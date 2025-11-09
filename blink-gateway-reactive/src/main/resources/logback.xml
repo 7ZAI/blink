@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--日志格式应用spring boot默认的格式，也可以自己更改-->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"/>
+
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="appName"/>
+
+    <springProperty scope="context" name="blink.log.path" source="blink.log.path" defaultValue="./log/"/>
+
+    <springProperty scope="context" name="rootLevel" source="logging.level.root" defaultValue="DEBUG"/>
+
+    <!-- 控制台打印记录 -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="accessLog" class="ch.qos.logback.core.FileAppender">
+        <file>access_log.log</file>
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+    <appender name="async" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="accessLog" />
+    </appender>
+
+    <logger name="reactor.netty.http.server.AccessLog" level="INFO" additivity="false">
+        <appender-ref ref="async"/>
+    </logger>
+
+    <!-- 错误日志设置 -->
+<!--    <appender name="errorFile" class="ch.qos.logback.core.rolling.RollingFileAppender">-->
+
+<!--        &lt;!&ndash; 正在记录的日志文件的路径及文件名 &ndash;&gt;-->
+<!--        <file>${blink.log.path}/error-${appName}.log</file>-->
+
+<!--        &lt;!&ndash; 日志记录器的滚动策略，按日期，按大小记录 &ndash;&gt;-->
+<!--        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
+<!--            &lt;!&ndash; 归档的日志文件的路径，%d{yyyy-MM-dd}指定日期格式，%i指定索引 &ndash;&gt;-->
+<!--            <fileNamePattern>${blink.log.path}/error-${appName}-%d{yyyyMMdd}.%i.log.zip</fileNamePattern>-->
+<!--            &lt;!&ndash; 日志总保存量为10GB &ndash;&gt;-->
+<!--            <totalSizeCap>10GB</totalSizeCap>-->
+<!--            &lt;!&ndash; 除按日志记录之外，还配置了日志文件不能超过20M，若超过20M，日志文件会以索引0开始 &ndash;&gt;-->
+<!--            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">-->
+<!--                &lt;!&ndash;文件达到 最大20MB时会被压缩和切割 &ndash;&gt;-->
+<!--                <maxFileSize>20MB</maxFileSize>-->
+<!--            </timeBasedFileNamingAndTriggeringPolicy>-->
+<!--        </rollingPolicy>-->
+<!--        &lt;!&ndash; 追加方式记录日志 &ndash;&gt;-->
+<!--        <append>true</append>-->
+<!--        &lt;!&ndash; 日志文件的格式 &ndash;&gt;-->
+<!--        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">-->
+<!--            <pattern>${CONSOLE_LOG_PATTERN}</pattern>-->
+<!--            <charset>UTF-8</charset>-->
+<!--        </encoder>-->
+<!--        &lt;!&ndash; 此日志文件只记录error级别的 &ndash;&gt;-->
+<!--        <filter class="ch.qos.logback.classic.filter.LevelFilter">-->
+<!--            <level>error</level>-->
+<!--            <onMatch>ACCEPT</onMatch>-->
+<!--            <onMismatch>DENY</onMismatch>-->
+<!--        </filter>-->
+<!--    </appender>-->
+
+    <!-- 客户端日志设置 -->
+<!--    <appender name="clientFile" class="ch.qos.logback.core.rolling.RollingFileAppender">-->
+<!--        &lt;!&ndash; 正在记录的日志文件的路径及文件名 &ndash;&gt;-->
+<!--        <file>${blink.log.path}/client-${appName}.log</file>-->
+<!--        &lt;!&ndash; 日志记录器的滚动策略，按日期，按大小记录 &ndash;&gt;-->
+<!--        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
+<!--            &lt;!&ndash; 归档的日志文件的路径，%d{yyyy-MM-dd}指定日期格式，%i指定索引 &ndash;&gt;-->
+<!--            <fileNamePattern>${blink.log.path}/client-${appName}-%d{yyyyMMdd}.%i.log.zip</fileNamePattern>-->
+<!--            &lt;!&ndash; 日志总保存量为10GB &ndash;&gt;-->
+<!--            <totalSizeCap>10GB</totalSizeCap>-->
+<!--            &lt;!&ndash; 除按日志记录之外，还配置了日志文件不能超过20M，若超过20M，日志文件会以索引0开始 &ndash;&gt;-->
+<!--            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">-->
+<!--                &lt;!&ndash;文件达到 最大20MB时会被压缩和切割 &ndash;&gt;-->
+<!--                <maxFileSize>20MB</maxFileSize>-->
+<!--            </timeBasedFileNamingAndTriggeringPolicy>-->
+<!--        </rollingPolicy>-->
+<!--        &lt;!&ndash; 追加方式记录日志 &ndash;&gt;-->
+<!--        <append>true</append>-->
+<!--        &lt;!&ndash; 日志文件的格式 &ndash;&gt;-->
+<!--        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">-->
+<!--            <pattern>${CONSOLE_LOG_PATTERN}</pattern>-->
+<!--            <charset>UTF-8</charset>-->
+<!--        </encoder>-->
+<!--    </appender>-->
+
+    <!-- 所有日志设置 -->
+<!--    <appender name="totalFile" class="ch.qos.logback.core.rolling.RollingFileAppender">-->
+<!--        &lt;!&ndash; 正在记录的日志文件的路径及文件名 &ndash;&gt;-->
+<!--        <file>${blink.log.path}/blink-${appName}.log</file>-->
+<!--        &lt;!&ndash; 日志记录器的滚动策略，按日期，按大小记录 &ndash;&gt;-->
+<!--        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
+<!--            &lt;!&ndash; 归档的日志文件的路径，%d{yyyy-MM-dd}指定日期格式，%i指定索引 &ndash;&gt;-->
+<!--            <fileNamePattern>${blink.log.path}/blink-${appName}-%d{yyyyMMdd}.%i.log.zip</fileNamePattern>-->
+<!--            &lt;!&ndash; 日志总保存量为10GB &ndash;&gt;-->
+<!--            <totalSizeCap>10GB</totalSizeCap>-->
+<!--            &lt;!&ndash; 除按日志记录之外，还配置了日志文件不能超过20M，若超过20M，日志文件会以索引0开始 &ndash;&gt;-->
+<!--            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">-->
+<!--                &lt;!&ndash;文件达到 最大20MB时会被压缩和切割 &ndash;&gt;-->
+<!--                <maxFileSize>20MB</maxFileSize>-->
+<!--            </timeBasedFileNamingAndTriggeringPolicy>-->
+<!--        </rollingPolicy>-->
+<!--        &lt;!&ndash; 追加方式记录日志 &ndash;&gt;-->
+<!--        <append>true</append>-->
+<!--        &lt;!&ndash; 日志文件的格式 &ndash;&gt;-->
+<!--        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">-->
+<!--            <pattern>${CONSOLE_LOG_PATTERN}</pattern>-->
+<!--            <charset>UTF-8</charset>-->
+<!--        </encoder>-->
+<!--    </appender>-->
+
+
+
+<!--    <logger name="com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler" level="INFO" additivity="false">-->
+<!--        <appender-ref ref="console"/>-->
+<!--        <appender-ref ref="errorFile"/>-->
+<!--        <appender-ref ref="totalFile"/>-->
+<!--    </logger>-->
+
+<!--    <logger name="org.springframework.beans.factory.support.DefaultListableBeanFactory" level="INFO" additivity="false">-->
+<!--        <appender-ref ref="console"/>-->
+<!--        <appender-ref ref="errorFile"/>-->
+<!--        <appender-ref ref="totalFile"/>-->
+<!--    </logger>-->
+
+
+
+    <logger name="com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler" level="INFO" additivity="false">
+    </logger>
+    <logger name="org.springframework.boot.autoconfigure.logging.ConditionEvaluationReportLogger" level="INFO" additivity="false">
+    </logger>
+
+    <logger name="com.alibaba.nacos.client.naming.remote.NamingClientProxy" level="INFO" additivity="false">
+    </logger>
+
+
+
+    <root level="${rootLevel}">
+        <appender-ref ref="console"/>
+<!--        <appender-ref ref="errorFile"/>-->
+<!--        <appender-ref ref="totalFile"/>-->
+    </root>
+</configuration>

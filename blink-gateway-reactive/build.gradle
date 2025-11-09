@@ -1,0 +1,84 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'maven-publish'
+    id 'java-library'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.springframework.boot' version '3.0.8'
+}
+
+group = 'com.blink'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = '17'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven {
+        allowInsecureProtocol true
+        url "http://localhost:8081/repository/maven-public/"
+        credentials {
+            username 'admin'
+            password '123456'
+
+        }
+    }
+
+}
+
+dependencyManagement {
+    imports {
+        mavenBom 'com.alibaba.cloud:spring-cloud-alibaba-dependencies:2022.0.0.0'
+        mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2022.0.3'
+        mavenBom 'cn.hutool:hutool-bom:5.8.29'
+    }
+}
+
+
+dependencies {
+    implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
+    implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    implementation 'cn.hutool:hutool-core'
+    implementation 'cn.hutool:hutool-jwt'
+//    implementation 'cn.hutool:hutool-crypto'
+    implementation 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
+
+    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-framework-redis:1.0.0-SNAPSHOT'
+    //在reactive 环境中 无法使用openfeign 用webclient代替
+    implementation('com.blink:blink-base-api:1.0.0-SNAPSHOT') {
+        // 排除指定 group 和 module 的传递依赖
+        exclude group: 'com.blink', module: 'blink-framework-openfeign'
+    }
+
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

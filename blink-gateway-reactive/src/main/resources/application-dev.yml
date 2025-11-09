@@ -1,0 +1,71 @@
+spring:
+  cloud:
+    gateway:
+      # 全局默认过滤器，对所有路由生效
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 100  # 令牌桶每秒填充速率
+            redis-rate-limiter.burstCapacity: 200  # 令牌桶总容量
+            key-resolver: "#{@ipKeyResolver}"      # 限流维度解析器
+      # 确保多个网关实例路由同步
+#      discovery:
+#        locator:
+#          enabled: true
+
+      httpclient:
+        connect-timeout: 10000
+        response-timeout: 5s
+        #动态路由 由配置中心json配置
+#      routes:
+#        - id: base-app
+#          uri: lb://base-app
+#          predicates:
+#            - Path=/base/**
+
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: 123456
+      database: 0 # 数据库索引
+      lettuce:
+        pool:
+          max-active: 8 # 连接池最大活跃连接数（使用负值表示没有限制）
+          max-idle: 8 # 连接池最大空闲连接数
+          max-wait: -1ms # 连接池最大阻塞等待时间 毫秒（使用负值表示没有限制）
+          min-idle: 0 # 最小空闲连接数
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    reactor.netty.http.client: DEBUG
+# actuator 监控
+management:
+  endpoint:
+    gateway:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: "*"  # 暴露所有端点，生产环境建议按需暴露
+
+blink:
+  gateway:
+    dynamicroute:
+      mode: nacos
+      nacos:
+        dataId: gateway-routes
+        group: DEFAULT_GROUP
+#      redis:
+#        routeSuffix: default
+    ingnoredUrl:
+      - /login
+      - /captcha/get
+  redis:
+    mode: reactive
+    localCache: false
+    idgenerator:
+      delta:
+        MQ_MSG_ID: 100
+
