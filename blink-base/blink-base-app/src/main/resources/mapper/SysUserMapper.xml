@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.base.mapper.SysUserMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.base.entity.SysUserDO">
+        <id column="user_id" property="userId" />
+        <result column="login_name" property="loginName" />
+        <result column="password" property="password" />
+        <result column="username" property="username" />
+        <result column="avatar" property="avatar" />
+        <result column="sex" property="sex" />
+        <result column="phone" property="phone" />
+        <result column="email" property="email" />
+        <result column="last_login_time" property="lastLoginTime" />
+        <result column="locked" property="locked" />
+        <result column="salt" property="salt" />
+        <result column="psw_retry" property="pswRetry" />
+        <result column="superFlag" property="superFlag" />
+        <result column="remark" property="remark" />
+        <result column="create_by" property="createBy" />
+        <result column="update_by" property="updateBy" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="lock_time" property="lockTime" />
+    </resultMap>
+
+    <resultMap id="VoResultMap" type="com.blink.base.dto.vo.SysUserVO">
+        <id column="user_id" property="userId" />
+        <result column="login_name" property="loginName" />
+        <result column="username" property="username" />
+        <result column="avatar" property="avatar" />
+        <result column="sex" property="sex" />
+        <result column="phone" property="phone" />
+        <result column="email" property="email" />
+        <result column="last_login_time" property="lastLoginTime" />
+        <result column="locked" property="locked" />
+        <result column="remark" property="remark" />
+        <result column="create_time" property="createTime" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        user_id, login_name, password, username, avatar, sex, phone, email, last_login_time, locked, salt,psw_retry, superFlag, remark, create_by, update_by, create_time, update_time, lock_time
+    </sql>
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="loginName != null and loginName != ''">and login_name = #{loginName}</if>
+
+            <if test="username != null and username != ''">and username = #{username}</if>
+
+            <if test="sex != null and sex != ''">and sex = #{sex}</if>
+
+            <if test="phone != null and phone != ''">and phone = #{phone}</if>
+
+            <if test="email != null and email != ''">and email = #{email}</if>
+
+            <if test="lastLoginTime != null and lastLoginTime != ''">and last_login_time = #{lastLoginTime}</if>
+
+            <if test="createTime != null and createTime != ''">and create_time = #{createTime}</if>
+        </trim>
+    </sql>
+
+
+<!--    <select id="findSysUserList" parameterType="com.blink.base.dto.req.QuerySysUserReqDTO" resultMap="BaseResultMap">-->
+<!--        select * from (WITH RECURSIVE child_group (group_id,group_name) AS-->
+<!--                                          (-->
+<!--                                              SELECT group_id,group_name-->
+<!--                                              FROM sys_group-->
+<!--                                              WHERE group_parent_id in(1,2)-->
+<!--                                              UNION ALL-->
+<!--                                              SELECT c.group_id,c.group_name-->
+<!--                                              FROM child_group AS cp JOIN sys_group AS c-->
+<!--                                                                          ON cp.group_id = c.group_parent_id-->
+<!--                                          )-->
+<!--                       SELECT DISTINCT u.user_id FROM child_group c,sys_user_group_rela u where c.group_id = u.group_id ) gu,sys_user su-->
+<!--        where username="as";-->
+<!--    </select>-->
+
+
+    <select id="findSysUserList" parameterType="com.blink.base.dto.req.QuerySysUserReqDTO" resultMap="VoResultMap">
+        select user_id,login_name,username,sex,phone,email,last_login_time
+        from sys_user su
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="loginName != null and loginName != ''">and login_name = #{loginName}</if>
+
+            <if test="username != null and username != ''">and username = #{username}</if>
+
+            <if test="sex != null and sex != ''">and sex = #{sex}</if>
+
+
+            <if test="startDate != null and startDate != ''">and create_time <![CDATA[ >= ]]> #{startDate}</if>
+
+            <if test="endDate != null and endDate != ''">and create_time <![CDATA[ <= ]]> #{endDate}</if>
+        </trim>
+    </select>
+</mapper>

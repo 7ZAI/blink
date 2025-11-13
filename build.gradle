@@ -1,0 +1,151 @@
+buildscript {
+    ext {
+        springBootVersion: '3.0.8'
+        springCloudVersion: '2022.0.3'
+        springCloudAlibaba: '2022.0.0.0'
+        repositoriesUsername: 'admin'
+        repositoriesPassword: '123456'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'idea'
+    id 'maven-publish'
+    id 'java-library'
+    id 'io.spring.dependency-management' version '1.1.4'
+
+}
+
+group = 'com.blink'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = '17'
+}
+
+// 设置Java编译的编码
+compileJava.options.encoding = 'UTF-8'
+compileTestJava.options.encoding = 'UTF-8'
+
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'maven-publish'
+    apply plugin: 'java-library'
+    apply plugin: 'io.spring.dependency-management'
+
+
+    group = 'com.blink'
+    version = '1.0.0-SNAPSHOT'
+
+    java {
+        sourceCompatibility = '17'
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+    }
+
+    // 在 build.gradle 中添加
+//    tasks.withType(Javadoc) {
+//        options.encoding = 'UTF-8'
+//        options.charSet = 'UTF-8'
+//        options.docEncoding = 'UTF-8'
+//
+//        // 根据你的Java版本设置
+//        options.addStringOption('source', '11')
+//
+//        // 禁用严格检查（临时解决）
+//        options.addStringOption('Xdoclint:none', '-quiet')
+//
+//        // 设置标题
+//        title = '项目名称 API文档'
+//
+//        // 包含所有依赖
+//        classpath += configurations.compileClasspath
+//        classpath += configurations.runtimeClasspath
+//
+//        // 如果使用了模块化，添加模块路径
+//        if (JavaVersion.current().isJava9Compatible()) {
+//            options.addStringOption('-module-path', classpath.asPath)
+//        }
+//    }
+
+    repositories {
+        mavenLocal()
+        maven {
+            allowInsecureProtocol true
+            url "http://localhost:8081/repository/maven-public/"
+            credentials {
+                username project.findProperty('repositories.username')
+                password project.findProperty('repositories.password')
+
+            }
+        }
+//        mavenCentral()
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom 'com.alibaba.cloud:spring-cloud-alibaba-dependencies:2022.0.0.0'
+            mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2022.0.3'
+            mavenBom 'cn.hutool:hutool-bom:5.8.29'
+
+        }
+    }
+
+    dependencies {
+
+        compileOnly 'org.projectlombok:lombok:1.18.26'
+        annotationProcessor 'org.projectlombok:lombok:1.18.26'
+
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                // 指定要发布的组件，通常为java组件，它包含了主jar包的信息
+                from components.java
+                // 也可以单独指定 groupId, artifactId, version，如果未指定，则使用项目默认的
+                groupId = 'com.blink'
+                artifactId = project.name
+                version = '1.0.0-SNAPSHOT'
+
+                // 添加生成的源码包和文档包
+//            artifact tasks.named('sourcesJar')
+//            artifact tasks.named('javadocJar')
+
+                versionMapping {
+                    usage('java-api') {
+                        fromResolutionOf('runtimeClasspath')
+                    }
+                    usage('java-runtime') {
+                        fromResolutionResult()
+                    }
+                }
+            }
+        }
+
+        repositories {
+            maven {
+                allowInsecureProtocol true
+                url "http://localhost:8081/repository/maven-snapshots/"
+                credentials {
+                    username project.findProperty('repositories.username')
+                    password project.findProperty('repositories.password')
+                }
+            }
+
+        }
+    }
+
+}
+

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.base.mapper.RedisMqMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.base.entity.RedisMqDO">
+        <id column="msg_id" property="msgId"/>
+        <result column="msg_status" property="msgStatus"/>
+        <result column="stream_id" property="streamId"/>
+        <result column="topic" property="topic"/>
+        <result column="msg_type" property="msgType"/>
+        <result column="payload" property="payload"/>
+        <result column="payload_class" property="payloadClass"/>
+        <result column="sender" property="sender"/>
+        <result column="receiver" property="receiver"/>
+        <result column="version" property="version"/>
+        <result column="retry_times" property="retryTimes"/>
+        <result column="fail_times" property="failTimes"/>
+        <result column="extra" property="extra"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        msg_id
+        , msg_status, stream_id, topic, msg_type, payload, payload_class, sender, receiver, version, retry_times, fail_times, extra, create_time, update_time
+    </sql>
+
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="msgId != null and msgId != ''">and msg_id =
+                #{msgId}
+            </if>
+            <if test="msgStatus != null and msgStatus != ''">and msg_status =
+                #{msgStatus}
+            </if>
+
+            <if test="streamId != null and streamId != ''">and stream_id =
+                #{streamId}
+            </if>
+
+            <if test="topic != null and topic != ''">and topic =
+                #{topic}
+            </if>
+
+            <if test="msgType != null and msgType != ''">and msg_type =
+                #{msgType}
+            </if>
+
+            <if test="payload != null and payload != ''">and payload =
+                #{payload}
+            </if>
+
+            <if test="payloadClass != null and payloadClass != ''">and payload_class =
+                #{payloadClass}
+            </if>
+
+            <if test="sender != null and sender != ''">and sender =
+                #{sender}
+            </if>
+
+            <if test="receiver != null and receiver != ''">and receiver =
+                #{receiver}
+            </if>
+
+            <if test="version != null and version != ''">and version =
+                #{version}
+            </if>
+
+            <if test="retryTimes != null and retryTimes != ''">and retry_times =
+                #{retryTimes}
+            </if>
+
+            <if test="failTimes != null and failTimes != ''">and fail_times =
+                #{failTimes}
+            </if>
+
+            <if test="extra != null and extra != ''">and extra =
+                #{extra}
+            </if>
+
+            <if test="createTime != null and createTime != ''">and create_time =
+                #{createTime}
+            </if>
+
+            <if test="updateTime != null and updateTime != ''">and update_time =
+                #{updateTime}
+            </if>
+
+        </trim>
+    </sql>
+
+
+</mapper>

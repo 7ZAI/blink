@@ -1,0 +1,21 @@
+rootProject.name = 'blink'
+
+// 可以暂时注释掉不用的模块 提高编译速度
+include 'blink-base:blink-base-app'
+include 'blink-base:blink-base-api'
+
+include 'blink-framework-common'
+include 'blink-framework-core'
+include 'blink-framework-datasource'
+include 'blink-framework-openfeign'
+include 'blink-framework-redis'
+include 'blink-framework-validation'
+//include 'blink-framework-mq'
+//include 'blink-framework-test'
+
+include 'blink-gateway-reactive'
+//include 'blink-gateway'
+//include 'blink-stream'
+//include 'blink-batch'
+
+

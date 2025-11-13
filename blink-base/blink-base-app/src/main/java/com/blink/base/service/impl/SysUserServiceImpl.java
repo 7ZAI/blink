@@ -1,0 +1,234 @@
+package com.blink.base.service.impl;
+
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.blink.base.constans.BaseErrCodeConstant;
+import com.blink.base.constans.CommonConstans;
+import com.blink.base.dto.req.AddSysUserReqDTO;
+import com.blink.base.dto.req.DeleteSysUserReqDTO;
+import com.blink.base.dto.req.QuerySysUserReqDTO;
+import com.blink.base.dto.req.UpdateSysUserReqDTO;
+import com.blink.base.dto.rsp.SysUserRspDTO;
+import com.blink.base.dto.vo.SysUserVO;
+import com.blink.base.entity.SysUserDO;
+import com.blink.base.entity.SysUserGroupRelaDO;
+import com.blink.base.entity.SysUserRoleRelaDO;
+import com.blink.base.mapper.SysUserGroupRelaMapper;
+import com.blink.base.mapper.SysUserMapper;
+import com.blink.base.mapper.SysUserRoleRelaMapper;
+import com.blink.base.service.SysUserService;
+import com.blink.datasource.PageUtils;
+import com.blink.framework.common.exception.BlinkException;
+
+import com.blink.framework.core.util.BlinkRequestContextHolder;
+import jakarta.annotation.Resource;
+import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * <p>
+ * 系统用户 服务实现类
+ * </p>
+ *
+ * @author binblink
+ * @since 2023-12-26
+ */
+@Transactional(rollbackFor = Exception.class)
+@Service
+public class SysUserServiceImpl implements SysUserService {
+
+    @Resource
+    private SysUserMapper sysUserMapper;
+
+    @Resource
+    private SysUserRoleRelaMapper sysUserRoleRelaMapper;
+
+    @Resource
+    private SysUserGroupRelaMapper sysUserGroupRelaMapper;
+
+    /**
+     * 保存 系统用户
+     *
+     * @param saveParam
+     * @throws BlinkException
+     */
+    @Override
+    public void saveSysUser(AddSysUserReqDTO saveParam) throws BlinkException {
+
+
+        SysUserDO sysUserDO = new SysUserDO();
+        BeanUtil.copyProperties(saveParam, sysUserDO);
+
+        //loginName 不能重复
+        Long existOne = sysUserMapper.selectCount(new LambdaQueryWrapper<SysUserDO>()
+                .eq(SysUserDO::getLoginName, sysUserDO.getLoginName()));
+
+        if (existOne > CommonConstans.LONG_ZERO) {
+            BlinkException.throwBusinessException(BaseErrCodeConstant.LOGIN_NAME_REPEAT);
+        }
+
+        //生成盐值
+        sysUserDO.setSalt(BCrypt.gensalt());
+        String encodePassword = BCrypt.hashpw(sysUserDO.getPassword(), sysUserDO.getSalt());
+        sysUserDO.setPassword(encodePassword);
+
+        //TODO 从报文中获取 报文头由网关填充  头像默认图片暂无
+        sysUserDO.setAvatar("default");
+        sysUserDO.setUsername("default");
+        sysUserDO.setUpdateBy(saveParam.getLoginName());
+
+        sysUserMapper.insert(sysUserDO);
+    }
+
+    /**
+     * 删除 系统用户
+     *
+     * @param deleteParam
+     * @throws BlinkException
+     */
+    @Override
+    public void deleteSysUser(DeleteSysUserReqDTO deleteParam) throws BlinkException {
+
+        if (deleteParam.isBatchDelete()) {
+            sysUserMapper.deleteBatchIds(deleteParam.getUserIdList());
+            sysUserRoleRelaMapper.deleteBatchIds(deleteParam.getUserIdList());
+            sysUserGroupRelaMapper.deleteBatchIds(deleteParam.getUserIdList());
+
+        } else {
+            sysUserMapper.deleteById(deleteParam.getUserId());
+            sysUserRoleRelaMapper.deleteById(deleteParam.getUserId());
+            sysUserGroupRelaMapper.deleteById(deleteParam.getUserId());
+        }
+    }
+
+    /**
+     * 更新 系统用户
+     *
+     * @param updateParam
+     * @throws BlinkException
+     */
+    @Override
+    public void modifySysUser(UpdateSysUserReqDTO updateParam) throws BlinkException {
+
+        Integer userId = updateParam.getUserId();
+
+        SysUserDO sysUserDO = sysUserMapper.selectById(userId);
+
+//        QueryWrapper queryWrapper = new QueryWrapper();
+//        queryWrapper.select("role_id").eq("user_id",updateParammter.getUserId());
+//        List<Integer> roleIdList = sysUserRoleRelaMapper.selectObjs(queryWrapper);
+//
+//        queryWrapper.clear();
+//        queryWrapper.select("group_id").eq("user_id",updateParammter.getUserId());
+//        List<Integer> groupIdList = sysUserRoleRelaMapper.selectObjs(queryWrapper);
+
+        List<SysUserRoleRelaDO> userRolesList = sysUserRoleRelaMapper.selectList(new LambdaQueryWrapper<SysUserRoleRelaDO>()
+                .eq(SysUserRoleRelaDO::getUserId, userId));
+
+        List<SysUserGroupRelaDO> userGroupList = sysUserGroupRelaMapper.selectList(new LambdaQueryWrapper<SysUserGroupRelaDO>()
+                .eq(SysUserGroupRelaDO::getUserId, userId));
+
+        //用户不存在
+        if (ObjectUtil.isEmpty(sysUserDO)) {
+            BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIST);
+        }
+
+        BeanUtil.copyProperties(updateParam, sysUserDO);
+        sysUserDO.setUpdateBy(BlinkRequestContextHolder.getLoginName());
+
+        List<Integer> roleIdList = new ArrayList<>();
+        List<Integer> groupIdList = new ArrayList<>();
+
+        if (CollUtil.isNotEmpty(userRolesList)) {
+            roleIdList = userRolesList.stream().map(SysUserRoleRelaDO::getRoleId).collect(Collectors.toList());
+        }
+
+        if (CollUtil.isNotEmpty(userGroupList)) {
+            groupIdList = userGroupList.stream().map(SysUserGroupRelaDO::getGroupId).collect(Collectors.toList());
+        }
+
+        //判断是否相同 相同则不更新
+        if (!CollUtil.isEqualList(updateParam.getRoleIdList(), roleIdList)) {
+            //删除所有角色关联
+            sysUserRoleRelaMapper.delete(new LambdaQueryWrapper<SysUserRoleRelaDO>().eq(SysUserRoleRelaDO::getUserId, userId));
+            // 插入新的角色关联
+            updateParam.getRoleIdList().forEach(roleId -> {
+
+                SysUserRoleRelaDO newUserRoleRela = new SysUserRoleRelaDO();
+                newUserRoleRela.setUserId(userId);
+                newUserRoleRela.setRoleId(roleId);
+
+                sysUserRoleRelaMapper.insert(newUserRoleRela);
+            });
+        }
+
+        //判断是否相同 相同则不更新
+        if (!CollUtil.isEqualList(updateParam.getGroupIdList(), groupIdList)) {
+            //删除所有组关联
+            sysUserGroupRelaMapper.delete(new LambdaQueryWrapper<SysUserGroupRelaDO>().eq(SysUserGroupRelaDO::getUserId, userId));
+            // 插入新的组关联
+            updateParam.getGroupIdList().forEach(groupId -> {
+
+                SysUserGroupRelaDO ugRela = new SysUserGroupRelaDO();
+                ugRela.setUserId(userId);
+                ugRela.setGroupId(groupId);
+                sysUserGroupRelaMapper.insert(ugRela);
+            });
+        }
+
+        sysUserMapper.updateById(sysUserDO);
+
+    }
+
+    /**
+     * 查询 系统用户 列表
+     *
+     * @param queryParam
+     * @return
+     * @throws BlinkException
+     */
+    @Override
+    public SysUserRspDTO getSysUserList(QuerySysUserReqDTO queryParam) throws BlinkException {
+
+
+        //如果为空
+//        if(CollUtil.isEmpty(queryDTO.getGroupId())){
+//        //TODO 从登入记录拿到当前用户所在部门
+//            List<Integer> groupId = new ArrayList<>();
+//            queryDTO.setGroupId(groupId);
+//        }
+//        //TODO校验 传入的组id 是否是在授权内的可查的组id
+//
+//        //TODO 超级管理员处理
+//
+//        if(BeanUtil.isEmpty(queryDTO.getGroupId())){
+//            SysUserDO currentUser =  sysUserMapper.selectOne(new LambdaQueryWrapper<SysUserDO>().eq(SysUserDO::getLoginName,reqDto.getLoginName()));
+//            sysUserGroupRelaMapper.selectList(new LambdaQueryWrapper<SysUserGroupRelaDO>().eq(SysUserGroupRelaDO::getUserId, currentUser.getUserId()));
+//        }
+
+        SysUserRspDTO<SysUserVO> sysUserRspDTO = new SysUserRspDTO<>();
+        PageUtils.queryPage(queryParam, () -> sysUserMapper.findSysUserList(queryParam), sysUserRspDTO);
+        return sysUserRspDTO;
+    }
+
+    /**
+     * 查询 系统用户 详情
+     *
+     * @param queryParam
+     * @return
+     * @throws BlinkException
+     */
+    @Override
+    public SysUserDO getSysUserDetail(SysUserDO queryParam) throws BlinkException {
+
+        SysUserDO sysUserDO = sysUserMapper.selectById(queryParam);
+        return sysUserDO;
+    }
+}

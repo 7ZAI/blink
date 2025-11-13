@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.base.mapper.SysConfigGroupMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.base.entity.SysConfigGroupDO">
+        <id column="id" property="id"/>
+        <result column="group_key" property="groupKey"/>
+        <result column="group_name" property="groupName"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="order_num" property="orderNum"/>
+        <result column="status" property="status"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id
+        , group_key, group_name, parent_id, order_num, status, create_by, create_time, update_by, update_time, remark
+    </sql>
+
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="id != null and id != ''">and id =
+                #{id}
+            </if>
+            <if test="groupKey != null and groupKey != ''">and group_key =
+                #{groupKey}
+            </if>
+
+            <if test="groupName != null and groupName != ''">and group_name =
+                #{groupName}
+            </if>
+
+            <if test="parentId != null and parentId != ''">and parent_id =
+                #{parentId}
+            </if>
+
+            <if test="orderNum != null and orderNum != ''">and order_num =
+                #{orderNum}
+            </if>
+
+            <if test="status != null and status != ''">and status =
+                #{status}
+            </if>
+
+            <if test="createBy != null and createBy != ''">and create_by =
+                #{createBy}
+            </if>
+
+            <if test="createTime != null and createTime != ''">and create_time =
+                #{createTime}
+            </if>
+
+            <if test="updateBy != null and updateBy != ''">and update_by =
+                #{updateBy}
+            </if>
+
+            <if test="updateTime != null and updateTime != ''">and update_time =
+                #{updateTime}
+            </if>
+
+            <if test="remark != null and remark != ''">and remark =
+                #{remark}
+            </if>
+
+        </trim>
+    </sql>
+
+
+    <select id="findSysConfigGroupList" parameterType="com.blink.base.dto.req.QuerySysConfigGroupReqDTO"
+            resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_config_group
+        <include refid="Condition_where"/>
+    </select>
+
+
+    <select id="findAllSonIdByParentId" resultType="java.lang.Integer">
+        -- mysql 8.0 支持 CET 递归查询语法
+        WITH RECURSIVE group_tree AS (
+            -- 初始查询（锚点）：根据传入的parentId找到起始节点
+            SELECT id, parent_id
+            FROM sys_config_group
+            WHERE id = #{parentId} -- 如果查询根节点，可以改为 parent_id IS NULL
+            UNION ALL
+            -- 递归部分：通过关联父节点ID逐级向下查找子节点
+            SELECT c.id,
+                   c.parent_id
+            FROM sys_config_group c
+                     INNER JOIN
+                 group_tree gt ON c.parent_id = gt.id)
+        SELECT id
+        FROM group_tree;
+    </select>
+
+</mapper>

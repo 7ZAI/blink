@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.base.mapper.BlinkChannelMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.base.entity.BlinkChannelDO">
+        <id column="channel_id" property="channelId"/>
+        <result column="channel_name" property="channelName"/>
+        <result column="app_key" property="appKey"/>
+        <result column="app_secret" property="appSecret"/>
+        <result column="rela_user_id" property="relaUserId"/>
+        <result column="access_token" property="accessToken"/>
+        <result column="system_publickey" property="systemPublickey"/>
+        <result column="system_privatekey" property="systemPrivatekey"/>
+        <result column="channel_publickey" property="channelPublickey"/>
+        <result column="channel_privatekey" property="channelPrivatekey"/>
+        <result column="enable" property="enable"/>
+        <result column="encryption_switch" property="encryptionSwitch"/>
+        <result column="token_timeout_switch" property="tokenTimeoutSwitch"/>
+        <result column="authority_switch" property="authoritySwitch"/>
+        <result column="remark" property="remark"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        channel_id
+        , channel_name, app_key, app_secret, rela_user_id, access_token, system_publickey, system_privatekey, channel_publickey, channel_privatekey, enable, encryption_switch, token_timeout_switch, authority_switch, remark, create_by, update_by, create_time, update_time
+    </sql>
+
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="channelId != null and channelId != ''">and channel_id = #{channelId}</if>
+            <if test="channelName != null and channelName != ''">and channel_name = #{channelName}</if>
+
+            <if test="appKey != null and appKey != ''">and app_key = #{appKey}</if>
+
+            <if test="appSecret != null and appSecret != ''">and app_secret = #{appSecret}</if>
+
+            <if test="relaUserId != null and relaUserId != ''">and rela_user_id = #{relaUserId}</if>
+
+            <if test="accessToken != null and accessToken != ''">and access_token = #{accessToken}</if>
+
+            <if test="systemPublickey != null and systemPublickey != ''">and system_publickey = #{systemPublickey}</if>
+
+            <if test="systemPrivatekey != null and systemPrivatekey != ''">and system_privatekey = #{systemPrivatekey}
+            </if>
+
+            <if test="channelPublickey != null and channelPublickey != ''">and channel_publickey = #{channelPublickey}
+            </if>
+
+            <if test="channelPrivatekey != null and channelPrivatekey != ''">and channel_privatekey =
+                #{channelPrivatekey}
+            </if>
+
+            <if test="enable != null and enable != ''">and enable = #{enable}</if>
+
+            <if test="encryptionSwitch != null and encryptionSwitch != ''">and encryption_switch = #{encryptionSwitch}
+            </if>
+
+            <if test="tokenTimeoutSwitch != null and tokenTimeoutSwitch != ''">and token_timeout_switch =
+                #{tokenTimeoutSwitch}
+            </if>
+
+            <if test="authoritySwitch != null and authoritySwitch != ''">and authority_switch = #{authoritySwitch}</if>
+
+            <if test="remark != null and remark != ''">and remark = #{remark}</if>
+
+            <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
+
+            <if test="updateBy != null and updateBy != ''">and update_by = #{updateBy}</if>
+
+            <if test="createTime != null and createTime != ''">and create_time = #{createTime}</if>
+
+            <if test="updateTime != null and updateTime != ''">and update_time = #{updateTime}</if>
+
+        </trim>
+    </sql>
+
+
+    <select id="findBlinkChannelList" parameterType="com.blink.base.dto.req.QueryBlinkChannelReqDTO"
+            resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from blink_channel
+        <include refid="Condition_where"/>
+    </select>
+
+    <select id="findAllChannels" resultType="com.blink.base.entity.BlinkChannelDO">
+        select
+        <include refid="Base_Column_List"/>
+        from blink_channel
+    </select>
+
+
+</mapper>

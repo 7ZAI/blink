@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.base.mapper.SysGroupMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.base.entity.SysGroupDO">
+        <id column="group_id" property="groupId"/>
+        <result column="group_no" property="groupNo"/>
+        <result column="group_name" property="groupName"/>
+        <result column="group_en_name" property="groupEnName"/>
+        <result column="group_parent_id" property="groupParentId"/>
+        <result column="group_level" property="groupLevel"/>
+        <result column="isLeaf" property="isLeaf"/>
+        <result column="group_leader" property="groupLeader"/>
+        <result column="group_address" property="groupAddress"/>
+        <result column="phone" property="phone"/>
+        <result column="create_time" property="createTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="delFlag" property="delFlag"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        group_id
+        , group_no, group_name, group_en_name, group_parent_id, group_level, isLeaf, group_leader, group_address, phone, create_time, create_by, update_time, update_by, delFlag
+    </sql>
+
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="groupId != null and groupId != ''">and group_id = #{groupId}</if>
+            <if test="groupNo != null and groupNo != ''">and group_no = #{groupNo}</if>
+            <if test="groupName != null and groupName != ''">and group_name = #{groupName}</if>
+
+            <if test="groupEnName != null and groupEnName != ''">and group_en_name = #{groupEnName}</if>
+
+            <if test="groupParentId != null and groupParentId != ''">and group_parent_id = #{groupParentId}</if>
+
+            <if test="groupLevel != null and groupLevel != ''">and group_level = #{groupLevel}</if>
+
+            <if test="isLeaf != null and isLeaf != ''">and isLeaf = #{isLeaf}</if>
+
+            <if test="groupLeader != null and groupLeader != ''">and group_leader = #{groupLeader}</if>
+
+            <if test="groupAddress != null and groupAddress != ''">and group_address = #{groupAddress}</if>
+
+            <if test="phone != null and phone != ''">and phone = #{phone}</if>
+
+            <if test="createTime != null and createTime != ''">and create_time = #{createTime}</if>
+
+            <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
+
+            <if test="updateTime != null and updateTime != ''">and update_time = #{updateTime}</if>
+
+            <if test="updateBy != null and updateBy != ''">and update_by = #{updateBy}</if>
+
+            <if test="delFlag != null and delFlag != ''">and delFlag = #{delFlag}</if>
+
+        </trim>
+    </sql>
+
+
+    <select id="findSysGroupList" parameterType="com.blink.base.dto.req.QuerySysGroupReqDTO" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_group
+        <include refid="Condition_where"/>
+    </select>
+
+</mapper>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.base.mapper.SysPermissionMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.base.entity.SysPermissionDO">
+        <id column="ac_id" property="acId"/>
+        <result column="ac_name" property="acName"/>
+        <result column="ac_en_name" property="acEnName"/>
+        <result column="ac_identity" property="acIdentity"/>
+        <result column="ac_type" property="acType"/>
+        <result column="icon" property="icon"/>
+        <result column="url" property="url"/>
+        <result column="status" property="status"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="data_filter_id" property="dataFilterId"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        ac_id
+        , ac_name, ac_en_name, ac_identity, ac_type, icon, url, status, parent_id, data_filter_id, create_by, create_time, update_by, update_time
+    </sql>
+
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="acId != null and acId != ''">and ac_id = #{acId}</if>
+            <if test="acName != null and acName != ''">and ac_name = #{acName}</if>
+
+            <if test="acEnName != null and acEnName != ''">and ac_en_name = #{acEnName}</if>
+
+            <if test="acIdentity != null and acIdentity != ''">and ac_identity = #{acIdentity}</if>
+
+            <if test="acType != null and acType != ''">and ac_type = #{acType}</if>
+
+            <if test="icon != null and icon != ''">and icon = #{icon}</if>
+
+            <if test="url != null and url != ''">and url = #{url}</if>
+
+            <if test="status != null and status != ''">and status = #{status}</if>
+
+            <if test="parentId != null and parentId != ''">and parent_id = #{parentId}</if>
+
+            <if test="dataFilterId != null and dataFilterId != ''">and data_filter_id = #{dataFilterId}</if>
+
+            <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
+
+            <if test="createTime != null and createTime != ''">and create_time = #{createTime}</if>
+
+            <if test="updateBy != null and updateBy != ''">and update_by = #{updateBy}</if>
+
+            <if test="updateTime != null and updateTime != ''">and update_time = #{updateTime}</if>
+
+        </trim>
+    </sql>
+
+
+    <select id="findSysPermissionList" parameterType="com.blink.base.dto.req.QuerySysPermissionReqDTO"
+            resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_permission
+        <include refid="Condition_where"/>
+    </select>
+
+
+    <select id="findRolesPermissions" parameterType="java.util.List" resultMap="BaseResultMap">
+        SELECT
+            DISTINCT sp.ac_id, ac_name, ac_en_name, ac_identity, ac_type, icon, url, status, parent_id, data_filter_id, create_by, create_time, update_by, update_time
+
+        FROM sys_permission sp,sys_role_perm_rela sr
+        WHERE sr.role_id IN
+        <foreach collection="list" item="roleId" index="index" open="(" close=")" separator=",">
+            #{roleId}
+        </foreach>
+
+    </select>
+
+
+</mapper>
