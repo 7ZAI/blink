@@ -1,0 +1,55 @@
+plugins {
+    id 'org.springframework.boot' version '3.0.8'
+}
+
+jar {
+    enabled = true
+    // 消除 打的包带 plain
+    archiveClassifier = ''
+
+}
+
+dependencies {
+
+    api 'org.springframework.cloud:spring-cloud-starter-openfeign'
+    api 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+    api 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
+    api 'org.apache.httpcomponents.client5:httpclient5-fluent:5.2.1'
+
+    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+}
+
+// 打包sourcesJar任务
+task sourcesJar(type: Jar, dependsOn: classes) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+publishing {
+    publications {
+        library(MavenPublication) {
+            groupId = project.group
+            artifactId = project.name
+            version = project.version
+
+            from components.java
+            artifact sourcesJar
+        }
+    }
+
+    repositories {
+        maven {
+            allowInsecureProtocol true
+            url "http://localhost:8081/repository/maven-snapshots/"
+            credentials {
+                username 'admin'
+                password '123456'
+            }
+        }
+
+    }
+}
