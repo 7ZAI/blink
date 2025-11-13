@@ -1,0 +1,60 @@
+package ${package.Service};
+
+import ${reqPackage}.${addReqDTOName};
+import ${reqPackage}.${deleteReqDTOName};
+import ${reqPackage}.${updateReqDTOName};
+import ${reqPackage}.${queryReqDTOName};
+import ${rspPackage}.${queryRspDTOName};
+import com.blink.framework.common.exception.BlinkException;
+
+#set($end=$entity.length() - 2)
+#set($entityOrigin=$entity.substring(0,$end))
+#set($entityLowerCase=$entityOrigin.substring(0,1).toLowerCase()+$entityOrigin.substring(1))
+/**
+ * <p>
+ *  $!{table.comment} 服务类
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+public interface ${table.serviceName} {
+
+        /**
+         * 保存 $!{table.comment}
+         *
+         * @param saveParam
+         * @return
+         * @throws BlinkException
+         */
+        void save${entityOrigin}(${addReqDTOName} saveParam) throws BlinkException;
+
+        /**
+         * 删除 $!{table.comment}
+         *
+         * @param deleteParam
+         * @return
+         * @throws BlinkException
+         */
+        void delete${entityOrigin}(${deleteReqDTOName} deleteParam) throws BlinkException;
+
+        /**
+         * 更新 $!{table.comment}
+         *
+         * @param updateParam
+         * @return
+         * @throws BlinkException
+         */
+        void modify${entityOrigin}(${updateReqDTOName} updateParam) throws BlinkException;
+
+        /**
+         * 查询 $!{table.comment} 列表
+         *
+         * @param queryParam
+         * @return
+         * @throws BlinkException
+         */
+            ${queryRspDTOName} get${entityOrigin}List(${queryReqDTOName} queryParam) throws BlinkException;
+
+
+}

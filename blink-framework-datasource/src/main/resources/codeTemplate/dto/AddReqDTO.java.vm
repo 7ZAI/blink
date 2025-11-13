@@ -1,0 +1,31 @@
+
+package ${reqPackage};
+import lombok.Data;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+/**
+ * <p>
+ * ${addReqDTOName} 新增$!{table.comment}请求参数对象
+ * </p>
+ * ${dtoName}
+ * ${table.name}
+ * @author ${author}
+ * @since ${date}
+ */
+@Data
+public class ${addReqDTOName} implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    ## ----------  BEGIN 字段循环遍历  ----------
+    #foreach($field in ${table.fields})
+
+        /**
+         * ${field.comment}
+         */
+        private ${field.propertyType} ${field.propertyName};
+
+    #end
+
+}

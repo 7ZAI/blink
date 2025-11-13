@@ -1,0 +1,115 @@
+package com.blink.datasource.config;
+
+
+import com.baomidou.mybatisplus.core.MybatisConfiguration;
+import com.baomidou.mybatisplus.core.config.GlobalConfig;
+import com.blink.datasource.interceptor.NormalFieldInterceptor;
+import com.github.pagehelper.PageInterceptor;
+import org.apache.ibatis.plugin.Interceptor;
+import org.apache.ibatis.session.LocalCacheScope;
+import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import java.util.Properties;
+
+
+@Configuration
+@MapperScan("com.blink.**.mapper")
+public class MybatisPlusConfiguration {
+    /**
+     *
+     * @return
+     */
+    @Bean
+    public MybatisConfiguration mybatisConfiguration(){
+        MybatisConfiguration mybatisConfiguration = new MybatisConfiguration();
+
+        //添加插件 目前采用mybatis plus MetaHandler的方式处理
+//        mybatisConfiguration.addInterceptor(new NormalFieldInterceptor());
+        //不映射空值
+        mybatisConfiguration.setCallSettersOnNulls(true);
+        //打开驼峰格式
+        mybatisConfiguration.setMapUnderscoreToCamelCase(true);
+        //打印日志
+//        mybatisConfiguration.setLogImpl(StdOutImpl.class);
+
+        //一级缓存是默认开启的 默认范围为同一个sqlsession中 在微服务中关闭一级缓存 因为别的服务可能会改变数据库数据 导致相同的session中查找出过期数据
+        mybatisConfiguration.setLocalCacheScope(LocalCacheScope.STATEMENT);
+
+        //二级缓存 以同mapper范围 是可以跨sqlsession的
+        //缓存是以namespace为单位的，不同namespace下的操作互不影响。
+        //insert,update,delete操作会清空所在namespace下的全部缓存。对于频繁修改数据的来说 缓存形同虚设
+        //通常使用MyBatis Generator生成的代码中，都是各个表独立的，每个表都有自己的namespace。
+        //多表操作一定不要使用二级缓存，因为多表操作进行更新操作，一定会产生脏数据。
+
+        //综上 单体环境可以开启一级缓存，微服务或者分布式架构下 关闭mybatis缓存
+        //真要建议上redis 针对热点查询 进行缓存 更加可控 更贴合实际业务
+        mybatisConfiguration.setCacheEnabled(false);
+
+        mybatisConfiguration.addInterceptor(pageInterceptor());
+
+        return mybatisConfiguration;
+    }
+
+    @Bean
+    public GlobalConfig globalConfig(){
+        GlobalConfig globalConfig = new GlobalConfig();
+        globalConfig.setDbConfig(dbConfig());
+        return globalConfig;
+    }
+
+    @Bean
+    public GlobalConfig.DbConfig dbConfig(){
+        GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
+        //逻辑删除配置
+        dbConfig.setLogicDeleteField("delFlag")
+                .setLogicDeleteValue("1")
+                .setLogicNotDeleteValue("0");
+
+        return dbConfig;
+    }
+
+    /**
+     * 配置自定义插件
+     * @return
+     */
+    @Bean
+    public Interceptor normalFieldInterceptor(){
+        NormalFieldInterceptor normalFieldInterceptor = new NormalFieldInterceptor();
+        return normalFieldInterceptor;
+    }
+
+    /**
+     * 配置pageHelper分页插件
+     *
+     */
+    @Bean
+    public PageInterceptor pageInterceptor(){
+        PageInterceptor pageHelper = new PageInterceptor();
+        Properties prop = new Properties();
+        prop.setProperty("defaultCount","true");
+        prop.setProperty("reasonable","false");
+//        prop.setProperty("dialect","mysql");
+        pageHelper.setProperties(prop);
+        return pageHelper;
+    }
+
+
+
+    /**
+     * 配置默认分页插件
+     *
+     */
+    //TODO 未来作可配置项
+//    @Bean
+//    public MybatisPlusInterceptor mybatisPlusInterceptor() {
+//        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
+//        //mybatis-plus 默认分页配置
+////        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));//如果配置多个插件,切记分页最后添加
+////        //interceptor.addInnerInterceptor(new PaginationInnerInterceptor()); 如果有多数据源可以不配具体类型 否则都建议配上具体的DbType
+//        interceptor.addInnerInterceptor(pageInterceptor());
+//        return interceptor;
+//    }
+
+
+}

@@ -1,0 +1,123 @@
+package ${package.Controller};
+
+
+import ${reqPackage}.${addReqDTOName};
+import ${reqPackage}.${deleteReqDTOName};
+import ${reqPackage}.${updateReqDTOName};
+import ${reqPackage}.${queryReqDTOName};
+import ${rspPackage}.${queryRspDTOName};
+import com.alibaba.fastjson2.JSON;
+import com.blink.base.dto.req.*;
+import com.blink.framework.common.constrant.SysConstant;
+import com.blink.framework.common.data.RequestDTO;
+import com.blink.framework.common.data.ResponseDTO;
+import jakarta.annotation.Resource;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+#set($end=$entity.length() - 2)
+#set($entityOrigin=$entity.substring(0,$end))
+#set($entityLowerCase=$entityOrigin.substring(0,1).toLowerCase()+$entityOrigin.substring(1))
+/**
+ *
+ *  单元测试
+ *  $!{table.comment} 管理API
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@SpringBootTest
+@AutoConfigureMockMvc
+class ${table.controllerName}Test {
+
+    @Resource
+    private MockMvc mockMvc;
+
+    /**
+     * 测试
+     * 新增$!{table.comment}
+     *
+     */
+    @Test
+    void testSave${entityOrigin}() throws Exception {
+        ${addReqDTOName} reqParam = new ${addReqDTOName}();
+
+        MvcResult result = perform("/${entityLowerCase}/save${entityOrigin}", reqParam);
+        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
+    }
+    /**
+     * 测试
+     * 删除$!{table.comment}
+     *
+     */
+    @Test
+    void testDelete${entityOrigin}() throws Exception {
+
+        ${deleteReqDTOName} reqParam = new ${deleteReqDTOName}();
+
+        MvcResult result = perform("/${entityLowerCase}/delete${entityOrigin}", reqParam);
+        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
+    }
+
+    /**
+     * 测试
+     * 更新$!{table.comment}
+     *
+     */
+    @Test
+    void testModify${entityOrigin}() throws Exception {
+
+        ${updateReqDTOName} reqParam = new ${updateReqDTOName}();
+
+        MvcResult result = perform("/${entityLowerCase}/modify${entityOrigin}", reqParam);
+        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
+    }
+
+    /**
+     * 测试
+     * 根据查询条件查询$!{table.comment}列表
+     *
+     */
+    @Test
+    void testGet${entityOrigin}List() throws Exception {
+
+        ${queryReqDTOName} reqParam = new ${queryReqDTOName}();
+
+        MvcResult result = perform("/${entityLowerCase}/get${entityOrigin}List", reqParam);
+        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
+    }
+
+
+
+
+    private <T> MvcResult perform(String url, T reqParam) throws Exception {
+
+        RequestDTO reqDto = new RequestDTO<>();
+        reqDto.setBody(reqParam);
+        String param = JSON.toJSONString(reqDto);
+
+        return mockMvc.perform(MockMvcRequestBuilders.post(url)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(param))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andReturn();
+
+    }
+
+
+}

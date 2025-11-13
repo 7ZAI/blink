@@ -1,0 +1,108 @@
+package ${package.ServiceImpl};
+
+import ${package.Entity}.${entity};
+import ${package.Mapper}.${table.mapperName};
+import ${package.Service}.${table.serviceName};
+
+import ${reqPackage}.${addReqDTOName};
+import ${reqPackage}.${deleteReqDTOName};
+import ${reqPackage}.${updateReqDTOName};
+import ${reqPackage}.${queryReqDTOName};
+import ${rspPackage}.${queryRspDTOName};
+import cn.hutool.core.bean.BeanUtil;
+import com.blink.datasource.PageUtils;
+import com.blink.framework.common.constrant.SysConstant;
+import com.blink.framework.common.exception.BlinkException;
+import jakarta.annotation.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+#set($end=$entity.length() - 2)
+#set($entityOrigin=$entity.substring(0,$end))
+#set($entityLowerCase=$entityOrigin.substring(0,1).toLowerCase()+$entityOrigin.substring(1))
+
+/**
+ *
+ * $!{table.comment} 服务实现类
+ *
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@Transactional(rollbackFor = Exception.class)
+@Service
+public class ${table.serviceImplName}  implements ${table.serviceName} {
+
+        private final Logger logger = LoggerFactory.getLogger(${table.serviceImplName}.class);
+
+        @Resource
+        private ${table.mapperName} ${entityLowerCase}Mapper;
+
+        /**
+         * 保存 $!{table.comment}
+         *
+         * @param saveParam
+         * @throws BlinkException
+         */
+        @Override
+        public void save${entityOrigin}(${addReqDTOName} saveParam) throws BlinkException {
+
+            ${entity} ${entityLowerCase}DO = new ${entity}();
+            BeanUtil.copyProperties(saveParam,${entityLowerCase}DO);
+
+                ${entityLowerCase}Mapper.insert(${entityLowerCase}DO);
+        }
+
+        /**
+         * 删除 $!{table.comment}
+         *
+         * @param deleteParam
+         * @throws BlinkException
+         */
+        @Override
+        public void delete${entityOrigin}(${deleteReqDTOName} deleteParam) throws BlinkException {
+
+
+            if(deleteParam.isBatchDelete()){
+                    ${entityLowerCase}Mapper.deleteBatchIds(deleteParam.getIdList());
+            }else{
+                    ${entityLowerCase}Mapper.deleteById(deleteParam.getDeleteId());
+            }
+
+        }
+
+        /**
+         * 更新 $!{table.comment}
+         *
+         * @param updateParam
+         * @throws BlinkException
+         */
+        @Override
+        public void modify${entityOrigin}(${updateReqDTOName} updateParam) throws BlinkException {
+            ${entity} ${entityLowerCase}DO = new ${entity}();
+            BeanUtil.copyProperties(updateParam,${entityLowerCase}DO);
+
+                ${entityLowerCase}Mapper.updateById(${entityLowerCase}DO);
+        }
+
+        /**
+         * 查询 $!{table.comment} 列表
+         *
+         * @param queryParam
+         * @return result
+         * @throws BlinkException
+         */
+        @Override
+        public ${queryRspDTOName} get${entityOrigin}List(${queryReqDTOName} queryParam) throws BlinkException {
+
+
+            ${queryRspDTOName} pageRsp = new ${queryRspDTOName}();
+
+            ${queryRspDTOName} result = PageUtils.queryPage(queryParam,()-> ${entityLowerCase}Mapper.find${entityOrigin}List(queryParam),pageRsp);
+
+            return result;
+        }
+
+
+}

@@ -1,0 +1,47 @@
+
+package ${reqPackage};
+
+import lombok.Data;
+import java.io.Serializable;
+import jakarta.validation.constraints.NotNull;
+import java.util.List;
+/**
+ * <p>
+ * ${deleteReqDTOName}删除$!{table.comment}请求参数对象
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+@Data
+public class ${deleteReqDTOName} implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    ## ----------  BEGIN 字段循环遍历  ----------
+    #foreach($field in ${table.fields})
+
+
+        #if(${field.keyFlag})
+            ## 主键
+            /**
+             * $!{field.comment}
+             */
+            private ${field.propertyType} deleteId;
+
+            /**
+             * 批量删除用户Id集合
+             */
+            private List<${field.propertyType}> idList;
+
+        #end
+    #end
+
+    /**
+     * 是否批量删除标志
+     */
+    @NotNull
+    private boolean isBatchDelete;
+
+
+}

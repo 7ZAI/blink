@@ -1,0 +1,34 @@
+package ${package.Mapper};
+
+import ${package.Entity}.${entity};
+import ${superMapperClassPackage};
+import ${reqPackage}.${queryReqDTOName};
+
+import java.util.List;
+#if(${mapperAnnotationClass})
+import ${mapperAnnotationClass.name};
+#end
+#set($end=$entity.length() - 2)
+#set($entityOrigin=$entity.substring(0,$end))
+#set($entityLowerCase=$entityOrigin.substring(0,1).toLowerCase()+$entityOrigin.substring(1))
+
+/**
+ * <p>
+ * $!{table.comment} Mapper 接口
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+#if(${mapperAnnotationClass})
+        @${mapperAnnotationClass.simpleName}
+#end
+#if(${kotlin})
+        interface ${table.mapperName} : ${superMapperClass}<${entity}>
+#else
+        public interface ${table.mapperName} extends ${superMapperClass}<${entity}> {
+
+
+       List<${entity}> find${entityOrigin}List(${queryReqDTOName} reqDTO);
+}
+#end
