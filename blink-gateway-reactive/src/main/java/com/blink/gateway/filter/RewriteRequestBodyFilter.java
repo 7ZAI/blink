@@ -39,8 +39,8 @@ import static com.blink.gateway.constant.GatewayConstant.*;
 
 public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
 
-    private Logger logger = LoggerFactory.getLogger(RewriteRequestBodyFilter.class);
-    private ReactiveIdGenerator idGenerator;
+    private final Logger logger = LoggerFactory.getLogger(RewriteRequestBodyFilter.class);
+    private final ReactiveIdGenerator idGenerator;
 
    public RewriteRequestBodyFilter(ReactiveIdGenerator idGenerator) {
         this.idGenerator = idGenerator;

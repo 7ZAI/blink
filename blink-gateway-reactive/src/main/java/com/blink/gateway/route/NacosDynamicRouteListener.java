@@ -2,7 +2,7 @@ package com.blink.gateway.route;
 
 import com.alibaba.cloud.nacos.NacosConfigManager;
 import com.alibaba.nacos.api.config.listener.Listener;
-import com.blink.gateway.config.prop.DynamicRouteProperties;
+import com.blink.gateway.config.prop.GatewayProperties;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.cloud.gateway.event.RefreshRoutesEvent;
@@ -19,10 +19,10 @@ public class NacosDynamicRouteListener implements ApplicationRunner {
     
     private final NacosConfigManager nacosConfigManager;
     private final ApplicationEventPublisher publisher;
-    private final DynamicRouteProperties.Nacos nacosProperties;
+    private final GatewayProperties.Dynamicroute.Nacos nacosProperties;
 
     public NacosDynamicRouteListener(NacosConfigManager nacosConfigManager,ApplicationEventPublisher publisher,
-                                     DynamicRouteProperties.Nacos nacosProperties) {
+                                     GatewayProperties.Dynamicroute.Nacos nacosProperties) {
         this.nacosConfigManager = nacosConfigManager;
         this.publisher = publisher;
         this.nacosProperties = nacosProperties;

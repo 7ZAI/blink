@@ -17,11 +17,11 @@ spring:
         connect-timeout: 10000
         response-timeout: 5s
         #动态路由 由配置中心json配置
-#      routes:
-#        - id: base-app
-#          uri: lb://base-app
-#          predicates:
-#            - Path=/base/**
+      routes:
+        - id: base-app
+          uri: lb://base-app
+          predicates:
+            - Path=/base/**
 
 
   data:
@@ -39,7 +39,7 @@ spring:
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
-    reactor.netty.http.client: DEBUG
+    reactor.netty.http.client: INFO
 # actuator 监控
 management:
   endpoint:
@@ -52,20 +52,24 @@ management:
 
 blink:
   gateway:
+    cache:
+      stream-group-name: cache_sync_1
     dynamicroute:
-      mode: nacos
-      nacos:
-        dataId: gateway-routes
-        group: DEFAULT_GROUP
-#      redis:
-#        routeSuffix: default
+      mode: redis
+#      nacos:
+#        dataId: gateway-routes
+#        group: DEFAULT_GROUP
+      redis:
+        routeSuffix: default
+        groupId: route-consumer-1
+        streamkey: blink:stream:gateway:route
     ingnoredUrl:
       - /login
       - /captcha/get
   redis:
     mode: reactive
-    localCache: false
-    idgenerator:
-      delta:
+    enableLocalCache: false
+    redisson-enable: false
+    idGenerator:
+      key-steps:
         MQ_MSG_ID: 100
-

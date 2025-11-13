@@ -10,11 +10,12 @@ import java.util.Map;
 
 /**
  * 路由同步监听 监听stream消息
+ * 同步写法 不符合 Reactive
  *
  * @Author binblink
- * @Date 2025/11/5
  */
 @Slf4j
+@Deprecated
 public class RouteUpdateStreamListener implements StreamListener<String, MapRecord<String,String,Object>> {
 
     private final ApplicationEventPublisher publisher;

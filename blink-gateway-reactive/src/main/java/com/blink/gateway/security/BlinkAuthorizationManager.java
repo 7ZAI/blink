@@ -21,7 +21,7 @@ import java.util.Set;
  */
 public class BlinkAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
 
-    private ReactiveRedisClient redisClient;
+    private final ReactiveRedisClient redisClient;
 
     public BlinkAuthorizationManager(ReactiveRedisClient redisClient) {
         this.redisClient = redisClient;

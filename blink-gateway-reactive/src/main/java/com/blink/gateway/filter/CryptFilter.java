@@ -84,10 +84,7 @@ public class CryptFilter implements GlobalFilter, Ordered {
             return false;
         }
         // 请求不是 post application/json
-        if (!GateWayUtil.shouldCacheRequestBody(exchange.getRequest())) {
-            return false;
-        }
-        return true;
+        return GateWayUtil.shouldCacheRequestBody(exchange.getRequest());
     }
 
     private Mono<Void> processCryptExchange(ServerWebExchange exchange, GatewayFilterChain chain, ChannelInfoRedisDO channelInfo) {

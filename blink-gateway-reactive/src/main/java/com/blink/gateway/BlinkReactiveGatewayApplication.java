@@ -9,11 +9,11 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @EnableDiscoveryClient
 @ComponentScan({"com.blink.*"})
-public class BlinkGatewayApplication {
+public class BlinkReactiveGatewayApplication {
 
 
     public static void main(String[] args) {
-       SpringApplication.run(BlinkGatewayApplication.class, args);
+       SpringApplication.run(BlinkReactiveGatewayApplication.class, args);
     }
 
 }

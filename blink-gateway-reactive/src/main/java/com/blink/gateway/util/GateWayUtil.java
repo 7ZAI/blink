@@ -3,11 +3,16 @@ package com.blink.gateway.util;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.blink.framework.common.data.SysConfigCacheDO;
+import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.redis.component.ReactiveRedisClient;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.data.redis.connection.stream.ReadOffset;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -20,6 +25,7 @@ import static com.blink.gateway.constant.GatewayConstant.SWITCH_ON;
  *
  * @author binblink
  */
+@Slf4j
 public class GateWayUtil {
 
 
@@ -144,6 +150,38 @@ public class GateWayUtil {
         }
 
         return sysConfigCacheDO;
+    }
+
+    /**
+     * 如果Stream和group不存在  则创建 Stream 和消费者组（响应式方式）
+     *
+     * @param redisClient redis客户端
+     * @param streamKey  流key值
+     * @param groupName 组名称
+     * @return Mono<Boolean> true/false
+     */
+    public static Mono<Boolean> createStreamAndGroup(ReactiveRedisClient redisClient, String streamKey, String groupName ) {
+
+        // 检查 Stream 是否存在，如果不存在则创建
+        return redisClient.xPending(streamKey, groupName)
+                //存在
+                .map(pms -> {
+                    log.info(" stream:{} 和 group:{} 已经存在!", streamKey, groupName);
+                    return true;
+                })
+                //不存在 会报错
+                .onErrorResume(e -> {
+                    log.error("xPending error", e);
+                    log.error("在stream:{} 中 组:{}不存在", streamKey, groupName);
+                    log.info("在stream:{} 中创建组:{}", streamKey, groupName);
+
+                    // createGroup 如果stream 不存在也会创建 再创建组
+                    return redisClient.xGroupCreate(streamKey, groupName, "0-0")
+                            .map(s -> {
+                                log.info("在stream:{} 创建组:{} 创建结果：{}",streamKey, groupName, s);
+                                return true;
+                            }).switchIfEmpty(Mono.error(new BlinkException("创建组失败")));
+                });
     }
 
 }

@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  */
 public class TokenAuthenticationManager implements ReactiveAuthenticationManager {
 
-    private ReactiveRedisClient redisClient;
+    private final ReactiveRedisClient redisClient;
 
     public TokenAuthenticationManager(ReactiveRedisClient redisClient) {
         this.redisClient = redisClient;

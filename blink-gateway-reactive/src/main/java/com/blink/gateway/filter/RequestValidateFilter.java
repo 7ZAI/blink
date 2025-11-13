@@ -295,11 +295,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
             return false;
         }
 
-        if (loginName.length() > LENGTH_LIMIT_32) {
-            return false;
-        }
-
-        return true;
+        return loginName.length() <= LENGTH_LIMIT_32;
 
     }
 

@@ -19,9 +19,9 @@ import reactor.core.publisher.Mono;
  */
 public class BlinkAuthenticationSuccessHandler implements ServerAuthenticationSuccessHandler {
 
-    private Logger logger = LoggerFactory.getLogger(BlinkAuthenticationSuccessHandler.class);
+    private final Logger logger = LoggerFactory.getLogger(BlinkAuthenticationSuccessHandler.class);
 
-    private ReactiveRedisClient redisClient;
+    private final ReactiveRedisClient redisClient;
 
     public BlinkAuthenticationSuccessHandler(ReactiveRedisClient redisClient) {
         this.redisClient = redisClient;

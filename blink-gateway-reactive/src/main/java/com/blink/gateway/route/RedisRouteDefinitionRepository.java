@@ -4,7 +4,8 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
-import com.blink.gateway.config.prop.DynamicRouteProperties;
+import com.blink.gateway.config.prop.GatewayProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.route.RouteDefinition;
@@ -18,24 +19,29 @@ import reactor.core.publisher.Mono;
  *
  * @author binblink
  */
+@Slf4j
 public class RedisRouteDefinitionRepository implements RouteDefinitionRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(RedisRouteDefinitionRepository.class);
 
-    private final DynamicRouteProperties.Redis redisProperties;
+    private final GatewayProperties.Dynamicroute.Redis redisProperties;
     private final ReactiveRedisClient redisClient;
 
-    public RedisRouteDefinitionRepository(DynamicRouteProperties.Redis redisProperties,
+    public RedisRouteDefinitionRepository(GatewayProperties.Dynamicroute.Redis redisProperties,
                                           ReactiveRedisClient redisClient) {
         this.redisProperties = redisProperties;
         this.redisClient = redisClient;
 //        initListener();
     }
 
+
+
     @Override
     public Flux<RouteDefinition> getRouteDefinitions() {
+        log.info("从redis中获取路由  RedisRouteDefinitionRepository getRouteDefinitions ！");
         return redisClient.hEntries(redisProperties.getRouteKey())
-                .map(entry -> JSON.parseObject(entry.getValue().toString(), RouteDefinition.class));
+                .map(entry -> JSON.parseObject(entry.getValue().toString(), RouteDefinition.class))
+                .doOnNext(routeDefinition -> log.info("从redis 获取的路由：{}",routeDefinition.toString()));
+
     }
 
     /**
@@ -76,7 +82,7 @@ public class RedisRouteDefinitionRepository implements RouteDefinitionRepository
                                 .flatMap(l -> l > 0 ? Mono.empty() : Mono.error(new BlinkException("删除路由失败！路由id:" + id)));
                     }
                     //不存在
-                    logger.error("删除路由 路由id:{} 不存在", id);
+                    log.error("删除路由 路由id:{} 不存在", id);
                     return Mono.empty();
                 })
         );

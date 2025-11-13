@@ -77,33 +77,6 @@ public interface GatewayConstant {
     String X_BLINK_SIGN = "x-blink-sign";
 
 
-    /**---------------------------------------------------Redis Key 常量--------------------------------------------------------**/
-
-
-    /**
-     * 渠道key prefix
-     */
-    String BLINK_CHANNEL_PREFIX = "blink:channel:";
-
-    /**
-     * 认证token
-     */
-    String USER_TOKEN = "user:token:";
-
-    /**
-     * 用户登入信息
-     */
-    String USER_INFO = "user:info:";
-    /**
-     * 请求随机数 验证 key
-     */
-    String REQ_NONCE_PREFIX = "req:nonce:";
-
-    /**
-     * 用户权限
-     */
-    String URL_PERMISSION = "permission:identity:";
-
     /**
      * spring order 执行顺序最高 值越低越高
      */
@@ -213,10 +186,6 @@ public interface GatewayConstant {
      */
     String GET_CHANNEL_URL = "/channel/getChannel";
 
-    /**
-     * 缓存key前缀
-     */
-    String GATEWAY_CONFIG_KEY_PREFIX = "config:gateway:";
 
     /**
      * 防止重放配置key
@@ -246,11 +215,62 @@ public interface GatewayConstant {
 
     String KEY_APPKEY = "appKey";
 
-    String GATEWAY_DYNAMIC_ROUTES = "blink:gateway:routes:";
 
     String NACOS_GATEWAY_ROUTES_DEFAULT_DATAID = "gateway-routes";
 
-     String NACOS_GATEWAY_ROUTES_DEFAULT_GROUP = "DEFAULT_GROUP";
+    String NACOS_GATEWAY_ROUTES_DEFAULT_GROUP = "DEFAULT_GROUP";
+
+
+    /**---------------------------------------------------Redis relate start--------------------------------------------------------**/
+
+    String BLINK_PREFIX = "blink:";
+    /**
+     * 渠道key prefix
+     */
+    String BLINK_CHANNEL_PREFIX = BLINK_PREFIX + "channel:";
+
+    /**
+     * 认证token
+     */
+    String USER_TOKEN = "user:token:";
+
+    /**
+     * 用户登入信息
+     */
+    String USER_INFO = "user:info:";
+    /**
+     * 请求随机数 验证 key
+     */
+    String REQ_NONCE_PREFIX = "req:nonce:";
+
+    /**
+     * 用户权限
+     */
+    String URL_PERMISSION = "permission:identity:";
+
+    /**
+     * 缓存key前缀
+     */
+    String GATEWAY_CONFIG_KEY_PREFIX = BLINK_PREFIX + "config:gateway:";
+
+    /**
+     * 同步缓存stream key
+     */
+    String REDIS_STREAM_CACHE_KEY = BLINK_PREFIX + "stream:gateway:cache";
+
+    /**
+     *  保存路由的key前缀
+     */
+    String GATEWAY_DYNAMIC_ROUTES = BLINK_PREFIX + "gateway:routes:";
+
+    /**
+     *
+     */
+    String CAHCE_STREAM_GROUP_NAME = "groupLocalCache";
+
+
+    /**---------------------------------------------------Redis relate end--------------------------------------------------------**/
+
 
 
 }

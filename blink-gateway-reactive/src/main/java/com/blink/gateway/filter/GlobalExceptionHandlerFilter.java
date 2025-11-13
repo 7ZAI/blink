@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 
 public class GlobalExceptionHandlerFilter implements WebExceptionHandler,Ordered {
 
-    private Logger logger = LoggerFactory.getLogger(GlobalExceptionHandlerFilter.class);
+    private final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandlerFilter.class);
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
 
