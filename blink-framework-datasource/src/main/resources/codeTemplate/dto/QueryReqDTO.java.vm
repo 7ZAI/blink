@@ -2,6 +2,7 @@
 package ${reqPackage};
 
 import lombok.Data;
+import java.io.Serial;
 import java.io.Serializable;
 import com.blink.framework.common.data.PageDTO;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 @Data
 public class ${queryReqDTOName} extends PageDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     ## ----------  BEGIN 字段循环遍历  ----------

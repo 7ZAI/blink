@@ -1,11 +1,9 @@
 
 package ${rspPackage};
 
-import lombok.Data;
-import java.io.Serializable;
 import com.blink.framework.common.data.PageDTO;
-import java.time.LocalDateTime;
-
+import java.io.Serial;
+import java.io.Serializable;
 /**
  * <p>
  * ${queryRspDTOName} 新增$!{table.comment}请求参数对象
@@ -14,19 +12,19 @@ import java.time.LocalDateTime;
  * @author ${author}
  * @since ${date}
  */
-@Data
-public class ${queryRspDTOName} extends PageDTO implements Serializable {
+public class ${queryRspDTOName}<T> extends PageDTO<T> implements Serializable{
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     ## ----------  BEGIN 字段循环遍历  ----------
-    #foreach($field in ${table.fields})
-
-        /**
-         * ${field.comment}
-         */
-        private ${field.propertyType} ${field.propertyName};
-
-    #end
+##    #foreach($field in ${table.fields})
+##
+##        /**
+##         * ${field.comment}
+##         */
+##        private ${field.propertyType} ${field.propertyName};
+##
+##    #end
 
 }
