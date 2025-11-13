@@ -1,0 +1,54 @@
+plugins {
+    id 'org.springframework.boot' version '3.0.8'
+}
+
+
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'cn.hutool:hutool-core'
+
+}
+
+// 任务：生成源码JAR
+java {
+    withSourcesJar()
+    modularity.inferModulePath = true
+}
+
+jar {
+    enabled = true
+    // 消除 打的包带 plain
+    archiveClassifier = ''
+    manifest {
+        attributes('Implementation-Title': 'Gradle',
+                'Implementation-Version': archiveVersion)
+    }
+}
+
+tasks.named('jar') {
+    // 设置JAR包的manifest属性
+    manifest {
+        attributes('Automatic-Module-Name': project.name)
+        // 如果需要，你也可以在这里指定主类 (Main-Class)
+        // attributes('Main-Class': 'com.yourcompany.yourmodule.MainClass')
+    }
+
+    // 确保包含所有必要的资源文件
+    include 'META-INF/**'
+    include '**/*.class' // 这行通常可以省略，因为jar任务默认包含编译输出的class文件
+}
+
+// 任务：生成Javadoc JAR
+//tasks.register('javadocJar', Jar) {
+//    archiveClassifier = 'javadoc'
+//    from javadoc
+//}
+
+
+
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
