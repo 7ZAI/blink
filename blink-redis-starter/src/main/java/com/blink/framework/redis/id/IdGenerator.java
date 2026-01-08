@@ -12,7 +12,7 @@ import java.time.format.DateTimeFormatter;
  *
  * @author binblink
  */
-public  class IdGenerator {
+public class IdGenerator {
     /**
      * 同步生成器
      */
@@ -20,62 +20,58 @@ public  class IdGenerator {
     private SeqGenerator seqGenerator;
 
 
-    public  Long generateId(String key) {
-        return seqGenerator.generateId(key, Long.valueOf(IdGeneratorConstant.DEFAULT_KEY_MAX_VALUE));
+    public Long generateId(String key) {
+        return seqGenerator.generateSeq(key, Long.valueOf(IdGeneratorConstant.DEFAULT_KEY_MAX_VALUE));
     }
 
-    public  Long generateId(String key, Long maxValue) {
-        return seqGenerator.generateId(key, maxValue);
+    public Long generateId(String key, Long maxValue) {
+        return seqGenerator.generateSeq(key, maxValue);
     }
 
 
-
-    public  String generateId(String key, int length) {
+    public String generateId(String key, int length) {
         return IdStrUtils.stringFillAuto(generateId(key, IdStrUtils.getMaxValue(IdStrUtils.getMaxIdGenLength(length))).toString(), IdGeneratorConstant.DEFAULT_SEQUENCE_PAD_CHAR, length);
     }
 
-    public  String generateIdWithDate(String key, String prefix, int length) {
+    public String generateIdWithDate(String key, String prefix, int length) {
 
         return prefix + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + generateId(key, length);
     }
 
-    public  String generateIdWithDate(String key, int length) {
+    public String generateIdWithDate(String key, int length) {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + generateId(key, length);
     }
 
 
-    public  String generateIdWithDateTime(String key, String prefix, int length) {
+    public String generateIdWithDateTime(String key, String prefix, int length) {
         return prefix + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + generateId(key, length);
     }
 
-    public  String generateIdWithDateTime(String key, int length) {
+    public String generateIdWithDateTime(String key, int length) {
         return IdStrUtils.getDateTimeString() + generateId(key, length);
     }
 
 
-    public  String generateCommonId(String key) {
+    public String generateCommonId(String key) {
         return generateIdWithDate(key, IdGeneratorConstant.DEFAULT_LENGTH);
     }
 
 
-    public  String generateMsgId() {
+    public String generateMsgId() {
         return generateIdWithDateTime(IdGeneratorConstant.MSG_ID_KEY, IdGeneratorConstant.DEFAULT_LENGTH);
     }
 
-    public  String generateRequestId() {
+    public String generateRequestId() {
         return generateIdWithDateTime(IdGeneratorConstant.REQ_ID_KEY, IdGeneratorConstant.DEFAULT_LENGTH);
     }
 
-    public  String generateMqMsgId() {
+    public String generateMqMsgId() {
         return generateIdWithDateTime(IdGeneratorConstant.MQ_MSG_ID_KEY, IdGeneratorConstant.DEFAULT_LENGTH);
     }
 
-    public  String generateTraceId() {
+    public String generateTraceId() {
         return generateIdWithDateTime(IdGeneratorConstant.TRANCE_ID_KEY, IdGeneratorConstant.DEFAULT_LENGTH);
     }
-
-
-
 
 
 }

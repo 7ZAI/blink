@@ -9,8 +9,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
-@ConditionalOnProperty(name = "blink.redis.redissonEnable", havingValue = "true")
+//@Configuration
+//@ConditionalOnProperty(name = "blink.redis.redissonEnable", havingValue = "true")
 public class RedissonConfig {
 
     private static final String REDISSON_PREFIX = "redis://";

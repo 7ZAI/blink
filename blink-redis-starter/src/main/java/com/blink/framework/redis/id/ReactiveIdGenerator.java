@@ -1,12 +1,15 @@
 package com.blink.framework.redis.id;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * @Author binblink
  * @Date 2025/8/21
  */
+@Slf4j
 public class ReactiveIdGenerator {
 
     /**

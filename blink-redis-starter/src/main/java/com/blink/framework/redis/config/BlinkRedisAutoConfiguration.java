@@ -5,8 +5,11 @@ import com.blink.framework.redis.component.CacheComponent;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.framework.redis.id.*;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,30 +20,36 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.util.concurrent.TimeUnit;
+
 /**
+ *  redis集群缓存配置
+ *
  * @author binblink
- * * redis集群缓存配置
  */
-@Configuration
+//@AutoConfiguration
 @EnableConfigurationProperties({BlinkRedisProperties.class})
-public class BlinkRedisConfig {
+@Configuration
+public class BlinkRedisAutoConfiguration {
 
 
     @Configuration
-    @ConditionalOnProperty(name = "blink.redis.mode", havingValue = "sync")
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     public static class SyncBlockRedisConfig {
         /**
          * Object RedisTemplate
          */
-        @Bean
-        @ConditionalOnMissingBean
-        public RedisTemplate<String, Object> lettuceRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        @Bean("blinkRedisTemplate")
+        @ConditionalOnMissingBean(
+                name = {"blinkRedisTemplate"}
+        )
+        @ConditionalOnClass({RedisConnectionFactory.class})
+        public RedisTemplate<String, Object> blinkRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
 
             RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
             redisTemplate.setConnectionFactory(redisConnectionFactory);
             GenericFastJsonRedisSerializer valueSerializer = new GenericFastJsonRedisSerializer(new String[]{"com.blink.", "org.springframework.security.core."});
             StringRedisSerializer keySerializer = new StringRedisSerializer();
-//        redisTemplate.setDefaultSerializer(valueSerializer);
             //Redis 的 Key 序列化
             redisTemplate.setKeySerializer(keySerializer);
             //Hash 中的 Field Key 序列化
@@ -55,12 +64,12 @@ public class BlinkRedisConfig {
         }
 
         @Bean
-        public RedisClient redisClient(RedisTemplate<String, Object> lettuceRedisTemplate) {
-            return new RedisClient(lettuceRedisTemplate);
+        public RedisClient redisClient(@Qualifier("blinkRedisTemplate") RedisTemplate<String, Object> blinkRedisTemplate) {
+            return new RedisClient(blinkRedisTemplate);
         }
 
         @Bean
-        public SeqGenerator idGenerator(RedisClient redisClient, BlinkRedisProperties blinkRedisProperties) {
+        public SeqGenerator seqGenerator(RedisClient redisClient, BlinkRedisProperties blinkRedisProperties) {
             return new SeqGenerator(redisClient, blinkRedisProperties);
         }
 
@@ -70,7 +79,7 @@ public class BlinkRedisConfig {
         }
 
         @Bean
-        public IdGenerator syncIdGenerator() {
+        public IdGenerator idGenerator() {
             return new IdGenerator();
         }
     }
@@ -78,12 +87,15 @@ public class BlinkRedisConfig {
 
     /*** * * * * * * * * * * * * * * * * * * *Reactive 版本 * * * * * * * * * * * * * * * * * * * * * * * * *   * */
     @Configuration
-    @ConditionalOnProperty(name = "blink.redis.mode", havingValue = "reactive")
+    @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
     public static class ReactiveRedisConfig {
 
-        @Bean
-        @ConditionalOnMissingBean
-        public ReactiveRedisTemplate<String, Object> reactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
+        @Bean("blinkReactiveRedisTemplate")
+        @ConditionalOnMissingBean(
+                name = {"blinkReactiveRedisTemplate"}
+        )
+        @ConditionalOnClass({ReactiveRedisConnectionFactory.class})
+        public ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
 
             GenericFastJsonRedisSerializer valueSerializer = new GenericFastJsonRedisSerializer(new String[]{"com.blink.", "org.springframework.security.core."});
             StringRedisSerializer keySerializer = new StringRedisSerializer();
@@ -97,29 +109,11 @@ public class BlinkRedisConfig {
 
             return new ReactiveRedisTemplate<>(factory, context);
 
-            // key 序列化用 String
-//        StringRedisSerializer keySerializer = new StringRedisSerializer();
-//
-//        // value 序列化用 Jackson
-//        ObjectMapper mapper = new ObjectMapper();
-//        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-//        mapper.activateDefaultTyping(mapper.getPolymorphicTypeValidator(), ObjectMapper.DefaultTyping.NON_FINAL);
-//
-//        GenericJackson2JsonRedisSerializer valueSerializer = new GenericJackson2JsonRedisSerializer(mapper);
-//
-//        RedisSerializationContext<String, Object> context = RedisSerializationContext
-//                .<String, Object>newSerializationContext(keySerializer)
-//                .value(valueSerializer)
-//                .hashKey(keySerializer)
-//                .hashValue(valueSerializer)
-//                .build();
-//
-//        return new ReactiveRedisTemplate<>(factory, context);
         }
 
         @Bean
-        public ReactiveRedisClient reactiveRedisClient(ReactiveRedisTemplate<String, Object> reactiveRedisTemplate) {
-            return new ReactiveRedisClient(reactiveRedisTemplate);
+        public ReactiveRedisClient reactiveRedisClient(@Qualifier("blinkReactiveRedisTemplate") ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate) {
+            return new ReactiveRedisClient(blinkReactiveRedisTemplate);
         }
 
         @Bean
@@ -131,6 +125,17 @@ public class BlinkRedisConfig {
         public ReactiveIdGenerator reactiveIdGenerator(ReactiveRedisClient reactiveRedisClient, BlinkRedisProperties blinkRedisProperties) {
             return new ReactiveIdGenerator();
         }
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "blink.redis.enableLocalCache",havingValue = "true")
+    public Cache<String,Object> caffeineCache(){
+        return  Caffeine.newBuilder()
+                //最后一次写入1个小时候 失效
+                .expireAfterWrite(3600, TimeUnit.SECONDS)
+                .initialCapacity(200)
+                .maximumSize(3000)
+                .build();
     }
 
 

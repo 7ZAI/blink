@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,21 +22,11 @@ import java.util.Objects;
 @Slf4j
 public class BlinkRedisProperties {
 
-    /**
-     * 是否启用分布式锁
-     */
-    private Boolean enableRedisson = false;
 
     /**
      * 是否启用本地缓存 caffeine实现
      */
     private Boolean enableLocalCache = false;
-
-    /**
-     * redis的模式 只有有两种sync 阻塞式  reactive响应式
-     *  默认 sync
-     */
-    private String mode = "sync";
 
 
     private IdGenerator idGenerator = new IdGenerator();
@@ -44,14 +35,14 @@ public class BlinkRedisProperties {
     @PostConstruct
     public void init() throws IOException {
 
-        if(StrUtil.isBlank(this.idGenerator.luaPath)){
+        if (StrUtil.isBlank(this.idGenerator.luaPath)) {
             this.idGenerator.luaPath = IdGeneratorConstant.DEFAULT_IDGEN_LUA_FILE_PATH;
         }
 
         StringBuilder content = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(
-                SeqGenerator.class.getClassLoader().
-                        getResourceAsStream(this.idGenerator.luaPath)));
+                Objects.requireNonNull(SeqGenerator.class.getClassLoader().
+                        getResourceAsStream(this.idGenerator.luaPath))));
         while (true) {
             String str = null;
             if ((str = br.readLine()) == null) {
@@ -66,14 +57,6 @@ public class BlinkRedisProperties {
         }
     }
 
-    public String getMode() {
-        return mode;
-    }
-
-    public void setMode(String mode) {
-        this.mode = mode;
-    }
-
     public IdGenerator getIdGenerator() {
         return idGenerator;
     }
@@ -82,13 +65,6 @@ public class BlinkRedisProperties {
         this.idGenerator = idGenerator;
     }
 
-    public Boolean getEnableRedisson() {
-        return enableRedisson;
-    }
-
-    public void setEnableRedisson(Boolean enableRedisson) {
-        this.enableRedisson = enableRedisson;
-    }
 
     public Boolean getEnableLocalCache() {
         return enableLocalCache;
@@ -98,22 +74,27 @@ public class BlinkRedisProperties {
         this.enableLocalCache = enableLocalCache;
     }
 
-    public static class IdGenerator{
+    /**
+     * IdGenerator 配置类
+     *
+     */
+    public static class IdGenerator {
 
         /**
          * 配置key 每次生成id的增量
-         *
+         * <p>
          * <key,deltaValue> [{"xxxx": 1},{"aaa":1000}]
          */
         private Map<String, Integer> keySteps = new HashMap<>();
 
         /**
          * luaScript 脚本路径
-         *
          */
         private String luaPath;
 
         private String luaScript;
+
+        private Double fetchPercent;
 
 
         public Integer getKeySteps(String key) {
@@ -125,6 +106,14 @@ public class BlinkRedisProperties {
             }
 
             return delta;
+        }
+
+        public Double getFetchPercent() {
+            return fetchPercent;
+        }
+
+        public void setFetchPercent(Double fetchPercent) {
+            this.fetchPercent = fetchPercent;
         }
 
         public Map<String, Integer> getKeySteps() {
@@ -151,14 +140,6 @@ public class BlinkRedisProperties {
             this.luaScript = luaScript;
         }
     }
-
-
-
-
-
-
-
-
 
 
 }
