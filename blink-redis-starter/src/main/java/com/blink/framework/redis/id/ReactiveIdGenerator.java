@@ -19,11 +19,19 @@ public class ReactiveIdGenerator {
     private  ReactiveSeqGenerator reactiveSeqGenerator;
 
     public  Mono<Long> generateId(String key) {
-        return reactiveSeqGenerator.nextId(key, IdGeneratorConstant.DEFAULT_KEY_MAX_VALUE);
+
+        return reactiveSeqGenerator.nextSeq(key, IdGeneratorConstant.DEFAULT_KEY_MAX_VALUE);
+//        return Mono.defer(() ->
+//                reactiveSeqGenerator.nextSeq(key, IdGeneratorConstant.DEFAULT_KEY_MAX_VALUE)
+//        ).subscribeOn(Schedulers.boundedElastic());
     }
 
     public  Mono<Long> generateId(String key, Long maxValue) {
-        return reactiveSeqGenerator.nextId(key, String.valueOf(maxValue));
+
+        return reactiveSeqGenerator.nextSeq(key, String.valueOf(maxValue));
+//        return Mono.defer(() ->
+//                reactiveSeqGenerator.nextSeq(key, String.valueOf(maxValue))
+//        ).subscribeOn(Schedulers.boundedElastic());
     }
 
     public  Mono<String> generateId(String key, String prefix) {

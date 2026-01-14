@@ -1,3 +1,4 @@
+
 spring:
   data:
     redis:
@@ -18,13 +19,16 @@ logging:
   file:
     path: /logs
 
-
+server:
+  port: 8080
+  servlet:
+    context-path: /myapp
 blink:
   redis:
     enableLocalCache: false
     idGenerator:
       key-steps:
         MQ_MSG_ID: 100
-        test: 2000
-        #获取阈值 达到80%取值
-      fetchPercent: 0.5
+        test: 4000
+        #获取阈值 达到20%取值
+      fetchPercent: 0.8

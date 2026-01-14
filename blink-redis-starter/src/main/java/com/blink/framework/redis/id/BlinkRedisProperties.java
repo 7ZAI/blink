@@ -31,7 +31,10 @@ public class BlinkRedisProperties {
 
     private IdGenerator idGenerator = new IdGenerator();
 
-
+    /**
+     * 读取lua脚本 字符串保存
+     * @throws IOException
+     */
     @PostConstruct
     public void init() throws IOException {
 
@@ -83,7 +86,7 @@ public class BlinkRedisProperties {
         /**
          * 配置key 每次生成id的增量
          * <p>
-         * <key,deltaValue> [{"xxxx": 1},{"aaa":1000}]
+         * <key,stepValue> [{"xxxx": 1},{"aaa":1000}]
          */
         private Map<String, Integer> keySteps = new HashMap<>();
 
@@ -94,6 +97,10 @@ public class BlinkRedisProperties {
 
         private String luaScript;
 
+        /**
+         * 使用阈值  百分比
+         * 当id已使用超过fetchPercent 会异步缓存
+         */
         private Double fetchPercent;
 
 

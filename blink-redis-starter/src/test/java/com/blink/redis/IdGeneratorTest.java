@@ -3,13 +3,17 @@ package com.blink.redis;
 
 import cn.hutool.core.lang.Assert;
 import com.blink.framework.redis.id.IdGenerator;
+import com.blink.framework.redis.id.ReactiveIdGenerator;
 import jakarta.annotation.Resource;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.platform.commons.util.StringUtils;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.scheduling.concurrent.ThreadPoolExecutorFactoryBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -22,20 +26,52 @@ import java.util.concurrent.atomic.LongAdder;
 /**
  * 测试id生成器
  * 
- * @author yutianbao
  */
 @SpringBootTest(classes = TestApplicationConfig.class)
 @ActiveProfiles("test")
 public class IdGeneratorTest {
 
-    private static final int SIZE = 100000;
+    private static final int SIZE = 1000000;
     private static final boolean VERBOSE = true;
 
-    @Resource
+//    @Resource
     private IdGenerator idGenerator;
 
-//    @Resource
-//    private ReactiveIdGenerator reactiveIdGenerator;
+    @Resource
+    private ReactiveIdGenerator reactiveIdGenerator;
+
+    @Test
+    public void testConcurrentGenerateIdUniqueness() throws InterruptedException {
+        int totalRequests = 10000; // 测试生成 1w 个 ID
+        int parallelism = 16;      // 模拟 50 个并发线程
+
+        // 使用 ConcurrentHashMap 的 KeySet 来实现线程安全的去重集合
+        Set<Long> idSet = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        CountDownLatch latch = new CountDownLatch(1);
+
+        System.out.println("开始并发生成 ID 测试...");
+
+        Flux.range(0, totalRequests)
+                .parallel(parallelism)             // 开启并行执行
+                .runOn(Schedulers.parallel())     // 在并行调度器上运行
+                .flatMap(i -> reactiveIdGenerator.generateId("test"))
+                .doOnNext(id -> {
+                    if (!idSet.add(id)) {
+                        System.err.println("发现重复 ID: " + id);
+                    }
+                })
+                .sequential()                      // 转回顺序流以便统计
+                .doFinally(signalType -> latch.countDown())
+                .subscribe();
+
+        latch.await(); // 等待所有异步任务完成
+
+        System.out.println("期望数量: " + totalRequests);
+        System.out.println("实际去重后数量: " + idSet.size());
+
+        // 断言：去重后的集合大小应等于总请求数
+        Assertions.assertEquals(totalRequests, idSet.size(), "ID 生成存在重复！");
+    }
 
     /**
      * 串行
@@ -69,8 +105,8 @@ public class IdGeneratorTest {
         long start = System.currentTimeMillis();
         Set<Long> uidSet = new ConcurrentSkipListSet<>();
         AtomicInteger control = new AtomicInteger(-1);
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(10,
-                20,
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(16,
+                32,
                 6,
                 TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(60000),
@@ -90,7 +126,7 @@ public class IdGeneratorTest {
                         System.out.println("Found duplicate UID " + uid);
                         throw new RuntimeException("出现重复id");
                     }
-                    System.out.println(Thread.currentThread().getName() + "  No."+ myPosition +" seq >>> " + uid);
+//                    System.out.println(Thread.currentThread().getName() + "  No."+ myPosition +" seq >>> " + uid);
             });
         }
 
@@ -118,11 +154,21 @@ public class IdGeneratorTest {
         System.out.println("并行生成"+uidSet.size()+"个序号花费时间："+(end - start)+"ms");
     }
 
+    /**
+     * CAS 优化 读写锁 细粒度下
+     *  10000id 10线程 共10万  0.59 秒
+     * 20 线程 50000 id 共 100万  0.91 秒
+     *
+     * 仅仅读写锁 粗粒度控制并发
+     *  10000id 10线程 共10万  0.59 秒耗时: 0.70 秒
+     *  20 线程 50000 id 共 100万  耗时: 2.87 秒
+     * @throws InterruptedException
+     */
     @Test
     public void multiThreadTest() throws InterruptedException {
         // 配置测试参数
-        int threadCount = 10;       // 并发线程数
-        int idsPerThread = 10000;     // 每个线程获取的ID数量
+        int threadCount = 32;       // 并发线程数
+        int idsPerThread = 100000;     // 每个线程获取的ID数量
         int totalExpected = threadCount * idsPerThread;
 
         // 用于存储结果，验证是否重复
@@ -143,22 +189,19 @@ public class IdGeneratorTest {
             new Thread(() -> {
                 try {
                     startGate.await(); // 所有线程在此处阻塞等待鸣枪
+
                     for (int j = 0; j < idsPerThread; j++) {
-                        Long id = idGenerator.generateId("test");
+//                        Long id = idGenerator.generateId("test");
+                        Long id =  reactiveIdGenerator.generateId("test").block(Duration.ofSeconds(10));
                         if (id != null) {
-                            System.out.println("seq id: ---------------------" + id);
+//                            System.out.println("seq id: ---------------------" + id);
                             if(!idSet.add(id)){
-                                // 随机睡眠 500ms 到 2000ms 之间
-//                                long sleepMs = ThreadLocalRandom.current().nextLong(500, 2000);
-//                                Thread.sleep(sleepMs);
                                 errorCounter.incrementAndGet();
                                 System.err.println("重复的 seq id: ---------------------" + id);
-                                throw new Exception("产生重复");
                             }
                         } else {
                             System.out.println("------有空值-----------------------");
                             errorCounter.incrementAndGet();
-                            throw new Exception("null");
                         }
                     }
                 } catch (Exception e) {

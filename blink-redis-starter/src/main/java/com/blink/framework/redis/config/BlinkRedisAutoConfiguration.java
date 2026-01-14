@@ -43,7 +43,6 @@ public class BlinkRedisAutoConfiguration {
         @ConditionalOnMissingBean(
                 name = {"blinkRedisTemplate"}
         )
-        @ConditionalOnClass({RedisConnectionFactory.class})
         public RedisTemplate<String, Object> blinkRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
 
             RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
@@ -94,7 +93,6 @@ public class BlinkRedisAutoConfiguration {
         @ConditionalOnMissingBean(
                 name = {"blinkReactiveRedisTemplate"}
         )
-        @ConditionalOnClass({ReactiveRedisConnectionFactory.class})
         public ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
 
             GenericFastJsonRedisSerializer valueSerializer = new GenericFastJsonRedisSerializer(new String[]{"com.blink.", "org.springframework.security.core."});

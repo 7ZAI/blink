@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * 基于redis的分布式锁
  */
-@Component
 @Slf4j
 public class RedisDistributeLock {
 
@@ -35,8 +34,11 @@ public class RedisDistributeLock {
      */
     private static final int DEFAULT_RETRY_COUNT = 30;
 
-    @Resource
-    private RedissonClient redisson;
+    private final RedissonClient redisson;
+
+    public RedisDistributeLock(RedissonClient redisson){
+        this.redisson = redisson;
+    }
 
     /**
      * 加锁

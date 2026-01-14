@@ -1,5 +1,6 @@
 package com.blink.framework.redis.config;
 
+import com.blink.framework.redis.lock.RedisDistributeLock;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
@@ -9,8 +10,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-//@Configuration
-//@ConditionalOnProperty(name = "blink.redis.redissonEnable", havingValue = "true")
+@Configuration
+@ConditionalOnProperty(name = "blink.redis.redissonEnable", havingValue = "true")
 public class RedissonConfig {
 
     private static final String REDISSON_PREFIX = "redis://";
@@ -37,6 +38,12 @@ public class RedissonConfig {
                 .setPassword(password);
 
         return  Redisson.create(config);
+    }
+
+    @Bean
+    public RedisDistributeLock redisDistributeLock(RedissonClient redisson){
+
+        return new RedisDistributeLock(redisson);
     }
 
 

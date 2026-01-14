@@ -8,7 +8,8 @@ import java.time.format.DateTimeFormatter;
 /**
  * 注意区分 reactive响应式 和 sync同步版 的生成方法
  * 注意：lua脚本规则是 所有的生成的序列号 超过设置的最大值后 重新从0开始
- * 所以使用时请结合业务谨慎考虑会不会重复
+ * 超量设计 上限远大于实际可能到达的值
+ * 所以使用时请结合业务谨慎 考虑会不会重复 谨慎使用手动设置maxValue的api
  *
  * @author binblink
  */
