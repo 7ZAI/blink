@@ -1,0 +1,135 @@
+
+mq-product: true
+
+
+
+generator:
+  url: jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8
+  username: root
+  password: 123456
+
+
+
+
+spring:
+#  config:
+#    activate:
+#      on-profile: dev
+
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${APP_MYSQL_URL:localhost:3306}/${APP_MYSQL_DB:blink}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8
+    username: ${APP_MYSQL_USERNAME:root}
+    password: ${APP_MYSQL_PASSWORD:123456}
+    druid:
+      initialSize: 8
+      minIdle: 8
+      maxActive: 500
+      maxWait: 60000
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: SELECT 1
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxPoolPreparedStatementPerConnectionSize: 20
+      filters: stat,wall,slf4j
+      connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      #连接在多少秒后应该考虑弃用
+      remove-abandoned-timeout: 120
+      #被弃用的连接在到达弃用超时后是否应该被移除
+      remove-abandoned: true
+      #打印回收连接时的错误日志
+      log-abandoned: true
+      monitor:
+        loginUsername: druid
+        loginPassword: druid123
+
+#mybatis-plus:
+#    global-config:
+#      db-config:
+#        logic-delete-field: delFlag
+#        logic-delete-value: 1
+#        logic-not-delete-value: 0
+#    configuration:
+#      cache-enabled: false
+#      local-cache-scope: statement
+#      map-underscore-to-camel-case: true
+#      call-setters-on-nulls: true
+#      log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+  rabbitmq:
+    host: localhost
+    username: test
+    password: 123456
+    virtual-host: "/blink"
+    ## 生产者确认模式 异步
+    publisher-confirm-type: correlated
+    ## 生产者发送至队列失败回调
+    publisher-returns: true
+    listener:
+      simple:
+        retry:
+#          如果使用消费端retry机制 必须配置retry enabled  暂时找不到config类配置的形式
+          enabled: true
+          max-attempts: 3
+        prefetch:
+        concurrency:
+        max-concurrency:
+
+
+    #单实例配置
+
+blink:
+  rabbitmq:
+#    queues:
+#      - name: blink
+#      - name: default
+#    exchanges:
+#      - name: blink_exchange
+#        type: DIRECT
+    bindings:
+      - queueName: blink
+        exchangeName: blink_exchange
+        routingKey: blink
+
+      - queueName: default
+        exchangeName: blink_exchange
+        routingKey: default
+    deadQueues:
+      - bindQueues:
+          - blink
+          - default
+
+#  redis:
+#    host: 127.0.0.1
+#    port: 6379
+#    timeout: 6000ms # 连接池超时时间（毫秒）
+#    password: 123456
+#    database: 0 # 数据库索引
+#    lettuce:
+#      pool:
+#        max-active: 8 # 连接池最大活跃连接数（使用负值表示没有限制）
+#        max-idle: 8 # 连接池最大空闲连接数
+#        max-wait: -1ms # 连接池最大阻塞等待时间 毫秒（使用负值表示没有限制）
+#        min-idle: 0 # 最小空闲连接数
+#    redis:
+#      host: 127.0.0.1
+#      port: 6379
+#      timeout: 6000ms # 连接池超时时间（毫秒）
+#      password: 123456
+#      database: 0 # 数据库索引
+#      lettuce:
+#        pool:
+#          max-active: 8 # 连接池最大活跃连接数（使用负值表示没有限制）
+#          max-idle: 8 # 连接池最大空闲连接数
+#          max-wait: -1ms # 连接池最大阻塞等待时间 毫秒（使用负值表示没有限制）
+#          min-idle: 0 # 最小空闲连接数
+
+
+
+logging:
+  level:
+    root: debug
