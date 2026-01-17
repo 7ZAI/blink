@@ -12,6 +12,7 @@ import java.util.Map;
 
 /**
  * 读取注释工具类 只能读当前工程包下的类
+ * 用于读取错误码类常量doc 自动生成sql 入库
  */
 public class JavaDocCommentUtil {
 

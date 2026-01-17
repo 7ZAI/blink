@@ -76,14 +76,14 @@ public class SysGroupServiceImpl implements SysGroupService {
             sysGroupMapper.updateById(parentGroup);
         }
 
-        SysGroupDO sysGroupDO = new SysGroupDO();
+        var sysGroupDO = new SysGroupDO();
         BeanUtil.copyProperties(saveParam, sysGroupDO);
         sysGroupDO.setGroupLevel(parentGroup.getGroupLevel() + 1);
 
 
         sysGroupMapper.insert(sysGroupDO);
 
-        SysGroupRspDTO rspDTO = new SysGroupRspDTO();
+        var rspDTO = new SysGroupRspDTO();
         BeanUtil.copyProperties(sysGroupDO, rspDTO);
 
         return rspDTO;
@@ -185,13 +185,13 @@ public class SysGroupServiceImpl implements SysGroupService {
         }
 
 
-        SysGroupDO sysGroupNew = new SysGroupDO();
+        var sysGroupNew = new SysGroupDO();
         BeanUtil.copyProperties(updateParam, sysGroupNew);
         sysGroupNew.setGroupLevel(parentGroup.getGroupLevel() + 1);
 
         sysGroupMapper.updateById(sysGroupNew);
 
-        SysGroupRspDTO rspDTO = new SysGroupRspDTO();
+        var rspDTO = new SysGroupRspDTO();
         BeanUtil.copyProperties(sysGroupNew, rspDTO);
 
         return rspDTO;
@@ -207,7 +207,7 @@ public class SysGroupServiceImpl implements SysGroupService {
     @Override
     public QuerySysGroupRspDTO getSysGroupList(QuerySysGroupReqDTO queryParam) throws BlinkException {
 
-        QuerySysGroupRspDTO pageRsp = new QuerySysGroupRspDTO();
+        var pageRsp = new QuerySysGroupRspDTO();
         pageRsp = PageUtils.queryPage(queryParam, () -> sysGroupMapper.findSysGroupList(queryParam), pageRsp);
 
         return pageRsp;

@@ -194,7 +194,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
 
         SysUserVO userInfo = rspInfo.getUserInfo();
 
-        UserInfoRedisDO userInfoRedis = new UserInfoRedisDO();
+        var userInfoRedis = new UserInfoRedisDO();
 
         BeanUtil.copyProperties(userInfo, userInfoRedis);
 
@@ -221,7 +221,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
      */
     private SysLoginRspDTO getLoginUserInfo(SysUserDO loginUser, String token) {
 
-        QueryUserRolesReqDTO queryUserRolesReqDTO = new QueryUserRolesReqDTO();
+        var queryUserRolesReqDTO = new QueryUserRolesReqDTO();
         queryUserRolesReqDTO.setUserId(loginUser.getUserId());
 
         List<SysRoleDO> roles = roleMapper.findSysRolesByUser(queryUserRolesReqDTO);
@@ -250,7 +250,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         }
 
         //用户信息
-        SysUserVO sysUserVO = new SysUserVO();
+        var sysUserVO = new SysUserVO();
         BeanUtil.copyProperties(loginUser, sysUserVO);
         sysLoginRspDTO.setUserInfo(sysUserVO);
         //角色信息

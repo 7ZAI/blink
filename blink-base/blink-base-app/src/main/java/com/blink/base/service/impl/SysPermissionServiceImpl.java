@@ -83,7 +83,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
 
         sysPermissionMapper.insert(sysPermissionDO);
 
-        SysPermissionVO permissionVO = new SysPermissionVO();
+        var permissionVO = new SysPermissionVO();
         BeanUtil.copyProperties(sysPermissionDO, permissionVO);
         return permissionVO;
     }
@@ -171,7 +171,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     @Override
     public QuerySysPermissionRspDTO<SysPermissionDO> getSysPermissionList(QuerySysPermissionReqDTO queryParam) throws BlinkException {
 
-        QuerySysPermissionRspDTO<SysPermissionDO> pageRsp = new QuerySysPermissionRspDTO<>();
+        var pageRsp = new QuerySysPermissionRspDTO<SysPermissionDO>();
         PageUtils.queryPage(queryParam, () -> sysPermissionMapper.findSysPermissionList(queryParam), pageRsp);
         return pageRsp;
     }
@@ -186,7 +186,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     @Override
     public Set<String> getPermissionsByRoles(List<Integer> roleIds) throws BlinkException {
 
-        List<SysPermissionDO> permissions = new ArrayList<>();
+        List<SysPermissionDO> permissions = new ArrayList<SysPermissionDO>();
         if (CollUtil.isNotEmpty(roleIds)) {
             //包含 超级管理员 查询所有
             if (roleIds.contains(CommonConstans.SUPER_ADMIN_ID)) {
@@ -221,7 +221,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
                 }
         );
 
-        QueryPermissionIdentityRspDTO rspDTO = new QueryPermissionIdentityRspDTO();
+        var rspDTO = new QueryPermissionIdentityRspDTO();
         rspDTO.setAcIdentity(acIden);
         return rspDTO;
     }

@@ -73,8 +73,8 @@ public class SysMenuServiceImpl implements SysMenuService {
             }
         }
 
-        SysMenuDO sysMenuDO = new SysMenuDO();
-        SysMenuVO sysMenuVO = new SysMenuVO();
+        var sysMenuDO = new SysMenuDO();
+        var sysMenuVO = new SysMenuVO();
         BeanUtil.copyProperties(saveParam, sysMenuDO);
         sysMenuMapper.insert(sysMenuDO);
         BeanUtil.copyProperties(sysMenuDO, sysMenuVO);
@@ -147,7 +147,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         BeanUtil.copyProperties(updateParam, sysMenuDO);
         sysMenuMapper.updateById(sysMenuDO);
 
-        SysMenuVO sysMenuVO = new SysMenuVO();
+        var sysMenuVO = new SysMenuVO();
         BeanUtil.copyProperties(sysMenuDO, sysMenuVO);
 
         return sysMenuVO;
@@ -163,7 +163,7 @@ public class SysMenuServiceImpl implements SysMenuService {
     @Override
     public QuerySysMenuRspDTO getSysMenuList(QuerySysMenuReqDTO queryParam) throws BlinkException {
 
-        QuerySysMenuRspDTO pageRsp = new QuerySysMenuRspDTO();
+        var pageRsp = new QuerySysMenuRspDTO();
         pageRsp = PageUtils.queryPage(queryParam, () -> sysMenuMapper.findSysMenuList(queryParam), pageRsp);
 
         return pageRsp;
@@ -194,7 +194,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         Map<String, SysPermissionDO> perMap = permissions.stream().collect(Collectors.toMap(SysPermissionDO::getUrl, p -> p));
         Map<String, SysPermissionDO> allPerMap = permissionDOList.stream().collect(Collectors.toMap(SysPermissionDO::getUrl, p -> p));
 
-        List<SysMenuVO> vos = new ArrayList<>(menus.size());
+        var vos = new ArrayList<SysMenuVO>(menus.size());
 
         BeanUtil.copyProperties(menus, vos);
 
@@ -233,7 +233,7 @@ public class SysMenuServiceImpl implements SysMenuService {
                         })
                 .collect(Collectors.toList());
 
-        QueryShowMenuRspDTO queryShowMenuRspDTO = new QueryShowMenuRspDTO();
+        var queryShowMenuRspDTO = new QueryShowMenuRspDTO();
 
         queryShowMenuRspDTO.setMenus(menuOfLefSide);
         queryShowMenuRspDTO.setFunctionMenu(menusFunc);

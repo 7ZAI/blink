@@ -63,7 +63,7 @@ public class SysUserServiceImpl implements SysUserService {
     public void saveSysUser(AddSysUserReqDTO saveParam) throws BlinkException {
 
 
-        SysUserDO sysUserDO = new SysUserDO();
+        var sysUserDO = new SysUserDO();
         BeanUtil.copyProperties(saveParam, sysUserDO);
 
         //loginName 不能重复
@@ -145,7 +145,7 @@ public class SysUserServiceImpl implements SysUserService {
         BeanUtil.copyProperties(updateParam, sysUserDO);
         sysUserDO.setUpdateBy(BlinkRequestContextHolder.getLoginName());
 
-        List<Integer> roleIdList = new ArrayList<>();
+        List<Integer> roleIdList = new ArrayList<Integer>();
         List<Integer> groupIdList = new ArrayList<>();
 
         if (CollUtil.isNotEmpty(userRolesList)) {
@@ -215,7 +215,7 @@ public class SysUserServiceImpl implements SysUserService {
 //            sysUserGroupRelaMapper.selectList(new LambdaQueryWrapper<SysUserGroupRelaDO>().eq(SysUserGroupRelaDO::getUserId, currentUser.getUserId()));
 //        }
 
-        SysUserRspDTO<SysUserVO> sysUserRspDTO = new SysUserRspDTO<>();
+        var sysUserRspDTO = new SysUserRspDTO<SysUserVO>();
         PageUtils.queryPage(queryParam, () -> sysUserMapper.findSysUserList(queryParam), sysUserRspDTO);
         return sysUserRspDTO;
     }

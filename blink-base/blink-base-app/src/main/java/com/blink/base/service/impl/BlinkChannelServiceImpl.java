@@ -80,7 +80,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
 
         BlinkChannelDO blinkChannelDO = getNewChanelDO(saveParam);
 
-        LambdaQueryWrapper<BlinkChannelDO> queryWrapper = new LambdaQueryWrapper<>();
+        var queryWrapper = new LambdaQueryWrapper<BlinkChannelDO>();
         queryWrapper.eq(BlinkChannelDO::getChannelName, blinkChannelDO.getChannelName());
         BlinkChannelDO channelCheck = channelMapper.selectOne(queryWrapper);
 
@@ -96,7 +96,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      */
     private BlinkChannelDO getNewChanelDO(AddBlinkChannelReqDTO reqBody) {
 
-        BlinkChannelDO channel = new BlinkChannelDO();
+        var channel = new BlinkChannelDO();
         BeanUtils.copyProperties(reqBody, channel);
 
         channel.setEnable(CommonConstans.SWITCH_OPEN);
@@ -133,7 +133,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     @Override
     public void deleteBlinkChannel(DeleteBlinkChannelReqDTO deleteParam) throws BlinkException {
 
-        List<String> deleteCacheKeys = new ArrayList<>();
+        var deleteCacheKeys = new ArrayList<String>();
         //批量删除
         if (deleteParam.isBatchDelete()) {
             Optional<List<BlinkChannelDO>> optional = Optional.of(channelMapper.selectBatchIds(deleteParam.getIdList()));
@@ -241,7 +241,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     @Override
     public QueryBlinkChannelRspDTO getBlinkChannelList(QueryBlinkChannelReqDTO queryParam) throws BlinkException {
 
-        QueryBlinkChannelRspDTO pageRsp = new QueryBlinkChannelRspDTO();
+        var pageRsp = new QueryBlinkChannelRspDTO();
         QueryBlinkChannelRspDTO result = PageUtils.queryPage(queryParam, () -> channelMapper.findBlinkChannelList(queryParam), pageRsp);
 
         return result;
@@ -262,7 +262,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
                 .eq(StrUtil.isNotBlank(queryParam.getChannelName()), BlinkChannelDO::getChannelName, queryParam.getChannelName())
                 .eq(StrUtil.isNotBlank(queryParam.getAppKey()), BlinkChannelDO::getAppKey, queryParam.getAppKey()));
 
-        ChannelVO channelVO = new ChannelVO();
+        var channelVO = new ChannelVO();
         BeanUtils.copyProperties(channelDO,channelVO);
 
         return channelVO;

@@ -62,7 +62,7 @@ public class GateWayRoutesServiceImpl implements GateWayRoutesService {
     @Override
     public QueryGateWayRoutesRspDTO getRouteslList(EmptyBody body) {
 
-        QueryGateWayRoutesRspDTO pageRsp = new QueryGateWayRoutesRspDTO();
+        var pageRsp = new QueryGateWayRoutesRspDTO();
 
         Map<String, Object> map = redisClient.hGetStringMap(GATEWAY_DYNAMIC_ROUTES);
         int total = map.size();

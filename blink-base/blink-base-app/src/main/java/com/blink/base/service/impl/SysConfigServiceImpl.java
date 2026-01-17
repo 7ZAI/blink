@@ -65,7 +65,7 @@ public class SysConfigServiceImpl implements SysConfigService {
     @Override
     public void saveSysConfig(AddSysConfigReqDTO saveParam) throws BlinkException {
 
-        SysConfigDO sysConfigDO = new SysConfigDO();
+        var sysConfigDO = new SysConfigDO();
         BeanUtil.copyProperties(saveParam, sysConfigDO);
 
         SysConfigDO keyName = sysConfigMapper.selectOne(new LambdaQueryWrapper<SysConfigDO>().eq(SysConfigDO::getConfigKey, sysConfigDO.getConfigKey()));
@@ -118,7 +118,7 @@ public class SysConfigServiceImpl implements SysConfigService {
             gateWayStreamMessageProducer.cacheOnChange(cacheKey);
         }
 
-        SysConfigDO sysConfigDO = new SysConfigDO();
+        var sysConfigDO = new SysConfigDO();
         SysConfigDO oldOne = sysConfigMapper.selectById(updateParam.getId());
 
         //参数不存在
@@ -159,7 +159,7 @@ public class SysConfigServiceImpl implements SysConfigService {
             queryParam.setGroupIds(groupIds);
         }
 
-        QuerySysConfigRspDTO pageRsp = new QuerySysConfigRspDTO();
+        var pageRsp = new QuerySysConfigRspDTO();
         QuerySysConfigRspDTO result = PageUtils.queryPage(queryParam, () -> sysConfigMapper.findSysConfigList(queryParam), pageRsp);
         return result;
     }
@@ -221,7 +221,7 @@ public class SysConfigServiceImpl implements SysConfigService {
                 .eq(StrUtil.isNotBlank(queryParam.getConfigKey()), SysConfigDO::getConfigKey, queryParam.getConfigKey())
                 .eq(Objects.nonNull(queryParam.getId()), SysConfigDO::getId, queryParam.getId())));
 
-        SysConfigVO vo = new SysConfigVO();
+        var vo = new SysConfigVO();
         BeanUtils.copyProperties(configDO, vo);
         return vo;
     }

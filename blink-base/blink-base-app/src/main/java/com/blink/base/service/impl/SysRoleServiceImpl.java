@@ -49,7 +49,7 @@ public class SysRoleServiceImpl implements SysRoleService {
     @Override
     public SysRoleVO saveSysRole(AddSysRoleReqDTO saveParam) throws BlinkException {
 
-        SysRoleDO sysRoleDO = new SysRoleDO();
+        var sysRoleDO = new SysRoleDO();
 
         BeanUtil.copyProperties(saveParam, sysRoleDO);
         Long count = sysRoleMapper.selectCount(new LambdaQueryWrapper<SysRoleDO>().eq(SysRoleDO::getRoleCode, sysRoleDO.getRoleCode()));
@@ -61,7 +61,7 @@ public class SysRoleServiceImpl implements SysRoleService {
 
         sysRoleMapper.insert(sysRoleDO);
 
-        SysRoleVO sysRoleVO = new SysRoleVO();
+        var sysRoleVO = new SysRoleVO();
         BeanUtil.copyProperties(sysRoleDO, sysRoleVO);
 
         return sysRoleVO;
@@ -126,7 +126,7 @@ public class SysRoleServiceImpl implements SysRoleService {
 
         sysRoleMapper.updateById(sysRoleDO);
 
-        SysRoleVO sysRoleVO = new SysRoleVO();
+        var sysRoleVO = new SysRoleVO();
         BeanUtil.copyProperties(sysRoleDO, sysRoleVO);
 
         return sysRoleVO;
@@ -142,7 +142,7 @@ public class SysRoleServiceImpl implements SysRoleService {
     @Override
     public QuerySysRoleRspDTO getSysRoleList(QuerySysRoleReqDTO queryParam) throws BlinkException {
 
-        QuerySysRoleRspDTO pageRsp = new QuerySysRoleRspDTO();
+        var pageRsp = new QuerySysRoleRspDTO();
         PageUtils.queryPage(queryParam, () -> sysRoleMapper.findSysRoleList(queryParam), pageRsp);
 
         return pageRsp;
@@ -158,7 +158,7 @@ public class SysRoleServiceImpl implements SysRoleService {
     @Override
     public QueryUserRolesRspDTO getSysRolesByUser(QueryUserRolesReqDTO queryParam) throws BlinkException {
 
-        QueryUserRolesRspDTO queryUserRolesRspDTO = new QueryUserRolesRspDTO();
+        var queryUserRolesRspDTO = new QueryUserRolesRspDTO();
 
         List<SysRoleDO> roles = sysRoleMapper.findSysRolesByUser(queryParam);
         List<SysRoleVO> vos = new ArrayList<>();
