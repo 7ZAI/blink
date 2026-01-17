@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 参数配置表 管理API
- *
+ * 一般直接由管理员在数据库添加 删除不提供管理接口，页面只提供设置值或修改值功能
  * @author blink
  * @module blink
  * @since 2025-09-05
@@ -31,6 +31,7 @@ public class SysConfigController {
 
 
     /**
+     *
      * 新增参数配置表
      *
      * @param reqDto

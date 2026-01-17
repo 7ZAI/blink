@@ -30,7 +30,7 @@ dependencies {
 //    implementation 'cn.hutool:hutool-crypto'
 
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
-    implementation 'com.blink:blink-framework-redis:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
     //在reactive 环境中 无法使用openfeign 用webclient代替
     implementation('com.blink:blink-base-api:1.0.0-SNAPSHOT') {
         // 排除指定 group 和 module 的传递依赖

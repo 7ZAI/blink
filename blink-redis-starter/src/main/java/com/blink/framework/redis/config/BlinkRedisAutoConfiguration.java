@@ -27,13 +27,12 @@ import java.util.concurrent.TimeUnit;
  *
  * @author binblink
  */
-//@AutoConfiguration
+@AutoConfiguration
 @EnableConfigurationProperties({BlinkRedisProperties.class})
 @Configuration
 public class BlinkRedisAutoConfiguration {
 
 
-    @Configuration
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     public static class SyncBlockRedisConfig {
         /**
@@ -85,7 +84,6 @@ public class BlinkRedisAutoConfiguration {
 
 
     /*** * * * * * * * * * * * * * * * * * * *Reactive 版本 * * * * * * * * * * * * * * * * * * * * * * * * *   * */
-    @Configuration
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.REACTIVE)
     public static class ReactiveRedisConfig {
 
@@ -125,6 +123,8 @@ public class BlinkRedisAutoConfiguration {
         }
     }
 
+
+
     @Bean
     @ConditionalOnProperty(name = "blink.redis.enableLocalCache",havingValue = "true")
     public Cache<String,Object> caffeineCache(){
@@ -135,7 +135,5 @@ public class BlinkRedisAutoConfiguration {
                 .maximumSize(3000)
                 .build();
     }
-
-
 
 }

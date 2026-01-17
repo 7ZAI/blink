@@ -15,7 +15,6 @@ import reactor.core.publisher.Mono;
  * 认证成功后续处理 自动续期token
  *
  * @Author binblink
- * @Date 2025/8/27
  */
 public class BlinkAuthenticationSuccessHandler implements ServerAuthenticationSuccessHandler {
 

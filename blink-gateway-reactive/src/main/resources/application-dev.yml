@@ -9,9 +9,9 @@ spring:
             redis-rate-limiter.burstCapacity: 200  # 令牌桶总容量
             key-resolver: "#{@ipKeyResolver}"      # 限流维度解析器
       # 确保多个网关实例路由同步
-#      discovery:
-#        locator:
-#          enabled: true
+      #      discovery:
+      #        locator:
+      #          enabled: true
 
       httpclient:
         connect-timeout: 10000
@@ -40,6 +40,8 @@ logging:
   level:
     org.springframework.cloud.gateway: DEBUG
     reactor.netty.http.client: INFO
+  file:
+    path: /logs
 # actuator 监控
 management:
   endpoint:
@@ -52,9 +54,13 @@ management:
 
 blink:
   gateway:
+    configDataId: gateway-routes
+    configGroup: DEFAULT_GROUP
     cache:
+      localCacheEnable: true
+      sync-listener-open: true
       stream-group-name: cache_sync_1
-    dynamicroute:
+    dynamicRoute:
       mode: redis
 #      nacos:
 #        dataId: gateway-routes
@@ -67,9 +73,12 @@ blink:
       - /login
       - /captcha/get
   redis:
-    mode: reactive
     enableLocalCache: false
-    redisson-enable: false
     idGenerator:
-      key-steps:
-        MQ_MSG_ID: 100
+      seq-param:
+        request:
+          step: 1000
+          fetch-percent: 0.8
+        trance:
+          step: 2000
+

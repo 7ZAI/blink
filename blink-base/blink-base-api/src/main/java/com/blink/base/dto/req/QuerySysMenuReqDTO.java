@@ -1,10 +1,13 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.dto.constant.BaseAppConstant;
-import com.blink.framework.validate.annotation.DataDict;
-import lombok.Data;
-import java.io.Serializable;
+import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.validate.annotation.DataDict;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.io.Serializable;
 
 /**
  * <p>
@@ -14,7 +17,9 @@ import com.blink.framework.common.data.PageDTO;
  * @author binblink
  * @since 2024-01-05
  */
-@Data
+@Getter
+@Setter
+@ToString
 public class QuerySysMenuReqDTO extends PageDTO implements Serializable {
 
   private static final long serialVersionUID = 1L;
@@ -23,21 +28,21 @@ public class QuerySysMenuReqDTO extends PageDTO implements Serializable {
   /**
    * 菜单名称
    */
-  @DataDict(name = "systemName", message = BaseAppConstant.PARAMETER_OUT_RANGE)
+  @DataDict(name = "systemName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
   private String menuName;
 
 
   /**
    * 菜单英文名称
    */
-  @DataDict(name = "systemEnName", message = BaseAppConstant.PARAMETER_OUT_RANGE)
+  @DataDict(name = "systemEnName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
   private String menuEnName;
 
 
   /**
    * 菜单类型
    */
-  @DataDict(name = "flag1", message = BaseAppConstant.PARAMETER_OUT_RANGE)
+  @DataDict(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
   private Integer type;
 
 

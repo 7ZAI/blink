@@ -8,18 +8,21 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.util.List;
 
 /**
  * QuerySysUserReqDTO  查询系统用户请求参数对象
+ * @author binblink
  */
 @Getter
 @Setter
 @ToString
 public class QuerySysUserReqDTO extends PageDTO implements Serializable   {
 
+    @Serial
     private static final long serialVersionUID = -951055160080394698L;
 
     /**

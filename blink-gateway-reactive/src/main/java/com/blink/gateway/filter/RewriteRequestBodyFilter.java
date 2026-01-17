@@ -30,9 +30,8 @@ import static com.blink.gateway.constant.GatewayConstant.*;
 
 
 /**
- * 全局过滤器 生成请求ID和链路ID
- * 放入请求头
- * 报文填入值
+ * 生成请求ID和链路ID放入请求头
+ * 完善报文填入值
  *
  * @author binblink
  */

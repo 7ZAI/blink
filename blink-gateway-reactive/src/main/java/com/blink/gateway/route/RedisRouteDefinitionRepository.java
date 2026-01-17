@@ -4,10 +4,8 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
-import com.blink.gateway.config.prop.GatewayProperties;
+import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.cloud.gateway.route.RouteDefinitionRepository;
 import reactor.core.publisher.Flux;
@@ -23,10 +21,10 @@ import reactor.core.publisher.Mono;
 public class RedisRouteDefinitionRepository implements RouteDefinitionRepository {
 
 
-    private final GatewayProperties.Dynamicroute.Redis redisProperties;
+    private final BlinkGatewayProperties.DynamicRoute.Redis redisProperties;
     private final ReactiveRedisClient redisClient;
 
-    public RedisRouteDefinitionRepository(GatewayProperties.Dynamicroute.Redis redisProperties,
+    public RedisRouteDefinitionRepository(BlinkGatewayProperties.DynamicRoute.Redis redisProperties,
                                           ReactiveRedisClient redisClient) {
         this.redisProperties = redisProperties;
         this.redisClient = redisClient;

@@ -1,6 +1,6 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.dto.constant.BaseAppConstant;
+import com.blink.base.constans.BaseErrCodeConstant;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -35,7 +35,7 @@ public class DeleteSysGroupReqDTO implements Serializable {
     /**
      * 是否批量删除标志
      */
-    @NotNull(message = BaseAppConstant.PARAMETER_NOT_NULL)
+    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     private boolean isBatchDelete;
 
 

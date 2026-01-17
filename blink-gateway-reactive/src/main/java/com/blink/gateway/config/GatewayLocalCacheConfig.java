@@ -21,6 +21,7 @@ public class GatewayLocalCacheConfig {
                 .initialCapacity(100)
                 .maximumSize(1000)
                 .recordStats());
+
         return cacheManager;
     }
 }

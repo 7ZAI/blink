@@ -27,8 +27,11 @@ blink:
   redis:
     enableLocalCache: false
     idGenerator:
-      key-steps:
-        MQ_MSG_ID: 100
-        test: 4000
-        #获取阈值 达到20%取值
-      fetchPercent: 0.8
+      seq-param:
+        mq_msg_id:
+          step: 1000
+          fetch-percent: 0.8
+        test:
+          step: 3000
+          fetch-percent: 0.4
+                #获取阈值 达到20%取值

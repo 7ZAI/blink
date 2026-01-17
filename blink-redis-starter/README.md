@@ -4,7 +4,7 @@
 
 针对Redis的配置依赖、使用操作、封装成内部使用的starter
 
-其中包含了基于lua脚本的顺序号生成、Redis Stream相关、redission依赖
+其中包含了基于lua脚本的序列号生成、Redis Stream相关、redission依赖
 
 提供了同步阻塞的redis操作组件、和非阻塞式响应式操作组件
 

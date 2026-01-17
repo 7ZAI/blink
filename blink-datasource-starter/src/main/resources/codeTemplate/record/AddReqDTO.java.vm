@@ -1,0 +1,31 @@
+
+package ${reqPackage};
+
+import java.io.Serializable;
+
+/**
+ * <p>
+ * ${addReqDTOName} 新增$!{table.comment}请求参数对象
+ * </p>
+ * ${dtoName}
+ * ${table.name}
+ * @author ${author}
+ * @since ${date}
+ */
+public record ${addReqDTOName}(
+
+    ## ----------  BEGIN 字段循环遍历  ----------
+    #foreach($field in ${table.fields})
+
+        /**
+         * ${field.comment}
+         */
+        ${field.propertyType} ${field.propertyName}#if($foreach.hasNext),#end
+
+    #end
+
+
+) implements Serializable {
+
+
+}

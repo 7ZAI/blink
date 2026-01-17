@@ -7,23 +7,18 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 
+/**
+ * 启动类
+ * @author binblink
+ */
 @SpringBootApplication
 @EnableDiscoveryClient
 @ComponentScan({"com.blink"})
 public class BlinkBaseAppApplication {
 
-    public static void main(String[] args) throws ClassNotFoundException {
+    public static void main(String[] args) {
 
        SpringApplication.run(BlinkBaseAppApplication.class, args);
-
-//       String name = context.getEnvironment().getProperty("user.name");
-//       String age = context.getEnvironment().getProperty("user.age");
-//
-//       System.out.println("name :" + name + " age:" + age);
-
-//       Class clazz =  Thread.currentThread().getContextClassLoader().loadClass("com.blink.base.component.CachePreHeating");
-//
-//       Object obj = ApplicationContextUtil.getBean(clazz);
 
     }
 

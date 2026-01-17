@@ -27,6 +27,7 @@ import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.CacheComponent;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -46,9 +47,8 @@ import java.util.stream.Collectors;
  */
 @Transactional(rollbackFor = Exception.class)
 @Service
+@Slf4j
 public class SysPermissionServiceImpl implements SysPermissionService {
-
-    private final Logger logger = LoggerFactory.getLogger(SysPermissionServiceImpl.class);
 
     @Resource
     private SysPermissionMapper sysPermissionMapper;
@@ -99,6 +99,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     public void deleteSysPermission(DeleteSysPermissionReqDTO deleteParam) throws BlinkException {
 
 
+        //批量删除
         if (deleteParam.isBatchDelete()) {
 
             Long count = rolePermRelaMapper.selectCount(new LambdaQueryWrapper<SysRolePermRelaDO>()
@@ -151,7 +152,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     public void modifySysPermission(UpdateSysPermissionReqDTO updateParam) throws BlinkException {
 
         SysPermissionDO sysPermissionDO = sysPermissionMapper.selectById(updateParam.getAcId());
-
+        //不存在
         if(Objects.isNull(sysPermissionDO)){
             BlinkException.throwBusinessException(BaseErrCodeConstant.PERMISSION_NOT_EXIST);
         }
@@ -168,9 +169,9 @@ public class SysPermissionServiceImpl implements SysPermissionService {
      * @throws BlinkException
      */
     @Override
-    public QuerySysPermissionRspDTO getSysPermissionList(QuerySysPermissionReqDTO queryParam) throws BlinkException {
+    public QuerySysPermissionRspDTO<SysPermissionDO> getSysPermissionList(QuerySysPermissionReqDTO queryParam) throws BlinkException {
 
-        QuerySysPermissionRspDTO pageRsp = new QuerySysPermissionRspDTO();
+        QuerySysPermissionRspDTO<SysPermissionDO> pageRsp = new QuerySysPermissionRspDTO<>();
         PageUtils.queryPage(queryParam, () -> sysPermissionMapper.findSysPermissionList(queryParam), pageRsp);
         return pageRsp;
     }

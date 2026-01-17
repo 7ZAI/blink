@@ -7,6 +7,7 @@ import com.blink.base.dto.req.UpdateSysPermissionReqDTO;
 import com.blink.base.dto.rsp.QueryPermissionIdentityRspDTO;
 import com.blink.base.dto.rsp.QuerySysPermissionRspDTO;
 import com.blink.base.dto.vo.SysPermissionVO;
+import com.blink.base.entity.SysPermissionDO;
 import com.blink.framework.common.exception.BlinkException;
 
 import java.util.List;
@@ -56,7 +57,7 @@ public interface SysPermissionService {
      * @return
      * @throws BlinkException
      */
-    QuerySysPermissionRspDTO getSysPermissionList(QuerySysPermissionReqDTO queryParam) throws BlinkException;
+    QuerySysPermissionRspDTO<SysPermissionDO> getSysPermissionList(QuerySysPermissionReqDTO queryParam) throws BlinkException;
 
     /**
      * 根据url 查询 权限标识

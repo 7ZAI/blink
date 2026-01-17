@@ -157,7 +157,7 @@ public class TestReactive {
         cacheMsgDTO.setKey("asdasd:gdsgf:4tt:rrr");
         StreamMessage<CacheMsgDTO> m = StreamMessage.of("dasd", "rs", cacheMsgDTO);
 
-        Map<String,String> map = StreamMessage.convertMessageToMap(m);
+        Map<String,Object> map = StreamMessage.convertMessageToMap(m);
 
         StreamMessage<CacheMsgDTO> k = (StreamMessage<CacheMsgDTO>) StreamMessage.convertMapToMessage(map,CacheMsgDTO.class);
 

@@ -17,10 +17,9 @@ dependencies {
 
 
     implementation 'com.blink:blink-framework-datasource:1.0.0-SNAPSHOT'
-    implementation 'com.blink:blink-framework-core:1.0.0-SNAPSHOT'
-//    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
-    implementation 'com.blink:blink-framework-common:1.0.0-20251105.060958-27'
-    implementation 'com.blink:blink-framework-redis:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-framework-web:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-framework-validation:1.0.0-SNAPSHOT'
 
     implementation 'cn.hutool:hutool-core'

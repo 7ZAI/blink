@@ -1,0 +1,27 @@
+
+package ${reqPackage};
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+/**
+ * <p>
+ * ${updateReqDTOName} 更新$!{table.comment}请求参数对象
+ * </p>
+ *
+ * @author ${author}
+ * @since ${date}
+ */
+public record ${updateReqDTOName}(
+    ## ----------  BEGIN 字段循环遍历  ----------
+    #foreach($field in ${table.fields})
+
+        /**
+         * ${field.comment}
+         */
+        ${field.propertyType} ${field.propertyName}#if($foreach.hasNext),#end
+
+    #end
+) implements Serializable {
+
+}

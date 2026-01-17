@@ -11,6 +11,7 @@ import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
+import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.security.web.server.context.WebSessionServerSecurityContextRepository;
 
 
@@ -41,9 +42,9 @@ public class SecurityConfig {
                 .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .logout(ServerHttpSecurity.LogoutSpec::disable)
-                //依然可以用session 传递凭证 AUTHENTICATION 到授权管理器 因为每个请求都产生新的AUTHENTICATION对象 不存在session共享问题
-                .securityContextRepository(new WebSessionServerSecurityContextRepository())
-                //自定义登入机制 以
+                //无状态 AuthenticationWebFilter默认就是无状态的
+                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+                //自定义登入机制
                 .authorizeExchange(exchange -> exchange
                         // 登入请求urL 依然会经过认证管理器 到授权管理器才放行
                         .pathMatchers(GatewayConstant.LOGIN_PATH).permitAll()
@@ -53,9 +54,9 @@ public class SecurityConfig {
 //                .addFilterBefore(requestValidateFilter(),SecurityWebFiltersOrder.AUTHENTICATION)
                 .addFilterAt(tokenAuthenticationFilter(tokenAuthenticationManager()), SecurityWebFiltersOrder.AUTHENTICATION)
                 .exceptionHandling(exceptionHandling -> exceptionHandling
-                        // 9. 处理认证异常（如未登录）
+                        //  处理认证异常（如未登录）
                         .authenticationEntryPoint(authenticationEntryPoint())
-                        // 10. 处理授权异常（如权限不足）
+                        //  处理授权异常（如权限不足）
                         .accessDeniedHandler(accessDeniedHandler()))
                 .build();
     }
@@ -104,6 +105,7 @@ public class SecurityConfig {
         authenticationFilter.setServerAuthenticationConverter(new TokenServerAuthenticationConverter());
         //设置认证成功处理器
         authenticationFilter.setAuthenticationSuccessHandler(new BlinkAuthenticationSuccessHandler(redisClient));
+        //设置认证失败处理器
         authenticationFilter.setAuthenticationFailureHandler(new BlinkAuthenticationFailureHandler());
         return authenticationFilter;
     }

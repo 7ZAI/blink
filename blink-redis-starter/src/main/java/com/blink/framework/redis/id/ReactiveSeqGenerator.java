@@ -44,6 +44,8 @@ public class ReactiveSeqGenerator {
      */
     private static final String PRE_FETCH_SEQ_PREFIX = "seq:prefetch:";
 
+    private static final String DEFAULT_KEY_PREFIX = "seq:";
+
     private final ReactiveRedisClient reactiveRedisClient;
 
     private final BlinkRedisProperties properties;
@@ -51,9 +53,9 @@ public class ReactiveSeqGenerator {
 
     @PostConstruct
     public void init() {
-        Map<String, Integer> map = properties.getIdGenerator().getKeySteps();
+        Map<String, BlinkRedisProperties.IdGenerator.SeqParam> map = properties.getIdGenerator().getSeqParam();
 
-        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+        for (Map.Entry<String, BlinkRedisProperties.IdGenerator.SeqParam> entry : map.entrySet()) {
             String key = entry.getKey();
             SEQ_CACHE.put(key, new SeqSegment(0, 0));
             STATUS_MAP.put(key, new AtomicStatus());
@@ -82,12 +84,14 @@ public class ReactiveSeqGenerator {
             return Mono.error(new BlinkException("key 不能为空"));
         }
 
-        final Integer steps = this.properties.getIdGenerator().getKeySteps(key);
-
-        if (Objects.isNull(steps)) {
-            log.error("该key:{} step 获取为空", key);
-            return Mono.error(new BlinkException("steps 不能为空"));
+        //未配置的key
+        if(!SEQ_CACHE.containsKey(key)) {
+            log.error("当前key：{} 未被配置！请先配置",key);
+            throw new RuntimeException("key为配置");
         }
+
+        //未配置默认为1000
+        final Integer steps = this.properties.getIdGenerator().getkeySteps(key);
 
         //获取顺序号缓存对象
         SeqSegment cache = SEQ_CACHE.get(key);
@@ -286,7 +290,7 @@ public class ReactiveSeqGenerator {
 
         return reactiveRedisClient.execute(
                         properties.getIdGenerator().getLuaScript(),
-                        Collections.singletonList(key),
+                        Collections.singletonList(DEFAULT_KEY_PREFIX + key),
                         Long.class,
                         new LongRedisSerializer(),
                         listParam
@@ -327,7 +331,7 @@ public class ReactiveSeqGenerator {
     private boolean shouldPrefetch(SeqSegment seqSegment, String key, Integer step) {
         double useRate = seqSegment.usageRate(step);
         //百分比
-        double percent = properties.getIdGenerator().getFetchPercent();
+        double percent = properties.getIdGenerator().getSeqParam().get(key).getFetchPercent();
         //使用数量超阈值并且没有预取对象存在缓存中
         return useRate >= percent && !SEQ_CACHE.containsKey(PRE_FETCH_SEQ_PREFIX + key);
     }

@@ -1,7 +1,7 @@
 package com.blink.base.dto.req;
 
 
-import com.blink.base.dto.constant.BaseAppConstant;
+import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.framework.validate.annotation.DataDict;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -26,31 +26,31 @@ public class AddSysRoleReqDTO implements Serializable {
     /**
      * 角色名称
      */
-    @NotNull(message = BaseAppConstant.PARAMETER_NOT_NULL)
-    @DataDict(name="systemName",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    @DataDict(name="systemName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String roleName;
 
 
     /**
      * 角色英文名称
      */
-    @DataDict(name="systemEnName",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="systemEnName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String roleEnName;
 
 
     /**
      * 角色状态
      */
-    @NotNull(message = BaseAppConstant.PARAMETER_NOT_NULL)
-    @DataDict(name="flag1",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    @DataDict(name="flag1",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer status;
 
 
     /**
      * 角色代码
      */
-    @NotNull(message = BaseAppConstant.PARAMETER_NOT_NULL)
-    @DataDict(name="code30",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    @DataDict(name="code30",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String roleCode;
 
 
@@ -58,8 +58,8 @@ public class AddSysRoleReqDTO implements Serializable {
     /**
      * 角色类型
      */
-    @NotNull(message = BaseAppConstant.PARAMETER_NOT_NULL)
-    @DataDict(name="flag1",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    @DataDict(name="flag1",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer roleType;
 
 

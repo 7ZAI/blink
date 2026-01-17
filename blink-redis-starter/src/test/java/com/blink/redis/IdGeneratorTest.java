@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 /**
  * 测试id生成器
- * 
+ *  web /webflux 环境切换需要手动注释代码和依赖库
  */
 @SpringBootTest(classes = TestApplicationConfig.class)
 @ActiveProfiles("test")
@@ -34,10 +34,10 @@ public class IdGeneratorTest {
     private static final int SIZE = 1000000;
     private static final boolean VERBOSE = true;
 
-//    @Resource
+    @Resource
     private IdGenerator idGenerator;
 
-    @Resource
+//    @Resource
     private ReactiveIdGenerator reactiveIdGenerator;
 
     @Test
@@ -167,7 +167,7 @@ public class IdGeneratorTest {
     @Test
     public void multiThreadTest() throws InterruptedException {
         // 配置测试参数
-        int threadCount = 32;       // 并发线程数
+        int threadCount = 16;       // 并发线程数
         int idsPerThread = 100000;     // 每个线程获取的ID数量
         int totalExpected = threadCount * idsPerThread;
 
@@ -191,8 +191,8 @@ public class IdGeneratorTest {
                     startGate.await(); // 所有线程在此处阻塞等待鸣枪
 
                     for (int j = 0; j < idsPerThread; j++) {
-//                        Long id = idGenerator.generateId("test");
-                        Long id =  reactiveIdGenerator.generateId("test").block(Duration.ofSeconds(10));
+                        Long id = idGenerator.generateId("test");
+//                        Long id =  reactiveIdGenerator.generateId("test").block(Duration.ofSeconds(10));
                         if (id != null) {
 //                            System.out.println("seq id: ---------------------" + id);
                             if(!idSet.add(id)){

@@ -1,7 +1,6 @@
 package com.blink.framework.redis.id;
 
 import cn.hutool.core.util.StrUtil;
-import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.factory.BlinkNamedThreadFactory;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.framework.redis.serializer.LongRedisSerializer;
@@ -15,7 +14,6 @@ import org.springframework.data.redis.core.script.RedisScript;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -47,6 +45,8 @@ public class SeqGenerator {
      */
     private static final String PRE_FETCH_SEQ_PREFIX = "seq:prefetch:";
 
+    private static final String DEFAULT_KEY_PREFIX = "seq:";
+
     private final RedisClient redisClient;
 
     private final BlinkRedisProperties properties;
@@ -65,9 +65,10 @@ public class SeqGenerator {
 
     @PostConstruct
     public void init() {
-        Map<String, Integer> map = properties.getIdGenerator().getKeySteps();
 
-        for (Map.Entry<String, Integer> entry : map.entrySet()) {
+        Map<String, BlinkRedisProperties.IdGenerator.SeqParam> map = properties.getIdGenerator().getSeqParam();
+
+        for (Map.Entry<String, BlinkRedisProperties.IdGenerator.SeqParam> entry : map.entrySet()) {
             String key = entry.getKey();
             SEQ_CACHE.put(key, new SeqSegment(0, 0));
             STATUS_MAP.put(key, new AtomicStatus());
@@ -87,12 +88,17 @@ public class SeqGenerator {
             log.error("generateSeq key is blank");
             throw new RuntimeException("key 不能为空");
         }
-        final Integer steps = this.properties.getIdGenerator().getKeySteps(key);
 
-        if (Objects.isNull(steps)) {
-            log.error("该key:{} step 获取为空", key);
-            throw new BlinkException("steps 不能为空");
+        //未配置的key
+        if(!SEQ_CACHE.containsKey(key)) {
+            log.error("当前key：{} 未被配置！请先配置",key);
+            throw new RuntimeException("key为配置");
         }
+
+        //未配置默认为1000
+        final Integer steps = this.properties.getIdGenerator().getkeySteps(key);
+
+
 
         while (true) {
             SeqSegment seqSegment = SEQ_CACHE.get(key);
@@ -206,7 +212,7 @@ public class SeqGenerator {
         log.info("使用Redis lua脚本生成序列号 with key: \"{}\" maxValue: \"{}\" step: \"{}\".", key, maxValue, step);
 
         List<String> keys = new ArrayList<>();
-        keys.add(key);
+        keys.add(DEFAULT_KEY_PREFIX + key);
         RedisScript<Long> redisScript = RedisScript.of(this.properties.getIdGenerator().getLuaScript(), Long.class);
         return redisClient.execute(redisScript, new LongRedisSerializer(), keys, String.valueOf(maxValue), String.valueOf(step));
     }
@@ -259,7 +265,7 @@ public class SeqGenerator {
     private boolean shouldPrefetch(SeqSegment seqSegment, String key, Integer step) {
         double useRate = seqSegment.usageRate(step);
         //百分比
-        double percent = properties.getIdGenerator().getFetchPercent();
+        double percent = properties.getIdGenerator().getSeqParam().get(key).getFetchPercent();
         //使用数量超阈值并且没有预取对象存在缓存中
         return useRate >= percent && !SEQ_CACHE.containsKey(PRE_FETCH_SEQ_PREFIX + key);
     }

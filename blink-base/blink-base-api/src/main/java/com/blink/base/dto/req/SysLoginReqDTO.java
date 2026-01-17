@@ -2,7 +2,6 @@ package com.blink.base.dto.req;
 
 import com.blink.base.dto.vo.CaptchaVO;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 
 public class SysLoginReqDTO {
 
@@ -10,6 +9,7 @@ public class SysLoginReqDTO {
     private String username;
     @NotBlank
     private String password;
+
     private CaptchaVO captchaVO;
 
     public String getUsername() {

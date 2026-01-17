@@ -1,12 +1,17 @@
 package com.blink.gateway;
 
 import com.blink.framework.redis.component.ReactiveRedisClient;
+import com.blink.framework.redis.id.IdGenerator;
+import com.blink.framework.redis.id.ReactiveIdGenerator;
 import com.blink.gateway.service.BaseAppService;
+import io.micrometer.core.instrument.util.NamedThreadFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 
 @SpringBootTest(classes={BlinkReactiveGatewayApplication.class})
@@ -17,6 +22,9 @@ class BlinkReactiveGatewayApplicationTests {
 
     @Autowired
     private BaseAppService baseAppService;
+
+    @Autowired
+    private ReactiveIdGenerator reactiveIdGenerator;
 
 
 
@@ -78,5 +86,135 @@ class BlinkReactiveGatewayApplicationTests {
 //            System.out.println(set.size());
 ////        }
 
+    }
+
+    @Test
+    void idgeneratortest2(){
+        Mono<String> tm = reactiveIdGenerator
+                .generateId("test", 4).doOnNext(s->{
+
+                    System.out.println( Thread.currentThread().getName()+"---------------id:+" + s);
+                });
+
+        Thread t1 = new Thread(()->{
+            for(int i = 0 ;i<10;i++){
+                tm.subscribe();
+            }
+        },"t1-thread");
+
+        Thread t2 = new Thread(()->{
+            for(int i = 0 ;i<10;i++){
+                tm.subscribe();
+            }
+        },"t2-thread");
+
+        t1.start();
+        t2.start();
+    }
+
+    @Test
+    void idgeneratortest() throws InterruptedException {
+
+
+        // 测试配置
+        int threadCount = 20;          // 线程数量
+        int requestsPerThread = 10;    // 每个线程请求次数
+        String prefix = "test";
+        int digits = 4;
+
+        ThreadPoolExecutor executor = createExecutor();
+
+
+
+        // 创建CountDownLatch确保同时开始
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch endLatch = new CountDownLatch(threadCount);
+
+        // 记录开始时间
+        long startTime = System.currentTimeMillis();
+
+        // 提交任务到线程池
+        System.out.println("📋 提交 " + threadCount + " 个线程任务，每个生成 " + requestsPerThread + " 个ID");
+        for (int i = 0; i < threadCount; i++) {
+            final int threadId = i + 1;
+            executor.submit(() -> {
+                try {
+                    // 等待所有线程准备就绪
+                    startLatch.await();
+
+                    List<CompletableFuture<String>> futures = new ArrayList<>();
+
+                    // 每个线程生成多个ID
+                    for (int j = 0; j < requestsPerThread; j++) {
+                        final int requestId = j + 1;
+
+                        // 创建CompletableFuture来包装Mono
+                        CompletableFuture<String> future = reactiveIdGenerator
+                                .generateId(prefix, digits)
+                                .doOnSubscribe(s -> System.out.println(
+                                        Thread.currentThread().getName() +
+                                                " - 线程" + threadId + " 第" + requestId + "次请求"
+                                ))
+                                .toFuture();
+
+                        // 添加回调处理结果
+                        future.thenAccept(id -> {
+//                            generatedIds.add(id);
+                            System.out.println(
+                                    Thread.currentThread().getName() +
+                                            " - 线程" + threadId + " 生成: " + id
+                            );
+                        });
+
+                        futures.add(future);
+                    }
+
+                    // 等待所有请求完成
+                    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                            .get(5, TimeUnit.SECONDS);
+
+                } catch (Exception e) {
+                    System.err.println("线程" + threadId + " 执行失败: " + e.getMessage());
+                    e.printStackTrace();
+                } finally {
+                    endLatch.countDown();
+                }
+            });
+        }
+
+        // 等待所有线程准备就绪，然后同时开始
+        Thread.sleep(1000); // 给线程创建一点时间
+        System.out.println("\n🎬 所有线程准备就绪，开始并发测试...");
+        startLatch.countDown(); // 同时释放所有线程
+
+        // 等待所有线程完成
+        boolean completed = endLatch.await(10, TimeUnit.SECONDS);
+
+        // 记录结束时间
+        long endTime = System.currentTimeMillis();
+
+        // 关闭线程池
+        executor.shutdown();
+        executor.awaitTermination(3, TimeUnit.SECONDS);
+    }
+
+    private ThreadPoolExecutor createExecutor(){
+        // 线程池配置常量
+         final int CORE_POOL_SIZE = 20;        // 核心线程数
+         final int MAX_POOL_SIZE = 20;        // 最大线程数
+         final int QUEUE_CAPACITY = 100;      // 队列容量
+         final long KEEP_ALIVE_TIME = 60L;    // 空闲线程存活时间（秒）
+
+        // 1. 创建线程池（生产环境推荐使用 ThreadPoolExecutor 以便清晰配置）
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                CORE_POOL_SIZE,
+                MAX_POOL_SIZE,
+                KEEP_ALIVE_TIME,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(QUEUE_CAPACITY),
+                new NamedThreadFactory("RequestProcessor"),
+                new ThreadPoolExecutor.CallerRunsPolicy()  // 拒绝策略：调用者线程执行
+        );
+        return executor;
     }
 }

@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono;
 
 /**
  * //TODO 未验证 目前使用webclient
- * HttpExchange远程调用登入认证服务
+ * HttpExchange 远程调用登入认证服务
  * @author binblink
  */
 @HttpExchange

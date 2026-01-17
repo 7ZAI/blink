@@ -120,8 +120,8 @@ ribbon:
 
 logging:
   config: classpath:logback-spring.xml
-
-
+  file:
+    path: /logs
 
     #    config:
     #        singleServerConfig:
@@ -186,11 +186,12 @@ logging:
 #     generator:
 #       ## key ：步进值
 #         delta: { "TEST": 50 }
-blink:
   redis:
-    mode: sync
-    enableLocalCache: true
-    redisson-enable: false
+    enableLocalCache: false
     idGenerator:
-      key-steps:
-        MQ_MSG_ID: 100
+      seq-param:
+        request:
+          step: 1000
+          fetch-percent: 0.8
+        trance:
+          step: 2000

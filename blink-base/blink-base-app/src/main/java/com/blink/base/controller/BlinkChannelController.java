@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * @author binblink
  * @module blink
- * @since 2024-07-29
  */
 @RestController
 @RequestMapping("/channel")

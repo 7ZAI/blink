@@ -13,6 +13,9 @@ import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * @author binblink
+ */
 public class GlobalExceptionHandlerFilter implements WebExceptionHandler,Ordered {
 
     private final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandlerFilter.class);
@@ -20,7 +23,7 @@ public class GlobalExceptionHandlerFilter implements WebExceptionHandler,Ordered
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
 
         logger.error(" Gateway GlobalException {}",ex.getMessage());
-        ex.printStackTrace();
+//        ex.printStackTrace();
         ServerHttpResponse response = exchange.getResponse();
         response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
         response.getHeaders().set("Content-Type", "application/json");

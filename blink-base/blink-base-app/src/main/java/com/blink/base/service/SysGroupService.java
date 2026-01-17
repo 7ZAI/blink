@@ -2,15 +2,15 @@ package com.blink.base.service;
 
 import com.blink.base.dto.req.AddSysGroupReqDTO;
 import com.blink.base.dto.req.DeleteSysGroupReqDTO;
-import com.blink.base.dto.req.UpdateSysGroupReqDTO;
 import com.blink.base.dto.req.QuerySysGroupReqDTO;
+import com.blink.base.dto.req.UpdateSysGroupReqDTO;
 import com.blink.base.dto.rsp.QuerySysGroupRspDTO;
 import com.blink.base.dto.rsp.SysGroupRspDTO;
 import com.blink.framework.common.exception.BlinkException;
 
 /**
  * <p>
- *  组 服务类
+ * 组 服务类
  * </p>
  *
  * @author blink
@@ -31,7 +31,6 @@ public interface SysGroupService {
      * 删除 组
      *
      * @param deleteParam
-     * @return
      * @throws BlinkException
      */
     void deleteSysGroup(DeleteSysGroupReqDTO deleteParam) throws BlinkException;
@@ -40,7 +39,7 @@ public interface SysGroupService {
      * 更新 组
      *
      * @param updateParam
-     * @return
+     * @return SysGroupRspDTO
      * @throws BlinkException
      */
     SysGroupRspDTO modifySysGroup(UpdateSysGroupReqDTO updateParam) throws BlinkException;

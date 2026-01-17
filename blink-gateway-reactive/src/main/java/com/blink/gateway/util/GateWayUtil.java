@@ -172,7 +172,7 @@ public class GateWayUtil {
                 //不存在 会报错
                 .onErrorResume(e -> {
                     log.error("xPending error", e);
-                    log.error("在stream:{} 中 组:{}不存在", streamKey, groupName);
+                    log.warn("在stream:{} 中 组:{}不存在", streamKey, groupName);
                     log.info("在stream:{} 中创建组:{}", streamKey, groupName);
 
                     // createGroup 如果stream 不存在也会创建 再创建组

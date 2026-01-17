@@ -39,7 +39,7 @@ import static com.blink.gateway.constant.GatewayConstant.*;
  * chain.filter(exchange) 之前执行的代码相当于传统filter的 pre 方法 之
  * 后加.then() 执行的代码相当于 post方法
  * 假如有 AFilter BFilter 加载顺序 A----> B 最终执行顺序 A.pre ---->  B.pre ----> B.post ----> A.post
- * 所以在CryptFilter  chain.filter(exchange)之前 完成请求报文解密
+ * 所以在CryptFilter中  chain.filter(exchange)之前 完成请求报文解密
  * chain.filter(exchange)之后 完成响应报文加密
  *
  * @author binblink
@@ -207,7 +207,6 @@ public class CryptFilter implements GlobalFilter, Ordered {
                                 headers.setContentLength(encryptedBytes.length);
                                 DataBuffer buffer = bufferFactory().wrap(encryptedBytes);
 
-
                                 return Mono.just(buffer);
                             }
 
@@ -230,6 +229,7 @@ public class CryptFilter implements GlobalFilter, Ordered {
             }
         };
     }
+
 
     private void setHttpHeaders(HttpHeaders headers,String encryptedKey, String base64IV, String sign, Map<String, Object> signParams) {
         headers.set(X_BLINK_SIGN, sign);

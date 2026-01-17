@@ -18,13 +18,9 @@ import com.blink.base.mapper.SysGroupMapper;
 import com.blink.base.mapper.SysUserGroupRelaMapper;
 import com.blink.base.service.SysGroupService;
 import com.blink.datasource.PageUtils;
-import com.blink.framework.common.constrant.SysConstant;
-import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import jakarta.annotation.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,9 +34,8 @@ import java.util.List;
  */
 @Transactional(rollbackFor = Exception.class)
 @Service
+@Slf4j
 public class SysGroupServiceImpl implements SysGroupService {
-
-    private final Logger logger = LoggerFactory.getLogger(SysGroupServiceImpl.class);
 
     @Resource
     private SysGroupMapper sysGroupMapper;
@@ -98,7 +93,6 @@ public class SysGroupServiceImpl implements SysGroupService {
      * 删除 组
      *
      * @param deleteParam
-     * @return
      * @throws BlinkException
      */
     @Override

@@ -9,16 +9,20 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 
 /**
  * AddSysUserReqDTO 新增系统用户请求参数对象
+ *
+ * @author binblink
  */
 @SameValue(fields = {"password","confirmPassword"},message = BaseErrCodeConstant.PASSWORD_CONFIRM_ERR)
 @Data
 public class AddSysUserReqDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

@@ -3,6 +3,7 @@ package com.blink.gateway.component;
 import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
+import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.service.RemoteService;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
@@ -28,8 +29,11 @@ public class MultiLevelCacheComponent {
     @Resource(name = "gatewayLocalCache")
     private CacheManager localCacheManager;
 
-    @Autowired
+    @Resource
     private ReactiveRedisClient redisClient;
+
+    @Resource
+    private BlinkGatewayProperties properties;
 
     // 本地缓存名称
     private static final String LOCAL_CACHE_NAME = "localCache";
@@ -54,7 +58,14 @@ public class MultiLevelCacheComponent {
      */
     private <T> Mono<T> getFromLocalCache(String key, Class<T> clazz) {
         logger.info("尝试从本地缓存获取 缓存参数 key:{}", key);
+
         return Mono.fromCallable(() -> {
+            Boolean configEnable = properties.getCache().getLocalCacheEnable();
+            boolean enableLocalCache =  configEnable != null ? configEnable : false;
+            // 未开启
+            if(!enableLocalCache){
+                return null;
+            }
             Cache localCache = localCacheManager.getCache(LOCAL_CACHE_NAME);
             if (localCache != null) {
                 Cache.ValueWrapper valueWrapper = localCache.get(key);
@@ -80,8 +91,9 @@ public class MultiLevelCacheComponent {
                     return value;
                 })
                 .onErrorResume(e -> {
+//                    e.printStackTrace();
+                    logger.error("{}",e.getMessage());
                     logger.error("从Redis获取缓存参数 失败! key:{}", key);
-                    e.printStackTrace();
                     return Mono.empty();
                 });
     }

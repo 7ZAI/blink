@@ -1,9 +1,10 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.dto.constant.BaseAppConstant;
+import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.framework.validate.annotation.DataDict;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
 import java.io.Serializable;
 
 
@@ -25,7 +26,7 @@ public class UpdateSysGroupReqDTO implements Serializable {
      * 分组id
      */
     @NotNull
-    @DataDict(name="systemId",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer groupId;
 
 
@@ -34,14 +35,14 @@ public class UpdateSysGroupReqDTO implements Serializable {
      * 组名称
      */
     @NotNull
-    @DataDict(name="systemName",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="systemName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String groupName;
 
 
     /**
      * 组英文名称
      */
-    @DataDict(name="systemEnName",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="systemEnName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String groupEnName;
 
 
@@ -49,7 +50,7 @@ public class UpdateSysGroupReqDTO implements Serializable {
      * 父组id
      */
     @NotNull
-    @DataDict(name="systemId",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer groupParentId;
 
 
@@ -57,7 +58,7 @@ public class UpdateSysGroupReqDTO implements Serializable {
      * 层级
      */
     @NotNull
-    @DataDict(name="number",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="number",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer groupLevel;
 
 
@@ -65,28 +66,28 @@ public class UpdateSysGroupReqDTO implements Serializable {
      * 是否叶子节点 0否 1是
      */
     @NotNull
-    @DataDict(name="flag1",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="flag1",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer isLeaf;
 
 
     /**
      * 组领导
      */
-    @DataDict(name="systemName",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="systemName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String groupLeader;
 
 
     /**
      * 组地址
      */
-    @DataDict(name="address",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="address",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String groupAddress;
 
 
     /**
      * 组电话
      */
-    @DataDict(name="phone",message = BaseAppConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name="phone",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String phone;
 
 

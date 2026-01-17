@@ -14,6 +14,7 @@ import static com.blink.gateway.constant.GatewayConstant.GATEWAY_CONFIG_KEY_PREF
 
 /**
  * 缓存组件
+ *
  * @Author binblink
  * @Date 2025/10/15
  */
@@ -31,6 +32,7 @@ public class GateWayCacheComponent {
 
     /**
      * 从缓存中获取配置参数
+     *
      * @param configKey
      * @return
      */
@@ -39,13 +41,13 @@ public class GateWayCacheComponent {
         String cacheKey = GATEWAY_CONFIG_KEY_PREFIX + configKey;
 
         return multiLevelCacheComponent.get(cacheKey, SysConfigCacheDO.class,
-                        (key, clazz) -> baseAppService.getOneConfig(key)
-                                .doOnNext(value -> setCache(cacheKey, value)))
+                        (key, clazz) -> baseAppService.getOneConfig(key).doOnNext(value -> setCache(cacheKey, value)))
                 .onErrorResume(e -> Mono.empty());
     }
 
     /**
      * 从缓存中获取渠道信息
+     *
      * @param appKey
      * @return
      */
@@ -54,8 +56,7 @@ public class GateWayCacheComponent {
         String cacheKey = BLINK_CHANNEL_PREFIX + appKey;
 
         return multiLevelCacheComponent.get(cacheKey, ChannelInfoRedisDO.class,
-                        (key, clazz) -> baseAppService.getChannelInfo(key)
-                                .doOnNext(value -> setCache(cacheKey, value)))
+                        (key, clazz) -> baseAppService.getChannelInfo(key).doOnNext(value -> setCache(cacheKey, value)))
                 .onErrorResume(e -> Mono.empty());
     }
 

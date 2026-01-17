@@ -6,6 +6,8 @@
     <!-- 统一字符集 -->
     <property name="CHARSET" value="UTF-8"/>
     <!-- 日志根目录，可通过 application.yml 中 logging.file.path 覆盖 -->
+    <springProperty scope="context" name="LOG_HOME" source="logging.file.path" defaultValue="/logs"/>
+        <!-- 使用LOG_HOME -->
     <springProperty scope="context"
                     name="LOG_HOME"
                     source="logging.file.path"
@@ -142,7 +144,7 @@
 
     <!-- ============== 6. 根日志 ============== -->
     <springProfile name="dev">
-        <root level="DEBUG">
+        <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="ASYNC_INFO"/>
             <appender-ref ref="ASYNC_ERROR"/>

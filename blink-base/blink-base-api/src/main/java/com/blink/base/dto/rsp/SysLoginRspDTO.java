@@ -1,11 +1,11 @@
 package com.blink.base.dto.rsp;
 
 import com.blink.base.dto.vo.SysMenuVO;
-import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.base.dto.vo.SysUserVO;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
 public class SysLoginRspDTO {
@@ -18,7 +18,7 @@ public class SysLoginRspDTO {
     /**
      * 用户角色
      */
-    private List<SysRoleVO> roles;
+    private List<String> roles;
 
     /**
      * 菜单展示
@@ -33,7 +33,7 @@ public class SysLoginRspDTO {
     /**
      * 权限标签
      */
-    private List<String> permissions;
+    private Set<String> permissions;
 
     /**
      * 登入凭证

@@ -15,13 +15,13 @@ public class IdGeneratorConstant {
      */
     public static final String DEFAULT_SLOT_HASHTAG = "{IDGEN}." ;
 
-    public static final String MSG_ID_KEY = "message:seq";
+    public static final String MSG_ID_KEY = "message";
 
-    public static final String REQ_ID_KEY = "request:seq";
+    public static final String REQ_ID_KEY = "request";
 
-    public static final String MQ_MSG_ID_KEY = "mq:message:seq";
+    public static final String MQ_MSG_ID_KEY = "mq:message";
 
-    public static final String TRANCE_ID_KEY = "trance:seq";
+    public static final String TRANCE_ID_KEY = "trance";
 
     /**
      * 默认step值
@@ -54,4 +54,5 @@ public class IdGeneratorConstant {
     public static final char DEFAULT_SEQUENCE_PAD_CHAR = '0';
 
 
+    public static final double  EIGHTY_PERCENT = 0.8;
 }

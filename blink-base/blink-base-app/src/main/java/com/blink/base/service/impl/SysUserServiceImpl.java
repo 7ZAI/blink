@@ -74,6 +74,8 @@ public class SysUserServiceImpl implements SysUserService {
             BlinkException.throwBusinessException(BaseErrCodeConstant.LOGIN_NAME_REPEAT);
         }
 
+        //TODO 解密密码 取决于密码是否加密
+
         //生成盐值
         sysUserDO.setSalt(BCrypt.gensalt());
         String encodePassword = BCrypt.hashpw(sysUserDO.getPassword(), sysUserDO.getSalt());
@@ -195,7 +197,7 @@ public class SysUserServiceImpl implements SysUserService {
      * @throws BlinkException
      */
     @Override
-    public SysUserRspDTO getSysUserList(QuerySysUserReqDTO queryParam) throws BlinkException {
+    public SysUserRspDTO<SysUserVO> getSysUserList(QuerySysUserReqDTO queryParam) throws BlinkException {
 
 
         //如果为空

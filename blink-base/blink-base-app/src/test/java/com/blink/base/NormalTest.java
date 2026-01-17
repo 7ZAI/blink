@@ -11,7 +11,7 @@ import com.blink.base.dto.req.SysLoginReqDTO;
 import com.blink.base.entity.FilterDefinitionDO;
 import com.blink.base.entity.PredicateDefinitionDO;
 import com.blink.base.entity.RouteDefinitionDO;
-import com.blink.datasource.CodeGenerator;
+import com.blink.datasource.code.CodeGenerator;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.core.crypt.AESUtils;
 import com.blink.framework.core.crypt.RSAUtils;

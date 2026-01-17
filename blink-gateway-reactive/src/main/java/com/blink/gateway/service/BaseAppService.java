@@ -85,7 +85,7 @@ public class BaseAppService {
         param.setConfigKey(configKey);
         requestDTO.setBody(param);
 
-        return webClientPost(GET_GATEWAY_CONFIG_URL,requestDTO,new SysConfigCacheDO(),new ParameterizedTypeReference<ResponseDTO<SysConfigVO>>(){});
+        return webClientPost(GET_GATEWAY_CONFIG_URL,requestDTO,new SysConfigCacheDO(),new ParameterizedTypeReference<ResponseDTO<SysConfigVO>>(){}).cache();
     }
 
 

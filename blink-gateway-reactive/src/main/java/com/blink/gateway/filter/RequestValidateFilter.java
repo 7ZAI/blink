@@ -13,8 +13,6 @@ import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -39,6 +37,7 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.C
  * <p>
  * 最后如果缓存 body 内容
  * TODO 文件上传 未实现 目前一律放过
+ *
  * @author binblink
  */
 public class RequestValidateFilter implements GlobalFilter, Ordered {
@@ -79,8 +78,28 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * 继续校验 组装流水线
-     * 拆分为多个函数避免return嵌套 虽然实际上还是 return 回调return
+     * 校验必填请求头 和 约束http提交方法为POST Content-Type为application/json
+     */
+    private Mono<Boolean> headerValidate(ServerHttpRequest httpRequest) {
+
+        HttpHeaders headers = httpRequest.getHeaders();
+
+        if (!checkRequestType(headers, httpRequest.getMethod())) {
+            logger.error("请求类型校验失败！");
+            return Mono.just(false);
+        }
+
+        if (!checkHeadersData(headers, httpRequest.getPath().value())) {
+            logger.error("请求头数据校验失败！");
+            return Mono.just(false);
+        }
+
+        return Mono.just(true);
+    }
+
+    /**
+     * 继续校验 组装程序处理模块
+     * 拆分为多个方法避免return嵌套 虽然实际上还是 return 回调return
      * 但是函数单一职责封装 提高了代码可读性
      *
      * @param exchange
@@ -133,6 +152,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
     /**
      * 缓存 body 到 Attributes 中
      * 后续 签名 加密 填充报文 均会用到 所以缓存下来
+     *
      * @param exchange
      * @param chain
      * @return
@@ -142,39 +162,22 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
         if (GateWayUtil.shouldCacheRequestBody(exchange.getRequest())) {
             //缓存body
             return cacheRequestBodyToAttributes(exchange).flatMap(mutatedRequest ->
-                    //跟换装饰后的request请求 继续执行过滤链
-                    chain.filter(exchange.mutate().request(mutatedRequest).build()).doFinally(s -> {
-                        Object backupCachedBody = exchange.getAttributes()
-                                .get(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR);
-                        if (backupCachedBody instanceof DataBuffer dataBuffer) {
-                            DataBufferUtils.release(dataBuffer);
-                        }
-                    })
+                            //跟换装饰后的request请求 继续执行过滤链
+                            chain.filter(exchange.mutate().request(mutatedRequest).build())
+//                            .doFinally(s -> {
+//
+//                        Object backupCachedBody = exchange.getAttributes()
+//                                .get(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR);
+//                        if (backupCachedBody instanceof DataBuffer dataBuffer) {
+//                            DataBufferUtils.release(dataBuffer);
+//                        }
+//                    })
             );
         }
         // 继续执行过滤链
         return chain.filter(exchange);
     }
 
-    /**
-     * 校验必填请求头 和 约束http提交方法为POST Content-Type为application/json
-     */
-    private Mono<Boolean> headerValidate(ServerHttpRequest httpRequest) {
-
-        HttpHeaders headers = httpRequest.getHeaders();
-
-        if (!checkRequestType(headers, httpRequest.getMethod())) {
-            logger.error("请求类型校验失败！");
-            return Mono.just(false);
-        }
-
-        if (!checkHeadersData(headers, httpRequest.getPath().value())) {
-            logger.error("请求头数据校验失败！");
-            return Mono.just(false);
-        }
-
-        return Mono.just(true);
-    }
 
     /**
      * 校验请求类型  只允许 method 为post  ContentType 为application/json和文件上传类型 通过
@@ -300,32 +303,35 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * 缓存body内容 转为字符串 重新包装exchange
-     * copy来自至 @link{CacheRequestBodyGatewayFilterFactory}的代码 略作修改
+     * 缓存body内容 转为字符串 重新包装 ServerHttpRequest
+     * 参考来自至@link{CacheRequestBodyGatewayFilterFactory}的代码 略作修改
      */
     private Mono<ServerHttpRequest> cacheRequestBodyToAttributes(ServerWebExchange exchange) {
-
+        //cacheRequestBodyAndRequest 内部缓存并返回装饰类
         return ServerWebExchangeUtils.cacheRequestBodyAndRequest(exchange, (serverHttpRequest) -> {
+            // ServerHttpRequest转换为ServerRequest
             final ServerRequest serverRequest = ServerRequest
                     .create(exchange.mutate().request(serverHttpRequest).build(), HandlerStrategies.withDefaults().messageReaders());
+            //利用原生bodyToMono方法 读取body内容转换为设置类型
             return serverRequest.bodyToMono(String.class).doOnNext(objectValue -> {
 
                 ChannelInfoRedisDO channelInfoRedisDO = exchange.getAttribute(CHANNEL_INFO);
                 String jsonString = objectValue;
                 //如果关闭加密 前端json字符串可能带有转义字符 导致验证签名不通过
-                if(SWITCH_OFF.equals(channelInfoRedisDO.getEncryptionSwitch())){
+                if (SWITCH_OFF.equals(channelInfoRedisDO.getEncryptionSwitch())) {
                     // 规范化json 去掉/r/n 等转义字符
                     JSONObject jsonObject = JSON.parseObject(objectValue);
                     jsonString = JSON.toJSONString(jsonObject);
                 }
-
+                //缓存请求body 字符串到 请求域
                 Object previousCachedBody = exchange.getAttributes()
                         .put(CACHED_REQUEST_BODY_ATTR, jsonString);
-                if (previousCachedBody != null) {
-                    // store previous cached body
-                    exchange.getAttributes().put(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR, previousCachedBody);
-                }
+//                if (previousCachedBody != null) {
+//                    // store previous cached body
+//                    exchange.getAttributes().put(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR, previousCachedBody);
+//                }
             }).then(Mono.defer(() -> {
+                //cacheRequestBodyAndRequest方法中 中缓存了 装饰类
                 ServerHttpRequest cachedRequest = exchange
                         .getAttribute(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
                 Assert.notNull(cachedRequest, "cache request shouldn't be null");

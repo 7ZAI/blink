@@ -11,6 +11,8 @@ import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.record.RequestRecord;
+import com.blink.framework.common.record.ResponseRecord;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- *
+ *  用户组织
  *  组 管理API
  *
  *
@@ -43,8 +45,8 @@ public class SysGroupController {
      * @throws Throwable
      */
     @PostMapping("/saveSysGroup")
-    public ResponseDTO<SysGroupRspDTO> saveSysGroup(@RequestBody @Validated RequestDTO<AddSysGroupReqDTO> reqDto) throws BlinkException {
-        return ResponseDTO.newSuccessInstance(sysGroupService.saveSysGroup(reqDto.getBody()));
+    public ResponseRecord<SysGroupRspDTO> saveSysGroup(@RequestBody @Validated RequestRecord<AddSysGroupReqDTO> reqDto) throws BlinkException {
+        return ResponseRecord.newSuccessInstance(sysGroupService.saveSysGroup(reqDto.body()));
     }
 
     /**

@@ -33,6 +33,7 @@ public class BlinkRedisProperties {
 
     /**
      * 读取lua脚本 字符串保存
+     *
      * @throws IOException
      */
     @PostConstruct
@@ -79,16 +80,15 @@ public class BlinkRedisProperties {
 
     /**
      * IdGenerator 配置类
-     *
      */
     public static class IdGenerator {
 
         /**
          * 配置key 每次生成id的增量
          * <p>
-         * <key,stepValue> [{"xxxx": 1},{"aaa":1000}]
+         * <key,stepValue> "xxxx": 1  "aaa":1000
          */
-        private Map<String, Integer> keySteps = new HashMap<>();
+        private Map<String, SeqParam> seqParam = new HashMap<>();
 
         /**
          * luaScript 脚本路径
@@ -97,38 +97,25 @@ public class BlinkRedisProperties {
 
         private String luaScript;
 
-        /**
-         * 使用阈值  百分比
-         * 当id已使用超过fetchPercent 会异步缓存
-         */
-        private Double fetchPercent;
 
-
-        public Integer getKeySteps(String key) {
+        public Integer getkeySteps(String key) {
             //是否有配置
-            Integer delta = this.getKeySteps().get(key);
+            SeqParam seqParam = this.getSeqParam().get(key);
 
-            if (Objects.isNull(delta)) {
-                delta = IdGeneratorConstant.DEFAULT_STEP;
+            Integer defaultStep = IdGeneratorConstant.DEFAULT_STEP;
+            if (Objects.isNull(seqParam)) {
+                return defaultStep;
             }
-
-            return delta;
+            return seqParam.getStep();
         }
 
-        public Double getFetchPercent() {
-            return fetchPercent;
+
+        public Map<String, SeqParam> getSeqParam() {
+            return seqParam;
         }
 
-        public void setFetchPercent(Double fetchPercent) {
-            this.fetchPercent = fetchPercent;
-        }
-
-        public Map<String, Integer> getKeySteps() {
-            return keySteps;
-        }
-
-        public void setKeySteps(Map<String, Integer> keySteps) {
-            this.keySteps = keySteps;
+        public void setSeqParam(Map<String, SeqParam> seqParam) {
+            this.seqParam = seqParam;
         }
 
         public String getLuaPath() {
@@ -145,6 +132,27 @@ public class BlinkRedisProperties {
 
         public void setLuaScript(String luaScript) {
             this.luaScript = luaScript;
+        }
+
+        public static class SeqParam {
+            private Integer step = IdGeneratorConstant.DEFAULT_STEP;
+            private Double fetchPercent = IdGeneratorConstant.EIGHTY_PERCENT;
+
+            public Integer getStep() {
+                return step;
+            }
+
+            public void setStep(Integer step) {
+                this.step = step;
+            }
+
+            public Double getFetchPercent() {
+                return fetchPercent;
+            }
+
+            public void setFetchPercent(Double fetchPercent) {
+                this.fetchPercent = fetchPercent;
+            }
         }
     }
 

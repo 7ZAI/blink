@@ -1,8 +1,11 @@
 package com.blink.base.dto.req;
 
-import lombok.Data;
-import java.io.Serializable;
 import com.blink.framework.common.data.PageDTO;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -13,7 +16,9 @@ import java.time.LocalDateTime;
  * @author binblink
  * @since 2024-01-13
  */
-@Data
+@Getter
+@Setter
+@ToString
 public class QuerySysPermissionReqDTO extends PageDTO implements Serializable {
 
   private static final long serialVersionUID = 1L;
