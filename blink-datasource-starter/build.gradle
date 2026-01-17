@@ -1,5 +1,5 @@
 plugins {
-    id 'org.springframework.boot' version '3.2.0'
+    id 'org.springframework.boot'
 
 }
 
@@ -10,41 +10,53 @@ java {
     modularity.inferModulePath = true
 }
 
-jar {
-    enabled = true
-    // 消除 打的包带 plain
-    archiveClassifier = ''
-    manifest {
-        attributes('Implementation-Title': 'Gradle',
-                'Implementation-Version': archiveVersion)
+//jar {
+//    enabled = true
+//    // 消除 打的包带 plain
+//    archiveClassifier = ''
+//    manifest {
+//        attributes('Implementation-Title': 'Gradle',
+//                'Implementation-Version': archiveVersion)
+//    }
+//}
+//
+//tasks.named('jar') {
+//    // 设置JAR包的manifest属性
+//    manifest {
+//        attributes('Automatic-Module-Name': project.name)
+//        // 如果需要，你也可以在这里指定主类 (Main-Class)
+//        groupId = 'com.blink'
+//        artifactId = 'blink-redis-spring-boot-starter'
+//        version = '1.0.0-SNAPSHOT'
+//    }
+//
+//    // 确保包含所有必要的资源文件
+//    include 'META-INF/**'
+//    include '**/*.class' // 这行通常可以省略，因为jar任务默认包含编译输出的class文件
+//}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            // 也可以单独指定 groupId, artifactId, version，如果未指定，则使用项目默认的
+            groupId = 'com.blink'
+            artifactId = 'blink-dataSource-spring-boot-starter'
+            version = '1.0.0-SNAPSHOT'
+        }
     }
 }
-
-tasks.named('jar') {
-    // 设置JAR包的manifest属性
-    manifest {
-        attributes('Automatic-Module-Name': project.name)
-        // 如果需要，你也可以在这里指定主类 (Main-Class)
-        // attributes('Main-Class': 'com.yourcompany.yourmodule.MainClass')
-    }
-
-    // 确保包含所有必要的资源文件
-    include 'META-INF/**'
-    include '**/*.class' // 这行通常可以省略，因为jar任务默认包含编译输出的class文件
-}
-
 
 dependencies {
 
-    implementation 'com.baomidou:mybatis-plus-generator:3.5.3.1'
-    api('com.baomidou:mybatis-plus-boot-starter:3.5.3.1'){
+    implementation "com.baomidou:mybatis-plus-generator:${mybatisPlusVersion}"
+    api("com.baomidou:mybatis-plus-boot-starter:${mybatisPlusVersion}"){
         exclude group: 'org.mybatis', module: 'mybatis-spring'
     }
+    implementation "mysql:mysql-connector-java:${mysqlConnectorVersion}"
+    implementation "com.alibaba:druid-spring-boot-starter:${druidStarterVersion}"
+    implementation "com.github.pagehelper:pagehelper:${pagehelperVersion}"
     implementation 'org.apache.velocity:velocity:1.7'
-    implementation 'mysql:mysql-connector-java:8.0.30'
-    implementation 'com.alibaba:druid-spring-boot-starter:1.2.18'
     implementation 'org.mybatis:mybatis-spring:3.0.3'
-    implementation 'com.github.pagehelper:pagehelper:5.3.1'
     implementation 'cn.hutool:hutool-core'
 
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'

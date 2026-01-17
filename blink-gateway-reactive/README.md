@@ -7,6 +7,8 @@
 - [💡 功能介绍](#-功能介绍)
   - [动态路由](#动态路由)
   - [认证与权限](#认证与权限)
+  - [多渠道对接管理](#多渠道对接管理)
+  - [报文组装与异常处理](#报文组装与异常处理)
 - [🧪 测试](#-测试)
 
 
@@ -75,9 +77,9 @@ blink gateway整合了spring security 来实现登录认证和权限校验
 引入渠道管理机制，在base-app服务提供渠道curd接口，用于管理接入blink系统中的第三方。为接入方创建一个渠道，包含appKey,appSecret、渠道密钥对 系统密钥对功能开关等信息。
 在网关通过appKey拿到redis中缓存的渠道（channel）信息，然后校验渠道开关，动态控制第三方能否接入、是否加解密、是否进行认证等等。
 
- ### 混合加解密 加签验签
+#### 混合加解密 加签验签
    通过AES+RSA混合加密及SHA-256数字签名技术，确保第三方接口数据传输的机密性、完整性和不可否认性，提升系统安全防护等级。
- ### 统一报文组装与异常处理
+ ### 报文组装与异常处理
  #### 报文组装
   因为blink系统设计了统一的请求DTO的格式，所以要在网关端进行填充；包括请求id,追踪id,日期 token 登入用户名等等 json格式如下：
   
@@ -116,7 +118,11 @@ blink gateway整合了spring security 来实现登录认证和权限校验
 这里的错误信息是根据请求头local获取对应的语言，以错误码+语言为key 去缓存获取信息，以实现提示语国际化
 
 相关类:[GlobalExceptionHandlerFilter.java](src/main/java/com/blink/gateway/filter/GlobalExceptionHandlerFilter.java)
- ### 动态调整参数配置
+ ### 配置参数
+ 通过Reids stream 消息进行本地缓存同步
+
+  #### 参数列表
+
  ### 流量控制
  使用spring cloud gateway自带的RedisRateLimiter 木桶令牌算法进行限流，在blink网关只进行粗粒度的限流，更细粒度的限流根据业务场景，由各个业务自己来实现
  ### 灰度发布 

@@ -8,12 +8,13 @@ import com.github.pagehelper.PageInterceptor;
 import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.session.LocalCacheScope;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import java.util.Properties;
 
 
-@Configuration
+@AutoConfiguration
 @MapperScan("com.blink.**.mapper")
 public class MybatisPlusConfiguration {
     /**
@@ -21,8 +22,9 @@ public class MybatisPlusConfiguration {
      * @return
      */
     @Bean
+    @ConditionalOnMissingBean
     public MybatisConfiguration mybatisConfiguration(){
-        MybatisConfiguration mybatisConfiguration = new MybatisConfiguration();
+        var mybatisConfiguration = new MybatisConfiguration();
 
         //添加插件 目前采用mybatis plus MetaHandler的方式处理
 //        mybatisConfiguration.addInterceptor(new NormalFieldInterceptor());
@@ -52,15 +54,17 @@ public class MybatisPlusConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public GlobalConfig globalConfig(){
-        GlobalConfig globalConfig = new GlobalConfig();
+        var globalConfig = new GlobalConfig();
         globalConfig.setDbConfig(dbConfig());
         return globalConfig;
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public GlobalConfig.DbConfig dbConfig(){
-        GlobalConfig.DbConfig dbConfig = new GlobalConfig.DbConfig();
+        var dbConfig = new GlobalConfig.DbConfig();
         //逻辑删除配置
         dbConfig.setLogicDeleteField("delFlag")
                 .setLogicDeleteValue("1")
@@ -75,8 +79,7 @@ public class MybatisPlusConfiguration {
      */
     @Bean
     public Interceptor normalFieldInterceptor(){
-        NormalFieldInterceptor normalFieldInterceptor = new NormalFieldInterceptor();
-        return normalFieldInterceptor;
+        return new NormalFieldInterceptor();
     }
 
     /**
@@ -84,9 +87,10 @@ public class MybatisPlusConfiguration {
      *
      */
     @Bean
+    @ConditionalOnMissingBean
     public PageInterceptor pageInterceptor(){
-        PageInterceptor pageHelper = new PageInterceptor();
-        Properties prop = new Properties();
+        var pageHelper = new PageInterceptor();
+        var prop = new Properties();
         prop.setProperty("defaultCount","true");
         prop.setProperty("reasonable","false");
 //        prop.setProperty("dialect","mysql");

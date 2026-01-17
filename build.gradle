@@ -1,10 +1,17 @@
 buildscript {
     ext {
-        springBootVersion: '3.0.8'
-        springCloudVersion: '2022.0.3'
-        springCloudAlibaba: '2022.0.0.0'
-        repositoriesUsername: 'admin'
-        repositoriesPassword: '123456'
+        springBootVersion='3.0.8'
+        springCloudVersion='2022.0.3'
+        springCloudAlibaba='2022.0.0.0'
+        hutoolVersion='5.8.29'
+        lombokVersion='1.18.26'
+        mysqlConnectorVersion='8.0.30'
+        mybatisPlusVersion='3.5.3.1'
+        druidStarterVersion='1.2.18'
+        pagehelperVersion='5.3.1'
+        fastjson2Extension='2.0.59'
+        httpclient5Version='5.2.1'
+        caffeineVersion='3.1.8'
     }
 }
 
@@ -14,7 +21,7 @@ plugins {
     id 'maven-publish'
     id 'java-library'
     id 'io.spring.dependency-management'
-
+    id 'org.springframework.boot' version '3.0.8' apply false
 }
 
 group = 'com.blink'
@@ -54,30 +61,6 @@ subprojects {
         options.encoding = "UTF-8"
     }
 
-    // 在 build.gradle 中添加
-//    tasks.withType(Javadoc) {
-//        options.encoding = 'UTF-8'
-//        options.charSet = 'UTF-8'
-//        options.docEncoding = 'UTF-8'
-//
-//        // 根据你的Java版本设置
-//        options.addStringOption('source', '11')
-//
-//        // 禁用严格检查（临时解决）
-//        options.addStringOption('Xdoclint:none', '-quiet')
-//
-//        // 设置标题
-//        title = '项目名称 API文档'
-//
-//        // 包含所有依赖
-//        classpath += configurations.compileClasspath
-//        classpath += configurations.runtimeClasspath
-//
-//        // 如果使用了模块化，添加模块路径
-//        if (JavaVersion.current().isJava9Compatible()) {
-//            options.addStringOption('-module-path', classpath.asPath)
-//        }
-//    }
 
     repositories {
         mavenLocal()
@@ -90,22 +73,22 @@ subprojects {
 
             }
         }
-//        mavenCentral()
+        mavenCentral()
     }
 
     dependencyManagement {
         imports {
-            mavenBom 'com.alibaba.cloud:spring-cloud-alibaba-dependencies:2022.0.0.0'
-            mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2022.0.3'
-            mavenBom 'cn.hutool:hutool-bom:5.8.29'
+            mavenBom "com.alibaba.cloud:spring-cloud-alibaba-dependencies:${springCloudAlibaba}"
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+            mavenBom "cn.hutool:hutool-bom:${hutoolVersion}"
 
         }
     }
 
     dependencies {
 
-        compileOnly 'org.projectlombok:lombok:1.18.26'
-        annotationProcessor 'org.projectlombok:lombok:1.18.26'
+        compileOnly "org.projectlombok:lombok:${lombokVersion}"
+        annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
     }
 

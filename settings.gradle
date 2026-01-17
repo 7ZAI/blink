@@ -18,12 +18,7 @@ include 'blink-datasource-starter'
 include 'blink-framework-openfeign'
 include 'blink-redis-starter'
 include 'blink-framework-validation'
-//include 'blink-framework-mq'
-//include 'blink-framework-test'
+include 'blink-framework-mq'
 
 include 'blink-gateway-reactive'
-//include 'blink-gateway'
-//include 'blink-stream'
-//include 'blink-batch'
-//include 'blink-framework-transaction'
 
