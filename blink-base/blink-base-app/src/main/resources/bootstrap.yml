@@ -39,7 +39,10 @@ server:
   servlet:
     context-path: /base
 
-
+logging:
+  config: classpath:logback.xml
+  file:
+    path: /logs
 
 
 

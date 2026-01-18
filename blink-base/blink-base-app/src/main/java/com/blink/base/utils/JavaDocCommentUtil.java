@@ -77,7 +77,8 @@ public class JavaDocCommentUtil {
     //例子
     private static void printJavadoc(String fullyQualifiedClassName) throws IOException {
         ClassJavadoc classDoc = RuntimeJavadoc.getJavadoc(fullyQualifiedClassName);
-        if (classDoc.isEmpty()) { // optionally skip absent documentation
+        // optionally skip absent documentation
+        if (classDoc.isEmpty()) {
             System.out.println("no documentation for " + fullyQualifiedClassName);
             return;
         }

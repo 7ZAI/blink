@@ -14,7 +14,6 @@ import java.io.Serializable;
  * </p>
  *
  * @author binblink
- * @since 2023-12-15
  */
 @Getter
 @Setter

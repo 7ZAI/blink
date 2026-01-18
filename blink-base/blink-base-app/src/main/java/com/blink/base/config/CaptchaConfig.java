@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
+ * TODO
  * 验证码配置 来自验证码开源jar com.anji-plus:captcha
  */
 @Configuration

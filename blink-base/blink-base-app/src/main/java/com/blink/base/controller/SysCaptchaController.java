@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
  *
  * @module blink
  * @author binblink
- * @since 2024-01-04
  */
 @RestController
 @RequestMapping("/captcha")

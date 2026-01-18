@@ -16,11 +16,13 @@ dependencies {
 //    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
 
 
-    implementation 'com.blink:blink-framework-web:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-framework-validation:1.0.0-SNAPSHOT'
+
     implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-dataSource-spring-boot-starter:1.0.0-SNAPSHOT'
-    implementation 'com.blink:blink-framework-validation:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-web-spring-boot-starter:1.0.0-SNAPSHOT'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     implementation 'cn.hutool:hutool-core'
     implementation 'cn.hutool:hutool-jwt'

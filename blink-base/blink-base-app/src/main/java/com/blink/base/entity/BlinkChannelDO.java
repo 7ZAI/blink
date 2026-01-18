@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
  * </p>
  *
  * @author binblink
- * @since 2024-07-29
  */
 @Getter
 @Setter
