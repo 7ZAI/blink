@@ -5,18 +5,13 @@ import com.alibaba.fastjson2.JSONWriter;
 import com.alibaba.fastjson2.support.config.FastJsonConfig;
 import com.alibaba.fastjson2.support.spring6.http.converter.FastJsonHttpMessageConverter;
 import com.alibaba.fastjson2.support.spring6.webservlet.view.FastJsonJsonView;
-import com.blink.framework.core.crypt.BlinkHybridEncrypted;
-import com.blink.framework.core.crypt.HttpServletCrypto;
-import com.blink.framework.core.filter.CryptoFilter;
+
 import com.blink.framework.core.interceptor.BlinkRequestContextInterceptor;
+import com.blink.framework.core.interceptor.LogMdcInterceptor;
 import com.blink.framework.core.mapper.SysChannelMapper;
 import com.blink.framework.redis.component.CacheComponent;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.*;
@@ -25,7 +20,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
-@Configuration
+/**
+ * 自动配置类
+ *
+ * @author binblink
+ */
+
 @EnableWebMvc
 public class BlinkWebMvcConfigurer implements WebMvcConfigurer {
 
@@ -46,9 +46,10 @@ public class BlinkWebMvcConfigurer implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new BlinkRequestContextInterceptor())
-                // 应用于所有路径
-                .addPathPatterns("/**");
+        // 应用于所有路径
+        registry.addInterceptor(new BlinkRequestContextInterceptor()).addPathPatterns("/**");
+
+        registry.addInterceptor(new LogMdcInterceptor()).addPathPatterns("/**");
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.blink.framework.core.util;
 
 import com.blink.framework.core.data.BlinkRequestContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 import java.time.LocalDate;
@@ -10,6 +11,7 @@ import java.time.LocalDate;
  * @Author binblink
  * @Date 2025/8/26
  */
+@Slf4j
 public class BlinkRequestContextHolder {
 
     private static final ThreadLocal<BlinkRequestContext> contextHolder = new ThreadLocal<>();
@@ -42,6 +44,7 @@ public class BlinkRequestContextHolder {
      * 清除上下文
      */
     public static void clearContext() {
+        log.debug("Clear RequestContext");
         contextHolder.remove();
     }
 

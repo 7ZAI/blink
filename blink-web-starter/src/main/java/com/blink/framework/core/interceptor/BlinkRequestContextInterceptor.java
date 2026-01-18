@@ -6,26 +6,30 @@ import com.blink.framework.core.data.CoreConstant;
 import com.blink.framework.core.util.BlinkRequestContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
  * @Author binblink
  * @Date 2025/8/26
  */
+@Slf4j
 public class BlinkRequestContextInterceptor implements HandlerInterceptor {
 
-    private final Logger logger = LoggerFactory.getLogger(BlinkRequestContextInterceptor.class);
+    @Value("${spring.application.name}")
+    private String appName;
+
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
-        logger.debug("Creating BlinkRequestContext");
+        log.debug("Creating BlinkRequestContext");
 
         // 创建并初始化上下文
         BlinkRequestContext context = new BlinkRequestContext();
@@ -39,25 +43,18 @@ public class BlinkRequestContextInterceptor implements HandlerInterceptor {
         context.setTraceId(request.getHeader(CoreConstant.X_BLINK_TRACE_ID));
         context.setLanguage(request.getHeader(CoreConstant.X_BLINK_LOCALE));
         context.setRequestDate(LocalDate.now());
-        context.setAppName(getAppName());
+        context.setAppName(appName);
 
         // 设置到上下文持有器
         BlinkRequestContextHolder.setContext(context);
         return true;
     }
 
-    private String getAppName(){
-        Environment environment = ApplicationContextUtil.getBean(Environment.class);
-        return environment.getProperty(CoreConstant.APP_NAME_PROPERTY);
-    }
-
-  
-
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         // 请求完成后清理上下文，防止内存泄漏
         BlinkRequestContextHolder.clearContext();
-        logger.debug("Clear BlinkRequestContext");
+        log.debug("Clear BlinkRequestContext");
     }
 
 
