@@ -1,8 +1,9 @@
 
 # blink微服务开发框架
 
-该项目是作为个人工作经验的技术总结和提炼，目的提供一套可以快速开发微服务。
+该项目目的提供一套可以快速开发微服务的框架，并作为个人工作经验技术的总结和提炼。
 
+目标：向企业级开发框架靠拢
 
 ## 技术栈
 
@@ -10,49 +11,59 @@ JDK17、Spring Cloud Alibaba、Spring Boot 3、Mysql 8.0、Spring MVC、Mybatis-
 
 具体版本详情查看[build.gradle](build.gradle)
 
-## 模块列表
+## 模块封装
 
-通过按功能划分模块并封装打包成starter包或普通jar包,在构建服务应用时，可以按需引入，实现基础功能可插拔化。
+模仿企业级工程采用功能维度模块化拆分策略，将各核心能力封装为独立可发布的依赖库（如 Spring Boot Starter）：
+实现模块间依赖隔离与功能可插拔，降低模块耦合性；
+Starter 内置自动化配置能力，外部引用时可通过自定义配置灵活覆盖依赖库默认参数；
+后续功能迭代或重大调整可通过发布新版本依赖包支撑持续交付，最终使工程架构达成高内聚、低耦合的管理目标
 
 目前项目具有以下模块
 
-| 模块名称                       | 功能               |
-|----------------------------|------------------|
-| blink-datasource-starter   | mysql数据库支持       | 
-| blink-framework-common     | 通用类封装            |
-| blink-framework-mq         | rabbitmq支持       |
-| blink-framework-openfeign  | rpc调用封装          |
-| blink-framework-validation | 数据校验支持           |
-| blink-redis-starter        | redis客户端支持       |
-| blink-web-starter          | webApp 通用非业务功能支持 |
+### 模块列表
+| 模块名称                                                               | 功能               |
+|--------------------------------------------------------------------|------------------|
+| [blink-datasource-starter](blink-datasource-starter/README.md)                                         | mysql数据库支持       | 
+| [blink-framework-common](blink-framework-common/README.md)                                           | 通用类封装            |
+| [blink-framework-mq](blink-framework-mq/README.md)                 | rabbitmq支持       |
+| [blink-framework-openfeign](blink-framework-openfeign/README.md)   | rpc调用封装          |
+| [blink-framework-validation](blink-framework-validation/README.md) | 数据校验支持           |
+| [blink-redis-starter](blink-redis-starter/README.md)               | redis客户端支持       |
+| [blink-web-starter](blink-web-starter/README.md)                   | webApp 通用非业务功能支持 |
 
 各个模块的具体功能详情，请查看各个模块的README文档
 
-项目处于持续开发的状态，后续还会添加其他依赖基础包封装
 
 ## 快速构建
 
 构建服务应用，可以参考[blink-base](blink-base)
 
 1、 环境准备
-    需要Idea、gradle、mysql、redis、nacos、nexus（可选）
-    下载项目后，可以在[build.gradle](build.gradle)修改私库配置，gradle执行publish任务打包发布各模块到私库。如果没有私库，可以配置为本地仓库 打j成ar包后，手动用gradle或者maven的安装命令 安装到本地库即可
+    需要Idea、gradle >=8.8、mysql >=8.0、redis >7.0、nacos 2.3、nexus（可选）
+    下载项目后，可以在[build.gradle](build.gradle)修改私库配置，gradle执行publish任务打包发布各模块到私库。如果没有私库，可以配置为本地仓库 打成jar包后，手动执行gradle或maven的安装命令 安装到本地库即可
 
-2、 Idea创建应用
+2、 添加依赖
 
-    编写gradle构建脚本 引入依赖
-```gradle
+使用idea创建新工程，或者下载本项目后在根目录上添加新模块
+编写gradle构建脚本 引入依赖
+
+参考base-app或者gateway的yml, 配置redis、nacos、mysql
+
+
+```groovy
     implementation 'com.blink:blink-web-spring-boot-starter:1.0.0-SNAPSHOT'
-    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-dataSource-spring-boot-starter:1.0.0-SNAPSHOT'
+    
+    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-framework-validation:1.0.0-SNAPSHOT'
 ```
-  参考base-app或者gateway的yml; 配置redis、nacos、mysql连接
+
 
 3、生成模板代码
 
-  使用类[CodeGenerator](blink-datasource-starter/src/main/java/com/blink/datasource/code/CodeGenerator.java)
+  使用类[CodeGenerator](blink-datasource-starter/src/main/java/com/blink/datasource/code/CodeGenerator.java)生成代码 
+
   
 ```java
   public static void main(String[] args) {
@@ -66,6 +77,8 @@ JDK17、Spring Cloud Alibaba、Spring Boot 3、Mysql 8.0、Spring MVC、Mybatis-
 
     }
 ```
+运行后按输入数据表名可根据数据表信息自动生成controller、Service、ServiceImpl、Mapper、mapper.xml、DO实体
+还生成了curdDTO
 
 生成成功控制台显示
 
@@ -82,11 +95,9 @@ none
 1
 18:21:57.113 [main] DEBUG com.baomidou.mybatisplus.generator.AutoGenerator -- ==========================文件生成完成！！！==========================
 ```
-默认是在生成地址是在项目根目录，随后将生成的代码拖入项目对应目录即可
-生成代码效果：
+默认是生成地址是在项目根目录中，随后将生成的代码拖入项目对应目录即可
 
 
-![img_1.png](img_1.png)
 
 4、添加启动类
  运行启动类 到此一个微服务应用构建完毕，可以进行业务开发了
@@ -110,12 +121,22 @@ public class BlinkBaseAppApplication {
 
 ## 应用
 
-目前blink框架具有两个服务应用：[blink-base](blink-base/blink-base-app/README.md)和[blink-gateway-reactive](blink-gateway-reactive/README.md)
+目前blink框架具有两个服务应用：blink-base和blink-gateway-reactive
 
 ### blink-base 
 
-blink-base 基于RBAC的后台管理应用。具有用户、角色、权限、菜单等curd接口
+blink-base RBAC后台管理服务。具有用户、角色、权限、菜单、组等curd接口，是企业中必不可少的应用。
+除了RBAC外 还会提供系统参数管理、外接渠道管理、数据字典等功能
+
+[blink-base](blink-base/blink-base-app/README.md)
 
 ### blink-gateway-reactive 
 
-blink-gateway-reactive 是基于spring cloud gateway实现的非阻塞响应式网关。具有路由转发、动态路由、认证管理、权限校验等功能
+blink-gateway-reactive 是基于spring cloud gateway实现的响应式非阻塞网关。
+目前具有路由转发、动态路由、认证管理、权限校验、渠道接入、报文加密解密、签名验证等功能
+
+[blink-gateway-reactive](blink-gateway-reactive/README.md)
+
+
+
+#### blink项目处于持续开发的状态，后续还会添加内容
