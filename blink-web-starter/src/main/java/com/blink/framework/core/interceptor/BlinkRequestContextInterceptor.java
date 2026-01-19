@@ -1,19 +1,17 @@
 package com.blink.framework.core.interceptor;
 
-import com.blink.framework.common.utils.ApplicationContextUtil;
-import com.blink.framework.core.data.BlinkRequestContext;
-import com.blink.framework.core.data.CoreConstant;
-import com.blink.framework.core.util.BlinkRequestContextHolder;
+import com.blink.framework.common.context.BlinkRequestContext;
+import com.blink.framework.common.context.BlinkRequestContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 
 import java.time.LocalDate;
-import java.util.Objects;
+
+import static com.blink.framework.common.constrant.SysConstant.*;
 
 /**
  * @Author binblink
@@ -30,18 +28,17 @@ public class BlinkRequestContextInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
 
         log.debug("Creating BlinkRequestContext");
-
         // 创建并初始化上下文
         BlinkRequestContext context = new BlinkRequestContext();
 
         // 设置内容
-        context.setRequestId(request.getHeader(CoreConstant.X_BLINK_REQUEST_ID));
-        context.setClientIp(request.getHeader(CoreConstant.X_BLINK_CLIENTIP));
-        context.setChannel(request.getHeader(CoreConstant.X_BLINK_CHANNEL));
-        context.setUserId(request.getHeader(CoreConstant.X_BLINK_USRID));
-        context.setLoginName(request.getHeader(CoreConstant.X_BLINK_LOGINNAME));
-        context.setTraceId(request.getHeader(CoreConstant.X_BLINK_TRACE_ID));
-        context.setLanguage(request.getHeader(CoreConstant.X_BLINK_LOCALE));
+        context.setRequestId(request.getHeader(X_BLINK_REQUEST_ID));
+        context.setClientIp(request.getHeader(X_BLINK_CLIENTIP));
+        context.setChannel(request.getHeader(X_BLINK_CHANNEL));
+        context.setUserId(request.getHeader(X_BLINK_USRID));
+        context.setLoginName(request.getHeader(X_BLINK_LOGINNAME));
+        context.setTraceId(request.getHeader(X_BLINK_TRACE_ID));
+        context.setLanguage(request.getHeader(X_BLINK_LOCALE));
         context.setRequestDate(LocalDate.now());
         context.setAppName(appName);
 

@@ -1,20 +1,19 @@
-package com.blink.framework.core.util;
+package com.blink.framework.common.context;
 
-import com.blink.framework.core.data.BlinkRequestContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.Assert;
 
 import java.time.LocalDate;
 
 /**
- *  注意 当使用@Async 或者异步环境下 慎用此类
+ * 注意 当使用@Async 或者异步环境下 慎用此类
+ *
  * @Author binblink
- * @Date 2025/8/26
  */
 @Slf4j
 public class BlinkRequestContextHolder {
 
-    private static final ThreadLocal<BlinkRequestContext> contextHolder = new ThreadLocal<>();
+    private static final ThreadLocal<BlinkRequestContext> CONTEXT_HOLDER = new ThreadLocal<>();
 
     // 私有构造方法防止实例化
     private BlinkRequestContextHolder() {
@@ -23,14 +22,14 @@ public class BlinkRequestContextHolder {
 
     public static void setContext(BlinkRequestContext context) {
         Assert.notNull(context, "Only non-null RequestContext instances are permitted");
-        contextHolder.set(context);
+        CONTEXT_HOLDER.set(context);
     }
 
     public static BlinkRequestContext getContext() {
-        BlinkRequestContext context = contextHolder.get();
+        BlinkRequestContext context = CONTEXT_HOLDER.get();
         if (context == null) {
             context = createEmptyContext();
-            contextHolder.set(context);
+            CONTEXT_HOLDER.set(context);
         }
         return context;
     }
@@ -45,7 +44,7 @@ public class BlinkRequestContextHolder {
      */
     public static void clearContext() {
         log.debug("Clear RequestContext");
-        contextHolder.remove();
+        CONTEXT_HOLDER.remove();
     }
 
     /**
@@ -114,6 +113,12 @@ public class BlinkRequestContextHolder {
         return getContext().getChannel();
     }
 
+    /**
+     * spanId
+     */
+    public static String getSpanId() {
+        return getContext().getSpanId();
+    }
 
 
 }

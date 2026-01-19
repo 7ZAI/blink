@@ -84,14 +84,13 @@ public class SysUserController {
 
 
     /**
-     * 根据Id查询系统用户详情
+     * 根据用户名查询系统用户详情
      * @param reqDto
      * @return
      * @throws BlinkException
      */
     @PostMapping("/getSysUserDetail")
-    public ResponseDTO<SysUserDO> getSysUserDetail(@RequestBody @Validated RequestDTO<AddSysUserReqDTO> reqDto) throws BlinkException {
-//        return  sysUserService.getSysUserDetail(reqDto);
-        return null;
+    public ResponseDTO<SysUserDO> getSysUserDetail(@RequestBody @Validated RequestDTO<QuerySysUserReqDTO> reqDto) throws BlinkException {
+        return  ResponseDTO.newSuccessInstance(sysUserService.getSysUserDetail(reqDto.getBody()));
     }
 }

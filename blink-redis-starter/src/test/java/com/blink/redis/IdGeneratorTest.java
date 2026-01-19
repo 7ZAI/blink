@@ -244,6 +244,85 @@ public class IdGeneratorTest {
     }
 
 
+    @Test
+    public void multiThreadRequestId() throws InterruptedException {
+        // 配置测试参数
+        int threadCount = 16;       // 并发线程数
+        int idsPerThread = 100000;     // 每个线程获取的ID数量
+        int totalExpected = threadCount * idsPerThread;
+
+        // 用于存储结果，验证是否重复
+        // 使用 ConcurrentHashMap 的 KeySet 模拟线程安全的 Set
+//        Set<Long> idSet = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        Set<String> idSet =  new ConcurrentSkipListSet<>();
+
+        // 倒计时锁：用于模拟瞬时并发
+        CountDownLatch startGate = new CountDownLatch(1);
+        // 倒计时锁：用于等待所有线程执行结束
+        CountDownLatch endGate = new CountDownLatch(threadCount);
+
+        // 错误计数
+        AtomicLong errorCounter = new AtomicLong(0);
+
+        // 创建任务
+        for (int i = 0; i < threadCount; i++) {
+            new Thread(() -> {
+                try {
+                    startGate.await(); // 所有线程在此处阻塞等待鸣枪
+
+                    for (int j = 0; j < idsPerThread; j++) {
+                        String id = idGenerator.generateRequestId();
+                        if (id != null) {
+//                            System.out.println("seq id: ---------------------" + id);
+                            if(!idSet.add(id)){
+                                errorCounter.incrementAndGet();
+                                System.err.println("重复的 seq id: ---------------------" + id);
+                            }
+                        } else {
+                            System.out.println("------有空值-----------------------");
+                            errorCounter.incrementAndGet();
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("------有异常-----------------------");
+                    errorCounter.incrementAndGet();
+                    throw new RuntimeException(e);
+                } finally {
+                    endGate.countDown();
+                }
+            }).start();
+        }
+
+        // --- 开始测试 ---
+        System.out.println(">>> 测试开始：并发线程数 " + threadCount + ", 计划生成 ID 总数 " + totalExpected);
+        long startTime = System.nanoTime();
+
+        startGate.countDown(); // 鸣枪！所有线程同时开始
+        endGate.await();       // 等待所有线程跑完
+
+        long endTime = System.nanoTime();
+        // --- 测试结束 ---
+
+        double durationSeconds = (endTime - startTime) / 1_000_000_000.0;
+        int actualSize = idSet.size();
+
+        // --- 结果分析 ---
+        System.out.println("---------------------------------------");
+        System.out.println("耗时: " + String.format("%.2f", durationSeconds) + " 秒");
+        System.out.println("吞吐量 (TPS): " + (int)(actualSize / durationSeconds));
+        System.out.println("预期 ID 数量: " + totalExpected);
+        System.out.println("实际去重后 ID 数量: " + actualSize);
+        System.out.println("异常请求数: " + errorCounter.get());
+
+        if (actualSize == totalExpected && errorCounter.get() == 0) {
+            System.out.println("验证结果: SUCCESS (无重复，无丢失)");
+        } else {
+            System.err.println("验证结果: FAILED (存在重复或丢失！)");
+            System.err.println("丢失/重复差值: " + (totalExpected - actualSize));
+        }
+    }
+
+
     /**
      * Do generating
      */

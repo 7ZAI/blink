@@ -2,9 +2,13 @@
 <configuration scan="true" scanPeriod="30 seconds" debug="false">
 
     <!-- ============== 0. 公共变量 ============== -->
-    <contextName>gateway-reactive</contextName>
+    <contextName>blink-gateway-reactive</contextName>
     <!-- 统一字符集 -->
     <property name="CHARSET" value="UTF-8"/>
+    <!-- 为 LOG_HOME 提供默认值 -->
+    <property name="LOG_HOME" value="${LOG_HOME:-./logs}" />
+    <!-- 或者使用系统属性 -->
+    <property name="LOG_HOME" value="${LOG_HOME:-${user.dir}/logs}" />
     <!-- 日志根目录，可通过 application.yml 中 logging.file.path 覆盖 -->
     <springProperty scope="context" name="LOG_HOME" source="logging.file.path" defaultValue="/logs"/>
         <!-- 使用LOG_HOME -->

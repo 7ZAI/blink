@@ -10,23 +10,23 @@ java {
     modularity.inferModulePath = true
 }
 
-//jar {
-//    enabled = true
-//    // 消除 打的包带 plain
-//    archiveClassifier = ''
-//    manifest {
-//        attributes('Implementation-Title': 'Gradle',
-//                'Implementation-Version': archiveVersion)
-//    }
-//}
-//
+jar {
+    enabled = true
+    // 消除 打的包带 plain
+    archiveClassifier = ''
+    manifest {
+        attributes('Implementation-Title': 'Gradle',
+                'Implementation-Version': archiveVersion)
+    }
+}
+
 //tasks.named('jar') {
 //    // 设置JAR包的manifest属性
 //    manifest {
 //        attributes('Automatic-Module-Name': project.name)
 //        // 如果需要，你也可以在这里指定主类 (Main-Class)
 //        groupId = 'com.blink'
-//        artifactId = 'blink-redis-spring-boot-starter'
+//        artifactId = 'blink-dataSource-spring-boot-starter'
 //        version = '1.0.0-SNAPSHOT'
 //    }
 //

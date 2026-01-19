@@ -1,13 +1,22 @@
 package com.blink.gateway;
 
+import com.blink.base.dto.req.QueryBlinkChannelReqDTO;
+import com.blink.base.dto.rsp.QueryBlinkChannelRspDTO;
+import com.blink.base.dto.vo.ChannelVO;
+import com.blink.framework.common.data.RequestDTO;
+import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.id.IdGenerator;
 import com.blink.framework.redis.id.ReactiveIdGenerator;
 import com.blink.gateway.service.BaseAppService;
+import com.blink.gateway.util.WebClientUtil;
 import io.micrometer.core.instrument.util.NamedThreadFactory;
+import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -25,6 +34,9 @@ class BlinkReactiveGatewayApplicationTests {
 
     @Autowired
     private ReactiveIdGenerator reactiveIdGenerator;
+
+    @Autowired
+    private  WebClient.Builder builder;
 
 
 
@@ -62,30 +74,22 @@ class BlinkReactiveGatewayApplicationTests {
 
 
     @Test
-    void testThread() throws InterruptedException, ExecutionException {
-//        IncrSeqCache incrSeqCache =  new IncrSeqCache(0L,10000L,99900L);
-//
-//        ThreadPoolExecutor poolExecutor = new ThreadPoolExecutor(16,32,
-//                10,TimeUnit.SECONDS,new LinkedBlockingQueue<>(20000));
-//        Set<Long> set = new HashSet<>();
-//        List<Future<Long>> futures = new ArrayList<>();
-//        for (int i = 0; i < 10000; i++) {
-//           futures.add(poolExecutor.submit(() -> incrSeqCache.nextValue()));
-//        }
-//
-//        for(Future future : futures){
-//            Long v = (Long) future.get();
-//            set.add(v.longValue());
-//            System.out.println(Thread.currentThread().getName() + "---currentValue----"+ v.longValue());
-//        }
-////        poolExecutor.shutdown();
-////        poolExecutor.awaitTermination(20, TimeUnit.SECONDS);
-//
-////        Thread.sleep(10000);
-////        if(poolExecutor.isTerminated()){
-//            System.out.println(set.size());
-////        }
+    void gatewayTest() throws InterruptedException, ExecutionException {
+        String base = "http://gateway-app/base/channel/getChannelList";
+        WebClient webClient = WebClientUtil.getWebClient(builder,base);
 
+        var queryBlinkChannelReqDTO = new QueryBlinkChannelReqDTO();
+
+        var requestDTO = new RequestDTO<QueryBlinkChannelReqDTO>();
+
+        QueryBlinkChannelRspDTO me = new QueryBlinkChannelRspDTO();
+
+        Mono<QueryBlinkChannelRspDTO> mono = WebClientUtil
+                .webClientPost(webClient,base,requestDTO,me,new ParameterizedTypeReference<ResponseDTO<QueryBlinkChannelRspDTO>>(){});
+
+        QueryBlinkChannelRspDTO queryBlinkChannelRspDTO = mono.block();
+
+        System.out.println(queryBlinkChannelRspDTO.toString());
     }
 
     @Test

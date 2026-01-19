@@ -452,8 +452,8 @@ public class CodeGenerator {
         String username = "root";
         String password = "123456";
 
-
-        generateByCustomTemplate(url, username, password);
+        var codeGenerator = new CodeGenerator();
+        codeGenerator.generateByCustomTemplate(url, username, password);
 
     }
 

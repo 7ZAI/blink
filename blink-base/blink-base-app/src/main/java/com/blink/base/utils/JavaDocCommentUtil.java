@@ -34,7 +34,8 @@ public class JavaDocCommentUtil {
 
         ClassJavadoc classDoc = RuntimeJavadoc.getJavadoc(fullyQualifiedClassName);
         Map<String, String> map = new HashMap<>();
-        if (classDoc.isEmpty()) { // optionally skip absent documentation
+        // optionally skip absent documentation
+        if (classDoc.isEmpty()) {
             System.out.println("no documentation for " + fullyQualifiedClassName);
         }
 
@@ -137,10 +138,10 @@ public class JavaDocCommentUtil {
     }
 
     public static void main(String[] args) throws Exception {
-//        getMsgCoeInsertSQL("com.blink.base.constant.BaseAppConstant");
-
-        CodeGenerator.generateByCustomTemplate("jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8",
-                "root","123456");
+        getMsgCoeInsertSQL("com.blink.base.constant.BaseAppConstant");
+//
+//        CodeGenerator.generateByCustomTemplate("jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8",
+//                "root","123456");
     }
 
 }

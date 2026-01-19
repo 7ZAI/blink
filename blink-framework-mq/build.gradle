@@ -21,14 +21,14 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
 
-    implementation 'com.blink:blink-dataSource-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation "com.alibaba.fastjson2:fastjson2:${fastjson2Extension}"
     implementation "com.alibaba.fastjson2:fastjson2-extension-spring6:${fastjson2Extension}"
+
+    implementation 'com.blink:blink-dataSource-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-
 
 }
 

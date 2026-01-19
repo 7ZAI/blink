@@ -1,8 +1,7 @@
-package com.blink.framework.mq;
+package com.blink.framework;
 
 import com.blink.framework.common.data.MqGenericDTO;
 import com.blink.framework.mq.constant.MqConstant;
-import com.blink.framework.mq.entity.Person;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

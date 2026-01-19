@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
  */
 @AutoConfiguration
 @EnableConfigurationProperties({BlinkRedisProperties.class})
-@Configuration
 public class BlinkRedisAutoConfiguration {
 
 

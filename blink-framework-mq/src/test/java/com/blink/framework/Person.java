@@ -1,4 +1,4 @@
-package com.blink.framework.mq.entity;
+package com.blink.framework;
 
 public class Person {
 

@@ -20,9 +20,9 @@ import com.blink.base.mapper.SysUserMapper;
 import com.blink.base.mapper.SysUserRoleRelaMapper;
 import com.blink.base.service.SysUserService;
 import com.blink.datasource.PageUtils;
+import com.blink.framework.common.context.BlinkRequestContextHolder;
 import com.blink.framework.common.exception.BlinkException;
 
-import com.blink.framework.core.util.BlinkRequestContextHolder;
 import jakarta.annotation.Resource;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
@@ -228,9 +228,8 @@ public class SysUserServiceImpl implements SysUserService {
      * @throws BlinkException
      */
     @Override
-    public SysUserDO getSysUserDetail(SysUserDO queryParam) throws BlinkException {
+    public SysUserDO getSysUserDetail(QuerySysUserReqDTO queryParam) throws BlinkException {
 
-        SysUserDO sysUserDO = sysUserMapper.selectById(queryParam);
-        return sysUserDO;
+        return sysUserMapper.selectOne(new LambdaQueryWrapper<SysUserDO>().eq(SysUserDO::getLoginName, queryParam.getLoginName()));
     }
 }

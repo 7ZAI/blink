@@ -1,5 +1,6 @@
 package com.blink.framework.mq.aop;
 
+import com.blink.framework.common.context.BlinkRequestContextHolder;
 import com.blink.framework.common.data.MqGenericDTO;
 import com.blink.framework.mq.constant.MqConstant;
 import com.blink.framework.mq.service.MqMsgReceService;
@@ -57,8 +58,8 @@ public class ReceiveMqMessageAspect {
         Object param = args[0];
 
         MqGenericDTO dto = (MqGenericDTO) param;
-        //TODO 临时系统id 以后会有设计一个上下文类来保存系统环境 包含系统id信息
-        dto.setReceiver("0000");
+
+        dto.setReceiver(BlinkRequestContextHolder.getAppName());
 
         mqMsgReceService.updateMqReceiveMsgSts(dto, MqConstant.MQ_STS_SUCCESS);
     }
@@ -72,8 +73,8 @@ public class ReceiveMqMessageAspect {
         Object param = args[0];
 
         MqGenericDTO dto = (MqGenericDTO) param;
-        //TODO 临时系统id 以后会有设计一个上下文类来保存系统环境 包含系统id信息
-        dto.setReceiver("0000");
+
+        dto.setReceiver(BlinkRequestContextHolder.getAppName());
 
         logger.info("mq 消息消费失败 ！ 错误信息： {} " ,ex);
 

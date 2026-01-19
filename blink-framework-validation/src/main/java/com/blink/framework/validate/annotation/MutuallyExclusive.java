@@ -11,7 +11,7 @@ import java.lang.annotation.Target;
 
 /**
  * 互斥字段验证
- *确保两个字段不会同时有值
+ * 确保两个字段不会同时有值
  * @author binblink
  */
 @Target({ElementType.TYPE})

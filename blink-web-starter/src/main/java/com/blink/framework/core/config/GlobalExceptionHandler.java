@@ -2,13 +2,13 @@ package com.blink.framework.core.config;
 
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.blink.framework.common.context.BlinkRequestContextHolder;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.core.data.CoreConstant;
 import com.blink.framework.core.entity.SysMsgInfoDO;
 import com.blink.framework.core.mapper.SysMsgInfoMapper;
-import com.blink.framework.core.util.BlinkRequestContextHolder;
 import com.blink.framework.redis.component.CacheComponent;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;

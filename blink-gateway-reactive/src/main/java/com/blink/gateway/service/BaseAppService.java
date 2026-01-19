@@ -11,7 +11,9 @@ import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.data.SysConfigCacheDO;
+import com.blink.gateway.util.WebClientUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -41,30 +43,7 @@ public class BaseAppService {
 
 
     public BaseAppService(WebClient.Builder webClientBuilder) {
-
-        // 1️ 配置 fastjson2 的行为
-        FastJsonConfig fastJsonConfig = new FastJsonConfig();
-        // 支持非 ISO 格式日期
-        fastJsonConfig.setDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        // 2️ 传入一个空的 ObjectMapper（只是为了满足构造函数要求）
-        ObjectMapper dummyMapper = new ObjectMapper();
-
-        // 3️ 创建 fastjson2 的编解码器
-        Fastjson2Decoder decoder = new Fastjson2Decoder(dummyMapper, fastJsonConfig, MediaType.APPLICATION_JSON);
-        Fastjson2Encoder encoder = new Fastjson2Encoder(dummyMapper, fastJsonConfig, MediaType.APPLICATION_JSON);
-
-        this.webClient = webClientBuilder
-                // 服务名或直接URL
-                .baseUrl(BASE_URL)
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .codecs(configurer -> {
-                    configurer.defaultCodecs().jackson2JsonDecoder(decoder);
-                    configurer.defaultCodecs().jackson2JsonEncoder(encoder);
-//                    configurer.customCodecs().register(decoder);
-//                    configurer.customCodecs().register(encoder);
-                })
-                .build();
+        this.webClient =  WebClientUtil.getWebClient(webClientBuilder,BASE_URL);
     }
 
 

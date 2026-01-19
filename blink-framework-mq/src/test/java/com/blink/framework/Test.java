@@ -1,10 +1,7 @@
 package com.blink.framework;
 
 import com.blink.framework.common.data.MqGenericDTO;
-import com.blink.framework.mq.MessageProdutor;
-import com.blink.framework.mq.BlinkFrameworkMqApplication;
 import com.blink.framework.mq.constant.MqConstant;
-import com.blink.framework.mq.entity.Person;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

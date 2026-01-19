@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-
 /**
  * 属性配置类
  *
@@ -158,3 +157,4 @@ public class BlinkRedisProperties {
 
 
 }
+

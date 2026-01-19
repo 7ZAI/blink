@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
  * </p>
  *
  * @author blink
- * @since 2025-09-05
  */
 @Getter
 @Setter

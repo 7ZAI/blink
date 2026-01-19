@@ -16,7 +16,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
-import static com.blink.framework.core.data.CoreConstant.*;
+import static com.blink.framework.common.constrant.SysConstant.*;
 
 
 /**

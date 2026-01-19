@@ -65,5 +65,5 @@ public interface SysUserService {
      * @return
      * @throws BlinkException
      */
-    SysUserDO getSysUserDetail(SysUserDO queryParam) throws BlinkException;
+    SysUserDO getSysUserDetail(QuerySysUserReqDTO queryParam) throws BlinkException;
 }

@@ -8,6 +8,10 @@ import org.springframework.util.StringUtils;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
+/**
+ *
+ * @author binblink
+ */
 public class GeneralValidChecker implements DictValidChecker {
     @Override
     public boolean check(DictCacheDO dict, Object value) {

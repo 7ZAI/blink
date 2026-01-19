@@ -34,4 +34,5 @@ blink:
         test:
           step: 3000
           fetch-percent: 0.4
-                #获取阈值 达到20%取值
+        request:
+          step: 3000

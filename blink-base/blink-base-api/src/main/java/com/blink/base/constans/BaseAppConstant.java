@@ -1,4 +1,4 @@
-package com.blink.base.dto.constant;
+package com.blink.base.constans;
 
 /**
  * 公共应用 常量

@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import static com.blink.framework.common.constrant.SysConstant.*;
 import static com.blink.framework.core.data.CoreConstant.*;
 
 /**

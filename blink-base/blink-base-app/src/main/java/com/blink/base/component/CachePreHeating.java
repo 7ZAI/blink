@@ -26,6 +26,11 @@ import java.util.stream.Collectors;
 
 import static com.blink.base.constans.CommonConstans.GATEWAY_CONFIG_GROUP_ID;
 
+/**
+ * 缓存数据预热
+ *
+ * @author binblink
+ */
 @Component
 @PreHeatData(method = "initCachingData")
 public class CachePreHeating {

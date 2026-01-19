@@ -3,20 +3,20 @@ plugins {
 }
 
 // 任务：生成源码JAR
-//java {
-//    withSourcesJar()
-//    modularity.inferModulePath = true
-//}
-//
-//jar {
-//    enabled = true
-//    // 消除 打的包带 plain
-//    archiveClassifier = ''
-//    manifest {
-//        attributes('Implementation-Title': 'Gradle',
-//                'Implementation-Version': archiveVersion)
-//    }
-//}
+java {
+    withSourcesJar()
+    modularity.inferModulePath = true
+}
+
+jar {
+    enabled = true
+    // 消除 打的包带 plain
+    archiveClassifier = ''
+    manifest {
+        attributes('Implementation-Title': 'Gradle',
+                'Implementation-Version': archiveVersion)
+    }
+}
 
 publishing {
     publications {

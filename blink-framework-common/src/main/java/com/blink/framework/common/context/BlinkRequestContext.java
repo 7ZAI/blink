@@ -1,4 +1,4 @@
-package com.blink.framework.core.data;
+package com.blink.framework.common.context;
 
 
 import lombok.Data;
@@ -8,7 +8,6 @@ import java.time.LocalDate;
 /**
  * 请求上下文 保存常用信息
  * @Author binblink
- * @Date 2025/8/26
  */
 @Data
 public class BlinkRequestContext {
@@ -20,6 +19,11 @@ public class BlinkRequestContext {
      * 追踪ID
      */
     private String traceId;
+
+    /**
+     * 组件id
+     */
+    private String spanId;
 
     /**
      * 当前登入用户ID

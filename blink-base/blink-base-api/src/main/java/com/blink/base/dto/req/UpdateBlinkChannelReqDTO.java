@@ -1,5 +1,6 @@
 package com.blink.base.dto.req;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -13,7 +14,6 @@ import java.io.Serializable;
  * </p>
  *
  * @author binblink
- * @since 2024-07-29
  */
 @Data
 public class UpdateBlinkChannelReqDTO implements Serializable {
@@ -79,6 +79,7 @@ public class UpdateBlinkChannelReqDTO implements Serializable {
     /**
      * 备注
      */
+
     private String remark;
 
 

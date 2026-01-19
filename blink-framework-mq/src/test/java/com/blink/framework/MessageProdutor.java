@@ -1,9 +1,8 @@
-package com.blink.framework.mq;
+package com.blink.framework;
 
 import com.blink.framework.common.data.MqGenericDTO;
 import com.blink.framework.mq.annotation.MessageProducer;
 import com.blink.framework.mq.constant.MqConstant;
-import com.blink.framework.mq.entity.Person;
 import org.springframework.stereotype.Component;
 
 /**

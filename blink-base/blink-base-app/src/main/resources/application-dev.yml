@@ -45,32 +45,30 @@ spring:
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-feign:
-  httpclient:
-    enabled: true
-    #max connection for http client
-    maxTotal: 300
-    #max per route connection for http client
-    maxPerRoute: 20
-    #Returns the duration of time which this connection can be safely kept idle
-    alive: 60000
-    #idle timeout for connection /ms
-    idleTimeoutMillis: 30000
-    #clear expire and idle timeout http connections schedule rate
-    closedConnectionsRate: 30000
+#feign:
+#  httpclient:
+#    enabled: true
+#    #max connection for http client
+#    maxTotal: 300
+#    #max per route connection for http client
+#    maxPerRoute: 20
+#    #Returns the duration of time which this connection can be safely kept idle
+#    alive: 60000
+#    #idle timeout for connection /ms
+#    idleTimeoutMillis: 30000
+#    #clear expire and idle timeout http connections schedule rate
+#    closedConnectionsRate: 30000
+#
+#  # feign compression support
+#  compression:
+#    request:
+#      enabled: true
+#      mime-types: application/json
+#      min-request-size: 2048
+#    response:
+#      enabled: true
 
-  # feign compression support
-  compression:
-    request:
-      enabled: true
-      mime-types: application/json
-      min-request-size: 2048
-    response:
-      enabled: true
 
-ribbon:
-  ReadTimeout: 6000
-  ConnectTimeout: 6000
     #
     #  rabbitmq:
     #    host: localhost

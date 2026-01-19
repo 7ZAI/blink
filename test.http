@@ -1,0 +1,46 @@
+### GET request to example server
+POST http://localhost:8001/base/routes/saveRoute
+Content-Type: application/json
+
+{
+  "requestId": "45",
+  "traceId": "10",
+  "version": "veniam nulla Lorem magna fugiat",
+  "spanId": "3",
+  "parentSpanId": "56",
+  "reqDate": "1999-09-15",
+  "startDateTime": "2016-02-11 23:02:26",
+  "endDateTime": "1982-01-10 07:12:01",
+  "userId": "78",
+  "clientIp": "89.153.145.25",
+  "source": "consequat ut nostrud",
+  "channel": "nisi sed",
+  "uri": "pariatur in",
+  "timeout": 177693,
+  "token": "amet",
+  "loginName": "藤宇轩",
+  "extensions": {
+    "key": {}
+  },
+  "body": [
+    {
+      "filters": [
+        {
+          "args": {},
+          "name": "Header"
+        }
+      ],
+      "id": "base-app",
+      "metadata": {},
+      "order": 1,
+      "predicates": [
+        {
+          "args": {},
+          "name": "Path"
+        }
+      ],
+      "uri": "lb://base-service"
+    }
+  ]
+}
+###
