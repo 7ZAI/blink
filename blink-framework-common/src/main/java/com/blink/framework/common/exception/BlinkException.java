@@ -1,20 +1,25 @@
 package com.blink.framework.common.exception;
 
 
+import java.io.Serial;
+
 /**
  * 自定义的异常类
+ *
+ * @author binblink
  */
 public class BlinkException extends RuntimeException {
 
+    @Serial
     static final long serialVersionUID = -7034897190745766938L;
 
     /**
-     * 默认错误码
+     * 默认系统错误码
      */
     protected static final String SYS_ERROR = BlinkErrorCodeEnum.SYS_ERROR.getCode();
 
     /**
-     * 默认错误码
+     * 默认业务错误码
      */
     protected static final String BUSINESS_ERROR = BlinkErrorCodeEnum.BUSINESS_ERROR.getCode();
 

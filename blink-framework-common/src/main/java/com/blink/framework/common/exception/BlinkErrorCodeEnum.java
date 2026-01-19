@@ -28,10 +28,7 @@ public enum BlinkErrorCodeEnum implements ErrorCode{
      * 文件没有找到
      */
     BLINK_FILE_NOT_FOUND_ERROR("BLINK0008"),
-    /**
-     * 找不到对应的冲正交易
-     */
-    BLINK_RVS_TXN_NOT_FOUND_ERROR("BLINK0009"),
+
     /**
      * 属性拷贝失败
      */

@@ -2,8 +2,8 @@ package com.blink.framework.common.constrant;
 
 /**
  * 系统常量类
- *
- **/
+ * @author binblink
+ * */
 public interface SysConstant {
 
 
