@@ -5,10 +5,12 @@ import com.alibaba.fastjson2.JSONObject;
 import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressSeqRange;
+import inet.ipaddr.IPAddressString;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.data.redis.connection.stream.ReadOffset;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -50,32 +52,176 @@ public class GateWayUtil {
         String ip = null;
 
         // 尝试从各种Header中获取IP
-        List<String> xff = request.getHeaders().get("X-Forwarded-For");
-        if (xff != null && !xff.isEmpty()) {
-            ip = xff.get(0);
-            if (ip.contains(",")) {
-                ip = ip.split(",")[0].trim();
-            }
-        }
-
+        ip = request.getHeaders().getFirst("X-Forwarded-For");
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            List<String> xri = request.getHeaders().get("X-Real-IP");
-            if (xri != null && !xri.isEmpty()) {
-                ip = xri.get(0);
-            }
+            ip = request.getHeaders().getFirst("Proxy-Client-IP");
         }
-
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeaders().getFirst("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeaders().getFirst("X-Real-IP");
+        }
         if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getRemoteAddress() != null ?
                     request.getRemoteAddress().getAddress().getHostAddress() : "";
+        }
 
-            // 处理IPv6本地地址
-            if ("0:0:0:0:0:0:0:1".equals(ip)) {
-                ip = "127.0.0.1";
+        // 处理多个IP的情况（取第一个）
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+
+
+        return ip;
+    }
+
+
+
+    /**
+     * 提取客户端真实 IP
+     * @param remoteAddress 远程地址
+     * @param xForwardedFor X-Forwarded-For 头
+     * @param xRealIp X-Real-IP 头
+     * @return 真实 IP 地址
+     */
+    public static String extractClientIp(String remoteAddress,
+                                         String xForwardedFor,
+                                         String xRealIp) {
+        String ip = null;
+
+        // 1. 首先检查 X-Forwarded-For
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            // X-Forwarded-For 可能有多个IP，第一个是真实IP
+            ip = xForwardedFor.split(",")[0].trim();
+        }
+
+        // 2. 检查 X-Real-IP
+        if ((ip == null || ip.isEmpty()) && xRealIp != null && !xRealIp.isEmpty()) {
+            ip = xRealIp.trim();
+        }
+
+        // 3. 使用远程地址
+        if (ip == null || ip.isEmpty()) {
+            ip = remoteAddress;
+            // 移除 IPv6 地址的方括号
+            if (ip != null && ip.contains(":")) {
+                ip = ip.replace("[", "").replace("]", "");
+                // 如果是 IPv6 地址且包含端口，移除端口部分
+                if (ip.contains(":")) {
+                    int lastColonIndex = ip.lastIndexOf(":");
+                    if (lastColonIndex != -1) {
+                        // 检查是否可能是 IPv6 地址（包含多个冒号）
+                        long colonCount = ip.chars().filter(ch -> ch == ':').count();
+                        if (colonCount <= 1) {
+                            // 可能是 IPv4 地址加端口
+                            ip = ip.substring(0, lastColonIndex);
+                        }
+                    }
+                }
             }
         }
 
         return ip;
+    }
+
+    /**
+     * 检查 IP 是否在列表中（支持 CIDR）
+     * @param ip 要检查的 IP
+     * @param ipList IP 列表（支持 CIDR）
+     * @return 是否匹配
+     */
+    public static boolean isIpInList(String ip, List<String> ipList) {
+        if (ip == null || ip.isEmpty() || ipList == null || ipList.isEmpty()) {
+            return false;
+        }
+
+        try {
+            IPAddress clientIp = new IPAddressString(ip).toAddress();
+
+            for (String ipPattern : ipList) {
+                if (ipPattern == null || ipPattern.isEmpty()) {
+                    continue;
+                }
+
+                IPAddressString patternString = new IPAddressString(ipPattern);
+                // 检查是否是 CIDR 格式
+                if (patternString.isPrefixed()) {
+                    // CIDR 格式，如 192.168.1.0/24
+                    IPAddress pattern = patternString.toAddress();
+                    if (pattern != null && pattern.contains(clientIp)) {
+                        return true;
+                    }
+                } else {
+                    // 单个 IP 或 IP 范围
+                    IPAddress pattern = patternString.toAddress();
+                    if (pattern != null) {
+                        if (pattern.isMultiple()) {
+                            // IP 范围，如 192.168.1.1-192.168.1.100
+                            IPAddressSeqRange range = pattern.toSequentialRange();
+                            if (range.contains(clientIp)) {
+                                return true;
+                            }
+                        } else {
+                            // 单个 IP
+                            if (pattern.equals(clientIp)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("IP 地址解析失败: ip={}, error={}", ip, e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
+     * 验证 IP 地址格式
+     * @param ip IP 地址
+     * @return 是否有效
+     */
+    public static boolean isValidIp(String ip) {
+        if (ip == null || ip.isEmpty()) {
+            return false;
+        }
+
+        try {
+            new IPAddressString(ip).toAddress();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 判断是否是 IPv6 地址
+     * @param ip IP 地址
+     * @return 是否是 IPv6
+     */
+    public static boolean isIPv6(String ip) {
+        try {
+            IPAddress address = new IPAddressString(ip).toAddress();
+            return address != null && address.isIPv6();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 判断是否是 IPv4 地址
+     * @param ip IP 地址
+     * @return 是否是 IPv4
+     */
+    public static boolean isIPv4(String ip) {
+        try {
+            IPAddress address = new IPAddressString(ip).toAddress();
+            return address != null && address.isIPv4();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

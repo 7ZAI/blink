@@ -4,6 +4,7 @@ package com.blink.gateway.config;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.id.ReactiveIdGenerator;
 import com.blink.gateway.component.GateWayCacheComponent;
+import com.blink.gateway.config.prop.BlinkGatewayConfigProperties;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.filter.*;
 import com.blink.gateway.signature.SignatureServiceFactory;
@@ -57,29 +58,53 @@ public class BlinkGatewayConfig {
     @Bean
     @Primary
     public GlobalExceptionHandlerFilter globalExceptionHandlerFilter() {
-        return new GlobalExceptionHandlerFilter();
+        return new GlobalExceptionHandlerFilter(cacheComponent);
     }
 
+    /**
+     * ip 过滤
+     * @param config 属性配置
+     * @return
+     */
+    @Bean
+    public IpFilter ipFilter(BlinkGatewayConfigProperties config) {
+        return new IpFilter(config);
+    }
 
+    /**
+     * 合法性校验filter
+     * @return
+     */
     @Bean
     public RequestValidateFilter requestValidateFilter() {
         return new RequestValidateFilter(cacheComponent);
     }
 
+    /**
+     * 签名 防重放 filter
+     * @return
+     */
     @Bean
     public SignatureFilter signatureFilter() {
         return new SignatureFilter(redisClient, signatureServiceFactory, cacheComponent);
     }
 
+    /**
+     * 加密 解密 filter
+     * @return
+     */
     @Bean
     public CryptFilter cryptFilter() {
         return new CryptFilter(signatureServiceFactory);
     }
 
+    /**
+     * 元数据组长filter
+     * @return
+     */
     @Bean
     public RewriteRequestBodyFilter rewriteRequestBodyFilter() {
         return new RewriteRequestBodyFilter(reactiveIdGenerator);
     }
-
 
 }

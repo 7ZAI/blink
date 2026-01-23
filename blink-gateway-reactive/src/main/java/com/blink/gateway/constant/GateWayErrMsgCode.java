@@ -1,6 +1,10 @@
 package com.blink.gateway.constant;
 
-public interface GateErrMsgCode {
+/**
+ * 错误码表
+ * @author binblink
+ */
+public interface GateWayErrMsgCode {
 
     /**
      * 认证失败 token过期失效
@@ -30,4 +34,10 @@ public interface GateErrMsgCode {
      */
     String CHANNEL_CLOSED = "ILLEGAL03";
 
+
+    /**
+     * 禁止访问
+     *
+     */
+    String FORBIDDEN = "HTTP403";
 }

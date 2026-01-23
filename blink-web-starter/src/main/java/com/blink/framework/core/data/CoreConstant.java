@@ -16,14 +16,9 @@ public interface CoreConstant {
     /**
      * 消息缓存key
      */
-     String MSG_INFO_KEY_PREFIX = "system:msginfo:";
+     String MSG_INFO_KEY_PREFIX = "system:err:msg:";
 
     String CHANNEL_INFO_KEY_PREFIX = "blink:channel:";
-
-
-
-
-
 
 
     String APP_NAME_PROPERTY = "spring.application.name";

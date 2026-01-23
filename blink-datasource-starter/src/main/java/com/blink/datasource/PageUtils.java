@@ -10,7 +10,8 @@ import com.github.pagehelper.PageInfo;
 
 /**
  * 根据 pageHelper的使用封装 分页工具类
- * ExecuteFunction 为了隐藏 ISelect的引用 让使用者不必依赖pageHelper包
+ * ExecuteFunction 为了隐藏 ISelect的引用 让外部应用不必显式依赖pageHelper包
+ *
  */
 public class PageUtils {
 

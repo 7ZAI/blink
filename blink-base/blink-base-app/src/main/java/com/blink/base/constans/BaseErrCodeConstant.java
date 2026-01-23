@@ -164,6 +164,11 @@ public interface BaseErrCodeConstant {
      */
     String CONFIG_NOT_EXIST = "BUSS0025";
 
+    /**
+     * 该错误消息不存在
+     */
+    String ERR_MSG_NOT_EXIST = "BUSS0026";
+
 
     /***************************错误码---end ********************************/
 

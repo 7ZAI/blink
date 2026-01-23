@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.blink.framework.common.constrant.SysConstant.*;
 import static com.blink.gateway.constant.GatewayConstant.*;
 
 /**
@@ -273,6 +274,6 @@ public class CryptFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return GatewayConstant.ORDER_LOWEST_ADD_THREE;
+        return Ordered.HIGHEST_PRECEDENCE + 13;
     }
 }

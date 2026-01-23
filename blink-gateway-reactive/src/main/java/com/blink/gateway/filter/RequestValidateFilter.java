@@ -7,6 +7,7 @@ import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.util.GateWayUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -25,7 +26,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 
-import static com.blink.gateway.constant.GateErrMsgCode.*;
+import static com.blink.framework.common.constrant.SysConstant.*;
+import static com.blink.gateway.constant.GateWayErrMsgCode.*;
 import static com.blink.gateway.constant.GatewayConstant.*;
 import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR;
 
@@ -40,9 +42,9 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.C
  *
  * @author binblink
  */
+@Slf4j
 public class RequestValidateFilter implements GlobalFilter, Ordered {
 
-    private final Logger logger = LoggerFactory.getLogger(RequestValidateFilter.class);
 
     private final GateWayCacheComponent cacheComponent;
 
@@ -61,12 +63,13 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
+
         var httpRequest = exchange.getRequest();
         var headers = httpRequest.getHeaders();
-        var method = httpRequest.getMethod();
 
-        logger.info("请求合法性校验 -----------  request:{} method:{} header:{} content-length:{}"
-                , httpRequest.getURI().getPath(), method.name(), headers, headers.getContentLength());
+
+        log.info("----------- 开始校验请求合法性 -----------");
+
         //获取客户端渠道信息key
         String appKey = headers.getFirst(X_BLINK_APPKEY);
 
@@ -85,12 +88,12 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
         HttpHeaders headers = httpRequest.getHeaders();
 
         if (!checkRequestType(headers, httpRequest.getMethod())) {
-            logger.error("请求类型校验失败！");
+            log.error("请求类型校验失败！");
             return Mono.just(false);
         }
 
         if (!checkHeadersData(headers, httpRequest.getPath().value())) {
-            logger.error("请求头数据校验失败！");
+            log.error("请求头数据校验失败！");
             return Mono.just(false);
         }
 
@@ -140,6 +143,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
                         String iv = headers.getFirst(X_BLINK_IV);
                         //缺失必要请求头 抛非法请求异常
                         if (StrUtil.isBlank(key) || StrUtil.isBlank(iv)) {
+                            log.warn("缺失必要请求头 channel:{}", channelDO.getChannelName());
                             return Mono.error(new BlinkException(ILLEGAL_REQUEST));
                         }
                     }
@@ -235,13 +239,12 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
         String token = headers.getFirst(X_BLINK_TOKEN);
         String timeStamp = headers.getFirst(X_BLINK_TIMESTAMP);
         String nonce = headers.getFirst(X_BLINK_NONCE);
-        String loginName = headers.getFirst(X_BLINK_LOGINNAME);
 
         //非空项目
-        if (!(StrUtil.isNotBlank(appKey) && StrUtil.isNotBlank(timeStamp) && StrUtil.isNotBlank(sign) && StrUtil.isNotBlank(nonce)
-                && StrUtil.isNotBlank(loginName))) {
+        if (!(StrUtil.isNotBlank(appKey) && StrUtil.isNotBlank(timeStamp)
+                && StrUtil.isNotBlank(sign) && StrUtil.isNotBlank(nonce))) {
 
-            logger.debug("缺失必要请求头！");
+            log.debug("缺失必要请求头！");
             return false;
         }
         //校验时间戳格式 为long类型
@@ -249,7 +252,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
             Long.parseLong(timeStamp);
         } catch (NumberFormatException e) {
             //数据格式错误 转换失败异常
-            logger.error("非法请求 格式错误！{}", e.getMessage());
+            log.error("非法请求 格式错误！{}", e.getMessage());
             return false;
         }
         //请求路径非登入请求 loginName和token 必填
@@ -260,8 +263,8 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
         }
 
         //内容长度校验
-        if (!checkHeaderLength(appKey, sign, token, timeStamp, nonce, loginName)) {
-            logger.debug("请求头长度校验失败！");
+        if (!checkHeaderLength(appKey, sign, token, timeStamp, nonce)) {
+            log.debug("请求头长度校验失败！");
             return false;
         }
 
@@ -274,31 +277,30 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
      * @param token     登入凭证
      * @param timeStamp 时间戳
      * @param nonce     随机数
-     * @param loginName 登入名
      * @return
      */
-    private boolean checkHeaderLength(String appKey, String sign, String token, String timeStamp, String nonce, String loginName) {
+    private boolean checkHeaderLength(String appKey, String sign, String token, String timeStamp, String nonce) {
 
-        if (appKey.length() > LENGTH_LIMIT_64) {
+        if (appKey.length() > LENGTH_LIMIT_128) {
             return false;
         }
 
-//        if (sign.length() > LENGTH_LIMIT_64) {
-//            return false;
-//        }
+        if (sign.length() > LENGTH_LIMIT_1024) {
+            return false;
+        }
 
-        if (token.length() > LENGTH_LIMIT_64) {
+        if (token.length() > LENGTH_LIMIT_128) {
             return false;
         }
 
         if (timeStamp.length() > String.valueOf(Long.MAX_VALUE).length()) {
             return false;
         }
-        if (nonce.length() > LENGTH_LIMIT_64) {
+        if(nonce.length() > LENGTH_LIMIT_128){
             return false;
         }
 
-        return loginName.length() <= LENGTH_LIMIT_32;
+        return true;
 
     }
 
@@ -323,6 +325,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
                     JSONObject jsonObject = JSON.parseObject(objectValue);
                     jsonString = JSON.toJSONString(jsonObject);
                 }
+                log.info("请求体:{}", jsonString);
                 //缓存请求body 字符串到 请求域
                 Object previousCachedBody = exchange.getAttributes()
                         .put(CACHED_REQUEST_BODY_ATTR, jsonString);
@@ -349,7 +352,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
      */
     @Override
     public int getOrder() {
-        return ORDER_LOWEST_ADD_ONE;
+        return Ordered.HIGHEST_PRECEDENCE + 11;
     }
 
 

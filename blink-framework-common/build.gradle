@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'com.github.seancfoley:ipaddress:5.5.1'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'cn.hutool:hutool-core'
 

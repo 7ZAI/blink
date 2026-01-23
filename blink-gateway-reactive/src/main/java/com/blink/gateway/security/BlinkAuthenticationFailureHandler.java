@@ -3,7 +3,7 @@ package com.blink.gateway.security;
 import com.alibaba.fastjson2.JSON;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
-import com.blink.gateway.constant.GateErrMsgCode;
+import com.blink.gateway.constant.GateWayErrMsgCode;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,7 +27,7 @@ public class BlinkAuthenticationFailureHandler implements ServerAuthenticationFa
 
         ResponseDTO<EmptyBody> errorResponse = ResponseDTO.newFailInstance();
 
-        errorResponse.setMsgCode(GateErrMsgCode.UNAUTHORIZED);
+        errorResponse.setMsgCode(GateWayErrMsgCode.UNAUTHORIZED);
         errorResponse.setMsgInfo(exception.getMessage());
 
         try {

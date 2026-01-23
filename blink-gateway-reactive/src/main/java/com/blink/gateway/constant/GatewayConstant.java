@@ -2,102 +2,14 @@ package com.blink.gateway.constant;
 
 import java.time.Duration;
 
+/**
+ * 常量类
+ * @author binblink
+ */
 public interface GatewayConstant {
 
 
-    /**
-     * 登入用户id 除了认证url 必填
-     * custom request header
-     */
-    String X_BLINK_USRID = "x-blink-usrId";
 
-    /**
-     * 登入用户名 除了认证url 必填
-     */
-    String X_BLINK_LOGINNAME = "x-blink-loginName";
-
-    /**
-     * 来源
-     */
-    String X_BLINK_SOURCE = "x-blink-source";
-
-    /**
-     * 客户端ip地址
-     */
-    String X_BLINK_CLIENTIP = "x-blink-clientIp";
-
-    /**
-     * 请求id 网关填充
-     */
-    String X_BLINK_REQUEST_ID = "x-blink-requestId";
-
-    /**
-     * 跟踪id 网关填充
-     */
-    String X_BLINK_TRACE_ID = "x-blink-traceId";
-
-    /**
-     * 用户token 必填
-     */
-    String X_BLINK_TOKEN = "x-blink-token";
-
-    /**
-     * 应用key 必填
-     */
-    String X_BLINK_APPKEY = "x-blink-appKey";
-
-    /**
-     * key(16位随机数) 加密时必填
-     */
-    String X_BLINK_KEY = "x-blink-key";
-
-    /**
-     * 偏移量 加密时必填
-     */
-    String X_BLINK_IV = "x-blink-iv";
-
-    /**
-     * 语言 可以不填 默认 zh cn
-     */
-    String X_BLINK_LOCALE = "x-blink-locale";
-
-    /**
-     * 时间戳 必填
-     */
-    String X_BLINK_TIMESTAMP = "x-blink-timestamp";
-
-    /**
-     * 随机数 必填
-     */
-    String X_BLINK_NONCE = "x-blink-nonce";
-
-    /**
-     * 签名 必填
-     */
-    String X_BLINK_SIGN = "x-blink-sign";
-
-
-    /**
-     * spring order 执行顺序最高 值越低越高
-     */
-    Integer ORDER_LOWEST = Integer.MIN_VALUE;
-    /**
-     * spring order 执行顺序 第一
-     */
-    Integer ORDER_LOWEST_ADD_ONE = Integer.MIN_VALUE + 1;
-
-    /**
-     * spring order 执行顺序 第二
-     */
-    Integer ORDER_LOWEST_ADD_TWO = Integer.MIN_VALUE + 2;
-
-    Integer ORDER_LOWEST_ADD_THREE = Integer.MIN_VALUE + 3;
-
-    Integer ORDER_LOWEST_ADD_FOUR = Integer.MIN_VALUE + 4;
-    /**
-     * spring order 执行顺序最低 末尾 值越低越高
-     */
-    Integer ORDER_HEIGHEST = Integer.MAX_VALUE - 1;
 
     /**
      * 用户信息本地缓存 key
@@ -153,7 +65,9 @@ public interface GatewayConstant {
     /**
      * 长度限制 64
      */
-    Integer LENGTH_LIMIT_64 = 64 ;
+    Integer LENGTH_LIMIT_128 = 128 ;
+
+    Integer LENGTH_LIMIT_1024 = 1024 ;
 
     /**
      * 长度限制 32
@@ -176,15 +90,7 @@ public interface GatewayConstant {
 
     String CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR = "cachedOriginalRequestBodyBackup";
 
-    /**
-     * 系统config 请求url
-     */
-    String GET_GATEWAY_CONFIG_URL = "/sysConfig/getOneConfig";
 
-    /**
-     * 渠道信息 请求url
-     */
-    String GET_CHANNEL_URL = "/channel/getChannel";
 
 
     /**
@@ -235,6 +141,11 @@ public interface GatewayConstant {
     String USER_TOKEN = "user:token:";
 
     /**
+     * 错误信息key 前缀
+     */
+    String ERR_MSG_PREFIX = "system:err:msg:";
+
+    /**
      * 用户登入信息
      */
     String USER_INFO = "user:info:";
@@ -267,6 +178,11 @@ public interface GatewayConstant {
      *
      */
     String CAHCE_STREAM_GROUP_NAME = "groupLocalCache";
+
+    /**
+     * 默认语言
+     */
+    String DEFAULT_LANG_CN = "zh_cn";
 
 
     /**---------------------------------------------------Redis relate end--------------------------------------------------------**/

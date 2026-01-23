@@ -1,5 +1,6 @@
 package com.blink.gateway.component;
 
+import com.blink.base.dto.rsp.QueryErrMsgRspDTO;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.gateway.service.BaseAppService;
@@ -9,8 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import static com.blink.gateway.constant.GatewayConstant.BLINK_CHANNEL_PREFIX;
-import static com.blink.gateway.constant.GatewayConstant.GATEWAY_CONFIG_KEY_PREFIX;
+import static com.blink.gateway.constant.GatewayConstant.*;
 
 /**
  * 缓存组件
@@ -57,6 +57,24 @@ public class GateWayCacheComponent {
 
         return multiLevelCacheComponent.get(cacheKey, ChannelInfoRedisDO.class,
                         (key, clazz) -> baseAppService.getChannelInfo(key).doOnNext(value -> setCache(cacheKey, value)))
+                .onErrorResume(e -> Mono.empty());
+    }
+
+    /**
+     * 从缓存中获取错误码信息表
+     *
+     * @param errCode 错误码
+     * @param local 语言
+     * @return
+     */
+    public Mono<String> getErrorMsgInfoFromCache(String errCode, String local) {
+
+        String cacheKey = ERR_MSG_PREFIX + local + ":" + errCode;
+
+        return multiLevelCacheComponent.get(cacheKey, String.class,
+                        (key, clazz) -> baseAppService.getErrorMsgInfo(errCode, local)
+                                .map(QueryErrMsgRspDTO::getMsgInfo)
+                                .doOnNext(value -> setCache(cacheKey, value)))
                 .onErrorResume(e -> Mono.empty());
     }
 

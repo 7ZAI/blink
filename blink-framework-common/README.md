@@ -12,9 +12,14 @@ Record类是对新特性的尝试，目前未使用上
 
 使用类 通用元数据 + 业务正文的信封模型设计，实现所有 API 请求响应格式的标准化
 
+通用请求DTO，不涉及业务字段 如果在真实业务生产环境 会添加一些业务强相关的字段 如在银行相关业务中会添加 会计日期 操作人 全局流水号 机构号等等。
+
+分页请求DTO在实际使用需要定义个子类继承它，查询条件字段就放在子类中
+分页响应也一样
+
 [RequestDTO](src/main/java/com/blink/framework/common/data/RequestDTO.java) 
-[ResponseDTO](src/mainjava/com/blink/framework/common/data/ResponseDTO.java)
-[PageDTO](src/mainjava/com/blink/framework/common/data/PageDTO.java)
+[ResponseDTO](src/main/java/com/blink/framework/common/data/ResponseDTO.java)
+[PageDTO](src/main/java/com/blink/framework/common/data/PageDTO.java)
 
 使用示例
 ```java
@@ -31,9 +36,6 @@ Record类是对新特性的尝试，目前未使用上
         //响应成功 设置具体业务响应体
         ResponseDTO.newSuccessInstance(T)
         
-        //分页请求    
-        QuerySysConfigReqDTO extends PageDTO
-
         //分页请求    
         QuerySysConfigReqDTO extends PageDTO
         

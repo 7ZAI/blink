@@ -3,7 +3,7 @@ package com.blink.gateway.security;
 import com.alibaba.fastjson2.JSON;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
-import com.blink.gateway.constant.GateErrMsgCode;
+import com.blink.gateway.constant.GateWayErrMsgCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -33,7 +33,7 @@ public class BlinkAccessDeniedHandler implements ServerAccessDeniedHandler {
         response.setStatusCode(HttpStatus.OK);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
         ResponseDTO<EmptyBody> errorResponse = ResponseDTO.newFailInstance();
-        errorResponse.setMsgCode(GateErrMsgCode.ACCESSDENIED);
+        errorResponse.setMsgCode(GateWayErrMsgCode.ACCESSDENIED);
         errorResponse.setMsgInfo("无访问权限");
 
         // 这里可以返回统一的 JSON 响应

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- 1. 控制台输出（测试环境优先输出到控制台） -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- 测试日志格式：简化，只保留关键信息 -->
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 2. 测试日志文件输出（可选，避免污染主环境日志） -->
+    <appender name="TEST_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- 测试日志单独输出到 test-logs 目录 -->
+        <file>./test-logs/test-app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>./test-logs/test-app.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory> <!-- 只保留7天测试日志 -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 3. 全局日志级别：测试环境调低（如 DEBUG），便于排查问题 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="TEST_FILE"/> <!-- 可选：输出到文件 -->
+    </root>
+
+    <!-- 4. 自定义包日志级别（比如测试 Redis 时调高日志） -->
+    <logger name="org.springframework.data.redis" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- 5. 测试类专属日志级别（只调高当前测试类的日志） -->
+    <logger name="com.xxx.test.RedisIsolatedTest" level="TRACE" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+</configuration>

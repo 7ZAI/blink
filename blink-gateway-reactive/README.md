@@ -160,7 +160,19 @@ TODO 未来支持
 
  未来方案 参考开源项目 [shenyu](https://github.com/apache/shenyu) 的网关实现，在网关采用内存微型数据库搭建后台管理和监控系统一起，直接垂直管理。
   #### 参数列表
-        TODO 未设计
+| 配置名                                     | 描述   | 默认值   |
+|-----------------------------------------|----|-------|
+| signture_enable                         | 报文签名开关	         | true  |
+| srequest_replay_defend_enable           | 防止请求重放开关       | false |
+| request_replay_defend_effect_time       | 请求有效时间          | 6000  |
+| request_replay_defend_nonce_expire_time | 请求随机值过期时间分钟(毫秒) | 6000  |
+| api_disable_switch                      | 数据校验支持          | false |
+| api_disable_list                        | 临时下线api集合       | {}    |
+| ip_filter_enable                        | ip 过滤开关         | false |
+| white_list_ips                          | 白名单ip地址集合       | {}    |
+| black_list_ips                          | 黑名单ip地址集合       | {}    |
+
+
 
  ### 流量控制
  使用spring cloud gateway自带的RedisRateLimiter 木桶令牌算法进行限流，在blink网关只进行粗粒度的限流，更细粒度的限流根据业务场景，由各个业务自己来实现

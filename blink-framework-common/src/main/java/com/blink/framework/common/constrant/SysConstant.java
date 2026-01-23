@@ -88,4 +88,16 @@ public interface SysConstant {
     */
    String X_BLINK_SIGN = "x-blink-sign";
 
+   /**
+    * 时间戳 必填
+    */
+   String X_BLINK_TIMESTAMP = "x-blink-timestamp";
+
+   /**
+    * 随机数 必填
+    */
+   String X_BLINK_NONCE = "x-blink-nonce";
+
+
+
 }

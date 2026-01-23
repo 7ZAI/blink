@@ -20,16 +20,19 @@ dependencies {
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
 
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-
+    //ip地址处理库
+    implementation 'com.github.seancfoley:ipaddress:5.5.1'
+    //本地缓存
+    implementation "com.github.ben-manes.caffeine:caffeine:${caffeineVersion}"
+    //fastjson
     implementation "com.alibaba.fastjson2:fastjson2-extension-spring6:${fastjson2Extension}"
+    //工具类
     implementation 'cn.hutool:hutool-core'
     implementation 'cn.hutool:hutool-jwt'
 //    implementation 'cn.hutool:hutool-crypto'
 
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-framework-validation:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
     //在reactive 环境中 无法使用openfeign 用webclient代替
     implementation('com.blink:blink-base-api:1.0.0-SNAPSHOT') {
@@ -37,7 +40,10 @@ dependencies {
         exclude group: 'com.blink', module: 'blink-framework-openfeign'
     }
 
-    implementation "com.github.ben-manes.caffeine:caffeine:${caffeineVersion}"
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
 }
 

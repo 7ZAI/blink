@@ -33,7 +33,7 @@ public class TokenAuthenticationManager implements ReactiveAuthenticationManager
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
         //authentication 为未认证的UsernamePasswordAuthenticationToken
-        String userIdFromHeader = (String) authentication.getPrincipal();
+//        String loginName = (String) authentication.getPrincipal();
         String token = (String) authentication.getCredentials();
 
         //直接返回未认证的token 错误由后面的filter抛出 登入uri会经过
@@ -49,11 +49,11 @@ public class TokenAuthenticationManager implements ReactiveAuthenticationManager
                 .flatMap(userInfoObj -> {
                     UserInfoRedisDO userInfo = (UserInfoRedisDO) userInfoObj;
                     //拿到userId
-                    String userIdFromRedis = String.valueOf(userInfo.getUserId());
-                    //参数不合法  request header userid参数 和redis存的userID不一致
-                    if(!userIdFromHeader.equals(userIdFromRedis)){
-                       return Mono.error(new UsernameNotFoundException("认证错误,参数非法！"));
-                    }
+                    String userIdFromRedis = String.valueOf(userInfo.getLoginName());
+                    //参数不合法  request header loginName参数 和redis存的loginName不一致
+//                    if(!loginName.equals(userIdFromRedis)){
+//                       return Mono.error(new UsernameNotFoundException("认证错误,参数非法！"));
+//                    }
                     //认证Authentication
                     Authentication authenticated = UsernamePasswordAuthenticationToken
                             .authenticated(userInfo, token, userInfo.getPermissions().stream().map(SimpleGrantedAuthority::new)

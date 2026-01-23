@@ -8,14 +8,20 @@ import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.id.IdGenerator;
 import com.blink.framework.redis.id.ReactiveIdGenerator;
+import com.blink.gateway.config.prop.BlinkGatewayConfigProperties;
 import com.blink.gateway.service.BaseAppService;
 import com.blink.gateway.util.WebClientUtil;
 import io.micrometer.core.instrument.util.NamedThreadFactory;
 import jakarta.annotation.Resource;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -23,25 +29,62 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
-@SpringBootTest(classes={BlinkReactiveGatewayApplication.class})
+@SpringBootTest
+@TestPropertySource(locations = {"classpath:application-test.yml"})
 class BlinkReactiveGatewayApplicationTests {
 
-    @Autowired
+//    @Autowired
     private ReactiveRedisClient redisClient;
 
-    @Autowired
+//    @Autowired
     private BaseAppService baseAppService;
 
-    @Autowired
+//    @Autowired
     private ReactiveIdGenerator reactiveIdGenerator;
 
-    @Autowired
-    private  WebClient.Builder builder;
 
 
+    @Resource
+    private BlinkGatewayConfigProperties configProperties;
 
+
+//    @BeforeAll
+//    static void setup() {
+//        System.setProperty("spring.profiles.active", "test");
+//    }
+
+    // 打印 Redis 核心配置，验证是否加载
+//    @Value("${spring.redis.host:未加载}")
+//    private String redisHost;
+//    @Value("${spring.redis.password:未加载}")
+//    private String redisPassword;
+//    @Value("${spring.redis.username:default}")
+//    private String redisUsername;
+//
+//    @Test
+//    public void printRedisConfig() {
+//        System.out.println("测试环境 Redis Host：" + redisHost);
+//        System.out.println("测试环境 Redis Password：" + redisPassword);
+//        System.out.println("测试环境 Redis Username：" + redisUsername);
+//
+//        // 核心判断：若 Password 是「未加载」，说明配置未绑定
+//        if ("未加载".equals(redisPassword)) {
+//            throw new RuntimeException("测试环境未加载 Redis 密码配置！");
+//        }
+//    }
+
+    /**
+     * ip过滤器测试 改变ip过滤器配置测试
+     * ipv4 总所周知
+     * ipv6 正确格式例子：2001:0db8:85a3:0000:0000:8a2e:0370:7334，2001:0db8:85a3::8a2e:0370:7334，::1，2001:0db8::，::ffff:192.168.1.1，fe80::1234:5678:9abc:def0%eth0
+     *                  fc00::1，2001:0DB8:85A3::8A2E:0370:7334
+     *      错误格式：2001:0db8:85a3::8a2e::7334，2001:0db8:85a3:8a2e:0370:7334 ，2001:0db8:85a3:0000:0000:8a2e:0370:7334:1234， 2001:0db8:85a3:g789:0000:8a2e:0370:7334，fe80:1234:5678:9abc:def0
+     *              2001:0db8:85a3:000:0000:8a2e:0370:7334， 2001:0db8:85a3:00000:0000:8a2e:0370:7334，::ffff:192.168.1.256，2001:0db8:::8a2e:0370:7334，2001-0db8-85a3-0000-0000-8a2e-0370-7334
+     */
     @Test
-    void contextLoads() {
+    void ipFilterTest(){
+        System.out.println(configProperties.getIpFilter().toString());
+        System.out.println("test");
     }
 
 
@@ -73,24 +116,7 @@ class BlinkReactiveGatewayApplicationTests {
     }
 
 
-    @Test
-    void gatewayTest() throws InterruptedException, ExecutionException {
-        String base = "http://gateway-app/base/channel/getChannelList";
-        WebClient webClient = WebClientUtil.getWebClient(builder,base);
 
-        var queryBlinkChannelReqDTO = new QueryBlinkChannelReqDTO();
-
-        var requestDTO = new RequestDTO<QueryBlinkChannelReqDTO>();
-
-        QueryBlinkChannelRspDTO me = new QueryBlinkChannelRspDTO();
-
-        Mono<QueryBlinkChannelRspDTO> mono = WebClientUtil
-                .webClientPost(webClient,base,requestDTO,me,new ParameterizedTypeReference<ResponseDTO<QueryBlinkChannelRspDTO>>(){});
-
-        QueryBlinkChannelRspDTO queryBlinkChannelRspDTO = mono.block();
-
-        System.out.println(queryBlinkChannelRspDTO.toString());
-    }
 
     @Test
     void idgeneratortest2(){

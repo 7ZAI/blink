@@ -8,6 +8,7 @@ import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.signature.HmacSignatureService;
 import com.blink.gateway.signature.SignatureServiceFactory;
 import com.blink.gateway.util.GateWayUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -23,17 +24,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.blink.framework.common.constrant.SysConstant.*;
 import static com.blink.gateway.constant.GatewayConstant.*;
 
 /**
  * 签名验证 包含防止请求重放功能
  *
  * @Author binblink
- * @Date 2025/9/3
  */
+@Slf4j
 public class SignatureFilter implements GlobalFilter, Ordered {
-
-    private final Logger logger = LoggerFactory.getLogger(SignatureFilter.class);
 
     private final SignatureServiceFactory signatureServiceFactory;
 
@@ -57,7 +57,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
      */
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-
+        log.info("----------- 开始签名校验 -----------");
         return cacheComponent.getGateWayConfigFromCache(SIGNTURE_SWITCH_KEY)
                 .defaultIfEmpty(GateWayUtil.getDefaultConfig(SIGNTURE_SWITCH_KEY))
                 .flatMap(conf -> {
@@ -69,7 +69,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
                     return signVerify(exchange)
                             .filter(isValid -> isValid)
                             .switchIfEmpty(Mono.error(new BlinkException("签名验证失败")))
-                            .doOnSuccess(v -> logger.debug("signature verify succeed 签名验证成功！"))
+                            .doOnSuccess(v -> log.info("signature verify succeed 签名验证成功！"))
                             // 验签成功 进行防止请求重发校验
                             .then(cacheComponent.getGateWayConfigFromCache(REQUEST_REPLAY_DEFEND_SWITCH)
                                     .defaultIfEmpty(GateWayUtil.getDefaultConfig(REQUEST_REPLAY_DEFEND_SWITCH))
@@ -102,13 +102,11 @@ public class SignatureFilter implements GlobalFilter, Ordered {
         String sign = headers.getFirst(X_BLINK_SIGN);
         String timeStamp = headers.getFirst(X_BLINK_TIMESTAMP);
         String nonce = headers.getFirst(X_BLINK_NONCE);
-        String loginName = headers.getFirst(X_BLINK_LOGINNAME);
 
         HmacSignatureService signatureService = (HmacSignatureService) signatureServiceFactory.getDefaultService();
         Map<String, Object> parameMap = new HashMap<>();
         parameMap.put(KEY_TIMESTAMP, timeStamp);
         parameMap.put(KEY_NONCE, nonce);
-        parameMap.put(KEY_LOGINNAME, loginName);
         parameMap.put(KEY_APPKEY, appKey);
 
         //非加密验证请求头数据 + body数据
@@ -133,7 +131,6 @@ public class SignatureFilter implements GlobalFilter, Ordered {
 
         String timeStamp = headers.getFirst(X_BLINK_TIMESTAMP);
         String nonce = headers.getFirst(X_BLINK_NONCE);
-        String loginName = headers.getFirst(X_BLINK_LOGINNAME);
         assert timeStamp != null;
 
         long currentTime = System.currentTimeMillis();
@@ -142,12 +139,12 @@ public class SignatureFilter implements GlobalFilter, Ordered {
                 //请求时间校验不通过 抛异常
                 .switchIfEmpty(Mono.error(new BlinkException("非法请求！ 请求过期")))
                 // 验证时间戳是否有效
-                .flatMap(r -> checkDuplicateRequest(nonce, loginName, chain, exchange));
+                .flatMap(r -> checkDuplicateRequest(nonce, chain, exchange));
 
     }
 
     //nonce 提取独立方法处理重复请求检查，包含配置化过期时间
-    private Mono<Void> checkDuplicateRequest(String nonce, String loginName,
+    private Mono<Void> checkDuplicateRequest(String nonce,
                                              GatewayFilterChain chain, ServerWebExchange exchange) {
         // 从配置获取过期时间
         return cacheComponent.getGateWayConfigFromCache(REQ_NONCE_EXPIRE_TIME_KEY)
@@ -155,7 +152,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
                 // 解析配置的过期时间
                 .map(expireConfig -> Duration.ofMillis(Long.parseLong(expireConfig.getConfigValue())))
                 // 使用配置的过期时间设置值
-                .flatMap(expireDuration -> redisClient.setIfAbsentWithExpire(REQ_NONCE_PREFIX + nonce, loginName, expireDuration))
+                .flatMap(expireDuration -> redisClient.setIfAbsentWithExpire(REQ_NONCE_PREFIX + nonce, nonce, expireDuration))
                 //设置结果判断
                 .flatMap(isSet -> isSet ? chain.filter(exchange) : Mono.error(new BlinkException("请求重复")));
     }
@@ -181,7 +178,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return GatewayConstant.ORDER_LOWEST_ADD_TWO;
+        return Ordered.HIGHEST_PRECEDENCE + 12;
     }
 
 

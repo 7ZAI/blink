@@ -6,7 +6,6 @@ import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.id.ReactiveIdGenerator;
-import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.util.GateWayUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +25,9 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Objects;
 
-import static com.blink.gateway.constant.GatewayConstant.*;
+import static com.blink.framework.common.constrant.SysConstant.*;
+import static com.blink.gateway.constant.GatewayConstant.CACHED_REQUEST_BODY_ATTR;
+import static com.blink.gateway.constant.GatewayConstant.CHANNEL_INFO;
 
 
 /**
@@ -41,7 +42,7 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
     private final Logger logger = LoggerFactory.getLogger(RewriteRequestBodyFilter.class);
     private final ReactiveIdGenerator idGenerator;
 
-   public RewriteRequestBodyFilter(ReactiveIdGenerator idGenerator) {
+    public RewriteRequestBodyFilter(ReactiveIdGenerator idGenerator) {
         this.idGenerator = idGenerator;
     }
 
@@ -50,7 +51,7 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
 
         String bodyStr = (String) exchange.getAttributes().get(CACHED_REQUEST_BODY_ATTR);
         //文件提交 bodyStr会为空
-        if( StrUtil.isNotBlank(bodyStr)){
+        if (StrUtil.isNotBlank(bodyStr)) {
             return idGenerator.generateRequestId()
                     .zipWith(idGenerator.generateTraceId())
                     .switchIfEmpty(Mono.error(new BlinkException("999999", false)))
@@ -60,19 +61,11 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
                         logger.info("generate requestId {} tarceId {}", requestId, traceId);
 
 
-                        ChannelInfoRedisDO channelInfo  = exchange.getAttribute(CHANNEL_INFO);
-                        if( Objects.isNull(channelInfo)){
+                        ChannelInfoRedisDO channelInfo = exchange.getAttribute(CHANNEL_INFO);
+                        if (Objects.isNull(channelInfo)) {
                             return Mono.error(new BlinkException("系统错误!"));
                         }
-                        RequestDTO requestDTO = JSON.parseObject(bodyStr,RequestDTO.class);
-                        requestDTO.setReqDate(LocalDate.now());
-                        requestDTO.setChannel(channelInfo.getChannelName());
-                        requestDTO.setRequestId(requestId);
-                        requestDTO.setTraceId(traceId);
-                        requestDTO.setClientIp(GateWayUtil.getClientIp(exchange.getRequest()));
-                        requestDTO.setLoginName(exchange.getRequest().getHeaders().getFirst(X_BLINK_LOGINNAME));
-                        requestDTO.setSource("gateway");
-                        requestDTO.setToken(exchange.getRequest().getHeaders().getFirst(X_BLINK_TOKEN));
+                        RequestDTO requestDTO = JSON.parseObject(bodyStr, RequestDTO.class);
 
 
                         String modifiedBody = JSON.toJSONString(requestDTO);
@@ -98,7 +91,7 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
                                 headers.remove(HttpHeaders.TRANSFER_ENCODING);
 
                                 headers.put(X_BLINK_REQUEST_ID, Collections.singletonList(requestId));
-                                headers.put(X_BLINK_TRACE_ID,Collections.singletonList(traceId));
+                                headers.put(X_BLINK_TRACE_ID, Collections.singletonList(traceId));
 
                                 return headers;
                             }
@@ -113,8 +106,24 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
 
     }
 
+    private RequestDTO generatorReqDTO(ChannelInfoRedisDO channelInfo, String requestId, String traceId, ServerWebExchange exchange) {
+
+        RequestDTO requestDTO = new RequestDTO();
+
+        requestDTO.setReqDate(LocalDate.now());
+        requestDTO.setChannel(channelInfo.getChannelName());
+        requestDTO.setRequestId(requestId);
+        requestDTO.setTraceId(traceId);
+        requestDTO.setClientIp(GateWayUtil.getClientIp(exchange.getRequest()));
+        requestDTO.setLoginName(exchange.getRequest().getHeaders().getFirst(X_BLINK_LOGINNAME));
+        requestDTO.setSource("gateway");
+        requestDTO.setToken(exchange.getRequest().getHeaders().getFirst(X_BLINK_TOKEN));
+
+        return requestDTO;
+    }
+
     @Override
     public int getOrder() {
-        return GatewayConstant.ORDER_LOWEST_ADD_FOUR;
+        return Ordered.HIGHEST_PRECEDENCE + 14;
     }
 }

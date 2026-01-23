@@ -1,13 +1,31 @@
+server:
+  port: 8002
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 1000
+    max-connections: 20000
+  servlet:
+    # 修正：归属于 server.servlet 下
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 200MB
+
 spring:
+  application:
+    name: gateway-app
   cloud:
+    loadbalancer:
+      nacos:
+        enabled: true
+    ##路由配置
     gateway:
       # 全局默认过滤器，对所有路由生效
-#      default-filters:
-#        - name: RequestRateLimiter
-#          args:
-#            redis-rate-limiter.replenishRate: 100  # 令牌桶每秒填充速率
-#            redis-rate-limiter.burstCapacity: 200  # 令牌桶总容量
-#            key-resolver: "#{@ipKeyResolver}"      # 限流维度解析器
+      default-filters:
+        - name: RequestRateLimiter
+          args:
+            redis-rate-limiter.replenishRate: 100  # 令牌桶每秒填充速率
+            redis-rate-limiter.burstCapacity: 200  # 令牌桶总容量
+            key-resolver: "#{@ipKeyResolver}"      # 限流维度解析器
       # 确保多个网关实例路由同步
       #      discovery:
       #        locator:
@@ -50,8 +68,14 @@ management:
       exposure:
         include: "*"  # 暴露所有端点，生产环境建议按需暴露
 
+# 自定义配置
 blink:
   gateway:
+    config:
+      ip-filter:
+        ip-filter-enable: true
+        black-list-ips: 192.168.1.255, 192.43.0.256,2001:0db8:85a3:0000:0000:8a2e:0370:7334
+        white-list-ips: 192.255.0.255, 2001:0DB8:85A3::8A2E:0370:7334
     configDataId: gateway-routes
     configGroup: DEFAULT_GROUP
     cache:
@@ -60,9 +84,9 @@ blink:
       stream-group-name: cache_sync_1
     dynamicRoute:
       mode: redis
-#      nacos:
-#        dataId: gateway-routes
-#        group: DEFAULT_GROUP
+      #      nacos:
+      #        dataId: gateway-routes
+      #        group: DEFAULT_GROUP
       redis:
         routeSuffix: default
         groupId: route-consumer-1

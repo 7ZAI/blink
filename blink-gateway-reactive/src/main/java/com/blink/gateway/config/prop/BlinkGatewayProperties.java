@@ -32,11 +32,6 @@ public class BlinkGatewayProperties {
      */
     private Cache cache;
 
-    /**
-     * ip过滤器配置
-     */
-    private IpFilter ipFilter;
-
 
     public DynamicRoute getDynamicroute() {
         return dynamicroute;
@@ -70,13 +65,6 @@ public class BlinkGatewayProperties {
         this.cache = cache;
     }
 
-    public IpFilter getIpFilter() {
-        return ipFilter;
-    }
-
-    public void setIpFilter(IpFilter ipFilter) {
-        this.ipFilter = ipFilter;
-    }
     /**
      * 缓存配置
      *
@@ -259,14 +247,5 @@ public class BlinkGatewayProperties {
         }
     }
 
-    /**
-     * ip过滤器 配置类
-     *
-     */
-    public static class IpFilter {
-
-
-
-    }
 
 }

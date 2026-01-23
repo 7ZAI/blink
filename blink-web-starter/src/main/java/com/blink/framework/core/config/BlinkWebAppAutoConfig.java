@@ -1,5 +1,11 @@
 package com.blink.framework.core.config;
 
+import com.blink.framework.core.aop.RedisCacheUpdateAspect;
+import com.blink.framework.core.component.RedisCachePreHeatRunner;
+import com.blink.framework.core.mapper.SysDataDictMapper;
+import com.blink.framework.core.mapper.SysMsgInfoMapper;
+import com.blink.framework.redis.component.CacheComponent;
+import com.blink.framework.redis.component.RedisClient;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -33,5 +39,18 @@ public class BlinkWebAppAutoConfig {
     @ConditionalOnMissingBean(annotation = EnableWebMvc.class)
     public BlinkWebMvcConfigurer blinkWebMvcConfigurer() {
         return new BlinkWebMvcConfigurer();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RedisCacheUpdateAspect redisCacheUpdateAspect(){
+        return new RedisCacheUpdateAspect();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public RedisCachePreHeatRunner redisCachePreHeatRunner(){
+        return new RedisCachePreHeatRunner();
+
     }
 }

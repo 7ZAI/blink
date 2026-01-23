@@ -1,10 +1,11 @@
 # blink-framework-validation
 
-针对数据检验封装，提供了统一的数据范围校验,主要中请求DTO中使用提供类联动校验逻辑注解是对hibernate-validator的补充
+使用hibernate-validator针对数据校验封装，提供了统一的数据范围校验,主要在请求DTO中使用 提供联动校验逻辑注解
 后续可根据业务，进行参考自定义校验逻辑注解
 
-细粒度考量：之所以将validation划分为一个单独的模块，是为了api模块 即业务应用服务提供的对外调用服务（feign或其他rpc）能够
-最小依赖的引入，避免引入web-starter模块了
+细粒度考量：之所以将validation划分为一个单独的模块，是为了避免服务间调用封装的api模块（如base-base-api）引入其他不必要的依赖
+这样遵循最小依赖原则
+
 
 ## @DataDict 
 
@@ -51,7 +52,7 @@ name 对应为数据表sys_data_dict中的dict_name 缓存组件通过注解上�
 [StartEndDate](src/main/java/com/blink/framework/validate/annotation/StartEndDate.java)
 
 
- 其他实现
+ ### 其他实现
  
 1、 @ScriptAssert 在JDK17中需要引入额外的依赖 
   如果使用JDK8-14，默认有Nashorn引擎。在JDK15及以上，Nashorn被移除，blink不考虑使用

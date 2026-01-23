@@ -3,14 +3,17 @@ package com.blink.gateway.service;
 import com.alibaba.fastjson2.support.config.FastJsonConfig;
 import com.alibaba.fastjson2.support.spring6.http.codec.Fastjson2Decoder;
 import com.alibaba.fastjson2.support.spring6.http.codec.Fastjson2Encoder;
+import com.blink.base.dto.req.QueryErrMsgReqDTO;
 import com.blink.base.dto.req.QueryOneChannelReqDTO;
 import com.blink.base.dto.req.QueryOneSysConfigReqDTO;
+import com.blink.base.dto.rsp.QueryErrMsgRspDTO;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.data.SysConfigCacheDO;
+import com.blink.gateway.constant.RemoteServerUrl;
 import com.blink.gateway.util.WebClientUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +57,7 @@ public class BaseAppService {
      */
     public Mono<SysConfigCacheDO> getOneConfig(String configKey) {
 
-        logger.info("调用远程服务获取 配置参数信息 key:{}}", configKey);
+        logger.info("调用远程服务获取 配置参数信息 key:{}", configKey);
 
         if(configKey.contains(GATEWAY_CONFIG_KEY_PREFIX)){
             configKey = configKey.replace(GATEWAY_CONFIG_KEY_PREFIX, "");
@@ -64,7 +67,7 @@ public class BaseAppService {
         param.setConfigKey(configKey);
         requestDTO.setBody(param);
 
-        return webClientPost(GET_GATEWAY_CONFIG_URL,requestDTO,new SysConfigCacheDO(),new ParameterizedTypeReference<ResponseDTO<SysConfigVO>>(){}).cache();
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_GATEWAY_CONFIG_URL,requestDTO,new SysConfigCacheDO(),new ParameterizedTypeReference<ResponseDTO<SysConfigVO>>(){}).cache();
     }
 
 
@@ -74,7 +77,7 @@ public class BaseAppService {
      * @return
      */
     public Mono<ChannelInfoRedisDO> getChannelInfo(String appkey) {
-        logger.info("调用远程服务获取 渠道信息 key:{}}", appkey);
+        logger.info("调用远程服务获取 渠道信息 key:{}", appkey);
         if(appkey.contains(BLINK_CHANNEL_PREFIX)){
             appkey = appkey.replace(BLINK_CHANNEL_PREFIX, "");
         }
@@ -84,40 +87,30 @@ public class BaseAppService {
         param.setAppKey(appkey);
         requestDTO.setBody(param);
 
-        return webClientPost(GET_CHANNEL_URL,requestDTO,new ChannelInfoRedisDO(),new ParameterizedTypeReference<ResponseDTO<ChannelVO>>(){});
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_CHANNEL_URL,requestDTO,new ChannelInfoRedisDO(),new ParameterizedTypeReference<ResponseDTO<ChannelVO>>(){});
 
     }
 
     /**
-     *  webclient post 请求模板代码
-     * @param requestDTO 请求报文
-     * @param r 实际返回值
-     * @param v 接口返回值
-     * @param url 请求url
-     * @return Mono<R>
+     * 获取错误提示信息
+     *
+     * @param code 错误码
+     * @param local 语言
+     * @return Mono<QueryErrMsgRspDTO>
      */
-    private <T,R,V extends ResponseDTO> Mono<R> webClientPost(String url,RequestDTO<T> requestDTO ,R r,ParameterizedTypeReference<V> v){
+    public Mono<QueryErrMsgRspDTO> getErrorMsgInfo(String code, String local) {
 
-        return webClient.post()
-                .uri(url)
-                .bodyValue(requestDTO)
-                .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response -> {
-                    logger.error("客户端错误: {}", response.statusCode());
-                    return Mono.error(new RuntimeException("客户端请求错误"));
-                })
-                .onStatus(HttpStatusCode::is5xxServerError, response -> {
-                    logger.error("服务端错误: {}", response.statusCode());
-                    return Mono.error(new RuntimeException("base-app 服务异常"));
-                })
-                //带泛型的返回值 写法
-                .bodyToMono(v)
-                .map(respDTO -> {
-                    BeanUtils.copyProperties(respDTO.getBody(), r);
-                    return r;
-                })
-                .doOnSuccess(response -> logger.info("获取参数成功: {}", response))
-                .doOnError(error -> logger.error("获取参数失败: {}", error.getMessage()));
+        logger.info("调用远程服务获取 错误提示信息 code:{},language:{}", code,local);
+
+        var  requestDTO = new RequestDTO<QueryErrMsgReqDTO>();
+        var param = new QueryErrMsgReqDTO();
+        param.setCode(code);
+        param.setLocal(local);
+        requestDTO.setBody(param);
+
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_ERR_MSG_URL,requestDTO,new QueryErrMsgRspDTO(),new ParameterizedTypeReference<ResponseDTO<QueryErrMsgRspDTO>>(){});
+
     }
+
 
 }

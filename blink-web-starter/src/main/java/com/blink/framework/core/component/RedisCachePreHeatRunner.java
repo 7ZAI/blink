@@ -11,10 +11,10 @@ import com.blink.framework.core.mapper.SysDataDictMapper;
 import com.blink.framework.core.mapper.SysMsgInfoMapper;
 import com.blink.framework.core.util.ScanClassUtil;
 import com.blink.framework.redis.component.CacheComponent;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -27,19 +27,17 @@ import java.util.stream.Collectors;
  *
  * @author binblink
  */
-@Component
 @Slf4j
 public class RedisCachePreHeatRunner implements ApplicationRunner {
 
-    private final SysDataDictMapper sysDataDictMapper;
-    private final SysMsgInfoMapper sysMsgInfoMapper;
-    private final CacheComponent cacheComponent;
+    @Resource
+    private  SysDataDictMapper sysDataDictMapper;
 
-    public RedisCachePreHeatRunner(CacheComponent cacheComponent,SysMsgInfoMapper sysMsgInfoMapper,SysDataDictMapper sysDataDictMapper) {
-        this.cacheComponent = cacheComponent;
-        this.sysMsgInfoMapper = sysMsgInfoMapper;
-        this.sysDataDictMapper = sysDataDictMapper;
-    }
+    @Resource
+    private  SysMsgInfoMapper sysMsgInfoMapper;
+
+    @Resource
+    private  CacheComponent cacheComponent;
 
     /**
      * 正则截取最后一个。后的字符串

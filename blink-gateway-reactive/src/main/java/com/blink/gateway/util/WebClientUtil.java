@@ -31,7 +31,7 @@ public class WebClientUtil {
      * @return Mono<R>
      */
     public static <T, R, V extends ResponseDTO> Mono<R> webClientPost(WebClient webClient, String url, RequestDTO<T> requestDTO, R r, ParameterizedTypeReference<V> v) {
-
+        log.info("=====>开始发送请求 url:{}, 请求体：{}", url, requestDTO);
         return webClient.post()
                 .uri(url)
                 .bodyValue(requestDTO)
@@ -53,6 +53,36 @@ public class WebClientUtil {
                 .doOnSuccess(response -> log.info("获取参数成功: {}", response))
                 .doOnError(error -> log.error("获取参数失败: {}", error.getMessage()));
     }
+
+    /**
+     * webclient post 请求模板代码
+     * 返回值带有元数据
+     * @param requestDTO 请求报文
+     * @param v          接口返回值
+     * @param url        请求url
+     * @return Mono<V> ResponseDTO<?>
+     */
+    public static <T, V extends ResponseDTO> Mono<V> webClientPost(WebClient webClient, String url, RequestDTO<T> requestDTO, ParameterizedTypeReference<V> v) {
+        log.info("=====>开始发送请求 url:{}, 请求体：{}", url, requestDTO);
+        return webClient.post()
+                .uri(url)
+                .bodyValue(requestDTO)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, response -> {
+                    log.error("客户端错误: {}", response.statusCode());
+                    return Mono.error(new RuntimeException("客户端请求错误"));
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, response -> {
+                    log.error("服务端错误: {}", response.statusCode());
+                    return Mono.error(new RuntimeException("base-app 服务异常"));
+                })
+                //带泛型的返回值 写法
+                .bodyToMono(v)
+                .doOnSuccess(response -> log.info("获取参数成功: {}", response))
+                .doOnError(error -> log.error("获取参数失败: {}", error.getMessage()));
+    }
+
+
 
     /**
      * 通过WebClient.Builder获取WebClient

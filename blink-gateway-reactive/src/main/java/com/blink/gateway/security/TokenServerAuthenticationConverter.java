@@ -9,6 +9,7 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import static com.blink.framework.common.constrant.SysConstant.*;
 import static com.blink.gateway.constant.GatewayConstant.CHANNEL_INFO;
 
 
@@ -16,7 +17,6 @@ import static com.blink.gateway.constant.GatewayConstant.CHANNEL_INFO;
  * token转换器
  * 从请求中拿到token
  * @Author binblink
- * @Date 2025/8/27
  */
 public class TokenServerAuthenticationConverter implements ServerAuthenticationConverter {
 
@@ -24,15 +24,12 @@ public class TokenServerAuthenticationConverter implements ServerAuthenticationC
     @Override
     public Mono<Authentication> convert(ServerWebExchange exchange) {
 
-        ChannelInfoRedisDO reqChannel = (ChannelInfoRedisDO) exchange.getAttributes().get(CHANNEL_INFO);
+//        ChannelInfoRedisDO reqChannel = (ChannelInfoRedisDO) exchange.getAttributes().get(CHANNEL_INFO);
 
 //        reqChannel.getChannelName().equals();
 
-
-
-        String token = exchange.getRequest().getHeaders().getFirst(GatewayConstant.X_BLINK_TOKEN);
-        String userId = exchange.getRequest().getHeaders().getFirst(GatewayConstant.X_BLINK_USRID);
+        String token = exchange.getRequest().getHeaders().getFirst(X_BLINK_TOKEN);
         //初始未认证的token
-        return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(userId,token));
+        return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(null,token));
     }
 }
