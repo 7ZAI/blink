@@ -44,6 +44,9 @@ public class BlinkRequestContextInterceptor implements HandlerInterceptor {
 
         // 设置到上下文持有器
         BlinkRequestContextHolder.setContext(context);
+
+        log.debug("Creating BlinkRequestContext context:{}", context);
+
         return true;
     }
 

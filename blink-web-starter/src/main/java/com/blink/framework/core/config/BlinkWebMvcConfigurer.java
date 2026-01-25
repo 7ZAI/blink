@@ -6,6 +6,7 @@ import com.alibaba.fastjson2.support.config.FastJsonConfig;
 import com.alibaba.fastjson2.support.spring6.http.converter.FastJsonHttpMessageConverter;
 import com.alibaba.fastjson2.support.spring6.webservlet.view.FastJsonJsonView;
 
+import com.blink.framework.core.config.prop.BlinkWebAppConfigProperties;
 import com.blink.framework.core.interceptor.BlinkRequestContextInterceptor;
 import com.blink.framework.core.interceptor.LogMdcInterceptor;
 import com.blink.framework.core.mapper.SysChannelMapper;
@@ -31,8 +32,12 @@ public class BlinkWebMvcConfigurer implements WebMvcConfigurer {
 
     @Resource
     private CacheComponent cacheComponent;
+
     @Resource
     private SysChannelMapper channelMapper;
+
+    @Resource
+    private BlinkWebAppConfigProperties properties;
 
     @Override
     public void configureViewResolvers(ViewResolverRegistry registry) {
@@ -46,8 +51,11 @@ public class BlinkWebMvcConfigurer implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 应用于所有路径
-        registry.addInterceptor(new BlinkRequestContextInterceptor()).addPathPatterns("/**");
+
+        if(properties.getEnableContextHolder()){
+            // 应用于所有路径
+            registry.addInterceptor(new BlinkRequestContextInterceptor()).addPathPatterns("/**");
+        }
 
         registry.addInterceptor(new LogMdcInterceptor()).addPathPatterns("/**");
     }

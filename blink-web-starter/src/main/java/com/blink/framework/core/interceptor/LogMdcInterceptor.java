@@ -22,6 +22,7 @@ public class LogMdcInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         // 1. 设置 traceId（优先从请求头取，没有则生成）
         String traceId = request.getHeader(X_BLINK_TRACE_ID);
+
         if (traceId == null || traceId.isEmpty()) {
             traceId = UUID.randomUUID().toString().replace("-", "");
         }

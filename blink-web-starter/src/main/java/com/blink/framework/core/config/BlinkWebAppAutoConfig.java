@@ -1,14 +1,15 @@
 package com.blink.framework.core.config;
 
+import com.blink.framework.core.aop.BlinkControllerLogAspect;
+import com.blink.framework.core.aop.LogExecutionAspect;
 import com.blink.framework.core.aop.RedisCacheUpdateAspect;
 import com.blink.framework.core.component.RedisCachePreHeatRunner;
-import com.blink.framework.core.mapper.SysDataDictMapper;
-import com.blink.framework.core.mapper.SysMsgInfoMapper;
-import com.blink.framework.redis.component.CacheComponent;
-import com.blink.framework.redis.component.RedisClient;
+import com.blink.framework.core.config.prop.BlinkWebAppConfigProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -20,6 +21,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
  */
 @AutoConfiguration
 @ConditionalOnWebApplication
+@EnableConfigurationProperties(BlinkWebAppConfigProperties.class)
 public class BlinkWebAppAutoConfig {
 
 
@@ -41,16 +43,51 @@ public class BlinkWebAppAutoConfig {
         return new BlinkWebMvcConfigurer();
     }
 
+    /**
+     * 注解@CacheDoubleDelete 延迟双删 redis缓存切面
+     *
+     * @return
+     */
     @Bean
     @ConditionalOnMissingBean
-    public RedisCacheUpdateAspect redisCacheUpdateAspect(){
+    public RedisCacheUpdateAspect redisCacheUpdateAspect() {
         return new RedisCacheUpdateAspect();
     }
 
+    /**
+     * 预热数据加载
+     *
+     * @return
+     */
     @Bean
     @ConditionalOnMissingBean
-    public RedisCachePreHeatRunner redisCachePreHeatRunner(){
+    public RedisCachePreHeatRunner redisCachePreHeatRunner() {
         return new RedisCachePreHeatRunner();
 
     }
+
+    /**
+     * 默认开启 controller AOP 日志
+     *
+     * @return
+     */
+    @Bean
+    @ConditionalOnProperty(value = "blink.web.enable-controller-log", havingValue = "true", matchIfMissing = true)
+    public BlinkControllerLogAspect controllerLogAspect(BlinkWebAppConfigProperties properties) {
+        return new BlinkControllerLogAspect(properties);
+
+    }
+
+    /**
+     * 注解@LogExecution 方法日志切面
+     *
+     * @return
+     */
+    @Bean
+    public LogExecutionAspect logExecutionAspect() {
+        return new LogExecutionAspect();
+
+    }
+
+
 }

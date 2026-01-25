@@ -4,6 +4,7 @@ import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.ApplicationContextUtil;
 import com.blink.framework.core.annotation.PreHeatData;
+import com.blink.framework.core.config.prop.BlinkWebAppConfigProperties;
 import com.blink.framework.core.data.CoreConstant;
 import com.blink.framework.core.entity.SysDataDictDO;
 import com.blink.framework.core.entity.SysMsgInfoDO;
@@ -23,7 +24,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * redis在应用启动后 加载数据
+ * 在应用启动后 加载数据 到redis缓存
  *
  * @author binblink
  */
@@ -31,13 +32,16 @@ import java.util.stream.Collectors;
 public class RedisCachePreHeatRunner implements ApplicationRunner {
 
     @Resource
-    private  SysDataDictMapper sysDataDictMapper;
+    private SysDataDictMapper sysDataDictMapper;
 
     @Resource
-    private  SysMsgInfoMapper sysMsgInfoMapper;
+    private SysMsgInfoMapper sysMsgInfoMapper;
 
     @Resource
-    private  CacheComponent cacheComponent;
+    private CacheComponent cacheComponent;
+
+    @Resource
+    private BlinkWebAppConfigProperties configProperties;
 
     /**
      * 正则截取最后一个。后的字符串
@@ -46,29 +50,37 @@ public class RedisCachePreHeatRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws BlinkException {
+        BlinkWebAppConfigProperties.PreCache cacheConfig = configProperties.getPreCache();
 
-        preHeatDataByScanPackage();
-        preHeatingDataDictCache();
-        preHeatingMsgInfoCache();
+        if (cacheConfig.getEnable()) {
+            preHeatDataByScanPackage();
+
+            if (cacheConfig.getDictionary()) {
+                preHeatingDataDictCache();
+            }
+            if (cacheConfig.getErrMsgInfo()) {
+                preHeatingMsgInfoCache();
+            }
+        }
     }
 
     /**
-     *  预加载数据到redis中
-     *  统一调用外部声明了@PreHeatData的类
+     * 预加载数据到redis中
+     * 统一调用外部声明了@PreHeatData的类
      */
-    private void preHeatDataByScanPackage(){
+    private void preHeatDataByScanPackage() {
 
         try {
             List<String> classNames = ScanClassUtil.getClassNameByScanAnnotation("com.blink.*", PreHeatData.class);
-            log.info("scanClass fund className with @PreHeatData :{}",classNames);
+            log.info("scanClass fund className with @PreHeatData :{}", classNames);
             for (String s : classNames) {
 
                 Matcher matcher = pattern.matcher(s);
-                if(matcher.find()){
-                    String beanName  = matcher.group();
+                if (matcher.find()) {
+                    String beanName = matcher.group();
                     beanName = Character.toLowerCase(beanName.charAt(0)) + beanName.substring(1);
                     Object obj = ApplicationContextUtil.getBean(beanName);
-                    Class clazz =  obj.getClass();
+                    Class clazz = obj.getClass();
                     PreHeatData[] preHeatData = (PreHeatData[]) clazz.getAnnotationsByType(PreHeatData.class);
                     if (preHeatData[0].enable()) {
                         String methodName = preHeatData[0].method();
@@ -79,11 +91,10 @@ public class RedisCachePreHeatRunner implements ApplicationRunner {
                 }
             }
         } catch (Exception e) {
-            log.error("PreHeatData occurs error: {}",e.getMessage());
+            log.error("PreHeatData occurs error: {}", e.getMessage());
             throw new BlinkException(e, BlinkErrorCodeEnum.SYS_ERROR.getCode());
         }
     }
-
 
 
     /**
