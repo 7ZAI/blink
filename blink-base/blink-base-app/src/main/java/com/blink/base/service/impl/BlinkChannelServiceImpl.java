@@ -242,9 +242,8 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     public QueryBlinkChannelRspDTO getBlinkChannelList(QueryBlinkChannelReqDTO queryParam) throws BlinkException {
 
         var pageRsp = new QueryBlinkChannelRspDTO();
-        QueryBlinkChannelRspDTO result = PageUtils.queryPage(queryParam, () -> channelMapper.findBlinkChannelList(queryParam), pageRsp);
 
-        return result;
+        return PageUtils.queryPage(queryParam, () -> channelMapper.findBlinkChannelList(queryParam), pageRsp);
     }
 
 

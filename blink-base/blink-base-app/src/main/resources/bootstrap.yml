@@ -1,3 +1,12 @@
+server:
+  port: 8001
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 1000
+    max-connections: 20000
+  servlet:
+    context-path: /base
+
 spring:
   profiles:
     active: dev
@@ -30,19 +39,13 @@ spring:
 #    cache-names: "cache1,cache2"
 #    caffeine:
 #      spec: "maximumSize=500,expireAfterAccess=600s"
-server:
-  port: 8001
-  tomcat:
-    uri-encoding: UTF-8
-    max-threads: 1000
-    max-connections: 20000
-  servlet:
-    context-path: /base
+
 
 logging:
-  config: classpath:logback.xml
+  level:
+    root: INFO
   file:
-    path: /logs
+    path: ./blink-base/blink-base-app/logs
 
 
 
