@@ -98,7 +98,7 @@ public class RedisStreamConsumerConfig {
      * @return
      */
     @Bean
-    @ConditionalOnProperty(prefix = "blink.gateway.dynamicroute",
+    @ConditionalOnProperty(prefix = "blink.gateway.dynamicRoute",
             name = "mode",
             havingValue = "nacos")
     public Flux<MapRecord<String,String,Object>>  localCacheFlux(StreamReceiver<String, MapRecord<String, String, Object>> streamReceiver){
@@ -141,7 +141,7 @@ public class RedisStreamConsumerConfig {
      * @return
      */
     @Bean
-    @ConditionalOnProperty(prefix = "blink.gateway.dynamicroute",
+    @ConditionalOnProperty(prefix = "blink.gateway.dynamicRoute",
             name = "mode",
             havingValue = "redis")
     public Flux<MapRecord<String,String,Object>> redisRouteFlux(StreamReceiver<String, MapRecord<String, String, Object>> streamReceiver){

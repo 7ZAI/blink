@@ -274,6 +274,6 @@ public class CryptFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE + 13;
+        return Ordered.HIGHEST_PRECEDENCE + 103;
     }
 }

@@ -31,7 +31,7 @@ public class DynamicRouteConfiguration {
      * 当 mode = nacos 时激活Nacos动态路由
      */
     @Configuration
-    @ConditionalOnProperty(prefix = "blink.gateway.dynamicroute",
+    @ConditionalOnProperty(prefix = "blink.gateway.dynamicRoute",
             name = "mode",
             havingValue = "nacos")
     public static class NacosDynamicRouteConfig {
@@ -55,7 +55,7 @@ public class DynamicRouteConfiguration {
      * 当 mode = redis 时激活Redis动态路由
      */
     @Configuration
-    @ConditionalOnProperty(prefix = "blink.gateway.dynamicroute",
+    @ConditionalOnProperty(prefix = "blink.gateway.dynamicRoute",
             name = "mode",
             havingValue = "redis")
     public static class RedisDynamicRouteConfig {

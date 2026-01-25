@@ -30,6 +30,13 @@ spring:
       nacos:
         enabled: true
 
+logging:
+  level:
+    root: INFO
+    com.blink.gateway.**: DEBUG
+  file:
+    path: ./blink-gateway-reactive/logs
+
 blink:
   gateway:
     ingnoredUrl:

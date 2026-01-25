@@ -63,7 +63,9 @@ public class WebClientUtil {
      * @return Mono<V> ResponseDTO<?>
      */
     public static <T, V extends ResponseDTO> Mono<V> webClientPost(WebClient webClient, String url, RequestDTO<T> requestDTO, ParameterizedTypeReference<V> v) {
+
         log.info("=====>开始发送请求 url:{}, 请求体：{}", url, requestDTO);
+
         return webClient.post()
                 .uri(url)
                 .bodyValue(requestDTO)

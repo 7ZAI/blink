@@ -178,7 +178,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE + 12;
+        return Ordered.HIGHEST_PRECEDENCE + 102;
     }
 
 

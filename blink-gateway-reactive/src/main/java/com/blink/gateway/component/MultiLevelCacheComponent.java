@@ -87,7 +87,11 @@ public class MultiLevelCacheComponent {
         return redisClient.get(key)
                 .map(e -> {
                     T value = clazz.cast(e);
-                    logger.info("从Redis获取缓存参数 成功! key:{},value:{}", key, value);
+                    if(value.toString().length() < 1000){
+                        logger.info("从Redis获取缓存参数 成功! key:{},value:{}", key, value);
+                    }else{
+                        logger.info("从Redis获取缓存参数 成功! key:{},value length:{} 超过设置值 省略", key, value.toString().length());
+                    }
                     return value;
                 })
                 .onErrorResume(e -> {

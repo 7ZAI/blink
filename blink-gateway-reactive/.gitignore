@@ -1,4 +1,5 @@
 learn.md
+actuator资料.md
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar

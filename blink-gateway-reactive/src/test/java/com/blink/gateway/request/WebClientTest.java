@@ -21,14 +21,15 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
 import static com.blink.gateway.constant.GatewayConstant.KEY_APPKEY;
 
 /**
- * 启动网关服务后 运行测试方法 测试
- * 测试
+ * 发起http请求 对网关和base-app联调测试
+ * 启动网关服务后 启动base-app 服务后测试
+ * 运行测试方法 测试
+ *
  * @Author binblink
  */
 public class WebClientTest {
@@ -44,10 +45,13 @@ public class WebClientTest {
 
     private final String loginName = "test2";
     private final String password = "123456";
-    private final String token = "08df01da6921441696d9040784e179f2";
+    private final String token = "d5814dca9f37434dabfd123ac6736002";
 
+    /**
+     * 测试获取渠道
+     */
     @Test
-    void gatewayTest() throws InterruptedException, ExecutionException {
+    void gatewayTest() {
 
         String base = "http://localhost:8002/base/channel/getChannelList";
 
@@ -57,8 +61,7 @@ public class WebClientTest {
         var requestDTO = new RequestDTO<QueryBlinkChannelReqDTO>();
         requestDTO.setBody(queryBlinkChannelReqDTO);
 
-        QueryBlinkChannelRspDTO me = new QueryBlinkChannelRspDTO();
-        this.setHeadersAndSign(webClientBuilder,requestDTO,loginName,token);
+        this.setHeadersAndSign(webClientBuilder,requestDTO,token);
 
         WebClient webClient = WebClientUtil.getWebClient(webClientBuilder,base);
 
@@ -67,9 +70,12 @@ public class WebClientTest {
 
         ResponseDTO<QueryBlinkChannelRspDTO> responseDTO = mono.block();
 
-        System.out.println(responseDTO.toString());
+        System.out.println("<=== "+ JSON.toJSONString(responseDTO));
     }
 
+    /**
+     * 验证json转换
+     */
     @Test
     void test2(){
         var queryBlinkChannelReqDTO = new QueryBlinkChannelReqDTO();
@@ -86,10 +92,14 @@ public class WebClientTest {
         System.out.println(requestDTO1.toString());
     }
 
+    /**
+     * 登入
+     */
     @Test
     void login(){
 
         String base = "http://localhost:8002/base/auth/login";
+
 
         var loginReqDTO = new SysLoginReqDTO();
         loginReqDTO.setUsername(loginName);
@@ -98,8 +108,9 @@ public class WebClientTest {
         var requestDTO = new RequestDTO<SysLoginReqDTO>();
         requestDTO.setBody(loginReqDTO);
 
-        this.setHeadersAndSign(webClientBuilder,requestDTO,loginName,"");
+        this.setHeadersAndSign(webClientBuilder,requestDTO,"");
         WebClient webClient = WebClientUtil.getWebClient(webClientBuilder,base);
+
         Mono<ResponseDTO<SysLoginRspDTO>> mono = WebClientUtil
                 .webClientPost(webClient,base,requestDTO,new ParameterizedTypeReference<>(){});
         ResponseDTO<SysLoginRspDTO> rs = mono.block();
@@ -112,7 +123,7 @@ public class WebClientTest {
      * 组装请求头 未开启加密版本
      * @param builder
      */
-    private void setHeadersAndSign(WebClient.Builder builder,RequestDTO requestDTO,String logName,String token) {
+    private void setHeadersAndSign(WebClient.Builder builder,RequestDTO requestDTO,String tokenParam) {
 
         long timestamp = System.currentTimeMillis();
         String nonce = UUID.fastUUID().toString(true);
@@ -126,11 +137,10 @@ public class WebClientTest {
 
         builder.defaultHeaders(httpHeaders -> {
             httpHeaders.put(SysConstant.X_BLINK_APPKEY, Collections.singletonList(appKey));
-            httpHeaders.put(SysConstant.X_BLINK_TOKEN, Collections.singletonList(token));
+            httpHeaders.put(SysConstant.X_BLINK_TOKEN, Collections.singletonList(tokenParam));
             httpHeaders.put(SysConstant.X_BLINK_NONCE, Collections.singletonList(nonce));
             httpHeaders.put(SysConstant.X_BLINK_SIGN, Collections.singletonList(sign));
             httpHeaders.put(SysConstant.X_BLINK_TIMESTAMP, Collections.singletonList(String.valueOf(timestamp)));
         });
-
     }
 }

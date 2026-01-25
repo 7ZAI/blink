@@ -62,6 +62,15 @@ public class BlinkGatewayConfig {
     }
 
     /**
+     * 日志记录过滤器 执行filter执行顺序 正是按照当前filter的从上到下的书写顺序
+     * @return
+     */
+    @Bean
+    public GatewayLogFilter gatewayLogFilter() {
+        return new GatewayLogFilter();
+    }
+
+    /**
      * ip 过滤
      * @param config 属性配置
      * @return
@@ -99,7 +108,7 @@ public class BlinkGatewayConfig {
     }
 
     /**
-     * 元数据组长filter
+     * 元数据组装filter
      * @return
      */
     @Bean

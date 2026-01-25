@@ -17,9 +17,8 @@ import reactor.core.publisher.Mono;
 
 
 /**
- * 授权异常处理
+ * 授权异常处理 抛出异常给全局异常统一处理
  * @Author binblink
- * @Date 2025/8/26
  */
 public class BlinkAccessDeniedHandler implements ServerAccessDeniedHandler {
 
@@ -27,23 +26,10 @@ public class BlinkAccessDeniedHandler implements ServerAccessDeniedHandler {
 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, AccessDeniedException denied) {
-        denied.printStackTrace();
-        logger.error("access denied {}",denied.getMessage());
-        ServerHttpResponse response = exchange.getResponse();
-        response.setStatusCode(HttpStatus.OK);
-        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        ResponseDTO<EmptyBody> errorResponse = ResponseDTO.newFailInstance();
-        errorResponse.setMsgCode(GateWayErrMsgCode.ACCESSDENIED);
-        errorResponse.setMsgInfo("无访问权限");
 
-        // 这里可以返回统一的 JSON 响应
-        try {
-            byte[] jsonBytes = JSON.toJSONBytes(errorResponse);
-            DataBuffer buffer = response.bufferFactory().wrap(jsonBytes);
-            return response.writeWith(Mono.just(buffer));
-        } catch (Exception e) {
-            return Mono.error(e);
-        }
+        logger.error("access denied",denied);
+
+        return Mono.error(denied);
     }
 
     public Logger getLogger() {

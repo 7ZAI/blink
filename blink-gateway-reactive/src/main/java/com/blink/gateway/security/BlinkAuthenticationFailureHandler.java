@@ -14,28 +14,13 @@ import org.springframework.security.web.server.authentication.ServerAuthenticati
 import reactor.core.publisher.Mono;
 
 /**
- * 认证失败
+ * 认证失败 抛出异常给全局异常统一处理
  * @Author binblink
- * @Date 2025/8/28
  */
 public class BlinkAuthenticationFailureHandler implements ServerAuthenticationFailureHandler {
     @Override
     public Mono<Void> onAuthenticationFailure(WebFilterExchange webFilterExchange, AuthenticationException exception) {
-        ServerHttpResponse response = webFilterExchange.getExchange().getResponse();
-        response.setStatusCode(HttpStatus.OK);
-        response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-        ResponseDTO<EmptyBody> errorResponse = ResponseDTO.newFailInstance();
-
-        errorResponse.setMsgCode(GateWayErrMsgCode.UNAUTHORIZED);
-        errorResponse.setMsgInfo(exception.getMessage());
-
-        try {
-            byte[] jsonBytes = JSON.toJSONBytes(errorResponse);
-            DataBuffer buffer = response.bufferFactory().wrap(jsonBytes);
-            return response.writeWith(Mono.just(buffer));
-        } catch (Exception e) {
-            return Mono.error(e);
-        }
+        return Mono.error(exception);
     }
 }

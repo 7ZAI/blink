@@ -3,6 +3,9 @@ package com.blink.gateway.route;
 import com.alibaba.cloud.nacos.NacosConfigManager;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.blink.gateway.config.prop.BlinkGatewayProperties;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.cloud.gateway.route.RouteDefinitionRepository;
 import reactor.core.publisher.Flux;
@@ -17,9 +20,13 @@ import java.util.List;
  *
  * @author binblink
  */
+@Slf4j
 public class NacosRouteDefinitionRepository implements RouteDefinitionRepository {
 
     private final NacosConfigManager nacosConfigManager;
+
+    @Resource
+    private BlinkGatewayProperties properties;
 
     public NacosRouteDefinitionRepository(NacosConfigManager nacosConfigManager) {
         this.nacosConfigManager = nacosConfigManager;
@@ -27,16 +34,23 @@ public class NacosRouteDefinitionRepository implements RouteDefinitionRepository
 
     @Override
     public Flux<RouteDefinition> getRouteDefinitions() {
-        // 从 Nacos 获取配置（例如，Data ID: "gateway-routes", Group: "DEFAULT_GROUP"）
-        String configInfo = null;
-        try {
-            configInfo = nacosConfigManager.getConfigService().getConfig("gateway-routes", "DEFAULT_GROUP", 5000);
-        } catch (NacosException e) {
-            throw new RuntimeException(e);
-        }
-        // 将配置信息（通常是 JSON 或 YAML 格式）反序列化为 RouteDefinition 对象的集合
-        List<RouteDefinition> routeDefinitions = JSON.parseArray(configInfo, RouteDefinition.class);
-        return Flux.fromIterable(routeDefinitions);
+
+        return Flux.defer(() -> {
+            String configInfo = null;
+            String dataId = properties.getDynamicroute().getNacos().getDataId();
+            String group = properties.getDynamicroute().getNacos().getGroup();
+            try {
+                configInfo = nacosConfigManager.getConfigService().getConfig(dataId, group, 5000);
+            } catch (NacosException e) {
+                return Flux.error(e);
+            }
+            log.debug("gateway-routes config:{}", configInfo);
+            List<RouteDefinition> routeDefinitions = JSON.parseArray(configInfo, RouteDefinition.class);
+            return Flux.fromIterable(routeDefinitions);
+        }).onErrorResume(ex -> {
+            log.error(" 从配置中心获取路由失败 get gateway-routes error", ex);
+            return Flux.error(ex);
+        });
     }
 
     /**

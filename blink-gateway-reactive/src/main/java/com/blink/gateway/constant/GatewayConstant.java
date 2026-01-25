@@ -90,9 +90,6 @@ public interface GatewayConstant {
 
     String CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR = "cachedOriginalRequestBodyBackup";
 
-
-
-
     /**
      * 防止重放配置key
      */
@@ -126,6 +123,22 @@ public interface GatewayConstant {
 
     String NACOS_GATEWAY_ROUTES_DEFAULT_GROUP = "DEFAULT_GROUP";
 
+    /**
+     * 当前登入用户信息 认证成功后的用户信息
+     * 会写入attribute
+     */
+    String LOGIN_USER_KEY = "current:userInfo";
+
+
+    /**
+     * spanId 源头00
+     */
+    String SPAN_ID_ORIGINAL = "00";
+
+    /**
+     * 元数据source来源
+     */
+    String SOURCE_GATEWAY = "gateway";
 
     /**---------------------------------------------------Redis relate start--------------------------------------------------------**/
 

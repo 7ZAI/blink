@@ -1,6 +1,8 @@
 package com.blink.gateway.security;
 
 
+import com.blink.framework.common.data.UserInfoRedisDO;
+import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.constant.GatewayConstant;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +13,8 @@ import org.springframework.security.web.server.WebFilterExchange;
 import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+
+import java.util.Objects;
 
 /**
  * 认证成功后续处理 自动续期token
@@ -29,11 +33,27 @@ public class BlinkAuthenticationSuccessHandler implements ServerAuthenticationSu
     @Override
     public Mono<Void> onAuthenticationSuccess(WebFilterExchange webFilterExchange, Authentication authentication) {
         ServerWebExchange exchange = webFilterExchange.getExchange();
+
+        //登入请求
+        if(GatewayConstant.LOGIN_PATH.equals(exchange.getRequest().getPath().value())){
+            log.debug("================>登入请求经过!");
+            return webFilterExchange.getChain().filter(exchange);
+        }
+
         String redisKey = GatewayConstant.USER_TOKEN + authentication.getCredentials();
 
-        log.debug("认证成功 token续期检查, redisKey: {}", redisKey);
+        //传递 登录用户信息 用来后续元数据组装使用
+        UserInfoRedisDO userInfo = (UserInfoRedisDO) authentication.getPrincipal();
+        if(Objects.nonNull(userInfo)) {
+            exchange.getAttributes().put(GatewayConstant.LOGIN_USER_KEY, userInfo);
+        }
+
         return redisClient.ttl(redisKey)
+                 //处理为空的情况
+                .switchIfEmpty(Mono.error(new BlinkException("检查过期时间失败 key:"+redisKey)))
+                //抛出异常 不会执行flatmap
                 .flatMap(ttl -> {
+                    log.debug("认证成功 token续期检查, redisKey: {}", redisKey);
                     // TTL 检查
                     if (ttl == null || ttl.toSeconds() < 0) {
                         log.warn("token不存在或已过期, redisKey: {}", redisKey);

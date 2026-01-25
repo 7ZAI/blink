@@ -28,7 +28,6 @@ import java.nio.charset.StandardCharsets;
  * @author binblink
  */
 @Slf4j
-@Component
 public class GatewayLogFilter implements GlobalFilter, Ordered {
 
     @Override
@@ -119,6 +118,6 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
     @Override
     public int getOrder() {
         // 设置较高优先级，确保最先执行
-        return Ordered.HIGHEST_PRECEDENCE;
+        return Ordered.HIGHEST_PRECEDENCE + 1;
     }
 }

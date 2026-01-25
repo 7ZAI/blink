@@ -98,6 +98,6 @@ public class IpFilter implements GlobalFilter, Ordered {
     @Override
     public int getOrder() {
         // 设置较高的优先级，确保在其他过滤器之前执行
-        return Ordered.HIGHEST_PRECEDENCE + 10;
+        return Ordered.HIGHEST_PRECEDENCE + 100 ;
     }
 }

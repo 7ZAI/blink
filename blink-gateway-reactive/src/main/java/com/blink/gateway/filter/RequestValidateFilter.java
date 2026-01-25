@@ -352,7 +352,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
      */
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE + 11;
+        return Ordered.HIGHEST_PRECEDENCE + 101;
     }
 
 

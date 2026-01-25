@@ -4,8 +4,11 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.RequestDTO;
+import com.blink.framework.common.data.UserInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.utils.ApplicationContextUtil;
 import com.blink.framework.redis.id.ReactiveIdGenerator;
+import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.util.GateWayUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +19,7 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -31,8 +35,11 @@ import static com.blink.gateway.constant.GatewayConstant.CHANNEL_INFO;
 
 
 /**
+ *
  * 生成请求ID和链路ID放入请求头
  * 完善报文填入值
+ * 注意order 顺序
+ * 此过滤器在 认证授权完成后执行 请查看类 {@link SecurityWebFiltersOrder}  后设置
  *
  * @author binblink
  */
@@ -65,8 +72,11 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
                         if (Objects.isNull(channelInfo)) {
                             return Mono.error(new BlinkException("系统错误!"));
                         }
-                        RequestDTO requestDTO = JSON.parseObject(bodyStr, RequestDTO.class);
 
+
+                        RequestDTO requestDTO = JSON.parseObject(bodyStr, RequestDTO.class);
+                        //组装元数据
+                        this.assembleReqDTO(requestDTO, channelInfo, requestId, traceId, exchange);
 
                         String modifiedBody = JSON.toJSONString(requestDTO);
                         // 创建新的请求，添加ID到Header
@@ -106,17 +116,33 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
 
     }
 
-    private RequestDTO generatorReqDTO(ChannelInfoRedisDO channelInfo, String requestId, String traceId, ServerWebExchange exchange) {
+    /**
+     * 组装元数据
+     * @param requestDTO json字符串转换后的请求DTO
+     * @param channelInfo 渠道信息
+     * @param requestId 请求id
+     * @param traceId 追踪id
+     * @param exchange 请求
+     * @return RequestDTO
+     */
+    private RequestDTO assembleReqDTO(RequestDTO requestDTO,ChannelInfoRedisDO channelInfo, String requestId, String traceId, ServerWebExchange exchange) {
 
-        RequestDTO requestDTO = new RequestDTO();
+        UserInfoRedisDO userInfo = exchange.getAttribute(GatewayConstant.LOGIN_USER_KEY);
+
+        if(Objects.nonNull(userInfo)) {
+            requestDTO.setLoginName(userInfo.getLoginName());
+            requestDTO.setUserId(String.valueOf(userInfo.getUserId()));
+        }
 
         requestDTO.setReqDate(LocalDate.now());
         requestDTO.setChannel(channelInfo.getChannelName());
         requestDTO.setRequestId(requestId);
         requestDTO.setTraceId(traceId);
         requestDTO.setClientIp(GateWayUtil.getClientIp(exchange.getRequest()));
-        requestDTO.setLoginName(exchange.getRequest().getHeaders().getFirst(X_BLINK_LOGINNAME));
-        requestDTO.setSource("gateway");
+        //来自网关
+        requestDTO.setSource(ApplicationContextUtil.getApplicationContext().getApplicationName());
+        //初始spanid 统一设置为00 parentId为空
+        requestDTO.setSpanId(GatewayConstant.SPAN_ID_ORIGINAL);
         requestDTO.setToken(exchange.getRequest().getHeaders().getFirst(X_BLINK_TOKEN));
 
         return requestDTO;
@@ -124,6 +150,6 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE + 14;
+        return SecurityWebFiltersOrder.AUTHENTICATION.getOrder() + 100;
     }
 }
