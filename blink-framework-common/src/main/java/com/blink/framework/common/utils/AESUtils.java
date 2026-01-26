@@ -1,18 +1,14 @@
-package com.blink.gateway.crypt;
-
-import com.blink.gateway.filter.CryptFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package com.blink.framework.common.utils;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
-import javax.crypto.spec.IvParameterSpec;
 /**
  * AES 加密解密工具类
  *

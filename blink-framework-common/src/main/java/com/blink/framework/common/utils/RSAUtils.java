@@ -1,4 +1,4 @@
-package com.blink.gateway.crypt;
+package com.blink.framework.common.utils;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.OAEPParameterSpec;
