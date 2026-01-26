@@ -3,6 +3,8 @@ package com.blink.framework.core.crypt;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.utils.AESUtils;
+import com.blink.framework.common.utils.RSAUtils;
 import com.blink.framework.core.entity.ChannelDO;
 import com.blink.framework.core.mapper.SysChannelMapper;
 import com.blink.framework.redis.component.CacheComponent;
@@ -61,12 +63,12 @@ public class BlinkHybridEncrypted implements HttpServletCrypto {
 
             String plaintext = response.toString();
 
-            SecretKey aesKey = AESUtils.generateSecretKey();
+            SecretKey aesKey = AESUtils.generateRandomAESKey();
 
             byte[] iv = AESUtils.generateIV();
 
-            AESUtils.encryptWithAad(aesKey, iv, plaintext, null);
-            String ivBase64 = AESUtils.encodeToBase64String(iv);
+//            AESUtils.encryptWithAad(aesKey, iv, plaintext, null);
+            String ivBase64 = AESUtils.encodeToBase64(iv);
 
 
             HybridEncryptedResult result = new HybridEncryptedResult("", ivBase64, "");
@@ -91,21 +93,21 @@ public class BlinkHybridEncrypted implements HttpServletCrypto {
     public HybridEncryptedResult encrypt(HttpServletRequest request, String plaintext) throws BlinkException {
         try {
 
-            SecretKey aesKey = AESUtils.generateSecretKey();
+            SecretKey aesKey = AESUtils.generateRandomAESKey();
 
             byte[] iv = AESUtils.generateIV();
             String ciperText = "";
 
             //是否启用AAD
-            if (aesAadEnable) {
-                byte[] aad = AESUtils.buildAAD(request.getHeader(X_BLINK_USRID), request.getHeader(X_BLINK_TOKEN), PROTOCOL_VERSION);
-                ciperText = AESUtils.encryptWithAad(aesKey, iv, plaintext, aad);
-            } else {
-                ciperText = AESUtils.encrypt(aesKey, iv, plaintext);
-            }
-
-            String keyBase64 = AESUtils.encodeToBase64String(aesKey.getEncoded());
-            String ivBase64 = AESUtils.encodeToBase64String(iv);
+//            if (aesAadEnable) {
+//                byte[] aad = AESUtils.buildAAD(request.getHeader(X_BLINK_USRID), request.getHeader(X_BLINK_TOKEN), PROTOCOL_VERSION);
+//                ciperText = AESUtils.encryptWithAad(aesKey, iv, plaintext, aad);
+//            } else {
+//                ciperText = AESUtils.encrypt(aesKey, iv, plaintext);
+//            }
+            ciperText = AESUtils.encrypt(aesKey, iv, plaintext);
+            String keyBase64 = AESUtils.encodeToBase64(aesKey.getEncoded());
+            String ivBase64 = AESUtils.encodeToBase64(iv);
 
             String appKey = request.getHeader(X_BLINK_APPKEY);
             Object channelInfo = cacheComponent.getFromCacheOrDB(CHANNEL_INFO_KEY_PREFIX + appKey,
@@ -166,15 +168,15 @@ public class BlinkHybridEncrypted implements HttpServletCrypto {
             String plaintext = "";
             // //RSA 私钥解密key 用系统私钥解密得到 secretkey的base64字符串
             key = RSAUtils.decryptFromBase64(key, RSAUtils.base64ToPrivateKey(privateKeyBase64));
-            if (aesAadEnable) {
-                //添加 aad GCM特性 可以添加不参与加密解密的认证数据 但解密会验证是否与加密时设置的是否一致
-                byte[] aadBytes = AESUtils.buildAAD(request.getHeader(X_BLINK_USRID), request.getHeader(X_BLINK_TOKEN), PROTOCOL_VERSION);
-                //AES解密报文 用key和iv 解密密文
-                plaintext = AESUtils.decryptWithAad(key, iv, cipherText, aadBytes);
-            } else {
-                plaintext = AESUtils.decrypt(key, iv, cipherText);
-            }
-
+//            if (aesAadEnable) {
+//                //添加 aad GCM特性 可以添加不参与加密解密的认证数据 但解密会验证是否与加密时设置的是否一致
+//                byte[] aadBytes = AESUtils.buildAAD(request.getHeader(X_BLINK_USRID), request.getHeader(X_BLINK_TOKEN), PROTOCOL_VERSION);
+//                //AES解密报文 用key和iv 解密密文
+//                plaintext = AESUtils.decryptWithAad(key, iv, cipherText, aadBytes);
+//            } else {
+//
+//            }
+            plaintext = AESUtils.decrypt(AESUtils.keyFromBase64(key), AESUtils.ivFromBase64(iv), cipherText);
 
             logger.info("http请求报文解密的结果：{}", plaintext);
 
