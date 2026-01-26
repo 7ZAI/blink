@@ -9,6 +9,7 @@ import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.core.annotation.LogExecution;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;

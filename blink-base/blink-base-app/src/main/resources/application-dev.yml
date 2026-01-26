@@ -46,6 +46,15 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
+blink:
+  web:
+    log:
+      autoSkip: true
+      upperLimit: 1000
+    preCache:
+      dictionary: false
+      errMsgInfo: false
+
     # blink:
     #   id:
     #     generator:

@@ -24,8 +24,9 @@ import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.utils.RSAUtils;
 import com.blink.framework.core.annotation.CacheDoubleDelete;
-import com.blink.framework.core.crypt.RSAUtils;
+import com.blink.framework.core.annotation.LogExecution;
 import com.blink.framework.redis.component.CacheComponent;
 import com.blink.framework.redis.component.RedisClient;
 import jakarta.annotation.Resource;
@@ -238,6 +239,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * @return
      * @throws BlinkException
      */
+    @LogExecution()
     @Override
     public QueryBlinkChannelRspDTO getBlinkChannelList(QueryBlinkChannelReqDTO queryParam) throws BlinkException {
 
