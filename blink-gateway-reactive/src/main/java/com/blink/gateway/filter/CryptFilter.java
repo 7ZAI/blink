@@ -3,15 +3,15 @@ package com.blink.gateway.filter;
 import cn.hutool.core.lang.UUID;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
-import com.blink.gateway.constant.GatewayConstant;
-import com.blink.gateway.crypt.AESUtils;
-import com.blink.gateway.crypt.RSAUtils;
+
+import com.blink.framework.common.utils.AESUtils;
+import com.blink.framework.common.utils.RSAUtils;
 import com.blink.gateway.signature.HmacSignatureService;
 import com.blink.gateway.signature.SignatureServiceFactory;
 import com.blink.gateway.util.GateWayUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -45,10 +45,9 @@ import static com.blink.gateway.constant.GatewayConstant.*;
  *
  * @author binblink
  */
+@Slf4j
 public class CryptFilter implements GlobalFilter, Ordered {
 
-
-    private final Logger logger = LoggerFactory.getLogger(CryptFilter.class);
 
     private final SignatureServiceFactory signatureServiceFactory;
 
@@ -131,22 +130,22 @@ public class CryptFilter implements GlobalFilter, Ordered {
         if (Objects.isNull(bodyStr)) {
             return Mono.error(new BlinkException("系统错误!"));
         }
-        logger.debug("请求body 字符串：{}", bodyStr);
+        log.debug("请求body 字符串：{}", bodyStr);
 
         String key = exchange.getRequest().getHeaders().getFirst(X_BLINK_KEY);
         String iv = exchange.getRequest().getHeaders().getFirst(X_BLINK_IV);
 
-        logger.debug("iv base64字符串：{}", iv);
+        log.debug("iv base64字符串：{}", iv);
         long start = System.currentTimeMillis();
         //RSA 解密还原 ase 密钥
         String aesKey = RSAUtils.decryptFromBase64(key, RSAUtils.base64ToPrivateKey(systemPrivateKey));
-        logger.debug("原始 aesKey：{}", aesKey);
+        log.debug("原始 aesKey：{}", aesKey);
         try {
             //aes 解密
             String plainBodyStr = AESUtils.decrypt(AESUtils.keyFromBase64(aesKey), AESUtils.ivFromBase64(iv), bodyStr);
             //替换缓存body
             exchange.getAttributes().put(CACHED_REQUEST_BODY_ATTR, plainBodyStr);
-            logger.debug("请求解密 耗时：{} ms", System.currentTimeMillis() - start);
+            log.debug("请求解密 耗时：{} ms", System.currentTimeMillis() - start);
         } catch (Exception e) {
             return Mono.error(new BlinkException(e, "AES解密错误"));
         }
@@ -178,7 +177,7 @@ public class CryptFilter implements GlobalFilter, Ordered {
                             String plainKey = AESUtils.encodeToBase64(aesKey.getEncoded());
                             String base64IV = AESUtils.encodeToBase64(iv);
 
-                            logger.debug("响应加密 aesKeyBase64:{}",plainKey);
+                            log.debug("响应加密 aesKeyBase64:{}",plainKey);
 
                             // 使用RSA加密AES密钥和IV
                             String encryptedKey = RSAUtils.encryptToBase64(plainKey, RSAUtils.base64ToPublicKey(channelInfo.getChannelPublickey()));
@@ -198,7 +197,7 @@ public class CryptFilter implements GlobalFilter, Ordered {
                                 String responseBody = new String(combinedBytes, StandardCharsets.UTF_8);
                                 String encryptedResponse = AESUtils.encrypt(aesKey, iv, responseBody);
                                 byte[] encryptedBytes = encryptedResponse.getBytes(StandardCharsets.UTF_8);
-                                logger.debug("响应加密 耗时：{} ms", System.currentTimeMillis() - start);
+                                log.debug("响应加密 耗时：{} ms", System.currentTimeMillis() - start);
                                 //签名
                                 String sign = getSignStr(encryptedResponse,channelInfo.getAppSecret(), signParams);
                                 // 设置响应头
@@ -214,7 +213,7 @@ public class CryptFilter implements GlobalFilter, Ordered {
                             return Mono.empty();
 
                         } catch (Exception e) {
-                            logger.error("Response encryption failed", e);
+                            log.error("Response encryption failed", e);
                             return Mono.error(new RuntimeException("Response encryption failed", e));
                         }
                     }));
@@ -267,7 +266,7 @@ public class CryptFilter implements GlobalFilter, Ordered {
     private String getSignStr(String data,String appSecret,Map<String,Object> signParams) {
         HmacSignatureService hmacSignatureService = (HmacSignatureService) signatureServiceFactory.getDefaultService();
         String sign = hmacSignatureService.sign(data, appSecret, signParams);
-        logger.debug("加密响应数字签名 sign：{}", sign);
+        log.debug("加密响应数字签名 sign：{}", sign);
         return sign;
     }
 

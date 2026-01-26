@@ -16,7 +16,7 @@ x-blink-loginName:
   "source": "web",
   "channel": "pc",
   "timeout": 3000,
-  "extensions": {}, // 空对象更规范，建议替换原有的 "" : {}
+  "extensions": {},
   "body": {
     "loginName": "test_user001",
     "password": "Test@123456",

@@ -3,9 +3,9 @@
 ## 目录
 - [✨ 简介](#-简介 )
 - [🚀 快速开始](#-快速开始)
-- [📦 安装](#-安装)
 - [💡 功能介绍](#-功能介绍)
-  - [动态路由](#动态路由)
+  - [路由转发](#路由转发)
+    - [动态路由](#动态路由) 
   - [认证与权限](#认证与权限)
   - [多渠道对接管理](#多渠道对接管理)
   - [报文组装](#报文组装)
@@ -32,12 +32,17 @@
 ## 快速开始
  ### 环境准备
  Idea、Gradle 8.8、JDK 17、Redis 7.2.3、Nacos 2.3.0
- ### 步骤
 
-     1、下载blink项目，包含子模块blink-gateway-reactive、blink-framework-common、blink-redis-starter
-     2、根据自己的环境在blink根目录下build.gradle中修改仓库地址，如果没有私库改为本地仓库。
-     3、构建blink-framework-common、blink-redis-spring-boot-starter依赖包
-     4、修改配置文件，配置Redis、Nacos,然后运行BlinkReactiveGatewayApplication
+### 步骤
+
+1、 下载blink项目
+
+2、根据自己的环境在blink根目录下build.gradle中修改仓库地址，如果没有私库改为本地仓库。
+
+3、构建blink-framework-common、blink-redis-spring-boot-starter、blink-base-api等依赖包
+
+4、修改配置文件，配置Redis、Nacos,然后运行BlinkReactiveGatewayApplication
+
 
 ## 功能介绍
 
@@ -45,7 +50,83 @@
 
    ip黑白名单 请求类型校验 请求头校验 渠道检验 签名验证
 
-### 动态路由
+### 路由转发
+    
+spring cloud gateway 已经提供了一套路由配置规则 可以选择代码配置配置文件配置的两种方式
+
+其中提供了多种路由匹配predicates规则 如路径(Path)匹配、方法(Method)匹配、Header匹配、Cookie匹配、Query参数匹配、时间匹配、Host匹配等
+
+路由配置示例： 注意服务发现的服务名对应的是uri 而不是路由id
+
+```yml
+spring:
+  cloud:
+    gateway:
+      # 全局配置
+      default-filters:
+        - AddRequestHeader=X-Forwarded-From-Gateway, true
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+
+      # 路由配置
+      routes:
+        - id: user-service
+          # 微服务路由（服务发现）
+          uri: lb://user-service
+          predicates:
+            - Path=/users/**
+            - Method=GET,POST,PUT,DELETE
+          filters:
+            - StripPrefix=1 # 常用 按配置数截取url 如果api为 /api/v1/v2 配置为2 则转发路由为uri/v2
+            - name: CircuitBreaker
+              args:
+                name: userService
+                fallbackUri: forward:/fallback/user
+
+        # API版本路由
+        - id: api-v2
+          uri: lb://api-service-v2
+          predicates:
+            - Path=/api/v2/**
+            - Header=X-API-Version, 2.x
+          filters:
+            - RewritePath=/api/v2/(?<segment>.*), /$\{segment}
+
+        # 静态资源路由
+        - id: static-resources
+          uri: file:/opt/resources/static
+          predicates:
+            - Path=/static/**
+
+        # WebSocket路由
+        - id: websocket-route
+          uri: lb://ws-service
+          predicates:
+            - Path=/ws/**
+
+        # 重定向路由
+        - id: redirect-route
+          uri: no://op
+          predicates:
+            - Path=/old/**
+          filters:
+            - RedirectTo=302, https://new-domain.com
+
+        # 限流路由
+        - id: rate-limit-route
+          uri: http://service
+          predicates:
+            - Path=/public/api/**
+          filters:
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+                key-resolver: "#{@ipKeyResolver}"
+      
+
+```
+    
+#### 动态路由
  blink网关提供动态路由两种实现方式：基于Nacos 配置文件实现 和基于Redis存储和Redis stream消息实现。两种方式通过配置文件开启，
  只能二择其一
 #### Nacos实现动态路由
@@ -186,7 +267,7 @@ TODO sentinel
  **TODO**
 ### 其他功能
  #### ip黑白名单
-TODO
+
  #### 临时功能下线
 TODO
 

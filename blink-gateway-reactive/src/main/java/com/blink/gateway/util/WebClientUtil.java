@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -57,6 +58,7 @@ public class WebClientUtil {
     /**
      * webclient post 请求模板代码
      * 返回值带有元数据
+     *
      * @param requestDTO 请求报文
      * @param v          接口返回值
      * @param url        请求url
@@ -84,7 +86,31 @@ public class WebClientUtil {
                 .doOnError(error -> log.error("获取参数失败: {}", error.getMessage()));
     }
 
+    /**
+     * 直接发送json (测试加密解密使用)
+     *
+     * @param webClient
+     * @param url
+     * @param json
+     * @return 获取响应json
+     */
+    public static Mono<ApiResponse> webClientPost(WebClient webClient, String url, String json) {
 
+        log.info("=====>开始发送请求 url:{}, 请求体：{}", url, json);
+
+        return webClient.post()
+                .uri(url)
+                .bodyValue(json)
+                .exchangeToMono(clientResponse -> {
+                    // 获取响应头
+                    HttpHeaders headers = clientResponse.headers().asHttpHeaders();
+                    HttpStatus httpStatus = (HttpStatus) clientResponse.statusCode();
+                    return clientResponse.bodyToMono(String.class)
+                            .map(body -> new ApiResponse(httpStatus, headers, body));
+                })
+                .doOnSuccess(response -> log.info("获取参数成功: {}", response))
+                .doOnError(error -> log.error("获取参数失败: {}", error.getMessage()));
+    }
 
     /**
      * 通过WebClient.Builder获取WebClient
@@ -114,6 +140,52 @@ public class WebClientUtil {
                     configurer.defaultCodecs().jackson2JsonEncoder(encoder);
                 }).build();
 
+    }
+
+    public static class ApiResponse {
+
+        private HttpStatus statusCode;
+        private HttpHeaders headers;
+        private String body;
+
+        public ApiResponse(HttpStatus statusCode, HttpHeaders headers, String body) {
+            this.statusCode = statusCode;
+            this.headers = headers;
+            this.body = body;
+        }
+
+        public HttpStatus getStatusCode() {
+            return statusCode;
+        }
+
+        public void setStatusCode(HttpStatus statusCode) {
+            this.statusCode = statusCode;
+        }
+
+        public HttpHeaders getHeaders() {
+            return headers;
+        }
+
+        public void setHeaders(HttpHeaders headers) {
+            this.headers = headers;
+        }
+
+        public String getBody() {
+            return body;
+        }
+
+        public void setBody(String body) {
+            this.body = body;
+        }
+
+        @Override
+        public String toString() {
+            return "ApiResponse{" +
+                    "statusCode=" + statusCode +
+                    ", headers=" + headers +
+                    ", body='" + body + '\'' +
+                    '}';
+        }
     }
 
 

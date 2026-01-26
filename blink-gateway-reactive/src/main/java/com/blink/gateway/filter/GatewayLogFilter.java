@@ -44,7 +44,7 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
         var headers = request.getHeaders();
 
         // 记录请求信息
-        log.info("======> 请求开始 请求路径: {},请求参数:{}, 请求方法: {}, 客户端IP: {}", path, requestParams,method, clientIp);
+        log.info("===> 请求开始 请求路径: {},请求参数:{}, 请求方法: {}, 客户端IP: {}", path, requestParams,method, clientIp);
         log.info("请求头: {}", headers);
         
 
