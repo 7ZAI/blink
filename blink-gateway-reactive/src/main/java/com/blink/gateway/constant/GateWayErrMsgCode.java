@@ -40,4 +40,11 @@ public interface GateWayErrMsgCode {
      *
      */
     String FORBIDDEN = "HTTP403";
+
+
+    /**
+     * 请求过多
+     *
+     */
+    String TOO_MANY_REQUESTS = "HTTP429";
 }

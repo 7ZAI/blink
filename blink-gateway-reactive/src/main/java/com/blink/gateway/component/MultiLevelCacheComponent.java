@@ -6,9 +6,7 @@ import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.service.RemoteService;
 import jakarta.annotation.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
@@ -22,9 +20,9 @@ import reactor.core.publisher.Mono;
  * @author binblink
  */
 @Component
+@Slf4j
 public class MultiLevelCacheComponent {
 
-    private final Logger logger = LoggerFactory.getLogger(MultiLevelCacheComponent.class);
 
     @Resource(name = "gatewayLocalCache")
     private CacheManager localCacheManager;
@@ -57,7 +55,7 @@ public class MultiLevelCacheComponent {
      * 从本地缓存获取数据
      */
     private <T> Mono<T> getFromLocalCache(String key, Class<T> clazz) {
-        logger.info("尝试从本地缓存获取 缓存参数 key:{}", key);
+        log.info("尝试从本地缓存获取 缓存参数 key:{}", key);
 
         return Mono.fromCallable(() -> {
             Boolean configEnable = properties.getCache().getLocalCacheEnable();
@@ -71,7 +69,11 @@ public class MultiLevelCacheComponent {
                 Cache.ValueWrapper valueWrapper = localCache.get(key);
                 if (valueWrapper != null) {
                     T value = clazz.cast(valueWrapper.get());
-                    logger.info("从本地缓存获取缓存参数 成功! key:{},value:{}", key, value);
+                    String valueStr = value.toString();
+                    if(valueStr.length()>1000){
+                         valueStr = value.toString().substring(0, 1000) + "......";
+                    }
+                    log.info("从本地缓存获取缓存参数 成功! key:{},value:{}", key, valueStr);
                     return value;
                 }
             }
@@ -83,21 +85,21 @@ public class MultiLevelCacheComponent {
      * 从Redis获取数据
      */
     private <T> Mono<T> getFromRedis(String key, Class<T> clazz) {
-        logger.info("尝试从Redis获取 缓存参数 key:{}", key);
+        log.info("尝试从Redis获取 缓存参数 key:{}", key);
         return redisClient.get(key)
                 .map(e -> {
                     T value = clazz.cast(e);
                     if(value.toString().length() < 1000){
-                        logger.info("从Redis获取缓存参数 成功! key:{},value:{}", key, value);
+                        log.info("从Redis获取缓存参数 成功! key:{},value:{}", key, value);
                     }else{
-                        logger.info("从Redis获取缓存参数 成功! key:{},value length:{} 超过设置值 省略", key, value.toString().length());
+                        log.info("从Redis获取缓存参数 成功! key:{},value length:{} 超过设置值 省略", key, value.toString().length());
                     }
                     return value;
                 })
                 .onErrorResume(e -> {
 //                    e.printStackTrace();
-                    logger.error("{}",e.getMessage());
-                    logger.error("从Redis获取缓存参数 失败! key:{}", key);
+                    log.error("{}",e.getMessage());
+                    log.error("从Redis获取缓存参数 失败! key:{}", key);
                     return Mono.empty();
                 });
     }
@@ -133,7 +135,7 @@ public class MultiLevelCacheComponent {
         return Mono.fromRunnable(() -> evictLocalCache(key))
                 .then(evictRedisCache(key))
                 .onErrorResume(throwable -> {
-                    logger.error("删除缓存失败, key: {}", key, throwable);
+                    log.error("删除缓存失败, key: {}", key, throwable);
                     return Mono.empty();
                 });
     }
@@ -146,10 +148,10 @@ public class MultiLevelCacheComponent {
             Cache localCache = localCacheManager.getCache(LOCAL_CACHE_NAME);
             if (localCache != null) {
                 localCache.evict(key);
-                logger.debug("本地缓存删除成功, key: {}", key);
+                log.debug("本地缓存删除成功, key: {}", key);
             }
         } catch (Exception e) {
-            logger.warn("删除本地缓存失败, key: {}", key, e);
+            log.warn("删除本地缓存失败, key: {}", key, e);
             // 不抛出异常，继续执行Redis删除
         }
     }
@@ -166,15 +168,15 @@ public class MultiLevelCacheComponent {
                 // 再删除Redis缓存，如果失败会回滚（通过异常传播）
                 return redisClient.del(key)
                         .doOnSuccess(count -> {
-                            logger.info("缓存删除成功, key: {}", key);
+                            log.info("缓存删除成功, key: {}", key);
                         })
                         .doOnError(throwable -> {
-                            logger.error("Redis缓存删除失败，可能需要手动清理, key: {}", key, throwable);
+                            log.error("Redis缓存删除失败，可能需要手动清理, key: {}", key, throwable);
                             // 这里可以添加补偿逻辑，比如重试或记录到死信队列
                         })
                         .then();
             } catch (Exception e) {
-                logger.error("本地缓存删除失败，整体操作中止, key: {}", key, e);
+                log.error("本地缓存删除失败，整体操作中止, key: {}", key, e);
                 return Mono.error(e);
             }
         });
@@ -187,9 +189,9 @@ public class MultiLevelCacheComponent {
         return redisClient.del(key)
                 .doOnSuccess(b -> {
                     if (b) {
-                        logger.debug("Redis缓存删除成功, key: {}", key);
+                        log.debug("Redis缓存删除成功, key: {}", key);
                     } else {
-                        logger.debug("Redis缓存键不存在, key: {}", key);
+                        log.debug("Redis缓存键不存在, key: {}", key);
                     }
                 })
                 .then();

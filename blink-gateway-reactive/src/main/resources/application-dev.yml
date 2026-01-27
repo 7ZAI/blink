@@ -5,9 +5,11 @@ spring:
 #      default-filters:
 #        - name: RequestRateLimiter
 #          args:
-#            redis-rate-limiter.replenishRate: 100  # 令牌桶每秒填充速率
-#            redis-rate-limiter.burstCapacity: 200  # 令牌桶总容量
+##            rate-limiter: "#{@blinkRedisRateLimiter}"
+#            redis-rate-limiter.replenishRate: 1  # 令牌桶每秒填充速率
+#            redis-rate-limiter.burstCapacity: 2  # 令牌桶总容量
 #            key-resolver: "#{@ipKeyResolver}"      # 限流维度解析器
+#            redis-rate-limiter.includeHeaders: true
       # 确保多个网关实例路由同步
       #      discovery:
       #        locator:
@@ -17,11 +19,11 @@ spring:
         connect-timeout: 10000
         response-timeout: 5s
         #动态路由 由配置中心json配置
-      routes:
-        - id: base-app
-          uri: lb://base-app
-          predicates:
-            - Path=/base/**
+#      routes:
+#        - id: base-app
+#          uri: lb://base-app
+#          predicates:
+#            - Path=/base/**
   data:
     redis:
       host: 127.0.0.1

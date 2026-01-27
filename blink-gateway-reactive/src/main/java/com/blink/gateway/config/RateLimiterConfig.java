@@ -1,12 +1,17 @@
 package com.blink.gateway.config;
 
+import com.blink.gateway.trafficControl.BlinkRedisRateLimiter;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import reactor.core.publisher.Mono;
 
-//@Configuration
+
+/**
+ * @author binblink
+ */
+@Configuration
 public class RateLimiterConfig {
     
     /**
@@ -31,7 +36,12 @@ public class RateLimiterConfig {
             exchange.getRequest().getURI().getPath()
         );
     }
-    
+
+    @Bean
+    @Primary
+    public BlinkRedisRateLimiter blinkRedisRateLimiter() {
+       return new BlinkRedisRateLimiter(10,100);
+    }
     /**
      * 基于用户ID的全局限流
      * 从请求参数中获取用户ID[citation:5]

@@ -12,6 +12,9 @@ server:
 spring:
   profiles:
     active: dev
+#  # 核心：允许Bean定义覆盖
+#  main:
+#    allow-bean-definition-overriding: true
   application:
     name: gateway-app
   cloud:

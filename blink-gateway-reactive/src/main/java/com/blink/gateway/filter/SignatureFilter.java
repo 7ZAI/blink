@@ -4,6 +4,7 @@ import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.component.GateWayCacheComponent;
+import com.blink.gateway.constant.GateWayErrMsgCode;
 import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.signature.HmacSignatureService;
 import com.blink.gateway.signature.SignatureServiceFactory;
@@ -68,7 +69,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
 
                     return signVerify(exchange)
                             .filter(isValid -> isValid)
-                            .switchIfEmpty(Mono.error(new BlinkException("签名验证失败")))
+                            .switchIfEmpty(Mono.error(new BlinkException(GateWayErrMsgCode.ILLEGAL_REQUEST)))
                             .doOnSuccess(v -> log.info("signature verify succeed 签名验证成功！"))
                             // 验签成功 进行防止请求重发校验
                             .then(cacheComponent.getGateWayConfigFromCache(REQUEST_REPLAY_DEFEND_SWITCH)

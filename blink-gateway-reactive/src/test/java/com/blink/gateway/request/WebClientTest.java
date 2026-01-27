@@ -10,12 +10,14 @@ import com.blink.framework.common.constrant.SysConstant;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 
+import com.blink.framework.common.factory.BlinkNamedThreadFactory;
 import com.blink.framework.common.utils.AESUtils;
 import com.blink.framework.common.utils.RSAUtils;
 import com.blink.gateway.signature.HmacSignatureService;
 import com.blink.gateway.signature.SignatureServiceFactory;
 import com.blink.gateway.util.WebClientUtil;
 import org.junit.jupiter.api.Test;
+import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -27,6 +29,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
 
@@ -50,7 +55,7 @@ public class WebClientTest {
 
     private final String loginName = "test2";
     private final String password = "123456";
-    private final String token = "031fd1e3b48a46b09633fb44d084edfb";
+    private final String token = "a2bafb6884104cb2a2e3b0f2ce7d5ee2";
     //系统公钥
     private final String systemPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlRqb7VG+lkiTH/8LY4ISQLjD2t+8kZMvthvixlIx57v3d5o994PY0/QFqOPqDdJeXIvxiCA0z/qdMGve3t2lJuUiExNmH+pY46LuNMIyzmiHKliocDCFb1bdVoTWHzJmjDT2TnRxmglVVm4mhlpDS18accZVPXdzESCn32HfmhKkQj+0NTdsPzjlpWsfsXpySToPVa8/U1HupTnRibdsCu80PHCjRwf/3+fj9fBRnNCubJoSlOi4o+koojqQ3vCMc+b+6dW6zYS83g67olT9J77ekOru/+OgWYe3FmBSjhiYAIMSwK1PalyvI9S3V57SdkHkwG72UrnsIP7iE5BSKwIDAQAB";
     //系统私钥
@@ -228,4 +233,30 @@ public class WebClientTest {
             httpHeaders.put(SysConstant.X_BLINK_KEY, Collections.singletonList(key));
         });
     }
+
+
+    @Test
+    void mutilThread() throws InterruptedException {
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(2,
+                4,
+                6,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(100),
+                new BlinkNamedThreadFactory.Builder("测试线程").build(),
+                new ThreadPoolExecutor.DiscardPolicy());
+
+        for (int i = 0; i < 10 ; i++) {
+            executor.submit(this::gatewayTest);
+        }
+
+
+        executor.awaitTermination(10, TimeUnit.SECONDS);
+        if(executor.isTerminated()){
+            executor.shutdown();
+        }
+
+    }
+
+
 }

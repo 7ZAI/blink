@@ -8,6 +8,7 @@ import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.gateway.component.GateWayCacheComponent;
+import com.blink.gateway.trafficControl.RateLimitExceededException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -44,28 +45,34 @@ public class GlobalExceptionHandlerFilter implements WebExceptionHandler, Ordere
         ServerHttpResponse response = exchange.getResponse();
 
         // 关键：检查响应是否已提交，避免二次异常
-//        if (response.isCommitted()) {
-//            return Mono.error(ex);
-//        }
+        if (response.isCommitted()) {
+            return Mono.error(ex);
+        }
         String code = "";
 
-        //权限不足 拒绝访问
-        if (ex instanceof AccessDeniedException) {
-            code = BlinkErrorCodeEnum.FORBIDDEN_OPERATION.getCode();
-            response.setStatusCode(HttpStatus.FORBIDDEN);
-        } else if (ex instanceof AuthenticationException) {
-            // 认证失败
-            code = BlinkErrorCodeEnum.NO_AUTH_ERROR.getCode();
-            response.setStatusCode(HttpStatus.UNAUTHORIZED);
-        } else if (ex instanceof BlinkException blinkException) {
-            //BlinkException
-            code = blinkException.getMessage();
-            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-        } else {
-            //未知异常
-            code = BlinkErrorCodeEnum.SYS_ERROR.getCode();
-            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+
+         if (ex instanceof RateLimitExceededException rle ) {
+             //限流
+            code = rle.getMessage();
+            response.setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+        } else if (ex instanceof AccessDeniedException) {
+             //权限不足 拒绝访问
+             code = BlinkErrorCodeEnum.FORBIDDEN_OPERATION.getCode();
+             response.setStatusCode(HttpStatus.FORBIDDEN);
+         } else if (ex instanceof AuthenticationException) {
+             // 认证失败
+             code = BlinkErrorCodeEnum.NO_AUTH_ERROR.getCode();
+             response.setStatusCode(HttpStatus.UNAUTHORIZED);
+         } else if (ex instanceof BlinkException blinkException) {
+             //BlinkException
+             code = blinkException.getMessage();
+             response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+         } else {
+             //未知异常
+             code = BlinkErrorCodeEnum.SYS_ERROR.getCode();
+             response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+         }
+
 
         //获取语言环境
         String local = exchange.getRequest().getHeaders().getFirst(SysConstant.X_BLINK_LOCALE);
