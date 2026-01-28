@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 /**
+ *
  * @Author binblink
  */
 @Slf4j
@@ -50,7 +51,7 @@ public class BlinkRedisRateLimiter extends RedisRateLimiter {
         return super.isAllowed(routeId, id)
                 .flatMap(response -> {
 
-                    log.debug("===>Redis限流返回值 resp: {}", response);
+                    log.debug("===> Redis限流返回值 resp: {}", response);
                     // 如果被限流（allowed = false），抛出自定义异常
                     int burstCapacity = 0, rate = 0;
                     String rateStr = response.getHeaders().get(REPLENISH_RATE_HEADER);
@@ -65,7 +66,7 @@ public class BlinkRedisRateLimiter extends RedisRateLimiter {
                     }
 
                     if (!response.isAllowed()) {
-                        log.warn("请求过多 限流拦截 路由:{} key:{},生成速率:{},容量:{}", routeId, id, rate, burstCapacity);
+                        log.warn("请求过多 限流拦截 路由id:{} 触发维度key:{},生成速率:{},容量:{}", routeId, id, rate, burstCapacity);
                         return Mono.error(new RateLimitExceededException(GateWayErrMsgCode.TOO_MANY_REQUESTS));
                     }
                     // 如果允许通过，正常返回

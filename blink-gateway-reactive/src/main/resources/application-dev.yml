@@ -19,11 +19,27 @@ spring:
         connect-timeout: 10000
         response-timeout: 5s
         #动态路由 由配置中心json配置
-#      routes:
-#        - id: base-app
-#          uri: lb://base-app
-#          predicates:
-#            - Path=/base/**
+      routes:
+        - id: base-app
+          uri: lb://base-app
+          predicates:
+            - Path=/base/**
+          filters:
+             # 1. 先限流
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
+            # 2. 再重试
+            - name: Retry
+              args:
+                retries: 2
+            # 3. 最后熔断
+            - name: CircuitBreaker
+              args:
+                name: protectedCircuitBreaker
+                # 不配置 让异常抛出 由全局异常处理
+#                fallbackUri: forward:/fallback/default
   data:
     redis:
       host: 127.0.0.1
@@ -36,15 +52,27 @@ spring:
           max-idle: 8 # 连接池最大空闲连接数
           max-wait: -1ms # 连接池最大阻塞等待时间 毫秒（使用负值表示没有限制）
           min-idle: 0 # 最小空闲连接数
+
+
 # actuator 监控
 management:
-  endpoint:
-    gateway:
-      enabled: true
   endpoints:
     web:
       exposure:
         include: "*"  # 暴露所有端点，生产环境建议按需暴露
+  endpoint:
+    gateway:
+      enabled: true
+    health:
+      show-details: always
+      circuitbreakers:
+        enabled: true
+      ratelimiters:
+        enabled: true
+    metrics:
+      export:
+        prometheus:
+          enabled: true
 
 blink:
   gateway:
@@ -56,7 +84,7 @@ blink:
       stream-group-name: cache_sync_1
       stream-key: blink:stream:gateway:cache
     dynamicRoute:
-      mode: nacos
+      mode: close
       nacos:
         dataId: gateway-routes
         group: DEFAULT_GROUP

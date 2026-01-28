@@ -17,7 +17,6 @@ import com.blink.gateway.signature.HmacSignatureService;
 import com.blink.gateway.signature.SignatureServiceFactory;
 import com.blink.gateway.util.WebClientUtil;
 import org.junit.jupiter.api.Test;
-import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -55,7 +54,7 @@ public class WebClientTest {
 
     private final String loginName = "test2";
     private final String password = "123456";
-    private final String token = "a2bafb6884104cb2a2e3b0f2ce7d5ee2";
+    private final String token = "5b69a8d59dd448e29536ed498105bb76";
     //系统公钥
     private final String systemPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlRqb7VG+lkiTH/8LY4ISQLjD2t+8kZMvthvixlIx57v3d5o994PY0/QFqOPqDdJeXIvxiCA0z/qdMGve3t2lJuUiExNmH+pY46LuNMIyzmiHKliocDCFb1bdVoTWHzJmjDT2TnRxmglVVm4mhlpDS18accZVPXdzESCn32HfmhKkQj+0NTdsPzjlpWsfsXpySToPVa8/U1HupTnRibdsCu80PHCjRwf/3+fj9fBRnNCubJoSlOi4o+koojqQ3vCMc+b+6dW6zYS83g67olT9J77ekOru/+OgWYe3FmBSjhiYAIMSwK1PalyvI9S3V57SdkHkwG72UrnsIP7iE5BSKwIDAQAB";
     //系统私钥
@@ -246,7 +245,7 @@ public class WebClientTest {
                 new BlinkNamedThreadFactory.Builder("测试线程").build(),
                 new ThreadPoolExecutor.DiscardPolicy());
 
-        for (int i = 0; i < 10 ; i++) {
+        for (int i = 0; i < 20 ; i++) {
             executor.submit(this::gatewayTest);
         }
 

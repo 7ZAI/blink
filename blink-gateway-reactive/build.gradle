@@ -20,6 +20,15 @@ dependencies {
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
 
+    implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3'
+    implementation 'io.github.resilience4j:resilience4j-circuitbreaker'
+//    implementation 'io.github.resilience4j:resilience4j-ratelimiter'
+    implementation 'io.github.resilience4j:resilience4j-retry'
+    implementation 'io.github.resilience4j:resilience4j-bulkhead'
+
+
+
     //ip地址处理库
     implementation 'com.github.seancfoley:ipaddress:5.5.1'
     //本地缓存
@@ -29,6 +38,7 @@ dependencies {
     //工具类
     implementation 'cn.hutool:hutool-core'
     implementation 'cn.hutool:hutool-jwt'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 //    implementation 'cn.hutool:hutool-crypto'
 
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'

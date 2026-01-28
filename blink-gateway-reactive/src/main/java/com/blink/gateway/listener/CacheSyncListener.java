@@ -15,10 +15,9 @@ import java.util.concurrent.Executor;
 
 /**
  * @Author binblink
- * @Date 2025/11/11
  */
 @Slf4j
-@Component
+//@Component
 public class CacheSyncListener {
 
     @Resource
