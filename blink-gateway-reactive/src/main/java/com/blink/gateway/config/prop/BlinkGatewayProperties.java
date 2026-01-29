@@ -1,6 +1,8 @@
 package com.blink.gateway.config.prop;
 
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
 
@@ -10,6 +12,7 @@ import static com.blink.gateway.constant.GatewayConstant.*;
  * @author binblink
  */
 @ConfigurationProperties(prefix = "blink.gateway")
+@Validated
 public class BlinkGatewayProperties {
 
     /**
@@ -28,9 +31,31 @@ public class BlinkGatewayProperties {
     private DynamicRoute dynamicroute;
 
     /**
-     * 缓存配置
+     *  redis stream监听开关 默认关闭 因为长轮询有性能开销 只有需要时开启 所以支持 运行时开启或关闭 通过配置文件nacos监听实现
+     * 值： open/close
      */
-    private Cache cache;
+    private Boolean eventStreamEnable = false;
+
+    /**
+     * 实例id 用来区分多实例 取值00 01 02等等
+     */
+    private String instanceId;
+
+
+    /**
+     * 本地缓存开关 默认开启
+     */
+    private Boolean localCacheEnable = true;
+
+
+    public Boolean getLocalCacheEnable() {
+        return localCacheEnable;
+    }
+
+    public void setLocalCacheEnable(Boolean localCacheEnable) {
+        this.localCacheEnable = localCacheEnable;
+    }
+
 
 
     public DynamicRoute getDynamicroute() {
@@ -57,66 +82,20 @@ public class BlinkGatewayProperties {
         this.configDataId = configDataId;
     }
 
-    public Cache getCache() {
-        return cache;
+    public Boolean getEventStreamEnable() {
+        return eventStreamEnable;
     }
 
-    public void setCache(Cache cache) {
-        this.cache = cache;
+    public void setEventStreamEnable(Boolean eventStreamEnable) {
+        this.eventStreamEnable = eventStreamEnable;
     }
 
-    /**
-     * 缓存配置
-     *
-     */
-    public static class Cache {
+    public String getInstanceId() {
+        return instanceId;
+    }
 
-        /**
-         * 本地缓存开关 默认开启
-         */
-        private Boolean localCacheEnable = true;
-
-        /**
-         * 本地缓存同步 redis stream监听开关 默认关闭 因为长轮询有性能开销 只有需要时开启 所以支持 运行时开启或关闭 通过配置文件nacos监听实现
-         * 值： open/close
-         */
-        private Boolean syncListenerOpen = false;
-
-        private String streamKey = REDIS_STREAM_CACHE_KEY;
-
-        private String streamGroupName;
-
-        public Boolean getSyncListenerOpen() {
-            return syncListenerOpen;
-        }
-
-        public String getStreamKey() {
-            return streamKey;
-        }
-
-        public String getStreamGroupName() {
-            return streamGroupName;
-        }
-
-        public Boolean getLocalCacheEnable() {
-            return localCacheEnable;
-        }
-
-        public void setLocalCacheEnable(Boolean localCacheEnable) {
-            this.localCacheEnable = localCacheEnable;
-        }
-
-        public void setSyncListenerOpen(Boolean syncListenerOpen) {
-            this.syncListenerOpen = syncListenerOpen;
-        }
-
-        public void setStreamKey(String streamKey) {
-            this.streamKey = streamKey;
-        }
-
-        public void setStreamGroupName(String streamGroupName) {
-            this.streamGroupName = streamGroupName;
-        }
+    public void setInstanceId(@NotBlank(message = "实例id不能为空") String instanceId) {
+        this.instanceId = instanceId;
     }
 
     /**
@@ -206,16 +185,6 @@ public class BlinkGatewayProperties {
 
             private String routeSuffix = "default";
 
-            /**
-             * 同步路由的streamKey
-             */
-            private String streamkey;
-
-            /**
-             * 组id 用于streamKey消费 实现消息广播规则则 多个gateway实例需要配置不同的groupId
-             */
-            private String groupId;
-
 
             public String getRouteSuffix() {
                 return routeSuffix;
@@ -225,25 +194,11 @@ public class BlinkGatewayProperties {
                 return routeKey;
             }
 
-            public String getGroupId() {
-                return groupId;
-            }
-
-            public String getStreamkey() {
-                return streamkey;
-            }
-
             public void setRouteSuffix(String routeSuffix) {
                 this.routeSuffix = routeSuffix;
             }
 
-            public void setStreamkey(String streamkey) {
-                this.streamkey = streamkey;
-            }
 
-            public void setGroupId(String groupId) {
-                this.groupId = groupId;
-            }
         }
     }
 

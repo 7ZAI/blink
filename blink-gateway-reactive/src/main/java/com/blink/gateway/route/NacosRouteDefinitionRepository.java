@@ -1,9 +1,9 @@
 package com.blink.gateway.route;
 
 import com.alibaba.cloud.nacos.NacosConfigManager;
-import com.alibaba.fastjson2.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
+import com.blink.gateway.util.JacksonUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.route.RouteDefinition;
@@ -45,7 +45,8 @@ public class NacosRouteDefinitionRepository implements RouteDefinitionRepository
                 return Flux.error(e);
             }
             log.debug("gateway-routes config:{}", configInfo);
-            List<RouteDefinition> routeDefinitions = JSON.parseArray(configInfo, RouteDefinition.class);
+
+            List<RouteDefinition> routeDefinitions =  JacksonUtil.fromJsonToList(configInfo, RouteDefinition.class);
             return Flux.fromIterable(routeDefinitions);
         }).onErrorResume(ex -> {
             log.error(" 从配置中心获取路由失败 get gateway-routes error", ex);

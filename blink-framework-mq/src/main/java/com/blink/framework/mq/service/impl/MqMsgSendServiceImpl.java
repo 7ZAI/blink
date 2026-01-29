@@ -1,8 +1,8 @@
 package com.blink.framework.mq.service.impl;
 
-import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.blink.framework.common.data.MqGenericDTO;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.mq.constant.MqConstant;
 import com.blink.framework.mq.entity.MqMsgSendDO;
 import com.blink.framework.mq.mapper.MqMsgSendMapper;
@@ -31,7 +31,7 @@ public class MqMsgSendServiceImpl extends ServiceImpl<MqMsgSendMapper, MqMsgSend
 
         MqMsgSendDO mqMsgSendDO = new MqMsgSendDO();
 
-        mqMsgSendDO.setMqContext(JSON.toJSONString(mqDto.getBody()));
+        mqMsgSendDO.setMqContext(JacksonUtil.toJson(mqDto.getBody()));
 
         BeanUtils.copyProperties(mqDto,mqMsgSendDO);
 

@@ -1,7 +1,6 @@
 package com.blink.gateway.filter;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson2.JSON;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.UserInfoRedisDO;
@@ -10,6 +9,7 @@ import com.blink.framework.common.utils.ApplicationContextUtil;
 import com.blink.framework.redis.id.ReactiveIdGenerator;
 import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.util.GateWayUtil;
+import com.blink.gateway.util.JacksonUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -74,11 +74,11 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
                         }
 
 
-                        RequestDTO requestDTO = JSON.parseObject(bodyStr, RequestDTO.class);
+                        RequestDTO requestDTO = JacksonUtil.parseMessyJson(bodyStr, RequestDTO.class);
                         //组装元数据
                         this.assembleReqDTO(requestDTO, channelInfo, requestId, traceId, exchange);
 
-                        String modifiedBody = JSON.toJSONString(requestDTO);
+                        String modifiedBody = JacksonUtil.toJson(requestDTO);
                         // 创建新的请求，添加ID到Header
                         // 将修改后的body转换为DataBuffer
                         byte[] modifiedBodyBytes = modifiedBody.getBytes(StandardCharsets.UTF_8);

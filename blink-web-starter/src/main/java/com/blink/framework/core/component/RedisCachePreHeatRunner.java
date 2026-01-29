@@ -1,5 +1,7 @@
 package com.blink.framework.core.component;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.blink.framework.common.data.DictCacheDO;
 import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.ApplicationContextUtil;
@@ -14,10 +16,12 @@ import com.blink.framework.core.util.ScanClassUtil;
 import com.blink.framework.redis.component.CacheComponent;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -103,8 +107,11 @@ public class RedisCachePreHeatRunner implements ApplicationRunner {
     private void preHeatingDataDictCache() {
         log.info("-----------------------------------------preHeatingDataDictCache-----------------------------------------");
         cacheComponent.loadCacheFromDB(CoreConstant.DICT_KEY_PREFIX, () -> {
+
             List<SysDataDictDO> dictList = sysDataDictMapper.findAllDataDicts();
-            return dictList.stream().collect(Collectors.toMap(dict -> CoreConstant.DICT_KEY_PREFIX + dict.getDictName()
+            List<DictCacheDO> cacheDicts = BeanUtil.copyToList(dictList,DictCacheDO.class);
+
+            return cacheDicts.stream().collect(Collectors.toMap(dict -> CoreConstant.DICT_KEY_PREFIX + dict.getDictName()
                     , dict -> dict));
         });
     }

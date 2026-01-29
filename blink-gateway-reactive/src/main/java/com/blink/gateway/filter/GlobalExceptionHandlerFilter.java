@@ -1,7 +1,6 @@
 package com.blink.gateway.filter;
 
 import cn.hutool.core.util.StrUtil;
-import com.alibaba.fastjson2.JSON;
 import com.blink.framework.common.constrant.SysConstant;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
@@ -9,6 +8,8 @@ import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.trafficControl.RateLimitExceededException;
+import com.blink.gateway.util.JacksonUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -26,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import static com.blink.gateway.constant.GatewayConstant.DEFAULT_LANG_CN;
 
 /**
+ * 全局异常处理
  * @author binblink
  */
 @Slf4j
@@ -33,8 +35,11 @@ public class GlobalExceptionHandlerFilter implements WebExceptionHandler, Ordere
 
     private final GateWayCacheComponent cacheComponent;
 
-    public GlobalExceptionHandlerFilter(GateWayCacheComponent gateWayCacheComponent) {
+    private final ObjectMapper objectMapper;
+
+    public GlobalExceptionHandlerFilter(GateWayCacheComponent gateWayCacheComponent,ObjectMapper objectMapper) {
         this.cacheComponent = gateWayCacheComponent;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -44,8 +49,10 @@ public class GlobalExceptionHandlerFilter implements WebExceptionHandler, Ordere
 
         ServerHttpResponse response = exchange.getResponse();
 
-        // 关键：检查响应是否已提交，避免二次异常
+        //兜底 检查响应是否已提交，避免二次异常，
+        // 按照系统设计无异常正常返回,有异常发生 则response在这里提交返回 不会有第三个地方于和全局异常处理争抢response的提交
         if (response.isCommitted()) {
+            log.error("unexpected response committed happen!", ex);
             return Mono.error(ex);
         }
         String code = "";
@@ -92,14 +99,14 @@ public class GlobalExceptionHandlerFilter implements WebExceptionHandler, Ordere
                 .switchIfEmpty(Mono.error(new BlinkException(BlinkErrorCodeEnum.SYS_ERROR.getCode())))
                 .flatMap(s -> {
                     responseDTO.setMsgInfo(s);
-                    String result = JSON.toJSONString(responseDTO);
+                    String result = JacksonUtil.toJson(responseDTO);
                     return response.writeWith(Mono.just(bufferFactory.wrap(result.getBytes(StandardCharsets.UTF_8))));
                 }).onErrorResume(throwable -> {
                     //兜底
                     log.error("获取错误信息失败!", throwable);
                     responseDTO.setMsgInfo("系统异常，请稍后重试");
                     responseDTO.setMsgCode(BlinkErrorCodeEnum.SYS_ERROR.getCode());
-                    String finResult = JSON.toJSONString(responseDTO);
+                    String finResult = JacksonUtil.toJson(responseDTO);
                     return response.writeWith(Mono.just(bufferFactory.wrap(finResult.getBytes(StandardCharsets.UTF_8))));
                 });
     }

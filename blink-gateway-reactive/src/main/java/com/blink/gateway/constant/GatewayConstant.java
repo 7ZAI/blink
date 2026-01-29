@@ -140,6 +140,11 @@ public interface GatewayConstant {
      */
     String SOURCE_GATEWAY = "gateway";
 
+    /**
+     * 默认语言
+     */
+    String DEFAULT_LANG_CN = "zh_cn";
+
     /**---------------------------------------------------Redis relate start--------------------------------------------------------**/
 
     String BLINK_PREFIX = "blink:";
@@ -177,10 +182,6 @@ public interface GatewayConstant {
      */
     String GATEWAY_CONFIG_KEY_PREFIX = BLINK_PREFIX + "config:gateway:";
 
-    /**
-     * 同步缓存stream key
-     */
-    String REDIS_STREAM_CACHE_KEY = BLINK_PREFIX + "stream:gateway:cache";
 
     /**
      *  保存路由的key前缀
@@ -192,10 +193,12 @@ public interface GatewayConstant {
      */
     String CAHCE_STREAM_GROUP_NAME = "groupLocalCache";
 
+
+
     /**
-     * 默认语言
+     * gateway同步 stream key
      */
-    String DEFAULT_LANG_CN = "zh_cn";
+    String GATEWAY_STREAM_EVENT = BLINK_PREFIX + "stream:gateway:event";
 
 
     /**---------------------------------------------------Redis relate end--------------------------------------------------------**/

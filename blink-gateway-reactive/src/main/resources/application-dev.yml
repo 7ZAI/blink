@@ -78,11 +78,8 @@ blink:
   gateway:
     configDataId: gateway-routes
     configGroup: DEFAULT_GROUP
-    cache:
-      localCacheEnable: true
-      sync-listener-open: true
-      stream-group-name: cache_sync_1
-      stream-key: blink:stream:gateway:cache
+    localCacheEnable: true
+    eventStreamEnable: true
     dynamicRoute:
       mode: close
       nacos:
@@ -95,6 +92,8 @@ blink:
     ingnoredUrl:
       - /login
       - /captcha/get
+    instance-id: 00
+
   redis:
     enableLocalCache: false
     idGenerator:

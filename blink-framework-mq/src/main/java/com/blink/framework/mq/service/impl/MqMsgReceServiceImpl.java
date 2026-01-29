@@ -1,11 +1,11 @@
 package com.blink.framework.mq.service.impl;
 
-import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.blink.framework.common.data.MqGenericDTO;
 import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.mq.constant.MqConstant;
 import com.blink.framework.mq.entity.MqMsgReceDO;
 import com.blink.framework.mq.mapper.MqMsgReceMapper;
@@ -68,7 +68,7 @@ public class MqMsgReceServiceImpl extends ServiceImpl<MqMsgReceMapper, MqMsgRece
 
 
         try {
-            mqMsgReceDO.setMqContext(JSON.toJSONString(mqDto.getBody()));
+            mqMsgReceDO.setMqContext(JacksonUtil.toJson(mqDto.getBody()));
         } catch (Exception e) {
             throw new BlinkException(e,e.getMessage());
         }

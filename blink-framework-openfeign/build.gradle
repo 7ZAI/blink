@@ -16,8 +16,6 @@ dependencies {
     api "org.apache.httpcomponents.client5:httpclient5:${httpclient5Version}"
     api "org.apache.httpcomponents.client5:httpclient5-fluent:${httpclient5Version}"
 
-    implementation "com.alibaba.fastjson2:fastjson2-extension-spring6:${fastjson2Extension}"
-
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
 }
 

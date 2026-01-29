@@ -9,6 +9,12 @@ import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.filter.*;
 import com.blink.gateway.signature.SignatureServiceFactory;
 import com.blink.gateway.util.GateWayUtil;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +55,25 @@ public class BlinkGatewayConfig {
     @Autowired
     private SignatureServiceFactory signatureServiceFactory;
 
+
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+
+        // 注册模块
+        mapper.registerModule(new JavaTimeModule());
+        // 支持构造函数参数名
+        mapper.registerModule(new ParameterNamesModule());
+
+        // 配置
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
+        return mapper;
+    }
+
     /**
      * 全局异常处理
      * 全局异常GlobalExceptionHandlerFilter
@@ -57,8 +82,8 @@ public class BlinkGatewayConfig {
      */
     @Bean
     @Primary
-    public GlobalExceptionHandlerFilter globalExceptionHandlerFilter() {
-        return new GlobalExceptionHandlerFilter(cacheComponent);
+    public GlobalExceptionHandlerFilter globalExceptionHandlerFilter(ObjectMapper objectMapper) {
+        return new GlobalExceptionHandlerFilter(cacheComponent,objectMapper);
     }
 
     /**
@@ -85,8 +110,8 @@ public class BlinkGatewayConfig {
      * @return
      */
     @Bean
-    public RequestValidateFilter requestValidateFilter() {
-        return new RequestValidateFilter(cacheComponent);
+    public RequestValidateFilter requestValidateFilter(ObjectMapper objectMapper) {
+        return new RequestValidateFilter(cacheComponent,objectMapper);
     }
 
     /**

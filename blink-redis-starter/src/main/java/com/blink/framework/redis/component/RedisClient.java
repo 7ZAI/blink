@@ -1471,6 +1471,7 @@ public class RedisClient {
             ObjectRecord<String, Object> record = StreamRecords.newRecord()
                     .in(streamKey)
                     .ofObject(value);
+            template.opsForStream().add(record);
             RecordId recordId = template.opsForStream().add(record);
             return recordId != null ? recordId.getValue() : null;
         } catch (Exception e) {

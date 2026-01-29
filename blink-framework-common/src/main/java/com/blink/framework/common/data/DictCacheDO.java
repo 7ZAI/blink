@@ -1,9 +1,11 @@
-package com.blink.framework.validate;
+package com.blink.framework.common.data;
 
 import java.io.Serializable;
 
 /**
  * SysDataDictDO的镜像实体类 为了保证包的隔离性
+ *
+ * @author binblink
  */
 public class DictCacheDO implements Serializable {
 

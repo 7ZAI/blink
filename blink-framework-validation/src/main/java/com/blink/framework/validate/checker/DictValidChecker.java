@@ -1,7 +1,7 @@
 package com.blink.framework.validate.checker;
 
 
-import com.blink.framework.validate.DictCacheDO;
+import com.blink.framework.common.data.DictCacheDO;
 
 public interface DictValidChecker {
 

@@ -58,7 +58,7 @@ public class MultiLevelCacheComponent {
         log.info("尝试从本地缓存获取 缓存参数 key:{}", key);
 
         return Mono.fromCallable(() -> {
-            Boolean configEnable = properties.getCache().getLocalCacheEnable();
+            Boolean configEnable = properties.getLocalCacheEnable();
             boolean enableLocalCache =  configEnable != null ? configEnable : false;
             // 未开启
             if(!enableLocalCache){
@@ -69,6 +69,7 @@ public class MultiLevelCacheComponent {
                 Cache.ValueWrapper valueWrapper = localCache.get(key);
                 if (valueWrapper != null) {
                     T value = clazz.cast(valueWrapper.get());
+                    assert value != null;
                     String valueStr = value.toString();
                     if(valueStr.length()>1000){
                          valueStr = value.toString().substring(0, 1000) + "......";
@@ -166,7 +167,7 @@ public class MultiLevelCacheComponent {
                 evictLocalCache(key);
 
                 // 再删除Redis缓存，如果失败会回滚（通过异常传播）
-                return redisClient.del(key)
+                return redisClient.delete(key)
                         .doOnSuccess(count -> {
                             log.info("缓存删除成功, key: {}", key);
                         })
@@ -186,7 +187,7 @@ public class MultiLevelCacheComponent {
      * 删除Redis缓存
      */
     private Mono<Void> evictRedisCache(String key) {
-        return redisClient.del(key)
+        return redisClient.delete(key)
                 .doOnSuccess(b -> {
                     if (b) {
                         log.debug("Redis缓存删除成功, key: {}", key);

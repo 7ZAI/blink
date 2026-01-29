@@ -67,7 +67,7 @@ Blink响应式网关基于spring cloud gateway 实现的API网关。旨在淘汰
 
 ### 路由转发
     
-spring cloud gateway 已经提供了一套路由配置规则 可以选择代码配置配置文件配置的两种方式
+spring cloud gateway 已经提供了一套路由配置规则 可以选择代码配置和配置文件配置的两种方式
 
 其中提供了多种路由匹配predicates规则 如路径(Path)匹配、方法(Method)匹配、Header匹配、Cookie匹配、Query参数匹配、时间匹配、Host匹配等
 
@@ -182,7 +182,10 @@ blink:
 
  ### 认证与鉴权
 
-blink gateway整合了spring security 来实现登录认证和权限校验。目前实现了base-app服务的用户名密码登录认证和权限校验。
+blink gateway整合了spring security 来实现登录认证和鉴权。
+
+
+目前实现了base-app服务的用户名密码登录认证和鉴权。
 
 token认证 登入后通过UUID生成一个唯一Id作为用户token凭证，将token存在redis中，并设置30分钟的过期时间。用户每个请求都会拦截获取token，与redis的做比对，token一致则请求通过，否则拒绝。
 自动续期：如果用户则过期时间仍然剩10分钟时，仍然活跃 则将token过期时间延长30分钟.
@@ -284,13 +287,23 @@ TODO 未来支持
 
 
  ### 流量控制
- 使用spring cloud gateway自带的RedisRateLimiter 木桶令牌算法进行限流，在blink网关只进行粗粒度的限流，更细粒度的限流根据业务场景，由各个业务自己来实现
-TODO sentinel
+
+限流：
+
+熔断：
+
+
+使用spring cloud gateway自带的RedisRateLimiter 木桶令牌算法进行限流，在blink网关只进行粗粒度的限流，更细粒度的限流根据业务场景，由各个业务自己来实现
+TODO 
+
+
  ### 灰度发布 
    通过动态路由已经可以实现一定程度的灰度发布。更细致的关于灰度发布的相关功能 暂时搁置 TODO
+
  **TODO**
  ### 监控
-    TODO 技术选型中
+
+
 
  **TODO**
 ### 其他功能
@@ -300,6 +313,8 @@ TODO sentinel
 TODO
 
 ## 测试
+
+    
  apifox测试脚本
 前置脚本[preHandle](apifoxScript/preHandle.js)
  后置脚本[afterHandle](apifoxScript/afterHandle.js)

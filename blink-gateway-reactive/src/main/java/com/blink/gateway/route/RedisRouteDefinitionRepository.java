@@ -1,10 +1,9 @@
 package com.blink.gateway.route;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
+import com.blink.gateway.util.JacksonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.cloud.gateway.route.RouteDefinitionRepository;
@@ -37,7 +36,7 @@ public class RedisRouteDefinitionRepository implements RouteDefinitionRepository
     public Flux<RouteDefinition> getRouteDefinitions() {
         log.info("从redis中获取路由  RedisRouteDefinitionRepository getRouteDefinitions ！");
         return redisClient.hEntries(redisProperties.getRouteKey())
-                .map(entry -> JSON.parseObject(entry.getValue().toString(), RouteDefinition.class))
+                .map(entry -> JacksonUtil.fromJson(entry.getValue().toString(), RouteDefinition.class))
                 .doOnNext(routeDefinition -> log.info("从redis 获取的路由：{}",routeDefinition.toString()));
 
     }
@@ -65,7 +64,7 @@ public class RedisRouteDefinitionRepository implements RouteDefinitionRepository
     public Mono<Void> save(Mono<RouteDefinition> route) {
         // 保存到Redis
         return route.flatMap(routeDefinition -> redisClient.hPut(redisProperties.getRouteKey(), routeDefinition.getId(),
-                        JSONObject.toJSONString(routeDefinition))
+                        JacksonUtil.toJson(routeDefinition))
                 .flatMap(r -> r ? Mono.empty() : Mono.error(new BlinkException("保存路由失败！路由id:" + routeDefinition.getId())))
         );
     }

@@ -1,8 +1,7 @@
 package com.blink.framework.mq.componet;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONReader;
-import com.alibaba.fastjson2.JSONWriter;
+
+import com.blink.framework.common.utils.JacksonUtil;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.support.converter.MessageConversionException;
@@ -32,12 +31,7 @@ public class Fastjson2MessageConverter implements MessageConverter {
         // 2. Fastjson2 序列化 Java 对象为 JSON 字节数组
         byte[] body;
         try {
-            body = JSON.toJSONBytes(
-                    object,
-                    JSONWriter.Feature.WriteNulls, // 可选：序列化空值
-                    JSONWriter.Feature.WriteMapNullValue,
-                    JSONWriter.Feature.IgnoreErrorGetter // 忽略 getter 异常
-            );
+            body = JacksonUtil.toJson(object).getBytes(StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new MessageConversionException("Fastjson2 序列化对象失败", e);
         }
@@ -76,12 +70,7 @@ public class Fastjson2MessageConverter implements MessageConverter {
         // 4. Fastjson2 反序列化 JSON 为指定类型对象
         try {
             Class<?> targetClass = Class.forName(targetClassName);
-            return JSON.parseObject(
-                    content,
-                    targetClass,
-                    JSONReader.Feature.NonStringKeyAsString, // 支持空值
-                    JSONReader.Feature.IgnoreAutoTypeNotMatch // 忽略字段不匹配
-            );
+            return JacksonUtil.parseMessyJson(content, targetClass);
         } catch (ClassNotFoundException e) {
             throw new MessageConversionException("找不到目标类型：" + targetClassName, e);
         } catch (Exception e) {

@@ -1,6 +1,7 @@
 package com.blink.framework.validate;
 
 
+import com.blink.framework.common.data.DictCacheDO;
 import com.blink.framework.validate.checker.DecimalValidChecker;
 import com.blink.framework.validate.checker.DictValidChecker;
 import com.blink.framework.validate.checker.GeneralValidChecker;

@@ -70,9 +70,5 @@ public class DynamicRouteConfiguration {
         }
 
 
-//        @Bean
-//        public RedisRouteSyncListener routeSyncFlux(ReactiveRedisClient redisClient, BlinkGatewayProperties properties){
-//            return new RedisRouteSyncListener();
-//        }
     }
 }

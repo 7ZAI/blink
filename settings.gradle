@@ -11,6 +11,7 @@ rootProject.name = 'blink'
 // 可以暂时注释掉不用的模块 提高编译速度
 include 'blink-base:blink-base-app'
 include 'blink-base:blink-base-api'
+include 'blink-gateway-reactive'
 
 include 'blink-framework-common'
 include 'blink-web-starter'
@@ -20,5 +21,4 @@ include 'blink-redis-starter'
 include 'blink-framework-validation'
 include 'blink-framework-mq'
 
-include 'blink-gateway-reactive'
 

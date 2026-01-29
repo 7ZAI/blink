@@ -1,10 +1,9 @@
 package com.blink.gateway.util;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
+
 import com.blink.framework.common.data.SysConfigCacheDO;
-import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
+import com.fasterxml.jackson.databind.JsonNode;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressSeqRange;
 import inet.ipaddr.IPAddressString;
@@ -39,7 +38,7 @@ public class GateWayUtil {
         DataBufferUtils.release(dataBuffer);
         // 将字节数组转换为字符串（假设是JSON）
         String json = new String(bytes, StandardCharsets.UTF_8);
-        return JSON.parseObject(bytes, clazz);
+        return JacksonUtil.fromJson(json, clazz);
     }
 
     /**
@@ -256,7 +255,7 @@ public class GateWayUtil {
         }
 
         if (3 == config.getConfigType()) {
-            return JSONObject.class;
+            return JsonNode.class;
         }
 
         if (4 == config.getConfigType()) {
@@ -326,7 +325,7 @@ public class GateWayUtil {
                             .map(s -> {
                                 log.info("在stream:{} 创建组:{} 创建结果：{}",streamKey, groupName, s);
                                 return true;
-                            }).switchIfEmpty(Mono.error(new BlinkException("创建组失败")));
+                            }).switchIfEmpty(Mono.just(false));
                 });
     }
 

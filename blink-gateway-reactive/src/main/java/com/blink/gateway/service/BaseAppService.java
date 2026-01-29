@@ -1,8 +1,6 @@
 package com.blink.gateway.service;
 
-import com.alibaba.fastjson2.support.config.FastJsonConfig;
-import com.alibaba.fastjson2.support.spring6.http.codec.Fastjson2Decoder;
-import com.alibaba.fastjson2.support.spring6.http.codec.Fastjson2Encoder;
+
 import com.blink.base.dto.req.QueryErrMsgReqDTO;
 import com.blink.base.dto.req.QueryOneChannelReqDTO;
 import com.blink.base.dto.req.QueryOneSysConfigReqDTO;
@@ -15,15 +13,11 @@ import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.gateway.constant.RemoteServerUrl;
 import com.blink.gateway.util.WebClientUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -36,9 +30,9 @@ import static com.blink.gateway.constant.GatewayConstant.*;
  * @Date 2025/10/16
  */
 @Service
+@Slf4j
 public class BaseAppService {
 
-    private final Logger logger = LoggerFactory.getLogger(BaseAppService.class);
 
     private final WebClient webClient;
 
@@ -57,7 +51,7 @@ public class BaseAppService {
      */
     public Mono<SysConfigCacheDO> getOneConfig(String configKey) {
 
-        logger.info("调用远程服务获取 配置参数信息 key:{}", configKey);
+        log.info("调用远程服务获取 配置参数信息 key:{}", configKey);
 
         if(configKey.contains(GATEWAY_CONFIG_KEY_PREFIX)){
             configKey = configKey.replace(GATEWAY_CONFIG_KEY_PREFIX, "");
@@ -77,7 +71,7 @@ public class BaseAppService {
      * @return
      */
     public Mono<ChannelInfoRedisDO> getChannelInfo(String appkey) {
-        logger.info("调用远程服务获取 渠道信息 key:{}", appkey);
+        log.info("调用远程服务获取 渠道信息 key:{}", appkey);
         if(appkey.contains(BLINK_CHANNEL_PREFIX)){
             appkey = appkey.replace(BLINK_CHANNEL_PREFIX, "");
         }
@@ -100,7 +94,7 @@ public class BaseAppService {
      */
     public Mono<QueryErrMsgRspDTO> getErrorMsgInfo(String code, String local) {
 
-        logger.info("调用远程服务获取 错误提示信息 code:{},language:{}", code,local);
+        log.info("调用远程服务获取 错误提示信息 code:{},language:{}", code,local);
 
         var  requestDTO = new RequestDTO<QueryErrMsgReqDTO>();
         var param = new QueryErrMsgReqDTO();

@@ -38,9 +38,10 @@ dependencies {
     api "com.github.ben-manes.caffeine:caffeine:${caffeineVersion}"
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
     implementation 'cn.hutool:hutool-core'
-    implementation "com.alibaba.fastjson2:fastjson2-extension-spring6:${fastjson2Extension}"
 
-
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
+    implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
     //注释切换环境
 //    testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
     testImplementation 'org.springframework.boot:spring-boot-starter-web'

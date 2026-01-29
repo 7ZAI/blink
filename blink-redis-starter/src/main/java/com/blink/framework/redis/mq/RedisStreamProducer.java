@@ -11,7 +11,6 @@ import java.util.Map;
  * stream 消息发送封装
  *
  * @Author binblink
- * @Date 2025/11/5
  */
 @Slf4j
 public class RedisStreamProducer implements BlinkProducer<StreamMessage, String> {
@@ -42,6 +41,10 @@ public class RedisStreamProducer implements BlinkProducer<StreamMessage, String>
             log.error("消息发送失败: messageInfo={}", message, e);
             throw new RuntimeException("消息发送失败", e);
         }
+    }
+
+    public RedisClient getRedisClient() {
+        return redisClient;
     }
 
     /**

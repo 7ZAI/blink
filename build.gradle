@@ -12,9 +12,9 @@ buildscript {
         druidStarterVersion='1.2.18'
         pagehelperVersion='5.3.1'
 
-        fastjson2Extension='2.0.59'
         httpclient5Version='5.2.1'
         caffeineVersion='3.1.8'
+        jacksonVersion='2.14.3'
     }
 }
 

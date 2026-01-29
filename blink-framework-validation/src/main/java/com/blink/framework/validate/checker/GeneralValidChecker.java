@@ -1,10 +1,6 @@
 package com.blink.framework.validate.checker;
 
-
-
-import com.blink.framework.validate.DictCacheDO;
-import org.springframework.util.StringUtils;
-
+import com.blink.framework.common.data.DictCacheDO;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -32,7 +28,7 @@ public class GeneralValidChecker implements DictValidChecker {
 
     protected boolean checkPattern(DictCacheDO dict,String valueStr){
         //正则表达式不为空
-        if(!StringUtils.isEmpty(dict.getDataPattern())){
+        if(dict.getDataPattern() != null && !dict.getDataPattern().isEmpty()){
             return Pattern.matches(dict.getDataPattern(),valueStr);
         }
         return true;

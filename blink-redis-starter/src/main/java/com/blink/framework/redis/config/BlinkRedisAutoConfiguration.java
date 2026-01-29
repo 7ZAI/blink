@@ -1,10 +1,13 @@
 package com.blink.framework.redis.config;
 
-import com.alibaba.fastjson2.support.spring6.data.redis.GenericFastJsonRedisSerializer;
 import com.blink.framework.redis.component.CacheComponent;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.framework.redis.id.*;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,14 +15,17 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,6 +37,40 @@ import java.util.concurrent.TimeUnit;
 @EnableConfigurationProperties({BlinkRedisProperties.class})
 public class BlinkRedisAutoConfiguration {
 
+    /**
+     * 创建自定义的 ObjectMapper
+     */
+    /**
+     * 自定义Redis专用的ObjectMapper
+     * 使用@Primary确保这是主要的ObjectMapper实例
+     */
+    @Bean
+    @Primary
+    public ObjectMapper redisObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+
+        // 1. 注册Java 8时间模块（必须，否则无法处理LocalDateTime等）
+        mapper.registerModule(new JavaTimeModule());
+
+        // 2. 禁用日期时间戳格式，使用ISO-8601字符串
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        // 3. 忽略JSON中的未知属性（提高兼容性）
+        mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        // 4. 设置全局日期格式（可选）
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+        mapper.setDateFormat(dateFormat);
+        // 5. 设置时区
+        mapper.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+
+        // 6. 序列化时忽略null值（可选，根据需求）
+        // mapper.setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL);
+
+        return mapper;
+    }
+
 
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     public static class SyncBlockRedisConfig {
@@ -41,11 +81,12 @@ public class BlinkRedisAutoConfiguration {
         @ConditionalOnMissingBean(
                 name = {"blinkRedisTemplate"}
         )
-        public RedisTemplate<String, Object> blinkRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
+        public RedisTemplate<String, Object> blinkRedisTemplate(RedisConnectionFactory redisConnectionFactory,ObjectMapper redisObjectMapper) {
 
             RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
             redisTemplate.setConnectionFactory(redisConnectionFactory);
-            GenericFastJsonRedisSerializer valueSerializer = new GenericFastJsonRedisSerializer(new String[]{"com.blink.", "org.springframework.security.core."});
+            // 序列化 value
+            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(redisObjectMapper);
             StringRedisSerializer keySerializer = new StringRedisSerializer();
             //Redis 的 Key 序列化
             redisTemplate.setKeySerializer(keySerializer);
@@ -53,9 +94,13 @@ public class BlinkRedisAutoConfiguration {
             redisTemplate.setHashKeySerializer(keySerializer);
 
             //Redis 中的 Value 序列化
-            redisTemplate.setValueSerializer(valueSerializer);
+            redisTemplate.setValueSerializer(jsonSerializer);
             //Hash 中的 Field Value 序列化
-            redisTemplate.setHashValueSerializer(valueSerializer);
+            redisTemplate.setHashValueSerializer(jsonSerializer);
+            //默认序列化
+            redisTemplate.setDefaultSerializer(jsonSerializer);
+
+            redisTemplate.afterPropertiesSet();
 
             return redisTemplate;
         }
@@ -90,16 +135,18 @@ public class BlinkRedisAutoConfiguration {
         @ConditionalOnMissingBean(
                 name = {"blinkReactiveRedisTemplate"}
         )
-        public ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
+        public ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate(ReactiveRedisConnectionFactory factory,ObjectMapper redisObjectMapper) {
 
-            GenericFastJsonRedisSerializer valueSerializer = new GenericFastJsonRedisSerializer(new String[]{"com.blink.", "org.springframework.security.core."});
             StringRedisSerializer keySerializer = new StringRedisSerializer();
-            // 更小更快可选：开启 JSONB（二进制 JSON）
+            // 序列化 value
+            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(redisObjectMapper);
             RedisSerializationContext<String, Object> context =
                     RedisSerializationContext.<String, Object>newSerializationContext(keySerializer)
-                            .value(valueSerializer)
+                            .value(jsonSerializer)
+                            .hashValue(jsonSerializer)
                             .hashKey(keySerializer)
-                            .hashValue(valueSerializer)
+                            .string(keySerializer)
+                            .key(keySerializer)
                             .build();
 
             return new ReactiveRedisTemplate<>(factory, context);
