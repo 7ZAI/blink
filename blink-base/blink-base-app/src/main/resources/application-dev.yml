@@ -51,9 +51,9 @@ blink:
     log:
       autoSkip: true
       upperLimit: 1000
-    preCache:
-      dictionary: false
-      errMsgInfo: false
+#    preCache:
+#      dictionary: false
+#      errMsgInfo: false
 
     # blink:
     #   id:

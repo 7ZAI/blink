@@ -1,18 +1,18 @@
 package com.blink.base.producer;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.alibaba.fastjson2.JSON;
 import com.blink.base.dto.CacheMsgDTO;
 import com.blink.base.dto.RouteSyncMsgDTO;
 import com.blink.base.entity.RedisMqDO;
 import com.blink.base.mapper.RedisMqMapper;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.RedisClient;
-import com.blink.framework.redis.entity.MessageType;
+import com.blink.framework.redis.entity.EventType;
+import com.blink.framework.redis.mq.EventStreamMessage;
 import com.blink.framework.redis.mq.RedisStreamProducer;
 import com.blink.framework.redis.mq.StreamMessage;
 import jakarta.annotation.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,21 +24,20 @@ import static com.blink.base.constans.RedisKeyConstans.*;
 
 
 /**
- *
- *
+ * 事件发布生产者
+ * gateway缓存、路由同步
+ * 它们公用一个stream 相当于事件总线
  * @Author binblink
- * @Date 2025/11/5
  */
 @Service
 @Transactional(rollbackFor = Exception.class)
+@Slf4j
 public class GateWayStreamMessageProducer extends RedisStreamProducer {
 
-    private static final Logger log = LoggerFactory.getLogger(GateWayStreamMessageProducer.class);
-
-    private RedisClient redisClient;
 
     @Resource
     private RedisMqMapper redisMqMapper;
+
 
     @Value("${spring.application.name}")
     private String appName;
@@ -47,25 +46,34 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
         super(redisClient);
     }
 
-
+    /**
+     * 数据写操作后 发送同步事件 删除数据缓存
+     * 缓存同步
+     * @param cacheKey
+     */
     public void cacheOnChange(String cacheKey) {
         CacheMsgDTO cacheMsgDTO = new CacheMsgDTO();
         cacheMsgDTO.setKey(cacheKey);
-        //通知同步
-        StreamMessage<CacheMsgDTO> msg = StreamMessage.of("blink:stream:gateway:cache", MessageType.EVENT, cacheMsgDTO)
-                .setSender(appName).setPayloadClass(CacheMsgDTO.class.getName());
+        //发送通知同步
+        EventStreamMessage<CacheMsgDTO> msg = new EventStreamMessage<>(EventType.CACHE_SYNC,GATEWAY_STREAM_EVENT, cacheMsgDTO);
+        msg.setSender(appName);
+        msg.setPayloadClass(CacheMsgDTO.class.getName());
         //发送并记录
         sendAndRecord(msg, cacheMsgDTO);
     }
 
+    /**
+     * 路由同步
+     * @param dynamicRouteKey
+     */
     public void routesOnChange(String dynamicRouteKey) {
 
         RouteSyncMsgDTO routeSyncMsgDTO = new RouteSyncMsgDTO();
         routeSyncMsgDTO.setDynamicRouteKey(dynamicRouteKey);
-        //通知同步
-        StreamMessage<RouteSyncMsgDTO> msg = StreamMessage.of("blink:stream:gateway:route", MessageType.EVENT, routeSyncMsgDTO)
-                .setSender(appName)
-                .setPayloadClass(CacheMsgDTO.class.getName());
+        //发送消息通知同步
+        EventStreamMessage<RouteSyncMsgDTO> msg = new EventStreamMessage<>(EventType.ROUTE_SYNC,GATEWAY_STREAM_EVENT, routeSyncMsgDTO);
+        msg.setSender(appName);
+        msg.setPayloadClass(RouteSyncMsgDTO.class.getName());
 
         //发送并记录
         sendAndRecord(msg, routeSyncMsgDTO);
@@ -84,7 +92,7 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
         RedisMqDO redisMqDO = new RedisMqDO();
         BeanUtil.copyProperties(msg, redisMqDO);
 
-        redisMqDO.setPayload(JSON.toJSONString(t));
+        redisMqDO.setPayload(JacksonUtil.toJson(t));
         redisMqMapper.insert(redisMqDO);
 
         //带重试机制的发送消息
@@ -96,12 +104,14 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
 
         //失败
         if(Objects.isNull(streamId)){
-            log.error("给GateWay的同步消息 发送Redis Stream 失败！messageInfo:{}",msg);
+            log.error("响Gateway发送Redis Stream 消息 失败！messageInfo:{}",msg);
             redisMqDO.setMsgStatus(REDIS_MSG_STATUS_SEND_FAILED);
         }
         //消息id
         redisMqDO.setStreamId(streamId);
         redisMqMapper.updateById(redisMqDO);
     }
+
+
 
 }

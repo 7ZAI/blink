@@ -1,14 +1,11 @@
 package com.blink.framework.redis.mq;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.util.DateUtils;
+import cn.hutool.core.bean.BeanUtil;
 import com.blink.framework.common.mq.BlinkMessage;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -239,22 +236,7 @@ public class StreamMessage<T> implements Serializable, BlinkMessage {
      * 将消息对象转换为Map
      */
     public static Map<String, Object> convertMessageToMap(StreamMessage<?> message) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("msgId", message.getMsgId());
-        map.put("topic", message.getTopic());
-        map.put("msgStatus", message.getMsgStatus());
-        map.put("msgType", message.getMsgType());
-        map.put("payload", JSON.toJSONString(message.getPayload()));
-        map.put("payloadClass", message.getPayloadClass());
-        map.put("createTime", message.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        map.put("version", message.getVersion());
-        map.put("sender", message.getSender());
-        map.put("receiver", message.getReceiver());
-        if (message.getExtra() != null) {
-            map.put("extra", JSON.toJSONString(message.getExtra()));
-        }
-
-        return map;
+        return BeanUtil.beanToMap(message, false, false);
     }
 
 
@@ -262,22 +244,14 @@ public class StreamMessage<T> implements Serializable, BlinkMessage {
      * 将Map转换为消息对象
      */
     public static <T> StreamMessage<T> convertMapToMessage(Map<String, Object> map, Class<T> tClass) {
+        // 1. 将map转换为StreamMessage，此时data字段是一个Map
+        StreamMessage<T> message = BeanUtil.mapToBean(map, StreamMessage.class, false);
+        // 2. 从map中获取data字段（是一个Map），然后转换为T
+        Object dataMap = map.get("payload");
+        T data = BeanUtil.toBean(dataMap, tClass);
 
-        StreamMessage<T> message = new StreamMessage<>();
-        message.setMsgId((String)map.get("msgId"))
-                .setTopic((String)map.get("topic"))
-                .setMsgStatus((String)map.get("msgStatus"))
-                .setMsgType((String)map.get("msgType"));
-
-        message.setPayload(JSON.parseObject((String)map.get("payload"), tClass));
-        message.setPayloadClass((String)map.get("payloadClass"))
-                .setCreateTime(DateUtils.parseLocalDateTime((String)map.get("createTime")))
-                .setVersion((String)map.get("version"));
-
-        message.setSender((String)map.get("sender"))
-                .setReceiver((String)map.get("receiver"))
-                .setExtra(map.get("extra"));
-
+        // 3. 设置data到message
+        message.setPayload(data);
 
         return message;
     }

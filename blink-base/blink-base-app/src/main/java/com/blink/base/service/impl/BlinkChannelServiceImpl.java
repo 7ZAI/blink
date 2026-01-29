@@ -65,9 +65,6 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     @Resource
     private GateWayStreamMessageProducer gateWayStreamMessageProducer;
 
-    @Resource
-    private CacheComponent cacheComponent;
-
 
     /**
      * 保存 对接渠道
@@ -154,8 +151,6 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
                 for (BlinkChannelDO chdo : allowDeleteList) {
                     String cacheKey = RedisKeyConstans.CHANNEL_INFO + chdo.getChannelId();
                     deleteCacheKeys.add(cacheKey);
-                    redisClient.delete(cacheKey);
-                    gateWayStreamMessageProducer.cacheOnChange(cacheKey);
                 }
             }
 
@@ -179,8 +174,6 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
             channelMapper.deleteById(deleteParam.getDeleteId());
             String cacheKey = RedisKeyConstans.CHANNEL_INFO + blinkChannelDO.getChannelId();
             deleteCacheKeys.add(cacheKey);
-            redisClient.delete(cacheKey);
-            gateWayStreamMessageProducer.cacheOnChange(cacheKey);
         }
 
         try {
@@ -207,16 +200,16 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     @Override
 //    @CacheDoubleDelete(keyPrefix = RedisKeyConstans.CHANNEL_INFO, fieldName = "channelId")
     public void modifyBlinkChannel(UpdateBlinkChannelReqDTO updateParam) throws BlinkException {
-        String cacheKey = RedisKeyConstans.CHANNEL_INFO + updateParam.getChannelId();
 
-        redisClient.delete(cacheKey);
-        gateWayStreamMessageProducer.cacheOnChange(cacheKey);
 
         BlinkChannelDO channel = channelMapper.selectById(updateParam.getChannelId());
         //数据不存在
         if (Objects.isNull(channel)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.DATA_NOT_EXIST);
         }
+        String cacheKey = RedisKeyConstans.CHANNEL_INFO + channel.getChannelId();
+
+        redisClient.delete(cacheKey);
 
         BeanUtil.copyProperties(updateParam, channel);
         channelMapper.updateById(channel);
@@ -276,12 +269,10 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * @return {@link BlinkChannelDO}
      * @throws Throwable
      */
+    //    @CacheDoubleDelete(keyPrefix = RedisKeyConstans.CHANNEL_INFO,fieldName="channelId",delayTime = 300L)
     @Override
     public BlinkChannelDO refreshChannelKey(QueryOneChannelReqDTO queryParam) throws BlinkException {
-        String cacheKey = RedisKeyConstans.CHANNEL_INFO + queryParam.getChannelId();
 
-        redisClient.delete(cacheKey);
-        gateWayStreamMessageProducer.cacheOnChange(cacheKey);
 
         LambdaQueryWrapper<BlinkChannelDO> queryWrapper = new LambdaQueryWrapper<BlinkChannelDO>()
                 .eq(StrUtil.isNotBlank(queryParam.getChannelName()), BlinkChannelDO::getChannelName, queryParam.getChannelName())
@@ -289,10 +280,15 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
                 .eq(StrUtil.isNotBlank(queryParam.getChannelId()), BlinkChannelDO::getChannelId, queryParam.getChannelId());
 
         BlinkChannelDO channel = channelMapper.selectOne(queryWrapper);
+
         //不存在
         if (Objects.isNull(channel)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.CHANNEL_NOT_EXIST);
         }
+
+        String cacheKey = RedisKeyConstans.CHANNEL_INFO + channel.getChannelId();
+
+        redisClient.delete(cacheKey);
 
         KeyPair keyPair = RSAUtils.generateKeyPair();
 
@@ -330,10 +326,6 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     @Override
     public BlinkChannelDO refreshSystemKey(QueryOneChannelReqDTO queryParam) throws BlinkException {
 
-        String cacheKey = RedisKeyConstans.CHANNEL_INFO + queryParam.getChannelId();
-
-        redisClient.delete(cacheKey);
-        gateWayStreamMessageProducer.cacheOnChange(cacheKey);
 
         LambdaQueryWrapper<BlinkChannelDO> queryWrapper = new LambdaQueryWrapper<BlinkChannelDO>()
                 .eq(StrUtil.isNotBlank(queryParam.getChannelName()), BlinkChannelDO::getChannelName, queryParam.getChannelName())
@@ -345,7 +337,9 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
         if (Objects.isNull(channel)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.CHANNEL_NOT_EXIST);
         }
+        String cacheKey = RedisKeyConstans.CHANNEL_INFO + channel.getChannelId();
 
+        redisClient.delete(cacheKey);
         KeyPair keyPair = RSAUtils.generateKeyPair();
 
         String publicKey = RSAUtils.generatePublicKeyToBase64(keyPair);

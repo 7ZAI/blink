@@ -24,7 +24,9 @@ public interface RedisKeyConstans {
     /**
      * gateway同步 stream key
      */
-    String GATEWAY_STREAM_SYNC = BLINK_PREFIX + "stream:gateway:sync";
+    String GATEWAY_STREAM_EVENT = BLINK_PREFIX + "stream:gateway:event";
+
+
 
 
 }

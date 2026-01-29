@@ -22,6 +22,11 @@ public class CacheMsgDTO implements Serializable {
     private Object value;
 
     /**
+     * 乐观锁更新缓存
+     */
+    private Integer version;
+
+    /**
      * 缓存操作 A增加 D删除  M修改
      */
     private String operator;
@@ -50,9 +55,21 @@ public class CacheMsgDTO implements Serializable {
         this.operator = operator;
     }
 
+    public Integer getVersion() {
+        return version;
+    }
 
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
 
-
-
-
+    @Override
+    public String toString() {
+        return "CacheMsgDTO{" +
+                "key='" + key + '\'' +
+                ", value=" + value +
+                ", version=" + version +
+                ", operator='" + operator + '\'' +
+                '}';
+    }
 }
