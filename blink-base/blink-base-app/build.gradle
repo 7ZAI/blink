@@ -18,26 +18,19 @@ dependencies {
 
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-framework-validation:1.0.0-SNAPSHOT'
-
     implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-dataSource-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-web-spring-boot-starter:1.0.0-SNAPSHOT'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'cn.hutool:hutool-core'
     implementation 'cn.hutool:hutool-jwt'
 
-
     compileOnly 'org.springframework.boot:spring-boot-devtools'
-
-    //能够读取源码javadoc注释的库
-    annotationProcessor 'com.github.therapi:therapi-runtime-javadoc-scribe:0.15.0'
-    // Runtime library
-    implementation 'com.github.therapi:therapi-runtime-javadoc:0.13.0'
     implementation 'com.anji-plus:captcha:1.3.0'
 
 //    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
-//    implementation project(':blink-base-api')
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 //    testImplementation 'io.micrometer:micrometer-observation-registry:1.11.0'

@@ -1,5 +1,6 @@
 package com.blink.base.service.impl;
 
+import com.blink.base.dto.req.AddRoutesReqDTO;
 import com.blink.base.dto.rsp.QueryGateWayRoutesRspDTO;
 import com.blink.base.entity.RouteDefinitionDO;
 import com.blink.base.producer.GateWayStreamMessageProducer;
@@ -35,17 +36,19 @@ public class GateWayRoutesServiceImpl implements GateWayRoutesService {
 
     /**
      * 添加 修改 都在同一个接口
-     * @param routes
+     * @param addRoutesReqDTO
      */
     @Override
-    public void saveRoute(List<RouteDefinitionDO> routes) {
+    public void saveRoute(AddRoutesReqDTO addRoutesReqDTO) {
 
-        Map<String, Object> map = redisClient.hGetStringMap(GATEWAY_DYNAMIC_ROUTES);
-
+        String group = addRoutesReqDTO.getRoutesGroup();
+        List<RouteDefinitionDO> routes = addRoutesReqDTO.getRoutes();
+        String key = GATEWAY_DYNAMIC_ROUTES + ":" + group;
+        Map<String, Object> map = redisClient.hGetStringMap(key);
         for (RouteDefinitionDO route : routes) {
-            map.put(route.getId(), JacksonUtil.toJson(route));
+            map.put(route.getId(), route);
         }
-        redisClient.hSet(GATEWAY_DYNAMIC_ROUTES, map);
+        redisClient.hSet(key, map);
         messageProducer.routesOnChange(GATEWAY_STREAM_EVENT);
     }
 

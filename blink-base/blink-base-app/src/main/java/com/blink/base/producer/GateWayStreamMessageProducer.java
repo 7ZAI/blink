@@ -7,8 +7,7 @@ import com.blink.base.entity.RedisMqDO;
 import com.blink.base.mapper.RedisMqMapper;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.RedisClient;
-import com.blink.framework.redis.entity.EventType;
-import com.blink.framework.redis.mq.EventStreamMessage;
+import com.blink.framework.redis.entity.MessageType;
 import com.blink.framework.redis.mq.RedisStreamProducer;
 import com.blink.framework.redis.mq.StreamMessage;
 import jakarta.annotation.Resource;
@@ -55,7 +54,7 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
         CacheMsgDTO cacheMsgDTO = new CacheMsgDTO();
         cacheMsgDTO.setKey(cacheKey);
         //发送通知同步
-        EventStreamMessage<CacheMsgDTO> msg = new EventStreamMessage<>(EventType.CACHE_SYNC,GATEWAY_STREAM_EVENT, cacheMsgDTO);
+        StreamMessage<CacheMsgDTO> msg = StreamMessage.of(GATEWAY_STREAM_EVENT, MessageType.EVENT, cacheMsgDTO);
         msg.setSender(appName);
         msg.setPayloadClass(CacheMsgDTO.class.getName());
         //发送并记录
@@ -71,10 +70,9 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
         RouteSyncMsgDTO routeSyncMsgDTO = new RouteSyncMsgDTO();
         routeSyncMsgDTO.setDynamicRouteKey(dynamicRouteKey);
         //发送消息通知同步
-        EventStreamMessage<RouteSyncMsgDTO> msg = new EventStreamMessage<>(EventType.ROUTE_SYNC,GATEWAY_STREAM_EVENT, routeSyncMsgDTO);
+        StreamMessage<RouteSyncMsgDTO> msg = StreamMessage.of(GATEWAY_STREAM_EVENT,MessageType.EVENT, routeSyncMsgDTO);
         msg.setSender(appName);
         msg.setPayloadClass(RouteSyncMsgDTO.class.getName());
-
         //发送并记录
         sendAndRecord(msg, routeSyncMsgDTO);
 
