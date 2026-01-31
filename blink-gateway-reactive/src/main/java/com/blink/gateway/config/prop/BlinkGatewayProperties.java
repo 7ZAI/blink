@@ -1,7 +1,11 @@
 package com.blink.gateway.config.prop;
 
+import com.blink.gateway.event.EnableStreamEvent;
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.validation.annotation.Validated;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
@@ -11,9 +15,17 @@ import static com.blink.gateway.constant.GatewayConstant.*;
  *
  * @author binblink
  */
+@RefreshScope
 @ConfigurationProperties(prefix = "blink.gateway")
 @Validated
 public class BlinkGatewayProperties {
+
+    private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    public void setEventPublisher(ApplicationEventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
+    }
 
     /**
      * 配置文件在nacos中的id 用于监听配置文件改动
@@ -57,7 +69,6 @@ public class BlinkGatewayProperties {
     }
 
 
-
     public DynamicRoute getDynamicroute() {
         return dynamicroute;
     }
@@ -87,7 +98,11 @@ public class BlinkGatewayProperties {
     }
 
     public void setEventStreamEnable(Boolean eventStreamEnable) {
+        Boolean oldVal = this.eventStreamEnable;
         this.eventStreamEnable = eventStreamEnable;
+        if(!eventStreamEnable.equals(oldVal) ){
+            eventPublisher.publishEvent(new EnableStreamEvent(eventStreamEnable));
+        }
     }
 
     public String getInstanceId() {
@@ -181,7 +196,7 @@ public class BlinkGatewayProperties {
              * 此属性在多gateway实例中 用来区分路由配置 多个实例routeKey相同则共享路由配置
              * 相当于在Nacos中 GROUP 的作用
              */
-            private final String routeKey = ROUTE_PROFIX + getRouteSuffix();
+            private String routeKey;
 
             private String routeSuffix = "default";
 
@@ -191,10 +206,11 @@ public class BlinkGatewayProperties {
             }
 
             public String getRouteKey() {
-                return routeKey;
+                return ROUTE_PROFIX + this.routeSuffix;
             }
 
             public void setRouteSuffix(String routeSuffix) {
+
                 this.routeSuffix = routeSuffix;
             }
 

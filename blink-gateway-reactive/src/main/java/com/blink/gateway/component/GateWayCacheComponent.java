@@ -5,6 +5,7 @@ import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.gateway.service.BaseAppService;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -19,9 +20,9 @@ import static com.blink.gateway.constant.GatewayConstant.*;
  * @Date 2025/10/15
  */
 @Component
+@Slf4j
 public class GateWayCacheComponent {
 
-    private final Logger logger = LoggerFactory.getLogger(GateWayCacheComponent.class);
 
     @Resource
     private MultiLevelCacheComponent multiLevelCacheComponent;
@@ -81,7 +82,7 @@ public class GateWayCacheComponent {
 
     private void setCache(String key, Object value) {
 
-        logger.info("从远程服务获取参数 成功！key:{},value:{}", key, value);
+        log.info("从远程服务获取参数 成功！key:{},value:{}", key, value);
         multiLevelCacheComponent.setRedisCache(key, value).subscribe();
         multiLevelCacheComponent.setLocalCache(key, value);
     }

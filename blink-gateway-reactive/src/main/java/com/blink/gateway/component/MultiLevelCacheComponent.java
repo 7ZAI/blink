@@ -72,7 +72,7 @@ public class MultiLevelCacheComponent {
                     assert value != null;
                     String valueStr = value.toString();
                     if(valueStr.length()>1000){
-                         valueStr = value.toString().substring(0, 1000) + "......";
+                         valueStr = value.toString().substring(0 , 1000) + "......";
                     }
                     log.info("从本地缓存获取缓存参数 成功! key:{},value:{}", key, valueStr);
                     return value;
@@ -130,71 +130,58 @@ public class MultiLevelCacheComponent {
 
 
     /**
-     * 删除缓存（多级）
-     */
-    public Mono<Void> evict(String key) {
-        return Mono.fromRunnable(() -> evictLocalCache(key))
-                .then(evictRedisCache(key))
-                .onErrorResume(throwable -> {
-                    log.error("删除缓存失败, key: {}", key, throwable);
-                    return Mono.empty();
-                });
-    }
-
-    /**
      * 删除本地缓存
+     * @param key
      */
-    public void evictLocalCache(String key) {
-        try {
-            Cache localCache = localCacheManager.getCache(LOCAL_CACHE_NAME);
-            if (localCache != null) {
-                localCache.evict(key);
-                log.debug("本地缓存删除成功, key: {}", key);
+    public Mono<Boolean> evictLocalCache(String key) {
+        return Mono.fromCallable(()->{
+            try{
+                Cache localCache = localCacheManager.getCache(LOCAL_CACHE_NAME);
+                if (localCache != null) {
+                    localCache.evictIfPresent(key);
+                }
+                //不抛异常 即认为成功 即使key 不存在
+                return true;
+            }catch (Exception e){
+                log.error("删除本地缓存 出现异常！"+ e.getMessage(),e);
+                throw new BlinkException(e,e.getMessage());
             }
-        } catch (Exception e) {
-            log.warn("删除本地缓存失败, key: {}", key, e);
-            // 不抛出异常，继续执行Redis删除
-        }
-    }
-
-    /**
-     * 事务性删除缓存（多级）
-     */
-    public Mono<Void> evictTransactional(String key) {
-        return Mono.defer(() -> {
-            try {
-                // 先删除本地缓存
-                evictLocalCache(key);
-
-                // 再删除Redis缓存，如果失败会回滚（通过异常传播）
-                return redisClient.delete(key)
-                        .doOnSuccess(count -> {
-                            log.info("缓存删除成功, key: {}", key);
-                        })
-                        .doOnError(throwable -> {
-                            log.error("Redis缓存删除失败，可能需要手动清理, key: {}", key, throwable);
-                            // 这里可以添加补偿逻辑，比如重试或记录到死信队列
-                        })
-                        .then();
-            } catch (Exception e) {
-                log.error("本地缓存删除失败，整体操作中止, key: {}", key, e);
-                return Mono.error(e);
-            }
-        });
+        }).doOnSuccess(r->log.info("本地缓存删除成功, key: {}", key)).onErrorResume(e -> Mono.just(false));
     }
 
     /**
      * 删除Redis缓存
+     * @param key
      */
-    private Mono<Void> evictRedisCache(String key) {
+    public Mono<Boolean> evictRedisCache(String key){
+        // 再删除Redis缓存，如果失败会回滚（通过异常传播）
         return redisClient.delete(key)
-                .doOnSuccess(b -> {
-                    if (b) {
-                        log.debug("Redis缓存删除成功, key: {}", key);
-                    } else {
-                        log.debug("Redis缓存键不存在, key: {}", key);
-                    }
+                // 这里的 r 通常是 Boolean (表示是否存在并删除) 或 Long (删除的数量)
+                // 无论 r 是 true 还是 false，只要没进 doOnError，业务上都视为成功
+                .map(r -> true)
+                .doOnSuccess(r -> {
+                    // 此时 r 永远是 true
+                    log.info("Redis缓存清理任务完成（无论原键是否存在）, key: {}", key);
                 })
-                .then();
+                .onErrorResume(throwable -> {
+                    log.error("Redis缓存删除失败，可能需要手动清理, key: {}", key, throwable);
+                    // 这里可以添加补偿逻辑，比如重试或记录到死信队列
+                    return Mono.just(false);
+                });
     }
+
+
+    /**
+     * 事务性删除缓存（多级）
+     */
+    public Mono<Boolean> evictTransactional(String key) {
+        return Mono.defer(() -> {
+                // 先删除本地缓存
+                return evictLocalCache(key).then(evictRedisCache(key));
+        }).onErrorResume(thr->{
+            log.error("删除多级缓存失败，整体操作中止, key: {}", key, thr);
+            return Mono.just(false);
+        });
+    }
+
 }

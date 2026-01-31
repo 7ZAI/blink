@@ -1,7 +1,6 @@
 package com.blink.gateway.request;
 
 import cn.hutool.core.lang.UUID;
-import com.alibaba.fastjson2.JSON;
 import com.blink.base.dto.req.QueryBlinkChannelReqDTO;
 import com.blink.base.dto.req.SysLoginReqDTO;
 import com.blink.base.dto.rsp.QueryBlinkChannelRspDTO;
@@ -15,6 +14,7 @@ import com.blink.framework.common.utils.AESUtils;
 import com.blink.framework.common.utils.RSAUtils;
 import com.blink.gateway.signature.HmacSignatureService;
 import com.blink.gateway.signature.SignatureServiceFactory;
+import com.blink.gateway.util.JacksonUtil;
 import com.blink.gateway.util.WebClientUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ParameterizedTypeReference;
@@ -115,7 +115,7 @@ public class WebClientTest {
 
         ResponseDTO<QueryBlinkChannelRspDTO> responseDTO = mono.block();
 
-        System.out.println("<=== " + JSON.toJSONString(responseDTO));
+        System.out.println("<=== " + JacksonUtil.toJson(responseDTO));
     }
 
     /**
@@ -139,7 +139,7 @@ public class WebClientTest {
         String iv = AESUtils.encodeToBase64(ivArr);
         String keyBase64 = AESUtils.encodeToBase64(key.getEncoded());
 
-        String plainTxt = JSON.toJSONString(requestDTO);
+        String plainTxt = JacksonUtil.toJson(requestDTO);
         //aes 加密请求体json字符串
         String encryptTxt = AESUtils.encrypt(key, ivArr, plainTxt);
 
@@ -187,10 +187,10 @@ public class WebClientTest {
 
         var requestDTO = new RequestDTO<QueryBlinkChannelReqDTO>();
         requestDTO.setBody(queryBlinkChannelReqDTO);
-        String bodyStr = JSON.toJSONString(requestDTO);
+        String bodyStr = JacksonUtil.toJson(requestDTO);
         System.out.println(bodyStr);
 
-        RequestDTO requestDTO1 = JSON.parseObject(bodyStr, RequestDTO.class);
+        RequestDTO requestDTO1 = JacksonUtil.fromJson(bodyStr, RequestDTO.class);
 
         requestDTO1.setReqDate(LocalDate.now());
         System.out.println(requestDTO1.toString());
@@ -207,7 +207,7 @@ public class WebClientTest {
         long timestamp = System.currentTimeMillis();
         String nonce = UUID.fastUUID().toString(true);
 
-        String data = JSON.toJSONString(requestDTO);
+        String data = JacksonUtil.toJson(requestDTO);
         Map<String, Object> parameMap = new HashMap<>();
         parameMap.put(KEY_TIMESTAMP, timestamp);
         parameMap.put(KEY_NONCE, nonce);

@@ -6,6 +6,7 @@ import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.util.GateWayUtil;
+import com.blink.gateway.util.JacksonUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,11 +48,9 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
 
 
     private final GateWayCacheComponent cacheComponent;
-    private final ObjectMapper objectMapper;
 
-    public RequestValidateFilter(GateWayCacheComponent cacheComponent,ObjectMapper objectMapper) {
+    public RequestValidateFilter(GateWayCacheComponent cacheComponent) {
         this.cacheComponent = cacheComponent;
-        this.objectMapper = objectMapper;
     }
 
     /**
@@ -324,9 +323,9 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
                 //如果关闭加密 前端json字符串可能带有转义字符 导致验证签名不通过
                 if (SWITCH_OFF.equals(channelInfoRedisDO.getEncryptionSwitch())) {
                     try {
-                        JsonNode jsonNode =   objectMapper.readValue(jsonString, JsonNode.class);
-                        jsonString = jsonNode.toString();
-                    } catch (JsonProcessingException e) {
+                        String jsonNode =   JacksonUtil.parseMessyJson(jsonString,String.class);
+                        jsonString = jsonNode;
+                    } catch (RuntimeException e) {
                         throw new RuntimeException(e);
                     }
 

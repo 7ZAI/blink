@@ -23,17 +23,19 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 @SpringBootTest
 @TestPropertySource(locations = {"classpath:application-test.yml"})
 class BlinkReactiveGatewayApplicationTests {
 
-//    @Autowired
+    @Autowired
     private ReactiveRedisClient redisClient;
 
 //    @Autowired
@@ -43,9 +45,15 @@ class BlinkReactiveGatewayApplicationTests {
     private ReactiveIdGenerator reactiveIdGenerator;
 
 
-
     @Resource
     private BlinkGatewayConfigProperties configProperties;
+
+    @Test
+    public void testRedis(){
+         redisClient.hEntries("blink:gateway:routes:default").doOnNext(entry -> {
+                    System.out.println("路由 Key: {}, Value: {}"+ entry.getKey()+ entry.getValue());
+                }).subscribe();
+    }
 
 
 //    @BeforeAll

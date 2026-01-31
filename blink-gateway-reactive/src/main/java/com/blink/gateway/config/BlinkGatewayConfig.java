@@ -5,31 +5,22 @@ import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.id.ReactiveIdGenerator;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.config.prop.BlinkGatewayConfigProperties;
-import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.filter.*;
 import com.blink.gateway.signature.SignatureServiceFactory;
-import com.blink.gateway.util.GateWayUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import jakarta.annotation.PostConstruct;
+
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
-import org.springframework.data.redis.connection.stream.*;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.RedisSerializationContext;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
-import org.springframework.data.redis.stream.StreamReceiver;
 
-import java.time.Duration;
 
 /**
  * filter 执行顺序
@@ -43,36 +34,18 @@ import java.time.Duration;
 @Configuration
 public class BlinkGatewayConfig {
 
-    @Autowired
+    @Resource
     private ReactiveRedisClient redisClient;
 
-    @Autowired
+    @Resource
     private ReactiveIdGenerator reactiveIdGenerator;
 
-    @Autowired
+    @Resource
     private GateWayCacheComponent cacheComponent;
 
-    @Autowired
+    @Resource
     private SignatureServiceFactory signatureServiceFactory;
 
-
-
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-
-        // 注册模块
-        mapper.registerModule(new JavaTimeModule());
-        // 支持构造函数参数名
-        mapper.registerModule(new ParameterNamesModule());
-
-        // 配置
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-        return mapper;
-    }
 
     /**
      * 全局异常处理
@@ -82,8 +55,8 @@ public class BlinkGatewayConfig {
      */
     @Bean
     @Primary
-    public GlobalExceptionHandlerFilter globalExceptionHandlerFilter(ObjectMapper objectMapper) {
-        return new GlobalExceptionHandlerFilter(cacheComponent,objectMapper);
+    public GlobalExceptionHandlerFilter globalExceptionHandlerFilter() {
+        return new GlobalExceptionHandlerFilter(cacheComponent);
     }
 
     /**
@@ -110,8 +83,8 @@ public class BlinkGatewayConfig {
      * @return
      */
     @Bean
-    public RequestValidateFilter requestValidateFilter(ObjectMapper objectMapper) {
-        return new RequestValidateFilter(cacheComponent,objectMapper);
+    public RequestValidateFilter requestValidateFilter() {
+        return new RequestValidateFilter(cacheComponent);
     }
 
     /**

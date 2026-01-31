@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
-import static com.blink.gateway.constant.GatewayConstant.SWITCH_ON;
 
 /**
  * DataBuffer工具类
@@ -76,12 +75,12 @@ public class GateWayUtil {
     }
 
 
-
     /**
      * 提取客户端真实 IP
+     *
      * @param remoteAddress 远程地址
      * @param xForwardedFor X-Forwarded-For 头
-     * @param xRealIp X-Real-IP 头
+     * @param xRealIp       X-Real-IP 头
      * @return 真实 IP 地址
      */
     public static String extractClientIp(String remoteAddress,
@@ -126,7 +125,8 @@ public class GateWayUtil {
 
     /**
      * 检查 IP 是否在列表中（支持 CIDR）
-     * @param ip 要检查的 IP
+     *
+     * @param ip     要检查的 IP
      * @param ipList IP 列表（支持 CIDR）
      * @return 是否匹配
      */
@@ -179,6 +179,7 @@ public class GateWayUtil {
 
     /**
      * 验证 IP 地址格式
+     *
      * @param ip IP 地址
      * @return 是否有效
      */
@@ -197,6 +198,7 @@ public class GateWayUtil {
 
     /**
      * 判断是否是 IPv6 地址
+     *
      * @param ip IP 地址
      * @return 是否是 IPv6
      */
@@ -211,6 +213,7 @@ public class GateWayUtil {
 
     /**
      * 判断是否是 IPv4 地址
+     *
      * @param ip IP 地址
      * @return 是否是 IPv4
      */
@@ -301,11 +304,11 @@ public class GateWayUtil {
      * 如果Stream和group不存在  则创建 Stream 和消费者组（响应式方式）
      *
      * @param redisClient redis客户端
-     * @param streamKey  流key值
-     * @param groupName 组名称
+     * @param streamKey   流key值
+     * @param groupName   组名称
      * @return Mono<Boolean> true/false
      */
-    public static Mono<Boolean> createStreamAndGroup(ReactiveRedisClient redisClient, String streamKey, String groupName ) {
+    public static Mono<Boolean> createStreamAndGroup(ReactiveRedisClient redisClient, String streamKey, String groupName) {
 
         // 检查 Stream 是否存在，如果不存在则创建
         return redisClient.xPending(streamKey, groupName)
@@ -316,16 +319,24 @@ public class GateWayUtil {
                 })
                 //不存在 会报错
                 .onErrorResume(e -> {
-                    log.error("xPending error", e);
                     log.warn("在stream:{} 中 组:{}不存在", streamKey, groupName);
                     log.info("在stream:{} 中创建组:{}", streamKey, groupName);
 
                     // createGroup 如果stream 不存在也会创建 再创建组
                     return redisClient.xGroupCreate(streamKey, groupName, "0-0")
                             .map(s -> {
-                                log.info("在stream:{} 创建组:{} 创建结果：{}",streamKey, groupName, s);
-                                return true;
-                            }).switchIfEmpty(Mono.just(false));
+                                log.info("在stream:{} 创建组:{} 创建结果：{}", streamKey, groupName, s);
+
+                                if ("OK".equals(s)) {
+                                    return true;
+                                }
+                                return false;
+                            })
+                            .switchIfEmpty(Mono.just(false))
+                            .onErrorResume(re -> {
+                                log.warn("创建stream:{} 创建组:{} 失败", streamKey, groupName);
+                                return Mono.just(false);
+                            });
                 });
     }
 

@@ -10,6 +10,8 @@ import org.springframework.cloud.gateway.route.RouteDefinitionRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 
 /**
  * Redis 存储路由
@@ -27,39 +29,22 @@ public class RedisRouteDefinitionRepository implements RouteDefinitionRepository
                                           ReactiveRedisClient redisClient) {
         this.redisProperties = redisProperties;
         this.redisClient = redisClient;
-//        initListener();
     }
-
 
 
     @Override
     public Flux<RouteDefinition> getRouteDefinitions() {
-        log.info("从redis中获取路由  RedisRouteDefinitionRepository getRouteDefinitions ！");
-        return redisClient.hEntries(redisProperties.getRouteKey())
-                .map(entry -> JacksonUtil.fromJson(entry.getValue().toString(), RouteDefinition.class))
-                .doOnNext(routeDefinition -> log.info("从redis 获取的路由：{}",routeDefinition.toString()));
+        String routesKey = redisProperties.getRouteKey();
+        return redisClient.hEntries(routesKey).switchIfEmpty(Mono.error(new BlinkException("路由为空 key:" + routesKey)))
+                .mapNotNull(routeDefinition -> {
+                    log.info("从redis 获取的路由：{}",routeDefinition.getValue());
+                    String jsonstr = (String) routeDefinition.getValue();
+                    return JacksonUtil.fromJson(jsonstr,RouteDefinition.class);
+                }).onErrorContinue((e, r) -> log.error("路由解析失败，跳过该条记录: {}", e.getMessage(),e));
+
 
     }
 
-    /**
-     * 初始化Redis消息监听[citation:5]
-     */
-//    private void initListener() {
-//        redisClient.
-//        redisClient.getConnectionFactory()
-//            .getConnection()
-//            .subscribe(
-//                (message, pattern) -> {
-//                    // 收到Redis路由变更消息时刷新路由
-//                    String body = new String(message.getBody());
-//                    if ("route_changed".equals(body)) {
-//                        // 这里可以通过ApplicationEventPublisher发布RefreshRoutesEvent
-//                        // 需要注入ApplicationEventPublisher
-//                    }
-//                },
-//                ("gateway_route_channel").getBytes()
-//            );
-//    }
     @Override
     public Mono<Void> save(Mono<RouteDefinition> route) {
         // 保存到Redis

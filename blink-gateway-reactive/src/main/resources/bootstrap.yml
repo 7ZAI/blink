@@ -23,7 +23,10 @@ spring:
       config:
         namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
         server-addr: 127.0.0.1:8848
-        file-extension: json
+        extension-configs:
+          - data-id: blink-gateway.yaml
+            group: DEFAULT_GROUP
+            refresh: true
       ## 服务发现注册
       discovery:
         namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb

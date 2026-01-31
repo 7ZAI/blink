@@ -9,7 +9,6 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.trafficControl.RateLimitExceededException;
 import com.blink.gateway.util.JacksonUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBufferFactory;
@@ -35,11 +34,8 @@ public class GlobalExceptionHandlerFilter implements WebExceptionHandler, Ordere
 
     private final GateWayCacheComponent cacheComponent;
 
-    private final ObjectMapper objectMapper;
-
-    public GlobalExceptionHandlerFilter(GateWayCacheComponent gateWayCacheComponent,ObjectMapper objectMapper) {
+    public GlobalExceptionHandlerFilter(GateWayCacheComponent gateWayCacheComponent) {
         this.cacheComponent = gateWayCacheComponent;
-        this.objectMapper = objectMapper;
     }
 
     @Override

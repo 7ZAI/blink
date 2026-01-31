@@ -74,33 +74,33 @@ management:
         prometheus:
           enabled: true
 
-blink:
-  gateway:
-    configDataId: gateway-routes
-    configGroup: DEFAULT_GROUP
-    localCacheEnable: true
-    eventStreamEnable: true
-    dynamicRoute:
-      mode: close
-      nacos:
-        dataId: gateway-routes
-        group: DEFAULT_GROUP
-#      redis:
-#        routeSuffix: default
-#        groupId: route-consumer-1
-#        streamkey: blink:stream:gateway:route
-    ingnoredUrl:
-      - /login
-      - /captcha/get
-    instance-id: 00
-
-  redis:
-    enableLocalCache: false
-    idGenerator:
-      seq-param:
-        request:
-          step: 1000
-          fetch-percent: 0.8
-        trance:
-          step: 2000
+#blink:
+#  gateway:
+#    configDataId: gateway-routes
+#    configGroup: DEFAULT_GROUP
+#    localCacheEnable: true
+#    eventStreamEnable: false
+#    dynamicRoute:
+#      mode: close
+#      nacos:
+#        dataId: gateway-routes
+#        group: DEFAULT_GROUP
+##      redis:
+##        routeSuffix: default
+##        groupId: route-consumer-1
+##        streamkey: blink:stream:gateway:route
+#    ingnoredUrl:
+#      - /login
+#      - /captcha/get
+#    instance-id: 00
+#
+#  redis:
+#    enableLocalCache: false
+#    idGenerator:
+#      seq-param:
+#        request:
+#          step: 1000
+#          fetch-percent: 0.8
+#        trance:
+#          step: 2000
 
