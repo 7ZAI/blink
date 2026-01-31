@@ -14,7 +14,7 @@ public class WebClientConfig {
 
 
     /**
-     * WebClient配置 这是实现负载均衡的关键配置
+     * WebClient配置 这是webclient实现负载均衡的关键注解
      * 调用第三方服务
      *
      */

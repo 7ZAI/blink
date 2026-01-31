@@ -70,6 +70,10 @@ public class BlinkGatewayConfigProperties {
          */
         private boolean ipFilterEnable = false;
 
+        private boolean whiteListEnable = false;
+
+        private boolean blackListEnable = false;
+
         /**
          * 白名单-单个IP地址集合
          * 格式示例：["192.168.1.1", "10.0.0.1"]

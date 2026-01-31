@@ -6,10 +6,8 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.mq.StreamMessage;
 import com.blink.gateway.component.MultiLevelCacheComponent;
-import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.listener.StreamMsgRecord;
 import com.blink.gateway.util.GateWayUtil;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,7 +49,7 @@ public class RedisStreamConsumerConfig {
     @Resource
     private MultiLevelCacheComponent cacheComponent;
 
-    @Value("${blink.gateway.instance-id:03}")
+    @Value("${blink.gateway.instance-id:01}")
     private String instanceId;
 
     @Value("${spring.application.name}")
@@ -75,7 +73,7 @@ public class RedisStreamConsumerConfig {
                 .targetType(StreamMessage.class)
                 //下面两个方法的顺序影响 返回类型泛型
                 .onErrorResume(e -> {
-                    log.error("stream error!"+ e.getMessage(),e);
+                    log.error("stream error!" + e.getMessage(), e);
                     return Mono.empty();
                 }).build();
 
@@ -85,32 +83,36 @@ public class RedisStreamConsumerConfig {
 
         Consumer consumer = Consumer.from(groupName, "event-consumer");
         //检查缓存stream 和消费group 无则创建
-        Flux<StreamMsgRecord> flux = GateWayUtil.createStreamAndGroup(redisClient, streamKey, groupName).flux().flatMap(bool -> {
-            if (bool) {
-                return streamReceiver.receive(consumer, streamOffset).flatMap(record -> {
-                    log.info("收到来自redis stream {}的事件消息 record：{}", streamKey, record);
+        Flux<StreamMsgRecord> flux = GateWayUtil.createStreamAndGroup(redisClient, streamKey, groupName)
+                .flux()
+                .flatMap(bool -> {
+                    //stream已经成功创建
+                    if (bool) {
+                        return streamReceiver.receive(consumer, streamOffset)
+                                .flatMap(record -> {
+                                    log.info("收到来自redis stream {}的事件消息 record：{}", streamKey, record);
 
-                    String rid = record.getId().getValue();
-                    StreamMessage message = record.getValue();
-                    StreamMsgRecord streamMsgRecord = new StreamMsgRecord(rid, streamKey, groupName, message);
+                                    String rid = record.getId().getValue();
+                                    StreamMessage message = record.getValue();
+                                    StreamMsgRecord streamMsgRecord = new StreamMsgRecord(rid, streamKey, groupName, message);
 
-                    return handlerEvent(streamMsgRecord).doOnSuccess(result->{
-                        //事件处理 失败！
-                        if (!result.getHandledResult()) {
-                               throw new BlinkException("消费失败");
-                        }
-                        ack(result).subscribe();
-                    });
-//                    return Flux.just(streamMsgRecord);
+                                    return handlerEvent(streamMsgRecord).flatMap(result -> {
+                                        //事件处理 失败！
+                                        if (!result.getHandledResult()) {
+                                            return Mono.error(new BlinkException("消费失败"));
+                                        }
+                                        return ack(result).map(r -> streamMsgRecord);
+                                    });
 
-                }).onErrorContinue((e, r) -> {
-                    //只记录 不停止监听 如果抛出异常会停止链接
-                    log.error("处理消费同步缓存消息出错！", e);
+                                }).onErrorContinue((e, r) -> {
+                                    //只记录 不停止监听 如果抛出异常会停止链接
+                                    log.error("处理消费同步缓存消息出错！", e);
 
+                                });
+                    }
+                    //stream不存在并创建失败
+                    return Mono.error(new BlinkException("创建消息stream失败！"));
                 });
-            }
-            return Mono.error(new BlinkException("创建消息stream失败！"));
-        });
 
         return flux;
     }
@@ -154,7 +156,7 @@ public class RedisStreamConsumerConfig {
     private Mono<Boolean> ack(StreamMsgRecord smr) {
 
         return redisClient.xAck(smr.getStreamKey(), smr.getGroupName(), smr.getId()).map(rs -> rs > 0)
-                .doOnSuccess(l -> log.info("stream消息消费完成 并以确认 ack结果:{}", l))
+                .doOnSuccess(l -> log.info("stream消息消费 ack结果:{}", l))
                 .onErrorContinue((ex, r) -> log.error("处理失败，消息将留在 PEL 中等待重试: {}", ex.getMessage(), ex));
     }
 

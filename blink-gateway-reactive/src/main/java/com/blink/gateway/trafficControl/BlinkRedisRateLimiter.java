@@ -12,7 +12,9 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 
 /**
- *
+ * 自定义限流判断
+ * 修改逻辑 达到限流条件提前抛出异常 而不是原本的直接返回响应429
+ * 其他不变
  * @Author binblink
  */
 @Slf4j

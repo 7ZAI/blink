@@ -8,6 +8,7 @@ import com.blink.gateway.component.MultiLevelCacheComponent;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.event.EnableStreamEvent;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.event.RefreshRoutesEvent;
@@ -44,6 +45,12 @@ public class CommonEventStreamListener {
             this.start();
         }
         CommonEventStreamListener.initialized = true;
+    }
+
+    @PreDestroy
+    public void destroy() {
+        // 取消订阅
+        this.stop();
     }
 
 

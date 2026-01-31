@@ -6,8 +6,6 @@ import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.gateway.service.BaseAppService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -16,8 +14,7 @@ import static com.blink.gateway.constant.GatewayConstant.*;
 /**
  * 缓存组件
  *
- * @Author binblink
- * @Date 2025/10/15
+ * @author binblink
  */
 @Component
 @Slf4j
@@ -41,8 +38,7 @@ public class GateWayCacheComponent {
 
         String cacheKey = GATEWAY_CONFIG_KEY_PREFIX + configKey;
 
-        return multiLevelCacheComponent.get(cacheKey, SysConfigCacheDO.class,
-                        (key, clazz) -> baseAppService.getOneConfig(key).doOnNext(value -> setCache(cacheKey, value)))
+        return multiLevelCacheComponent.get(cacheKey, SysConfigCacheDO.class,(key, clazz) -> baseAppService.getOneConfig(key))
                 .onErrorResume(e -> Mono.empty());
     }
 
@@ -56,8 +52,7 @@ public class GateWayCacheComponent {
 
         String cacheKey = BLINK_CHANNEL_PREFIX + appKey;
 
-        return multiLevelCacheComponent.get(cacheKey, ChannelInfoRedisDO.class,
-                        (key, clazz) -> baseAppService.getChannelInfo(key).doOnNext(value -> setCache(cacheKey, value)))
+        return multiLevelCacheComponent.get(cacheKey, ChannelInfoRedisDO.class,(key, clazz) -> baseAppService.getChannelInfo(key))
                 .onErrorResume(e -> Mono.empty());
     }
 
@@ -65,7 +60,7 @@ public class GateWayCacheComponent {
      * 从缓存中获取错误码信息表
      *
      * @param errCode 错误码
-     * @param local 语言
+     * @param local   语言
      * @return
      */
     public Mono<String> getErrorMsgInfoFromCache(String errCode, String local) {
@@ -73,18 +68,8 @@ public class GateWayCacheComponent {
         String cacheKey = ERR_MSG_PREFIX + local + ":" + errCode;
 
         return multiLevelCacheComponent.get(cacheKey, String.class,
-                        (key, clazz) -> baseAppService.getErrorMsgInfo(errCode, local)
-                                .map(QueryErrMsgRspDTO::getMsgInfo)
-                                .doOnNext(value -> setCache(cacheKey, value)))
+                        (key, clazz) -> baseAppService.getErrorMsgInfo(errCode, local).map(QueryErrMsgRspDTO::getMsgInfo))
                 .onErrorResume(e -> Mono.empty());
-    }
-
-
-    private void setCache(String key, Object value) {
-
-        log.info("从远程服务获取参数 成功！key:{},value:{}", key, value);
-        multiLevelCacheComponent.setRedisCache(key, value).subscribe();
-        multiLevelCacheComponent.setLocalCache(key, value);
     }
 
 
