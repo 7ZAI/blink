@@ -5,7 +5,6 @@ package com.blink.base;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.crypto.asymmetric.RSA;
-import com.alibaba.fastjson2.JSON;
 import com.blink.base.dto.req.AddSysUserReqDTO;
 import com.blink.base.dto.req.SysLoginReqDTO;
 import com.blink.base.entity.FilterDefinitionDO;
@@ -13,26 +12,52 @@ import com.blink.base.entity.PredicateDefinitionDO;
 import com.blink.base.entity.RouteDefinitionDO;
 import com.blink.datasource.code.CodeGenerator;
 import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.core.crypt.AESUtils;
-import com.blink.framework.core.crypt.RSAUtils;
+import com.blink.framework.common.utils.AESUtils;
+import com.blink.framework.common.utils.JacksonUtil;
+import com.blink.framework.common.utils.RSAUtils;
 import org.junit.jupiter.api.Test;
 
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.time.LocalDate;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 
 public class NormalTest {
+    @Test
+    void testJson(){
+        String json = "{\n" +
+                "    \"id\": \"test-app\",\n" +
+                "    \"predicates\": [\n" +
+                "        {\n" +
+                "            \"name\": \"Path\",\n" +
+                "            \"args\": {\n" +
+                "                \"pattern\": \"/test/**\"\n" +
+                "            }\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"filters\": [\n" +
+                "        {\n" +
+                "            \"name\": \"RequestRateLimiter\",\n" +
+                "            \"args\": {\n" +
+                "                \"key-resolver\": \"#{@ipKeyResolver}\",\n" +
+                "                \"redis-rate-limiter.replenishRate\": \"1\",\n" +
+                "                \"redis-rate-limiter.burstCapacity\": \"9\",\n" +
+                "                \"redis-rate-limiter.requestedTokens\": \"1\"\n" +
+                "            }\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"uri\": \"lb://test-app\",\n" +
+                "    \"metadata\": {},\n" +
+                "    \"order\": 0\n" +
+                "}";
+        RouteDefinitionDO routeDefinitionDO =  JacksonUtil.fromJson(json, RouteDefinitionDO.class);
 
-
+        System.out.println(routeDefinitionDO);
+    }
 
     @Test
     public void test() throws Exception {
@@ -95,7 +120,7 @@ public class NormalTest {
         requestDTO.setVersion("v1");
         requestDTO.setClientIp("192.168.1.3");
         requestDTO.setBody(sysLoginReqDTO);
-        System.out.println(JSON.toJSONString(requestDTO));
+        System.out.println(JacksonUtil.toJson(requestDTO));
     }
 
 
@@ -120,11 +145,11 @@ public class NormalTest {
     @Test
     public void test2() throws Exception {
         byte[] iv = AESUtils.generateIV();
-        String iv64 = AESUtils.encodeToBase64String(iv);
+        String iv64 = AESUtils.encodeToBase64(iv);
         System.out.println("iv:  "+iv64);
-        SecretKey secretKey = AESUtils.generateSecretKey();
+        SecretKey secretKey = AESUtils.generateRandomAESKey();
 
-        String key = AESUtils.encodeToBase64String(secretKey.getEncoded());
+        String key = AESUtils.encodeToBase64(secretKey.getEncoded());
 
         System.out.println("keypalin:  "+key);
 
@@ -142,7 +167,7 @@ public class NormalTest {
         reqDTO.setBody(req);
         reqDTO.setReqDate(LocalDate.now());
 
-        String jsonStr = JSON.toJSONString(reqDTO);
+        String jsonStr = JacksonUtil.toJson(reqDTO);
         System.out.println(jsonStr);
         String cipertext = AESUtils.encrypt(secretKey, iv, jsonStr);
         System.out.println("cipertext: "+cipertext);
@@ -163,7 +188,7 @@ public class NormalTest {
         System.out.println("还原的key:" + keyde);
 
 
-        String jsono = AESUtils.decrypt(keyde, iv64, cipertext);
+        String jsono = AESUtils.decrypt(AESUtils.keyFromBase64(keyde), AESUtils.ivFromBase64(iv64), cipertext);
 
         System.out.println(jsono);
 
@@ -182,7 +207,7 @@ public class NormalTest {
 
         String cipertext = "rmefLxwNzTGLPaiaKirzFNMlmM7kLOqLJovKqSg56xZ0YO1sf0aFY1TU6Xa7cishdm1/2Zjgc4sKjZd+c/X9RwojaMc/PeLsD5ReaOB8NEEN0YzNjBvBrlkdB4/4nrCndT2fWKbi9ZoU";
 
-        System.out.println(AESUtils.decrypt(keyde, iv, cipertext));
+        System.out.println(AESUtils.decrypt(AESUtils.keyFromBase64(keyde), AESUtils.ivFromBase64(iv), cipertext));
 
     }
 
@@ -208,13 +233,15 @@ public class NormalTest {
         routeDefinitionDO.setPredicates(Collections.singletonList(predicateDefinitionDO));
         routeDefinitionDO.setFilters(Collections.singletonList(filterDefinitionDO));
 
-        System.out.println(JSON.toJSONString(routeDefinitionDO));
+        System.out.println(JacksonUtil.toJson(routeDefinitionDO));
     }
 
     public static void main(String[] args) {
         CodeGenerator.generateByCustomTemplate("jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8",
                 "root","123456");
     }
+
+
 
 
 }

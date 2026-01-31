@@ -1,11 +1,11 @@
 package com.blink.base.controller;
 
-import com.alibaba.fastjson2.JSON;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.dto.req.*;
 import com.blink.framework.common.constrant.SysConstant;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
+import com.blink.framework.common.utils.JacksonUtil;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -40,7 +40,7 @@ class BlinkChannelControllerTest {
         reqParam.setRelaUserId("1");
 
         MvcResult result = perform("/channel/saveChannel", reqParam);
-        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
 
@@ -54,7 +54,7 @@ class BlinkChannelControllerTest {
 
 
         MvcResult result = perform("/channel/deleteChannel", reqParam);
-        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
 
@@ -72,7 +72,7 @@ class BlinkChannelControllerTest {
         reqParam.setTokenTimeoutSwitch(CommonConstans.SWITCH_CLOSE);
 
         MvcResult result = perform("/channel/modifyChannel", reqParam);
-        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
 
@@ -82,7 +82,7 @@ class BlinkChannelControllerTest {
         QueryBlinkChannelReqDTO reqParam = new QueryBlinkChannelReqDTO();
 
         MvcResult result = perform("/channel/getChannelList", reqParam);
-        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
 
@@ -94,7 +94,7 @@ class BlinkChannelControllerTest {
         reqParam.setChannelName("Apple");
 
         MvcResult result = perform("/channel/getChannel", reqParam);
-        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
 
@@ -103,7 +103,7 @@ class BlinkChannelControllerTest {
 
         RequestDTO reqDto = new RequestDTO<>();
         reqDto.setBody(reqParam);
-        String param = JSON.toJSONString(reqDto);
+        String param = JacksonUtil.toJson(reqDto);
 
         return mockMvc.perform(MockMvcRequestBuilders.post(url)
                         .accept(MediaType.APPLICATION_JSON)

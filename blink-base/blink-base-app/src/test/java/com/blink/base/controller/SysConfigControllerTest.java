@@ -5,12 +5,10 @@ import com.blink.base.dto.req.AddSysConfigReqDTO;
 import com.blink.base.dto.req.DeleteSysConfigReqDTO;
 import com.blink.base.dto.req.UpdateSysConfigReqDTO;
 import com.blink.base.dto.req.QuerySysConfigReqDTO;
-import com.blink.base.dto.rsp.QuerySysConfigRspDTO;
-import com.alibaba.fastjson2.JSON;
-import com.blink.base.dto.req.*;
 import com.blink.framework.common.constrant.SysConstant;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
+import com.blink.framework.common.utils.JacksonUtil;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -49,7 +47,7 @@ class SysConfigControllerTest {
         AddSysConfigReqDTO reqParam = new AddSysConfigReqDTO();
 
         MvcResult result = perform("/sysConfig/saveSysConfig", reqParam);
-        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
     /**
@@ -63,7 +61,7 @@ class SysConfigControllerTest {
         DeleteSysConfigReqDTO reqParam = new DeleteSysConfigReqDTO();
 
         MvcResult result = perform("/sysConfig/deleteSysConfig", reqParam);
-        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
 
@@ -78,7 +76,7 @@ class SysConfigControllerTest {
         UpdateSysConfigReqDTO reqParam = new UpdateSysConfigReqDTO();
 
         MvcResult result = perform("/sysConfig/modifySysConfig", reqParam);
-        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
 
@@ -93,7 +91,7 @@ class SysConfigControllerTest {
         QuerySysConfigReqDTO reqParam = new QuerySysConfigReqDTO();
 
         MvcResult result = perform("/sysConfig/getSysConfigList", reqParam);
-        ResponseDTO response = JSON.parseObject(result.getResponse().getContentAsString(), ResponseDTO.class);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
 
@@ -104,7 +102,7 @@ class SysConfigControllerTest {
 
         RequestDTO reqDto = new RequestDTO<>();
         reqDto.setBody(reqParam);
-        String param = JSON.toJSONString(reqDto);
+        String param = JacksonUtil.toJson(reqDto);
 
         return mockMvc.perform(MockMvcRequestBuilders.post(url)
                         .accept(MediaType.APPLICATION_JSON)
