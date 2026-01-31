@@ -14,6 +14,8 @@ import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 import static com.blink.gateway.constant.GateWayErrMsgCode.FORBIDDEN;
 import static com.blink.gateway.constant.GateWayErrMsgCode.ILLEGAL_REQUEST;
 
@@ -57,22 +59,56 @@ public class IpFilter implements GlobalFilter, Ordered {
 //            log.debug("IPv6 地址被拒绝，因为 IPv6 支持未启用: {}", clientIp);
 //            return Mono.error(new BlinkException(FORBIDDEN));
 //        }
-
-        // 检查白名单（如果白名单不为空，则只允许白名单中的 IP 访问）
-        if (!config.getWhiteListIps().isEmpty()) {
-            if (config.getWhiteListIps().contains(clientIp)) {
-                log.debug("IP 地址在白名单中，允许访问: {}", clientIp);
-                return chain.filter(exchange);
-            } else {
-                log.warn("IP 地址不在白名单中被拒绝: {}", clientIp);
-                return Mono.error(new BlinkException(FORBIDDEN));
+        // 白名单开启
+        if(config.isWhiteListEnable()){
+            //单个
+            List<String> whiteListIps = config.getWhiteListIps();
+            //网段
+            List<String> whiteListNetwork = config.getWhiteListIpRanges();
+            // 检查白名单（如果白名单不为空，则只允许白名单中的 IP 访问）
+            if (!whiteListIps.isEmpty()) {
+                if (whiteListIps.contains(clientIp)) {
+                    log.debug("IP 地址在白名单中，允许访问: {}", clientIp);
+                    return chain.filter(exchange);
+                }
             }
+
+            if(!whiteListNetwork.isEmpty()){
+                for(String network : whiteListNetwork){
+                    if(IPAddressUtils.isIpInNetwork(clientIp,network)){
+                        log.debug("IP 地址在白名单网段中，允许访问: {}", clientIp);
+                        return chain.filter(exchange);
+                    }
+                }
+            }
+            log.warn("IP 地址不在白名单中被拒绝: {}", clientIp);
+            return Mono.error(new BlinkException(FORBIDDEN));
         }
 
-        //白名单为空 检查黑名单
-        if (!config.getBlackListIps().isEmpty() && config.getBlackListIps().contains(clientIp)) {
-            log.warn("IP 地址在黑名单中被拒绝: {}", clientIp);
-            return Mono.error(new BlinkException(FORBIDDEN));
+        //黑名单开启
+        if(config.isBlackListEnable()){
+            //单个
+            List<String> blackListIps = config.getBlackListIps();
+            //网段
+            List<String> blackListNetwork = config.getBlackListIpRanges();
+
+            //白名单为空 检查黑名单
+            if (!blackListIps.isEmpty()) {
+
+                if(blackListIps.contains(clientIp)){
+                    log.warn("IP 地址在黑名单中 拒绝访问: {}", clientIp);
+                    return Mono.error(new BlinkException(FORBIDDEN));
+                }
+            }
+
+            if(!blackListNetwork.isEmpty()){
+                for(String network : blackListNetwork){
+                    if(IPAddressUtils.isIpInNetwork(clientIp,network)){
+                        log.warn("IP 地址在黑名单网段中 拒绝访问: {}", clientIp);
+                        return Mono.error(new BlinkException(FORBIDDEN));
+                    }
+                }
+            }
         }
 
         // 黑白名单都为空或白名单为空且不在黑名单中，允许访问
