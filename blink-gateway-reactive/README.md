@@ -13,6 +13,7 @@
   - [全局异常处理](#全局异常处理)
   - [负载均衡](#负载均衡) 
   - [配置参数](#配置参数)
+  - [缓存](#缓存)
   - [监控](#监控)
 - [🧪 测试](#-测试)
 
@@ -166,9 +167,11 @@ blink:
 #### Redis实现动态路由
 
 redis实现的动态路由也是通过传递刷新事件来实现路由变化的实时生效，不同于Nacos的实现，路由仓库为redis缓存，路由修改事件
-通过监听redis stream 消息来获取，而修改事件的触发，是调用base-app服务提供的管理接口触发。最终流程为通过base-app后台管理页面修改路由，
-，base服务发送修改事件消息到Redis stream，网关端获取事件消息 刷新路由。
+通过监听redis stream 消息来获取，而修改事件的触发，是调用base-app服务提供的管理接口触发。
 
+最终流程为通过 调用base-app后台管理接口修改路由----> ---->base服务发送修改事件消息到Redis stream---->网关端获取事件消息---->刷新路由
+
+启用Redis 动态路由配置 其中routeSuffix为redis保存路由信息的key后缀 通过它可以划分不同的gateway集群
 ```yaml
 blink:
   gateway:
@@ -176,8 +179,6 @@ blink:
       mode: redis
       redis:
         routeSuffix: default
-        groupId: route-consumer-1
-        streamkey: blink:stream:gateway:route
 ```
 
  ### 认证与鉴权
@@ -187,19 +188,23 @@ blink gateway整合了spring security 来实现登录认证和鉴权。
 
 目前实现了base-app服务的用户名密码登录认证和鉴权。
 
-token认证 登入后通过UUID生成一个唯一Id作为用户token凭证，将token存在redis中，并设置30分钟的过期时间。用户每个请求都会拦截获取token，与redis的做比对，token一致则请求通过，否则拒绝。
-自动续期：如果用户则过期时间仍然剩10分钟时，仍然活跃 则将token过期时间延长30分钟.
+token认证: 登入后通过UUID生成一个唯一Id作为用户token凭证，将token存在redis中，并设置30分钟的过期时间。用户每个请求都会拦截获取token，与redis的做比对，token一致则请求通过，否则拒绝。
 
-这种方案是为了管理后台管理系统的用户状态，方便实现 踢人 强制下线等功能。
+自动续期：如果用户过期时间仍然剩5分钟时，仍然活跃 则将token过期时间延长30分钟.
+
+这种方案是适用于管理后台管理系统的用户状态，方便实现 踢人 强制下线等功能。
+
+TODO 未来支持
+如果不追求管理用户登录状态，可以采用jwt 双token的方案 后续添加
 
 相关类：[TokenServerAuthenticationConverter](src/main/java/com/blink/gateway/security/TokenServerAuthenticationConverter.java)、
 [BlinkAuthorizationManager](src/main/java/com/blink/gateway/security/BlinkAuthorizationManager.java) 、[BlinkAuthenticationSuccessHandler](src/main/java/com/blink/gateway/security/BlinkAuthenticationSuccessHandler.java)
 
 权限校验：是对RBAC权限管理模型的实现。通过redis缓存获取url对应的权限标识，校验用户登入成功时获取的权限集合，是否具有该标识，有则通过 无则拒绝。
+
  相关类：[TokenAuthenticationManager](src/main/java/com/blink/gateway/security/TokenAuthenticationManager.java)
 
-TODO 未来支持
-如果不追求管理用户登录状态，可以采用jwt 双token的方案
+
 
 
 
@@ -244,9 +249,13 @@ TODO 未来支持
 
 ```
 
+链路追踪：
+
+
 相关类：[RewriteRequestBodyFilter.java](src/main/java/com/blink/gateway/filter/RewriteRequestBodyFilter.java)
 
  ### 全局异常处理
+
  全局异常处理 这里只针对在网关产生的异常进行处理 其他服务产生的异常由服务自身处理
  错误信息组装所有的错误都应该设置msg为错误码的形式，然后由全局异常处理统一根据错误码设置具体的错误信息。
  在blink框架中 采用HTTP 200 + 业务错误码的方案 业务上的错误码和http的状态码是分开设置，即业务上抛出错误，http状态码也是200.
@@ -263,11 +272,15 @@ TODO 未来支持
 目前引入LoadBalancer依赖 按默认配置即按轮询的方式进行负载均衡。通过路由配置lb://服务名 前缀来启动负载均衡
 
  ### 配置参数
+
+
+
 对gateway的一些系统参数进行动态修改，实时生效。这些参数一般为：请求报文大小限制、本地缓存开关、防重放开关、有效时间、ip黑白名单等等
  目前有两种方案 一、Reids stream 消息进行本地缓存同步 好处是可以中后台系统搭建页面进行可视化管理
               二、Nacos 监听参数文件的 好处是实现简单
  虽然技术上stream的方案更有挑战，但是实际场景中 gateway的配置参数不会经常变动 所以从实际触发采用Nacos配置文件的方案
  当前Reids stream已经走通 未完善、关于gateway的配置参数文件也未设置
+
 
  未来方案 参考开源项目 [shenyu](https://github.com/apache/shenyu) 的网关实现，在网关采用内存微型数据库搭建后台管理和监控系统一起，直接垂直管理。
 
@@ -285,6 +298,7 @@ TODO 未来支持
 | black_list_ips                          | 黑名单ip地址集合       | {}    |
 
 
+### 缓存
 
  ### 流量控制
 
@@ -301,14 +315,20 @@ TODO
    通过动态路由已经可以实现一定程度的灰度发布。更细致的关于灰度发布的相关功能 暂时搁置 TODO
 
  **TODO**
+
  ### 监控
 
-
-
  **TODO**
+
 ### 其他功能
+
  #### ip黑白名单
-        
+   
+可以设置ip 白名单和黑名单，白名单黑名单同时开启时 优先校验白名单   
+支持设置ipv4和ipv6 
+支持网段设置
+
+详情[IpFilter](src/main/java/com/blink/gateway/filter/IpFilter.java)    
  #### 临时功能下线
 TODO
 

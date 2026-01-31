@@ -4,12 +4,16 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.service.RemoteService;
+import com.blink.gateway.util.JacksonUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * 多级缓存基础组件封装
@@ -99,12 +103,14 @@ public class MultiLevelCacheComponent {
     private <T> Mono<T> getFromRedis(String key, Class<T> clazz) {
         log.info("尝试从Redis获取 缓存参数 key:{}", key);
         return redisClient.get(key)
-                .map(e -> {
-                    T value = clazz.cast(e);
-                    if (value.toString().length() < 1000) {
-                        log.info("从Redis获取缓存参数 成功! key:{},value:{}", key, value);
-                    } else {
-                        log.info("从Redis获取缓存参数 成功! key:{},value length:{} 超过设置值 省略", key, value.toString().length());
+                .mapNotNull(e -> {
+                    T value = JacksonUtil.convert(e, clazz);
+                    if(value != null){
+                        if (value.toString().length() < 1000) {
+                            log.info("从Redis获取缓存参数 成功! key:{},value:{}", key, value);
+                        } else {
+                            log.info("从Redis获取缓存参数 成功! key:{},value length:{} 超过设置值 省略", key, value.toString().length());
+                        }
                     }
                     return value;
                 })

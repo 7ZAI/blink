@@ -10,6 +10,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -53,11 +55,21 @@ import java.util.concurrent.TimeUnit;
 @EnableConfigurationProperties({BlinkRedisProperties.class})
 public class BlinkRedisAutoConfiguration {
 
-    @Bean
-    @ConditionalOnMissingBean
-    public ObjectMapper objectMapper(){
-        ObjectMapper mapper = new ObjectMapper();
+    private static volatile ObjectMapper objectMapperForRedis;
 
+    public static ObjectMapper getObjectMapper() {
+        if (objectMapperForRedis == null) {
+            synchronized (JacksonUtil.class) {
+                if (objectMapperForRedis == null) {
+                    objectMapperForRedis = objectMapperForRedis();
+                }
+            }
+        }
+        return objectMapperForRedis;
+    }
+
+    private static ObjectMapper objectMapperForRedis(){
+        ObjectMapper mapper = new ObjectMapper();
         // ========== 基础配置 ==========
         // 忽略未知属性
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -66,6 +78,19 @@ public class BlinkRedisAutoConfiguration {
         // 忽略null值
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
+//        PolymorphicTypeValidator typeValidator = BasicPolymorphicTypeValidator.builder()
+//                // 允许所有以 Object 为基类的类型嵌入类型信息
+//                .allowIfBaseType(Object.class)
+//                .build();
+//
+//        // 参数1：类型验证器
+//        // 参数2：类型嵌入策略（NON_FINAL：非 final 类都嵌入类型信息，常用）
+//        // 参数3：类型信息的属性名（默认 "@class"，存入 Redis 时会携带该字段）
+//        mapper.activateDefaultTypingAsProperty(
+//                typeValidator,
+//                ObjectMapper.DefaultTyping.NON_FINAL,
+//                "@class"
+//        );
         // ========== 时间配置 ==========
         // 禁用时间戳格式，使用ISO格式
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -116,12 +141,12 @@ public class BlinkRedisAutoConfiguration {
          */
         @Bean("blinkRedisTemplate")
         @ConditionalOnMissingBean( name = {"blinkRedisTemplate"} )
-        public RedisTemplate<String, Object> blinkRedisTemplate(RedisConnectionFactory redisConnectionFactory,ObjectMapper objectMapper) {
+        public RedisTemplate<String, Object> blinkRedisTemplate(RedisConnectionFactory redisConnectionFactory) {
 
             RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
             redisTemplate.setConnectionFactory(redisConnectionFactory);
             // 序列化 value
-            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(objectMapper);
+            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(getObjectMapper());
             StringRedisSerializer keySerializer = new StringRedisSerializer();
             //Redis 的 Key 序列化
             redisTemplate.setKeySerializer(keySerializer);
@@ -192,11 +217,11 @@ public class BlinkRedisAutoConfiguration {
 
         @Bean("blinkReactiveRedisTemplate")
         @ConditionalOnMissingBean( name = {"blinkReactiveRedisTemplate"} )
-        public ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate(ReactiveRedisConnectionFactory factory,ObjectMapper objectMapper) {
+        public ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
 
             StringRedisSerializer keySerializer = new StringRedisSerializer();
             // 序列化 value
-            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(objectMapper);
+            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(getObjectMapper());
 
             RedisSerializationContext<String, Object> context =
                     RedisSerializationContext.<String, Object>newSerializationContext(keySerializer)
@@ -220,11 +245,11 @@ public class BlinkRedisAutoConfiguration {
         @ConditionalOnMissingBean(
                 name = {"streamReactiveRedisTemplate"}
         )
-        public ReactiveRedisTemplate<String, Object> streamReactiveRedisTemplate(ReactiveRedisConnectionFactory factory,ObjectMapper objectMapper) {
+        public ReactiveRedisTemplate<String, Object> streamReactiveRedisTemplate(ReactiveRedisConnectionFactory factory) {
 
             StringRedisSerializer stringSerializer = new StringRedisSerializer();
             // 序列化 value
-            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(objectMapper);
+            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(getObjectMapper());
 
             RedisSerializationContext<String, Object> context =
                     RedisSerializationContext.<String, Object>newSerializationContext(stringSerializer)

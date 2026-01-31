@@ -9,6 +9,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -117,10 +119,18 @@ public class WebClientUtil {
      */
     public static WebClient getWebClient(WebClient.Builder webClientBuilder, String baseUrl) {
 
+
+        Jackson2JsonDecoder jackson2JsonDecoder = new Jackson2JsonDecoder(JacksonUtil.getDefaultMapper());
+        Jackson2JsonEncoder jackson2JsonEncoder = new Jackson2JsonEncoder(JacksonUtil.getDefaultMapper());
+
         return webClientBuilder
                 // 服务名或直接URL
                 .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .codecs(configurer -> {
+                    configurer.defaultCodecs().jackson2JsonDecoder(jackson2JsonDecoder);
+                    configurer.defaultCodecs().jackson2JsonEncoder(jackson2JsonEncoder);
+                })
                 .build();
 
     }

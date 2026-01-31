@@ -1,9 +1,12 @@
 package com.blink.framework.common.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -59,7 +62,7 @@ public class JacksonUtil {
      */
     private static ObjectMapper createDefaultObjectMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        
+
         // ========== 基础配置 ==========
         // 忽略未知属性
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -67,19 +70,19 @@ public class JacksonUtil {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         // 忽略null值
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        
+
         // ========== 时间配置 ==========
         // 禁用时间戳格式，使用ISO格式
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        
+
         // 创建Java 8时间模块
         JavaTimeModule javaTimeModule = new JavaTimeModule();
-        
+
         // 定义时间格式
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-        
+
         // 注册序列化和反序列化器
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
         javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
@@ -87,25 +90,50 @@ public class JacksonUtil {
         javaTimeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(dateFormatter));
         javaTimeModule.addSerializer(LocalTime.class, new LocalTimeSerializer(timeFormatter));
         javaTimeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(timeFormatter));
-        
+
         // 注册时间模块
         mapper.registerModule(javaTimeModule);
-        
+
         // ========== 自定义模块 ==========
         SimpleModule customModule = new SimpleModule();
         // 处理Long类型，防止前端精度丢失（超过16位转为字符串）
         customModule.addSerializer(Long.class, ToStringSerializer.instance);
         customModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
         customModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
-        
+
         mapper.registerModule(customModule);
-        
+
         // ========== 其他配置 ==========
         // 设置日期格式（传统Date类型）
         mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
         // 设置时区
         mapper.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
-        
+
+
+        // ========== 关键：启用安全的多态类型处理 ==========
+        // 创建类型验证器，限制允许反序列化的类型
+//        PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
+//                // 允许项目内的包
+//                .allowIfSubType("com.blink.")
+//                // 允许Java标准库中的常见类型
+//                .allowIfSubType("java.util.ArrayList")
+//                .allowIfSubType("java.util.LinkedHashMap")
+//                .allowIfSubType("java.util.HashMap")
+//                .allowIfSubType("java.util.HashSet")
+//                // 允许数组
+//                .allowIfSubTypeIsArray()
+//                // 允许基础类型
+//                .allowIfBaseType(String.class)
+//                .allowIfBaseType(Integer.class)
+//                .allowIfBaseType(Long.class)
+//                .allowIfBaseType(Boolean.class)
+//                .allowIfBaseType(Double.class)
+//                .allowIfBaseType(Character.class)
+//                .build();
+//
+//        // 启用默认类型，解决LinkedHashMap转换问题
+//        mapper.activateDefaultTyping(ptv,ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY );
+
         return mapper;
     }
     

@@ -5,13 +5,10 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.constant.GateWayErrMsgCode;
-import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.signature.HmacSignatureService;
 import com.blink.gateway.signature.SignatureServiceFactory;
 import com.blink.gateway.util.GateWayUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -49,12 +46,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * 仅仅验证 必填请求头完整性
-     * through the given {@link GatewayFilterChain}.
-     *
-     * @param exchange the current server exchange
-     * @param chain    provides a way to delegate to the next filter
-     * @return {@code Mono<Void>} to indicate when request processing is complete
+     * 签名过滤器
      */
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -126,7 +118,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
     }
 
 
-    // 提取独立方法处理开关开启的情况
+    // 提取成独立方法处理开关开启的情况
     private Mono<Void> processWithDefend(GatewayFilterChain chain, ServerWebExchange exchange) {
         HttpHeaders headers = exchange.getRequest().getHeaders();
 
@@ -138,13 +130,13 @@ public class SignatureFilter implements GlobalFilter, Ordered {
         return isValidTimestamp(Long.parseLong(timeStamp), currentTime)
                 .filter(isValid -> isValid)
                 //请求时间校验不通过 抛异常
-                .switchIfEmpty(Mono.error(new BlinkException("非法请求！ 请求过期")))
+                .switchIfEmpty(Mono.error(new BlinkException(GateWayErrMsgCode.ILLEGAL_REQUEST)))
                 // 验证时间戳是否有效
                 .flatMap(r -> checkDuplicateRequest(nonce, chain, exchange));
 
     }
 
-    //nonce 提取独立方法处理重复请求检查，包含配置化过期时间
+    //nonce 提取成独立方法处理重复请求检查，包含配置化过期时间
     private Mono<Void> checkDuplicateRequest(String nonce,
                                              GatewayFilterChain chain, ServerWebExchange exchange) {
         // 从配置获取过期时间
@@ -155,7 +147,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
                 // 使用配置的过期时间设置值
                 .flatMap(expireDuration -> redisClient.setIfAbsentWithExpire(REQ_NONCE_PREFIX + nonce, nonce, expireDuration))
                 //设置结果判断
-                .flatMap(isSet -> isSet ? chain.filter(exchange) : Mono.error(new BlinkException("请求重复")));
+                .flatMap(isSet -> isSet ? chain.filter(exchange) : Mono.error(new BlinkException(GateWayErrMsgCode.ILLEGAL_REQUEST)));
     }
 
 

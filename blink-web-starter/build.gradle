@@ -53,11 +53,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
-//    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
-    implementation 'com.blink:blink-framework-datasource:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-dataSource-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
 }

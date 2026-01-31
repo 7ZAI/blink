@@ -1,15 +1,11 @@
 package com.blink.gateway.filter;
 
 import cn.hutool.core.util.StrUtil;
-
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.util.GateWayUtil;
 import com.blink.gateway.util.JacksonUtil;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -68,15 +64,11 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
         var httpRequest = exchange.getRequest();
         var headers = httpRequest.getHeaders();
 
+        log.info("===> 开始校验请求合法性 ");
 
-        log.info("----------- 开始校验请求合法性 -----------");
-
-        //获取客户端渠道信息key
-        String appKey = headers.getFirst(X_BLINK_APPKEY);
-
-        return headerValidate(httpRequest).flatMap(isValid -> isValid
-                ? processChecking(exchange, chain, headers, appKey)
+        return headerValidate(httpRequest).flatMap(isValid -> isValid ? processChecking(exchange, chain, headers)
                 : Mono.error(new BlinkException(ILLEGAL_REQUEST))
+
         );
 
     }
@@ -109,11 +101,10 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
      * @param exchange
      * @param chain
      * @param headers
-     * @param appKey
      * @return
      */
-    private Mono<Void> processChecking(ServerWebExchange exchange, GatewayFilterChain chain, HttpHeaders headers, String appKey) {
-        return checkChannel(exchange, headers, appKey).flatMap(isValid -> isValid
+    private Mono<Void> processChecking(ServerWebExchange exchange, GatewayFilterChain chain, HttpHeaders headers) {
+        return checkChannel(exchange, headers).flatMap(isValid -> isValid
                 ? cacheRequestBody(exchange, chain)
                 : Mono.error(new BlinkException(ILLEGAL_REQUEST)));
     }
@@ -123,11 +114,12 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
      *
      * @param exchange 请求服务
      * @param headers  请求头
-     * @param appKey   渠道key
      * @return
      */
-    private Mono<Boolean> checkChannel(ServerWebExchange exchange, HttpHeaders headers, String appKey) {
+    private Mono<Boolean> checkChannel(ServerWebExchange exchange, HttpHeaders headers) {
 
+        //获取客户端渠道信息key
+        String appKey = headers.getFirst(X_BLINK_APPKEY);
         //从缓存组件中获取参数
         return cacheComponent.getChannelInfoFromCache(appKey)
                 //抛异常 后续flatMap 不再执行
@@ -167,7 +159,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
         if (GateWayUtil.shouldCacheRequestBody(exchange.getRequest())) {
             //缓存body
             return cacheRequestBodyToAttributes(exchange).flatMap(mutatedRequest ->
-                            //跟换装饰后的request请求 继续执行过滤链
+                            //更换装饰后的request请求 继续执行过滤链
                             chain.filter(exchange.mutate().request(mutatedRequest).build())
 //                            .doFinally(s -> {
 //
@@ -233,7 +225,6 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
      */
     private Boolean checkHeadersData(HttpHeaders headers, String path) {
 
-
         // 调用方appkey channel sign必填
         String appKey = headers.getFirst(X_BLINK_APPKEY);
         String sign = headers.getFirst(X_BLINK_SIGN);
@@ -297,7 +288,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
         if (timeStamp.length() > String.valueOf(Long.MAX_VALUE).length()) {
             return false;
         }
-        if(nonce.length() > LENGTH_LIMIT_128){
+        if (nonce.length() > LENGTH_LIMIT_128) {
             return false;
         }
 
@@ -323,21 +314,17 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
                 //如果关闭加密 前端json字符串可能带有转义字符 导致验证签名不通过
                 if (SWITCH_OFF.equals(channelInfoRedisDO.getEncryptionSwitch())) {
                     try {
-                        String jsonNode =   JacksonUtil.parseMessyJson(jsonString,String.class);
-                        jsonString = jsonNode;
+                        jsonString = JacksonUtil.normalizeJson(jsonString);
                     } catch (RuntimeException e) {
                         throw new RuntimeException(e);
                     }
 
                 }
-                log.info("请求体:{}", jsonString);
+                log.info("===> 缓存请求体:{}", jsonString);
                 //缓存请求body 字符串到 请求域
                 Object previousCachedBody = exchange.getAttributes()
                         .put(CACHED_REQUEST_BODY_ATTR, jsonString);
-//                if (previousCachedBody != null) {
-//                    // store previous cached body
-//                    exchange.getAttributes().put(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR, previousCachedBody);
-//                }
+
             }).then(Mono.defer(() -> {
                 //cacheRequestBodyAndRequest方法中 中缓存了 装饰类
                 ServerHttpRequest cachedRequest = exchange

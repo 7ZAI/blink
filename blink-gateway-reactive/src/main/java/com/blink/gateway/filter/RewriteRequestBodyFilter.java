@@ -10,8 +10,7 @@ import com.blink.framework.redis.id.ReactiveIdGenerator;
 import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.util.GateWayUtil;
 import com.blink.gateway.util.JacksonUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -43,10 +42,9 @@ import static com.blink.gateway.constant.GatewayConstant.CHANNEL_INFO;
  *
  * @author binblink
  */
-
+@Slf4j
 public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
 
-    private final Logger logger = LoggerFactory.getLogger(RewriteRequestBodyFilter.class);
     private final ReactiveIdGenerator idGenerator;
 
     public RewriteRequestBodyFilter(ReactiveIdGenerator idGenerator) {
@@ -65,14 +63,12 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
                     .flatMap(tuple -> {
                         String requestId = tuple.getT1();
                         String traceId = tuple.getT2();
-                        logger.info("generate requestId {} tarceId {}", requestId, traceId);
-
+                        log.info("generate requestId {} tarceId {}", requestId, traceId);
 
                         ChannelInfoRedisDO channelInfo = exchange.getAttribute(CHANNEL_INFO);
                         if (Objects.isNull(channelInfo)) {
                             return Mono.error(new BlinkException("系统错误!"));
                         }
-
 
                         RequestDTO requestDTO = JacksonUtil.parseMessyJson(bodyStr, RequestDTO.class);
                         //组装元数据

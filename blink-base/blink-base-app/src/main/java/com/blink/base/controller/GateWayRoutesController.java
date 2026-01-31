@@ -34,7 +34,7 @@ public class GateWayRoutesController {
     private GateWayRoutesService gateWayRoutesService;
 
     /**
-     * 保存对接渠道
+     * 保存路由
      *
      * @param reqDto
      * @return {@link ResponseDTO < EmptyBody >}
@@ -47,7 +47,7 @@ public class GateWayRoutesController {
     }
 
     /**
-     * 删除对接渠道
+     * 删除路由
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
@@ -60,7 +60,7 @@ public class GateWayRoutesController {
     }
 
     /**
-     * 根据查询条件查询对接渠道列表
+     * 根据查询条件查询对接路由
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}

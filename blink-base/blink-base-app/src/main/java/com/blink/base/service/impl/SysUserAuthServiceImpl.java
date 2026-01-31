@@ -27,6 +27,7 @@ import com.blink.base.service.UserAuthService;
 import com.blink.framework.common.context.BlinkRequestContextHolder;
 import com.blink.framework.common.data.UserInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.RedisClient;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
@@ -37,6 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -124,7 +126,6 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         }
 
 
-
         //生成token 选择方案1
         //方案1 uuid 存 redis 更安全 适用短期登入 企业应用
         //方案2 jwt 加密存在前端 后端校验  适用长期登入 面对公众的网站
@@ -136,7 +137,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         SysLoginRspDTO result = getLoginUserInfo(loginUser, token);
 
         //踢出久登入
-        UserInfoRedisDO older = (UserInfoRedisDO) redisClient.get(RedisKeyConstans.USER_INFO + loginUser.getUserId());
+        UserInfoRedisDO older = JacksonUtil.convert(redisClient.get(RedisKeyConstans.USER_INFO + loginUser.getUserId()), UserInfoRedisDO.class);
 
         if (Objects.nonNull(older)) {
             redisClient.delete(RedisKeyConstans.USER_TOKEN + older.getToken());
@@ -166,10 +167,9 @@ public class SysUserAuthServiceImpl implements UserAuthService {
     @Override
     public void logout(SysLogoutReqDTO logoutParam) throws BlinkException {
 
+        UserInfoRedisDO userInfo = JacksonUtil.convert(redisClient.get(RedisKeyConstans.USER_TOKEN + logoutParam.getToken()), UserInfoRedisDO.class);
 
-        UserInfoRedisDO userInfo = (UserInfoRedisDO) redisClient.get(RedisKeyConstans.USER_TOKEN + logoutParam.getToken());
-
-        if(Objects.isNull(userInfo)) {
+        if (Objects.isNull(userInfo)) {
             // 用户已登出
             BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIT);
         }

@@ -3,7 +3,6 @@ package com.blink.gateway.filter;
 import cn.hutool.core.lang.UUID;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
-
 import com.blink.framework.common.utils.AESUtils;
 import com.blink.framework.common.utils.RSAUtils;
 import com.blink.gateway.signature.HmacSignatureService;
@@ -11,7 +10,6 @@ import com.blink.gateway.signature.SignatureServiceFactory;
 import com.blink.gateway.util.GateWayUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
-
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -90,28 +88,26 @@ public class CryptFilter implements GlobalFilter, Ordered {
     private Mono<Void> processCryptExchange(ServerWebExchange exchange, GatewayFilterChain chain, ChannelInfoRedisDO channelInfo) {
         // 处理请求解密
         Mono<Boolean> decryptedRequest = decryptRequest(exchange, channelInfo.getSystemPrivatekey());
-        Map<String,Object> signParams =  getSignParams(exchange,channelInfo);
+        Map<String, Object> signParams = getSignParams(channelInfo);
 
         return decryptedRequest.flatMap(result -> {
             // 处理响应加密
-            return chain.filter(
-                    exchange.mutate().response(createEncryptedResponseDecorator(exchange.getResponse(), channelInfo,signParams))
-                            .build());
+            return chain.filter(exchange.mutate()
+                    .response(createEncryptedResponseDecorator(exchange.getResponse(), channelInfo, signParams)).build());
         });
     }
 
     /**
      * 签名参数
-     * @param exchange
+     *
      * @param channelInfo
      * @return
      */
-    private Map<String, Object> getSignParams(ServerWebExchange exchange, ChannelInfoRedisDO channelInfo) {
+    private Map<String, Object> getSignParams(ChannelInfoRedisDO channelInfo) {
         Map<String, Object> params = new HashMap<>();
-        params.put("timeStamp", System.currentTimeMillis());
-        params.put("nonce", UUID.fastUUID().toString(true));
-        params.put("appKey", channelInfo.getAppKey());
-        params.put("loginName", exchange.getRequest().getHeaders().getFirst(X_BLINK_LOGINNAME));
+        params.put(KEY_TIMESTAMP, System.currentTimeMillis());
+        params.put(KEY_NONCE, UUID.fastUUID().toString(true));
+        params.put(KEY_APPKEY, channelInfo.getAppKey());
 
         return params;
 
@@ -154,12 +150,13 @@ public class CryptFilter implements GlobalFilter, Ordered {
 
     /**
      * 创建Response装饰类 读取响应 加密 加签
+     *
      * @param originalResponse
      * @param channelInfo
      * @param signParams
      * @return
      */
-    private ServerHttpResponseDecorator createEncryptedResponseDecorator(ServerHttpResponse originalResponse, ChannelInfoRedisDO channelInfo,Map<String,Object> signParams) {
+    private ServerHttpResponseDecorator createEncryptedResponseDecorator(ServerHttpResponse originalResponse, ChannelInfoRedisDO channelInfo, Map<String, Object> signParams) {
         return new ServerHttpResponseDecorator(originalResponse) {
             @Override
             public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
@@ -177,7 +174,7 @@ public class CryptFilter implements GlobalFilter, Ordered {
                             String plainKey = AESUtils.encodeToBase64(aesKey.getEncoded());
                             String base64IV = AESUtils.encodeToBase64(iv);
 
-                            log.debug("响应加密 aesKeyBase64:{}",plainKey);
+                            log.debug("响应加密 aesKeyBase64:{}", plainKey);
 
                             // 使用RSA加密AES密钥和IV
                             String encryptedKey = RSAUtils.encryptToBase64(plainKey, RSAUtils.base64ToPublicKey(channelInfo.getChannelPublickey()));
@@ -199,9 +196,9 @@ public class CryptFilter implements GlobalFilter, Ordered {
                                 byte[] encryptedBytes = encryptedResponse.getBytes(StandardCharsets.UTF_8);
                                 log.debug("响应加密 耗时：{} ms", System.currentTimeMillis() - start);
                                 //签名
-                                String sign = getSignStr(encryptedResponse,channelInfo.getAppSecret(), signParams);
+                                String sign = getSignStr(encryptedResponse, channelInfo.getAppSecret(), signParams);
                                 // 设置响应头
-                                setHttpHeaders(headers,encryptedKey, base64IV, sign, signParams);
+                                setHttpHeaders(headers, encryptedKey, base64IV, sign, signParams);
 
                                 // 设置内容长度并写入加密后的数据
                                 headers.setContentLength(encryptedBytes.length);
@@ -231,12 +228,12 @@ public class CryptFilter implements GlobalFilter, Ordered {
     }
 
 
-    private void setHttpHeaders(HttpHeaders headers,String encryptedKey, String base64IV, String sign, Map<String, Object> signParams) {
+    private void setHttpHeaders(HttpHeaders headers, String encryptedKey, String base64IV, String sign, Map<String, Object> signParams) {
         headers.set(X_BLINK_SIGN, sign);
         headers.set(X_BLINK_KEY, encryptedKey);
         headers.set(X_BLINK_IV, base64IV);
-        headers.set(X_BLINK_TIMESTAMP,signParams.get("timeStamp").toString());
-        headers.set(X_BLINK_NONCE,signParams.get("nonce").toString());
+        headers.set(X_BLINK_TIMESTAMP, signParams.get("timeStamp").toString());
+        headers.set(X_BLINK_NONCE, signParams.get("nonce").toString());
 
     }
 
@@ -258,12 +255,13 @@ public class CryptFilter implements GlobalFilter, Ordered {
 
     /**
      * 获取数据签名字符串
-     * @param data 签名数据
-     * @param appSecret 签名密钥
+     *
+     * @param data       签名数据
+     * @param appSecret  签名密钥
      * @param signParams 签名参数
      * @return
      */
-    private String getSignStr(String data,String appSecret,Map<String,Object> signParams) {
+    private String getSignStr(String data, String appSecret, Map<String, Object> signParams) {
         HmacSignatureService hmacSignatureService = (HmacSignatureService) signatureServiceFactory.getDefaultService();
         String sign = hmacSignatureService.sign(data, appSecret, signParams);
         log.debug("加密响应数字签名 sign：{}", sign);

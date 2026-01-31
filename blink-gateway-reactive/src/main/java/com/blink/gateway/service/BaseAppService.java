@@ -14,8 +14,6 @@ import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.gateway.constant.RemoteServerUrl;
 import com.blink.gateway.util.WebClientUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 
 import org.springframework.stereotype.Service;

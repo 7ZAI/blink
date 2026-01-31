@@ -18,8 +18,8 @@ dependencies {
 
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-framework-validation:1.0.0-SNAPSHOT'
-    implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-dataSource-spring-boot-starter:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-web-spring-boot-starter:1.0.0-SNAPSHOT'
 
 

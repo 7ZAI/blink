@@ -3,6 +3,7 @@ package com.blink.gateway.security;
 import com.blink.framework.common.data.UserInfoRedisDO;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.constant.GatewayConstant;
+import com.blink.gateway.util.JacksonUtil;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
@@ -47,9 +48,9 @@ public class TokenAuthenticationManager implements ReactiveAuthenticationManager
         return redisClient.get(tokenKey)
                 .switchIfEmpty(Mono.error(new CredentialsExpiredException("token过期")))
                 .flatMap(userInfoObj -> {
-                    UserInfoRedisDO userInfo = (UserInfoRedisDO) userInfoObj;
+                    UserInfoRedisDO userInfo = JacksonUtil.convert(userInfoObj, UserInfoRedisDO.class);
                     //拿到userId
-                    String userIdFromRedis = String.valueOf(userInfo.getLoginName());
+//                    String userIdFromRedis = String.valueOf(userInfo.getLoginName());
                     //参数不合法  request header loginName参数 和redis存的loginName不一致
 //                    if(!loginName.equals(userIdFromRedis)){
 //                       return Mono.error(new UsernameNotFoundException("认证错误,参数非法！"));

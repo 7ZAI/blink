@@ -22,6 +22,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -54,7 +55,7 @@ public class WebClientTest {
 
     private final String loginName = "test2";
     private final String password = "123456";
-    private final String token = "5b69a8d59dd448e29536ed498105bb76";
+    private final String token = "95e12312da3940a694a9eacd405b1895";
     //系统公钥
     private final String systemPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlRqb7VG+lkiTH/8LY4ISQLjD2t+8kZMvthvixlIx57v3d5o994PY0/QFqOPqDdJeXIvxiCA0z/qdMGve3t2lJuUiExNmH+pY46LuNMIyzmiHKliocDCFb1bdVoTWHzJmjDT2TnRxmglVVm4mhlpDS18accZVPXdzESCn32HfmhKkQj+0NTdsPzjlpWsfsXpySToPVa8/U1HupTnRibdsCu80PHCjRwf/3+fj9fBRnNCubJoSlOi4o+koojqQ3vCMc+b+6dW6zYS83g67olT9J77ekOru/+OgWYe3FmBSjhiYAIMSwK1PalyvI9S3V57SdkHkwG72UrnsIP7iE5BSKwIDAQAB";
     //系统私钥
@@ -163,8 +164,47 @@ public class WebClientTest {
         System.out.println("响应body:" + apiResponse.getBody());
 
         System.out.println("body解密：" + decryptResponseBody(apiResponse));
+    }
+
+    @Test
+    void encryptGatewayTest() throws Exception {
+        String base = "http://localhost:8002/base/channel/getChannelList";
+
+        var queryBlinkChannelReqDTO = new QueryBlinkChannelReqDTO();
+        queryBlinkChannelReqDTO.setChannelName("Browser");
+
+        var requestDTO = new RequestDTO<QueryBlinkChannelReqDTO>();
+        requestDTO.setBody(queryBlinkChannelReqDTO);
+
+        SecretKey key = AESUtils.generateRandomAESKey();
+        byte[] ivArr = AESUtils.generateIV();
+        String iv = AESUtils.encodeToBase64(ivArr);
+        String keyBase64 = AESUtils.encodeToBase64(key.getEncoded());
+
+        String plainTxt = JacksonUtil.toJson(requestDTO);
+        //aes 加密请求体json字符串
+        String encryptTxt = AESUtils.encrypt(key, ivArr, plainTxt);
+
+        PublicKey publicKey = RSAUtils.base64ToPublicKey(systemPublicKey);
+        //RSA加密 aes密钥
+        String aesKeyAfterRSA = RSAUtils.encryptToBase64(keyBase64, publicKey);
+
+        this.setHeadersEncrypt(webClientBuilder, requestDTO, token,aesKeyAfterRSA, iv);
+        WebClient webClient = WebClientUtil.getWebClient(webClientBuilder, base);
+        Mono<WebClientUtil.ApiResponse> rsp = WebClientUtil.webClientPost(webClient, base, encryptTxt);
 
 
+        WebClientUtil.ApiResponse apiResponse = rsp.block();
+        System.out.println("响应状态码：" + apiResponse.getStatusCode().toString());
+
+
+        for (Map.Entry<String, List<String>> entrty : apiResponse.getHeaders().entrySet()) {
+            System.out.println("响应头：" + entrty.getKey() + ":" + entrty.getValue().get(0));
+        }
+
+        System.out.println("响应body:" + apiResponse.getBody());
+
+        System.out.println("body解密：" + decryptResponseBody(apiResponse));
     }
 
     private String decryptResponseBody(WebClientUtil.ApiResponse apiResponse) throws Exception {
