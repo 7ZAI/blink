@@ -1,6 +1,5 @@
-package com.blink.base.utils;
+package com.blink.framework.common.utils;
 
-import com.blink.datasource.code.CodeGenerator;
 import com.github.therapi.runtimejavadoc.*;
 
 import java.io.IOException;
@@ -139,9 +138,6 @@ public class JavaDocCommentUtil {
 
     public static void main(String[] args) throws Exception {
         getMsgCoeInsertSQL("com.blink.base.constant.BaseAppConstant");
-//
-//        CodeGenerator.generateByCustomTemplate("jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8",
-//                "root","123456");
     }
 
 }
