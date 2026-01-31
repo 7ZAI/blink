@@ -1,13 +1,24 @@
 package com.blink.framework.redis.config;
 
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.CacheComponent;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.framework.redis.id.*;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -15,7 +26,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.*;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
@@ -24,7 +34,13 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+
+import java.math.BigInteger;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -37,39 +53,60 @@ import java.util.concurrent.TimeUnit;
 @EnableConfigurationProperties({BlinkRedisProperties.class})
 public class BlinkRedisAutoConfiguration {
 
-    /**
-     * 创建自定义的 ObjectMapper
-     */
-    /**
-     * 自定义Redis专用的ObjectMapper
-     * 使用@Primary确保这是主要的ObjectMapper实例
-     */
     @Bean
-    @Primary
-    public ObjectMapper redisObjectMapper() {
+    @ConditionalOnMissingBean
+    public ObjectMapper objectMapper(){
         ObjectMapper mapper = new ObjectMapper();
 
-        // 1. 注册Java 8时间模块（必须，否则无法处理LocalDateTime等）
-        mapper.registerModule(new JavaTimeModule());
+        // ========== 基础配置 ==========
+        // 忽略未知属性
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // 空对象不抛异常
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        // 忽略null值
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-        // 2. 禁用日期时间戳格式，使用ISO-8601字符串
+        // ========== 时间配置 ==========
+        // 禁用时间戳格式，使用ISO格式
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-        // 3. 忽略JSON中的未知属性（提高兼容性）
-        mapper.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // 创建Java 8时间模块
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
 
-        // 4. 设置全局日期格式（可选）
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        dateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
-        mapper.setDateFormat(dateFormat);
-        // 5. 设置时区
+        // 定义时间格式
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+        // 注册序列化和反序列化器
+        javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dateTimeFormatter));
+        javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dateTimeFormatter));
+        javaTimeModule.addSerializer(LocalDate.class, new LocalDateSerializer(dateFormatter));
+        javaTimeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(dateFormatter));
+        javaTimeModule.addSerializer(LocalTime.class, new LocalTimeSerializer(timeFormatter));
+        javaTimeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(timeFormatter));
+
+        // 注册时间模块
+        mapper.registerModule(javaTimeModule);
+
+        // ========== 自定义模块 ==========
+        SimpleModule customModule = new SimpleModule();
+        // 处理Long类型，防止前端精度丢失（超过16位转为字符串）
+        customModule.addSerializer(Long.class, ToStringSerializer.instance);
+        customModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
+        customModule.addSerializer(BigInteger.class, ToStringSerializer.instance);
+
+        mapper.registerModule(customModule);
+
+        // ========== 其他配置 ==========
+        // 设置日期格式（传统Date类型）
+        mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+        // 设置时区
         mapper.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
-
-        // 6. 序列化时忽略null值（可选，根据需求）
-        // mapper.setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL);
 
         return mapper;
     }
+
 
 
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -78,15 +115,13 @@ public class BlinkRedisAutoConfiguration {
          * Object RedisTemplate
          */
         @Bean("blinkRedisTemplate")
-        @ConditionalOnMissingBean(
-                name = {"blinkRedisTemplate"}
-        )
-        public RedisTemplate<String, Object> blinkRedisTemplate(RedisConnectionFactory redisConnectionFactory,ObjectMapper redisObjectMapper) {
+        @ConditionalOnMissingBean( name = {"blinkRedisTemplate"} )
+        public RedisTemplate<String, Object> blinkRedisTemplate(RedisConnectionFactory redisConnectionFactory,ObjectMapper objectMapper) {
 
             RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
             redisTemplate.setConnectionFactory(redisConnectionFactory);
             // 序列化 value
-            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(redisObjectMapper);
+            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(objectMapper);
             StringRedisSerializer keySerializer = new StringRedisSerializer();
             //Redis 的 Key 序列化
             redisTemplate.setKeySerializer(keySerializer);
@@ -100,14 +135,38 @@ public class BlinkRedisAutoConfiguration {
             //默认序列化
             redisTemplate.setDefaultSerializer(jsonSerializer);
 
+
             redisTemplate.afterPropertiesSet();
 
             return redisTemplate;
         }
 
+        /**
+         * 专门给 stream操作用的
+         * @param factory
+         * @return
+         */
+        @Bean("streamRedisTemplate")
+        @ConditionalOnMissingBean( name = {"streamRedisTemplate"})
+        public RedisTemplate<String, Object> streamRedisTemplate(RedisConnectionFactory factory) {
+            RedisTemplate<String, Object> template = new RedisTemplate<>();
+            template.setConnectionFactory(factory);
+
+            StringRedisSerializer stringSerializer = new StringRedisSerializer();
+            template.setKeySerializer(stringSerializer);
+            template.setHashKeySerializer(stringSerializer);
+
+            //这里一定要设为 String，不要用 Json 或 GenericJackson
+            template.setHashValueSerializer(stringSerializer);
+            template.setValueSerializer(stringSerializer);
+
+            template.afterPropertiesSet();
+            return template;
+        }
+
         @Bean
-        public RedisClient redisClient(@Qualifier("blinkRedisTemplate") RedisTemplate<String, Object> blinkRedisTemplate) {
-            return new RedisClient(blinkRedisTemplate);
+        public RedisClient redisClient(@Qualifier("blinkRedisTemplate") RedisTemplate<String, Object> blinkRedisTemplate,@Qualifier("streamRedisTemplate") RedisTemplate<String, Object> streamRedisTemplate) {
+            return new RedisClient(blinkRedisTemplate,streamRedisTemplate);
         }
 
         @Bean
@@ -132,14 +191,13 @@ public class BlinkRedisAutoConfiguration {
     public static class ReactiveRedisConfig {
 
         @Bean("blinkReactiveRedisTemplate")
-        @ConditionalOnMissingBean(
-                name = {"blinkReactiveRedisTemplate"}
-        )
-        public ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate(ReactiveRedisConnectionFactory factory,ObjectMapper redisObjectMapper) {
+        @ConditionalOnMissingBean( name = {"blinkReactiveRedisTemplate"} )
+        public ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate(ReactiveRedisConnectionFactory factory,ObjectMapper objectMapper) {
 
             StringRedisSerializer keySerializer = new StringRedisSerializer();
             // 序列化 value
-            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(redisObjectMapper);
+            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(objectMapper);
+
             RedisSerializationContext<String, Object> context =
                     RedisSerializationContext.<String, Object>newSerializationContext(keySerializer)
                             .value(jsonSerializer)
@@ -153,9 +211,37 @@ public class BlinkRedisAutoConfiguration {
 
         }
 
+        /**
+         * 专门给 stream操作用的
+         * @param factory
+         * @return
+         */
+        @Bean("streamReactiveRedisTemplate")
+        @ConditionalOnMissingBean(
+                name = {"streamReactiveRedisTemplate"}
+        )
+        public ReactiveRedisTemplate<String, Object> streamReactiveRedisTemplate(ReactiveRedisConnectionFactory factory,ObjectMapper objectMapper) {
+
+            StringRedisSerializer stringSerializer = new StringRedisSerializer();
+            // 序列化 value
+            GenericJackson2JsonRedisSerializer jsonSerializer =  new GenericJackson2JsonRedisSerializer(objectMapper);
+
+            RedisSerializationContext<String, Object> context =
+                    RedisSerializationContext.<String, Object>newSerializationContext(stringSerializer)
+                            .value(jsonSerializer)
+                            .hashValue(stringSerializer)
+                            .hashKey(stringSerializer)
+                            .string(stringSerializer)
+                            .key(stringSerializer)
+                            .build();
+
+            return new ReactiveRedisTemplate<>(factory, context);
+        }
+
         @Bean
-        public ReactiveRedisClient reactiveRedisClient(@Qualifier("blinkReactiveRedisTemplate") ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate) {
-            return new ReactiveRedisClient(blinkReactiveRedisTemplate);
+        public ReactiveRedisClient reactiveRedisClient(@Qualifier("blinkReactiveRedisTemplate") ReactiveRedisTemplate<String, Object> blinkReactiveRedisTemplate,
+                                                       @Qualifier("streamReactiveRedisTemplate") ReactiveRedisTemplate<String, Object> streamReactiveRedisTemplate) {
+            return new ReactiveRedisClient(blinkReactiveRedisTemplate,streamReactiveRedisTemplate);
         }
 
         @Bean
@@ -164,8 +250,8 @@ public class BlinkRedisAutoConfiguration {
         }
 
         @Bean
-        public ReactiveIdGenerator reactiveIdGenerator(ReactiveRedisClient reactiveRedisClient, BlinkRedisProperties blinkRedisProperties) {
-            return new ReactiveIdGenerator();
+        public ReactiveIdGenerator reactiveIdGenerator(ReactiveSeqGenerator sequenceGenerator) {
+            return new ReactiveIdGenerator(sequenceGenerator);
         }
     }
 

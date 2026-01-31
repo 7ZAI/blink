@@ -34,10 +34,10 @@ public class IdGeneratorTest {
     private static final int SIZE = 1000000;
     private static final boolean VERBOSE = true;
 
-    @Resource
+//    @Resource
     private IdGenerator idGenerator;
 
-//    @Resource
+    @Resource
     private ReactiveIdGenerator reactiveIdGenerator;
 
     @Test

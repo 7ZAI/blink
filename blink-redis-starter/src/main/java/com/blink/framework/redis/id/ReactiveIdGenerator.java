@@ -15,8 +15,11 @@ public class ReactiveIdGenerator {
     /**
      * 响应式生成器
      */
-    @Autowired
-    private  ReactiveSeqGenerator reactiveSeqGenerator;
+    private final ReactiveSeqGenerator reactiveSeqGenerator;
+
+    public ReactiveIdGenerator(ReactiveSeqGenerator reactiveSeqGenerator) {
+        this.reactiveSeqGenerator = reactiveSeqGenerator;
+    }
 
     public  Mono<Long> generateId(String key) {
 

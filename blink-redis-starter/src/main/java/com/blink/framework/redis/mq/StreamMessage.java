@@ -2,6 +2,7 @@ package com.blink.framework.redis.mq;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.blink.framework.common.mq.BlinkMessage;
+import com.blink.framework.common.utils.JacksonUtil;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -74,6 +75,8 @@ public class StreamMessage<T> implements Serializable, BlinkMessage {
      * 扩展字段
      */
     private Object extra;
+
+
 
     public String getMsgId() {
         return msgId;
@@ -236,7 +239,10 @@ public class StreamMessage<T> implements Serializable, BlinkMessage {
      * 将消息对象转换为Map
      */
     public static Map<String, Object> convertMessageToMap(StreamMessage<?> message) {
-        return BeanUtil.beanToMap(message, false, false);
+        Object obj = message.getPayload();
+        Map<String, Object> map = BeanUtil.beanToMap(message, false, false);
+        map.put("payload", JacksonUtil.toJson(obj));
+        return map;
     }
 
 
@@ -244,16 +250,20 @@ public class StreamMessage<T> implements Serializable, BlinkMessage {
      * 将Map转换为消息对象
      */
     public static <T> StreamMessage<T> convertMapToMessage(Map<String, Object> map, Class<T> tClass) {
-        // 1. 将map转换为StreamMessage，此时data字段是一个Map
         StreamMessage<T> message = BeanUtil.mapToBean(map, StreamMessage.class, false);
-        // 2. 从map中获取data字段（是一个Map），然后转换为T
-        Object dataMap = map.get("payload");
-        T data = BeanUtil.toBean(dataMap, tClass);
-
-        // 3. 设置data到message
+        Object object = map.get("payload");
+        T data = JacksonUtil.convert(object, tClass);
         message.setPayload(data);
 
         return message;
+    }
+
+    public static void main(String[] args) {
+
+//        String json = "\\\"{\\\\\\\"msgId\\\\\\\":\\\\\\\"e05da46b-4daf-439c-a60a-c54df9fc8ce9\\\\\\\",\\\\\\\"topic\\\\\\\":\\\\\\\"blink:stream:gateway:event\\\\\\\",\\\\\\\"msgType\\\\\\\":\\\\\\\"EVENT\\\\\\\",\\\\\\\"msgStatus\\\\\\\":\\\\\\\"0\\\\\\\",\\\\\\\"payload\\\\\\\":{\\\\\\\"key\\\\\\\":\\\\\\\"blink:channel:cefc8ad2a66144d8ac4cff1090ef6c8e\\\\\\\"},\\\\\\\"payloadClass\\\\\\\":\\\\\\\"com.blink.base.dto.CacheMsgDTO\\\\\\\",\\\\\\\"createTime\\\\\\\":\\\\\\\"2026-01-31 00:24:45\\\\\\\",\\\\\\\"version\\\\\\\":\\\\\\\"1.0\\\\\\\",\\\\\\\"sender\\\\\\\":\\\\\\\"base-app\\\\\\\"}\\\"\"";
+//        StreamMessage streamMessage = JacksonUtil.parseMessyJson(json, StreamMessage.class);
+//        System.out.println(streamMessage);
+
     }
 
 

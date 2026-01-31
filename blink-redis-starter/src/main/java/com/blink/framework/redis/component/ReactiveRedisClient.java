@@ -33,13 +33,16 @@ public class ReactiveRedisClient {
 
     private final ReactiveRedisTemplate<String, Object> template;
 
+    private final ReactiveRedisTemplate<String, Object> streamTemplate;
+
     /**
      * 构造函数
      *
      * @param redisTemplate ReactiveRedisTemplate 实例
      */
-    public ReactiveRedisClient(ReactiveRedisTemplate<String, Object> redisTemplate) {
+    public ReactiveRedisClient(ReactiveRedisTemplate<String, Object> redisTemplate,ReactiveRedisTemplate<String, Object> streamTemplate) {
         this.template = redisTemplate;
+        this.streamTemplate = streamTemplate;
     }
 
     /* ---------------------------- 通用操作 ---------------------------- */
@@ -998,7 +1001,7 @@ public class ReactiveRedisClient {
      * @return Mono<Long> 实际删除的消息数量
      */
     public Mono<Long> xTrim(String key, long maxLength) {
-        return template.opsForStream().trim(key, maxLength);
+        return streamTemplate.opsForStream().trim(key, maxLength);
     }
 
     /**
@@ -1010,7 +1013,7 @@ public class ReactiveRedisClient {
      * @return Mono<Long> 实际删除的消息数量
      */
     public Mono<Long> xTrim(String key, long maxLength, boolean exactTrim) {
-        return template.opsForStream().trim(key, maxLength, exactTrim);
+        return streamTemplate.opsForStream().trim(key, maxLength, exactTrim);
     }
 
     /* ---------------------------- Stream 信息查询 ---------------------------- */
@@ -1022,7 +1025,7 @@ public class ReactiveRedisClient {
      * @return Mono<StreamInfo.XInfoStream> Stream 信息
      */
     public Mono<StreamInfo.XInfoStream> xInfo(String key) {
-        return template.opsForStream().info(key);
+        return streamTemplate.opsForStream().info(key);
     }
 
     /**
@@ -1032,7 +1035,7 @@ public class ReactiveRedisClient {
      * @return Flux<StreamInfo.XInfoGroup> 消费者组信息流
      */
     public Flux<StreamInfo.XInfoGroup> xInfoGroups(String key) {
-        return template.opsForStream().groups(key);
+        return streamTemplate.opsForStream().groups(key);
     }
 
     /**
@@ -1043,7 +1046,7 @@ public class ReactiveRedisClient {
      * @return Flux<StreamInfo.XInfoConsumer> 消费者信息流
      */
     public Flux<StreamInfo.XInfoConsumer> xInfoConsumers(String key, String groupName) {
-        return template.opsForStream().consumers(key, groupName);
+        return streamTemplate.opsForStream().consumers(key, groupName);
     }
 
 
@@ -1143,7 +1146,7 @@ public class ReactiveRedisClient {
             recordIds[i] = RecordId.of(messageIds[i]);
         }
 
-        return template.opsForStream().claim(key, groupName, consumer.getGroup(), Duration.ofMillis(minIdleTime), recordIds);
+        return streamTemplate.opsForStream().claim(key, groupName, consumer.getGroup(), Duration.ofMillis(minIdleTime), recordIds);
 
     }
 

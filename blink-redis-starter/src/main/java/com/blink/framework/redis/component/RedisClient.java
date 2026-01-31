@@ -1,14 +1,17 @@
 package com.blink.framework.redis.component;
 
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.entity.RedisException;
 import io.lettuce.core.RedisBusyException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.RedisSystemException;
 import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
+import org.springframework.data.redis.hash.Jackson2HashMapper;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -30,6 +33,8 @@ public class RedisClient {
 
     private final RedisTemplate<String, Object> template;
 
+    private final RedisTemplate<String, Object>  streamRedisTemplate;
+
     private final RedisSerializer<String> keySerializer;
 
     private final RedisSerializer<Object> valueSerializer;
@@ -39,8 +44,9 @@ public class RedisClient {
      *
      * @param redisTemplate RedisTemplate 实例
      */
-    public RedisClient(RedisTemplate<String, Object> redisTemplate) {
+    public RedisClient(RedisTemplate<String, Object> redisTemplate, RedisTemplate<String, Object> streamRedisTemplate) {
         this.template = redisTemplate;
+        this.streamRedisTemplate = streamRedisTemplate;
         this.keySerializer = (RedisSerializer<String>) redisTemplate.getKeySerializer();
         this.valueSerializer = (RedisSerializer<Object>) redisTemplate.getValueSerializer();
     }
@@ -1449,11 +1455,11 @@ public class RedisClient {
      */
     public String xAdd(String streamKey, Map<String, Object> fieldValueMap) {
         try {
-            RecordId recordId = template.opsForStream().add(streamKey,fieldValueMap);
+            RecordId recordId = streamRedisTemplate.opsForStream().add(streamKey,fieldValueMap);
             return recordId != null ? recordId.getValue() : null;
         } catch (Exception e) {
             log.error("Failed to add message to stream: {}", streamKey, e);
-            throw new RedisException("Redis stream add operation failed", e);
+            throw e;
         }
     }
 
@@ -1461,7 +1467,7 @@ public class RedisClient {
      * 发送消息到指定的 Stream
      *
      * @param streamKey     Stream 的键
-     * @param value 值  需为map类型
+     * @param value 值
      * @return 消息ID，如果发送失败返回 null
      * @throws RedisException 当 Redis 操作失败时抛出
      */
@@ -1471,12 +1477,11 @@ public class RedisClient {
             ObjectRecord<String, Object> record = StreamRecords.newRecord()
                     .in(streamKey)
                     .ofObject(value);
-            template.opsForStream().add(record);
-            RecordId recordId = template.opsForStream().add(record);
+            RecordId recordId = streamRedisTemplate.opsForStream().add(record);
             return recordId != null ? recordId.getValue() : null;
         } catch (Exception e) {
             log.error("Failed to add message to stream: {}", streamKey, e);
-            throw new RedisException("Redis stream add operation failed", e);
+            throw e;
         }
     }
 
@@ -1495,8 +1500,12 @@ public class RedisClient {
             StreamOffset<String> offset = StreamOffset.from(StreamRecords.newRecord().in(streamKey).withId(startId).ofObject(null));
             StreamReadOptions options = StreamReadOptions.empty().count(count);
 
-            List<MapRecord<String, Object, Object>> records = template.opsForStream()
+            List<MapRecord<String, Object, Object>> records = streamRedisTemplate.opsForStream()
                     .read(options, offset);
+
+            if(records == null || records.isEmpty()) {
+                return Collections.emptyList();
+            }
 
             return records.stream()
                     .map(record -> {
@@ -1523,7 +1532,7 @@ public class RedisClient {
      */
     public boolean xGroupCreate(String streamKey, String groupName, String startId) {
         try {
-            template.opsForStream().createGroup(streamKey, ReadOffset.from(startId), groupName);
+            streamRedisTemplate.opsForStream().createGroup(streamKey, ReadOffset.from(startId), groupName);
             return true;
         } catch (RedisSystemException e) {
             if (e.getCause() instanceof RedisBusyException) {
@@ -1557,7 +1566,7 @@ public class RedisClient {
                     .count(count)
                     .block(Duration.ofMillis(blockMillis));
 
-            List<MapRecord<String, Object, Object>> records = template.opsForStream().read(consumer, options, offset);
+            List<MapRecord<String, Object, Object>> records = streamRedisTemplate.opsForStream().read(consumer, options, offset);
 
             return records.stream()
                     .map(record -> {
@@ -1584,7 +1593,7 @@ public class RedisClient {
      */
     public boolean xAck(String streamKey, String groupName, String messageId) {
         try {
-            Long acked = template.opsForStream().acknowledge(streamKey, groupName, messageId);
+            Long acked = streamRedisTemplate.opsForStream().acknowledge(streamKey, groupName, messageId);
             return acked != null && acked > 0;
         } catch (Exception e) {
             log.error("Failed to acknowledge message: {} in group: {}", messageId, groupName, e);
@@ -1601,7 +1610,7 @@ public class RedisClient {
      */
     public StreamInfo.XInfoStream xInfo(String streamKey) {
         try {
-            return template.opsForStream().info(streamKey);
+            return streamRedisTemplate.opsForStream().info(streamKey);
         } catch (Exception e) {
             log.error("Failed to get stream info: {}", streamKey, e);
             throw new RedisException("Redis stream info operation failed", e);
@@ -1618,7 +1627,7 @@ public class RedisClient {
      */
     public long xDel(String streamKey, String... messageIds) {
         try {
-            Long deleted = template.opsForStream().delete(streamKey, messageIds);
+            Long deleted = streamRedisTemplate.opsForStream().delete(streamKey, messageIds);
             return deleted != null ? deleted : 0L;
         } catch (Exception e) {
             log.error("Failed to delete messages from stream: {}", streamKey, e);
@@ -1636,7 +1645,7 @@ public class RedisClient {
      */
     public long xTrim(String streamKey, long maxLength) {
         try {
-            Long trimmed = template.opsForStream().trim(streamKey, maxLength);
+            Long trimmed = streamRedisTemplate.opsForStream().trim(streamKey, maxLength);
             return trimmed != null ? trimmed : 0L;
         } catch (Exception e) {
             log.error("Failed to trim stream: {}", streamKey, e);
@@ -1653,7 +1662,7 @@ public class RedisClient {
      */
     public StreamInfo.XInfoGroups xInfoGroups(String streamKey) {
         try {
-            return template.opsForStream().groups(streamKey);
+            return streamRedisTemplate.opsForStream().groups(streamKey);
         } catch (Exception e) {
             log.error("Failed to get consumer groups for stream: {}", streamKey, e);
             throw new RedisException("Redis stream groups operation failed", e);
@@ -1670,7 +1679,7 @@ public class RedisClient {
      */
     public StreamInfo.XInfoConsumers xInfoConsumers(String streamKey, String groupName) {
         try {
-            return template.opsForStream().consumers(streamKey, groupName);
+            return streamRedisTemplate.opsForStream().consumers(streamKey, groupName);
         } catch (Exception e) {
             log.error("Failed to get consumers for group: {} in stream: {}", groupName, streamKey, e);
             throw new RedisException("Redis stream consumers operation failed", e);
