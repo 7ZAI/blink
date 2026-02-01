@@ -44,6 +44,14 @@ public class BlinkException extends RuntimeException {
         this.code = SYS_ERROR;
     }
 
+    /**
+     *  这里一般为new出来的异常使用
+     *  内部用code覆盖父类的错误message
+     *  如果是要将其他异常转为BlinkException 不能使用这个API
+     *  原则上要保留原始错误信息，请使用其他重载方法
+     *
+     * @param code 错误代码
+     */
     public BlinkException(String code) {
         super(code);
         this.code = code;
@@ -63,6 +71,7 @@ public class BlinkException extends RuntimeException {
     }
 
     public BlinkException(String code, Boolean isBusinessException) {
+        super(code);
         this.code = code;
         this.isBusinessException = isBusinessException;
     }
@@ -97,5 +106,15 @@ public class BlinkException extends RuntimeException {
         return isBusinessException;
     }
 
+    public String getCode() {
+        return code;
+    }
 
+    public Boolean getBusinessException() {
+        return isBusinessException;
+    }
+
+    public String getErrMessage() {
+        return errMessage;
+    }
 }
