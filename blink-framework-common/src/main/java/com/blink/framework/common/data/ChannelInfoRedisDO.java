@@ -71,9 +71,9 @@ public class ChannelInfoRedisDO implements Serializable {
     private Byte encryptionSwitch;
 
     /**
-     * 认证token过期开关 0 开启 1关闭
+     * 认证方式 0带状态的token  1 jwt
      */
-    private Byte tokenTimeoutSwitch;
+    private Byte tokenType;
 
     /**
      * 权限校验开关 0 开启 1关闭
@@ -173,12 +173,12 @@ public class ChannelInfoRedisDO implements Serializable {
         this.encryptionSwitch = encryptionSwitch;
     }
 
-    public Byte getTokenTimeoutSwitch() {
-        return tokenTimeoutSwitch;
+    public Byte getTokenType() {
+        return tokenType;
     }
 
-    public void setTokenTimeoutSwitch(Byte tokenTimeoutSwitch) {
-        this.tokenTimeoutSwitch = tokenTimeoutSwitch;
+    public void setTokenType(Byte tokenType) {
+        this.tokenType = tokenType;
     }
 
     public Byte getAuthoritySwitch() {
@@ -211,7 +211,7 @@ public class ChannelInfoRedisDO implements Serializable {
                 ", channelPublickey='" + channelPublickey + '\'' +
                 ", enable=" + enable +
                 ", encryptionSwitch=" + encryptionSwitch +
-                ", tokenTimeoutSwitch=" + tokenTimeoutSwitch +
+                ", tokenType=" + tokenType +
                 ", authoritySwitch=" + authoritySwitch +
                 ", remark='" + remark + '\'' +
                 '}';
