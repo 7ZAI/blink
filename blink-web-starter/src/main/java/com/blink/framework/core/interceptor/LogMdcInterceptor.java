@@ -1,6 +1,5 @@
 package com.blink.framework.core.interceptor;
 
-import com.blink.framework.core.data.CoreConstant;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.MDC;

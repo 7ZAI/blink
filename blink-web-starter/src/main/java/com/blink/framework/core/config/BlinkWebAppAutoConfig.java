@@ -19,7 +19,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.time.LocalDateTime;
@@ -36,10 +39,10 @@ import java.time.format.DateTimeFormatter;
 public class BlinkWebAppAutoConfig {
 
     /**
-     * 如果外部配置了新的ControllerAdvice 覆盖自动配置
+     * 如果外部配置了新的RestControllerAdvice 覆盖自动配置
      */
     @Bean
-    @ConditionalOnMissingBean(annotation = ControllerAdvice.class)
+    @ConditionalOnMissingBean(annotation = RestControllerAdvice.class)
     public GlobalExceptionHandler globalExceptionHandler() {
         return new GlobalExceptionHandler();
     }

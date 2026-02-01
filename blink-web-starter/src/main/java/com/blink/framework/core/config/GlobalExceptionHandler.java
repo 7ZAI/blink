@@ -11,15 +11,14 @@ import com.blink.framework.core.entity.SysMsgInfoDO;
 import com.blink.framework.core.mapper.SysMsgInfoMapper;
 import com.blink.framework.redis.component.CacheComponent;
 import jakarta.annotation.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,10 +28,10 @@ import java.util.function.Supplier;
  * 全局异常处理 优先处理子类确定声明的异常 然后再处理父类
  * @author binblink
  */
-@ControllerAdvice
+@RestControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
-    private final static Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @Resource
     private SysMsgInfoMapper sysMsgInfoMapper;
@@ -49,12 +48,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(value = HttpStatus.OK)
     public ResponseDTO<EmptyBody> handleBlinkException(BlinkException exception) {
 
-        logger.error(exception.getMessage(), exception);
+        log.error(exception.getMessage(), exception);
 
         ResponseDTO<EmptyBody> rspDto = ResponseDTO.newFailInstance();
         String msgCode = exception.getMessage();
         rspDto.setMsgCode(exception.getMessage());
-
         String msgInfo = getMsgInfo(msgCode);
         rspDto.setMsgInfo(msgInfo);
 
@@ -73,7 +71,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(value = HttpStatus.OK)
     public ResponseDTO<EmptyBody> handleException(MethodArgumentNotValidException exception) {
 
-        logger.error(exception.getMessage(), exception);
+        log.error(exception.getMessage(), exception);
 
         BindingResult bindingResult = exception.getBindingResult();
         //可能会同时存在多个参数校验失败异常 只取第一个异常信息
@@ -102,7 +100,7 @@ public class GlobalExceptionHandler {
     public ResponseDTO<EmptyBody> handleAllOtherExceptions(Exception e) {
         // 通用异常处理逻辑（如日志记录、返回默认错误信息）
         // 记录详细日志便于排查
-        logger.error("未处理的异常：", e);
+        log.error("发生未处理的异常：", e);
         ResponseDTO<EmptyBody> errRsp = ResponseDTO.newFailInstance();
         String msgCode = errRsp.getMsgCode();
 
