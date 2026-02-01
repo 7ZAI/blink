@@ -97,10 +97,10 @@ public class BlinkChannelDO implements Serializable {
     private Byte encryptionSwitch;
 
     /**
-     * 认证token过期开关 0 开启 1关闭
+     * 认证方式 0带状态的token  1 jwt
      */
-    @TableField("token_timeout_switch")
-    private Byte tokenTimeoutSwitch;
+    @TableField("token_type")
+    private Byte tokenType;
 
     /**
      * 权限校验开关 0 开启 1关闭

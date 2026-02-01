@@ -48,13 +48,11 @@ import java.util.stream.Collectors;
  * 对接渠道 服务实现类
  *
  * @author binblink
- * @since 2024-07-29
  */
 @Transactional(rollbackFor = Exception.class)
 @Service
 public class BlinkChannelServiceImpl implements BlinkChannelService {
 
-    private final Logger logger = LoggerFactory.getLogger(BlinkChannelServiceImpl.class);
 
     @Resource
     private BlinkChannelMapper channelMapper;
@@ -257,7 +255,9 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
                 .eq(StrUtil.isNotBlank(queryParam.getAppKey()), BlinkChannelDO::getAppKey, queryParam.getAppKey()));
 
         var channelVO = new ChannelVO();
-        BeanUtils.copyProperties(channelDO,channelVO);
+        if(channelDO != null) {
+            BeanUtils.copyProperties(channelDO,channelVO);
+        }
 
         return channelVO;
     }

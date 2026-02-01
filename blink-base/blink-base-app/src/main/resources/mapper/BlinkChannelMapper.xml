@@ -16,7 +16,7 @@
         <result column="channel_privatekey" property="channelPrivatekey"/>
         <result column="enable" property="enable"/>
         <result column="encryption_switch" property="encryptionSwitch"/>
-        <result column="token_timeout_switch" property="tokenTimeoutSwitch"/>
+        <result column="token_type" property="tokenType"/>
         <result column="authority_switch" property="authoritySwitch"/>
         <result column="remark" property="remark"/>
         <result column="create_by" property="createBy"/>
@@ -27,7 +27,7 @@
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         channel_id
-        , channel_name, app_key, app_secret, rela_user_id, access_token, system_publickey, system_privatekey, channel_publickey, channel_privatekey, enable, encryption_switch, token_timeout_switch, authority_switch, remark, create_by, update_by, create_time, update_time
+        , channel_name, app_key, app_secret, rela_user_id, access_token, system_publickey, system_privatekey, channel_publickey, channel_privatekey, enable, encryption_switch, token_type, authority_switch, remark, create_by, update_by, create_time, update_time
     </sql>
 
 
@@ -62,8 +62,8 @@
             <if test="encryptionSwitch != null and encryptionSwitch != ''">and encryption_switch = #{encryptionSwitch}
             </if>
 
-            <if test="tokenTimeoutSwitch != null and tokenTimeoutSwitch != ''">and token_timeout_switch =
-                #{tokenTimeoutSwitch}
+            <if test="tokenType != null and tokenType != ''">and token_type =
+                #{tokenType}
             </if>
 
             <if test="authoritySwitch != null and authoritySwitch != ''">and authority_switch = #{authoritySwitch}</if>

@@ -98,9 +98,9 @@ public class QueryBlinkChannelRspDTO extends PageDTO implements Serializable {
 
 
     /**
-     * 认证token过期开关 0 开启 1关闭
+     * 认证方式 0带状态的token  1 jwt
      */
-    private Byte tokenTimeoutSwitch;
+    private Byte tokenType;
 
 
     /**

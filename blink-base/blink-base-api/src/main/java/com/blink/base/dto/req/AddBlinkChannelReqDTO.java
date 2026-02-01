@@ -1,22 +1,22 @@
 package com.blink.base.dto.req;
 
-import com.blink.framework.common.data.PageDTO;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
  * <p>
- * QueryBlinkChannelReqDTO 查询列表对接渠道请求参数对象
+ * AddBlinkChannelReqDTO 新增对接渠道请求参数对象
  * </p>
  *
  * @author binblink
+ * @since 2024-07-29
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-public class QueryBlinkChannelReqDTO extends PageDTO implements Serializable {
+public class AddBlinkChannelReqDTO implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -30,6 +30,7 @@ public class QueryBlinkChannelReqDTO extends PageDTO implements Serializable {
     /**
      * 渠道名
      */
+    @NotBlank
     private String channelName;
 
 
@@ -48,6 +49,7 @@ public class QueryBlinkChannelReqDTO extends PageDTO implements Serializable {
     /**
      * 关联用户
      */
+    @NotNull
     private String relaUserId;
 
 
@@ -90,18 +92,21 @@ public class QueryBlinkChannelReqDTO extends PageDTO implements Serializable {
     /**
      * 加密开关 0 开启 1关闭
      */
+    @NotNull
     private Byte encryptionSwitch;
 
 
     /**
      * 认证方式 0带状态的token  1 jwt
      */
+    @NotNull
     private Byte tokenType;
 
 
     /**
      * 权限校验开关 0 开启 1关闭
      */
+    @NotNull
     private Byte authoritySwitch;
 
 

@@ -96,10 +96,10 @@ public class AddBlinkChannelReqDTO implements Serializable {
 
 
     /**
-     * 认证token过期开关 0 开启 1关闭
+     * 认证方式 0带状态的token  1 jwt
      */
     @NotNull
-    private Byte tokenTimeoutSwitch;
+    private Byte tokenType;
 
 
     /**
