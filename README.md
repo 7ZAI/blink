@@ -13,7 +13,7 @@ JDK17、Spring Cloud Alibaba、Spring Boot 3、Mysql 8.0、Spring MVC、Mybatis-
 
 ## 模块封装
 
-模仿企业级工程采用功能维度模块化拆分策略，将各核心能力封装为独立可发布的依赖库（如 Spring Boot Starter）：
+采用企业级工程按功能维度模块化拆分策略，将各核心能力封装为独立可发布的依赖库（如 Spring Boot Starter）：
 实现模块间依赖隔离与功能可插拔，降低模块耦合性；
 Starter 内置自动化配置能力，外部引用时可通过自定义配置灵活覆盖依赖库默认参数；
 后续功能迭代或重大调整可通过发布新版本依赖包支撑持续交付，最终使工程架构达成高内聚、低耦合的管理目标
@@ -139,4 +139,4 @@ blink-gateway-reactive 是基于spring cloud gateway实现的响应式非阻塞�
 
 
 
-#### blink项目处于持续开发的状态，后续还会添加内容
+#### blink项目处于持续开发的状态，后续持续更新 
