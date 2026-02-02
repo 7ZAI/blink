@@ -1,17 +1,15 @@
-package com.blink.gateway.filter;
+package com.blink.gateway.security.filter;
 
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.IPAddressUtils;
 import com.blink.gateway.config.prop.BlinkGatewayConfigProperties;
+import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.util.GateWayUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.core.Ordered;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -26,7 +24,7 @@ import static com.blink.gateway.constant.GateWayErrMsgCode.ILLEGAL_REQUEST;
  * @Author binblink
  */
 @Slf4j
-public class IpFilter implements GlobalFilter, Ordered {
+public class IpFilter implements WebFilter {
 
     private final BlinkGatewayConfigProperties.IPFilter config;
 
@@ -35,7 +33,7 @@ public class IpFilter implements GlobalFilter, Ordered {
     }
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 
         ServerHttpRequest request = exchange.getRequest();
         //获取真实ip
@@ -46,9 +44,8 @@ public class IpFilter implements GlobalFilter, Ordered {
             log.warn("无效的 IP 地址: {}", clientIp);
             return Mono.error(new BlinkException(ILLEGAL_REQUEST));
         }
-
         //后续使用
-        exchange.getAttributes().put("clientIp",clientIp);
+        exchange.getAttributes().put(GatewayConstant.CLIENT_IP, clientIp);
 
         // 检查是否启用 IP 过滤
         if (!config.isIpFilterEnable()) {
@@ -60,7 +57,7 @@ public class IpFilter implements GlobalFilter, Ordered {
 //            return Mono.error(new BlinkException(FORBIDDEN));
 //        }
         // 白名单开启
-        if(config.isWhiteListEnable()){
+        if (config.isWhiteListEnable()) {
             //单个
             List<String> whiteListIps = config.getWhiteListIps();
             //网段
@@ -73,9 +70,9 @@ public class IpFilter implements GlobalFilter, Ordered {
                 }
             }
 
-            if(!whiteListNetwork.isEmpty()){
-                for(String network : whiteListNetwork){
-                    if(IPAddressUtils.isIpInNetwork(clientIp,network)){
+            if (!whiteListNetwork.isEmpty()) {
+                for (String network : whiteListNetwork) {
+                    if (IPAddressUtils.isIpInNetwork(clientIp, network)) {
                         log.debug("IP 地址在白名单网段中，允许访问: {}", clientIp);
                         return chain.filter(exchange);
                     }
@@ -86,7 +83,7 @@ public class IpFilter implements GlobalFilter, Ordered {
         }
 
         //黑名单开启
-        if(config.isBlackListEnable()){
+        if (config.isBlackListEnable()) {
             //单个
             List<String> blackListIps = config.getBlackListIps();
             //网段
@@ -95,15 +92,15 @@ public class IpFilter implements GlobalFilter, Ordered {
             //白名单为空 检查黑名单
             if (!blackListIps.isEmpty()) {
 
-                if(blackListIps.contains(clientIp)){
+                if (blackListIps.contains(clientIp)) {
                     log.warn("IP 地址在黑名单中 拒绝访问: {}", clientIp);
                     return Mono.error(new BlinkException(FORBIDDEN));
                 }
             }
 
-            if(!blackListNetwork.isEmpty()){
-                for(String network : blackListNetwork){
-                    if(IPAddressUtils.isIpInNetwork(clientIp,network)){
+            if (!blackListNetwork.isEmpty()) {
+                for (String network : blackListNetwork) {
+                    if (IPAddressUtils.isIpInNetwork(clientIp, network)) {
                         log.warn("IP 地址在黑名单网段中 拒绝访问: {}", clientIp);
                         return Mono.error(new BlinkException(FORBIDDEN));
                     }
@@ -114,6 +111,7 @@ public class IpFilter implements GlobalFilter, Ordered {
         // 黑白名单都为空或白名单为空且不在黑名单中，允许访问
         return chain.filter(exchange);
     }
+
 
     /**
      * 提取客户端真实 IP
@@ -130,10 +128,4 @@ public class IpFilter implements GlobalFilter, Ordered {
         return GateWayUtil.extractClientIp(remoteAddress, xForwardedFor, xRealIp);
     }
 
-
-    @Override
-    public int getOrder() {
-        // 设置较高的优先级，确保在其他过滤器之前执行
-        return Ordered.HIGHEST_PRECEDENCE + 100 ;
-    }
 }

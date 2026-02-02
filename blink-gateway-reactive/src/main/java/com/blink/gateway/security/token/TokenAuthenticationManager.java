@@ -1,4 +1,4 @@
-package com.blink.gateway.security;
+package com.blink.gateway.security.token;
 
 import com.blink.framework.common.data.UserInfoRedisDO;
 import com.blink.framework.redis.component.ReactiveRedisClient;
@@ -10,7 +10,6 @@ import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import reactor.core.publisher.Mono;
 
 import java.util.stream.Collectors;

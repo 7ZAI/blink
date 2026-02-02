@@ -1,8 +1,8 @@
-package com.blink.gateway.security;
+package com.blink.gateway.security.token;
 
 import com.blink.framework.common.data.ChannelInfoRedisDO;
-import com.blink.gateway.config.prop.BlinkGatewayProperties;
-import com.blink.gateway.constant.GatewayConstant;
+import com.blink.framework.common.exception.BlinkException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
@@ -18,18 +18,19 @@ import static com.blink.gateway.constant.GatewayConstant.CHANNEL_INFO;
  * 从请求中拿到token
  * @Author binblink
  */
-public class TokenServerAuthenticationConverter implements ServerAuthenticationConverter {
+@Slf4j
+public class TokenAuthenticationConverter implements ServerAuthenticationConverter {
 
 
     @Override
     public Mono<Authentication> convert(ServerWebExchange exchange) {
 
-//        ChannelInfoRedisDO reqChannel = (ChannelInfoRedisDO) exchange.getAttributes().get(CHANNEL_INFO);
-
-//        reqChannel.getChannelName().equals();
-
-        String token = exchange.getRequest().getHeaders().getFirst(X_BLINK_TOKEN);
         //初始未认证的token
-        return Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(null,token));
+        return Mono.justOrEmpty((ChannelInfoRedisDO) exchange.getAttributes().get(CHANNEL_INFO))
+                .filter(channel-> 0 == channel.getTokenType())
+                .flatMap(channel -> Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst(X_BLINK_TOKEN)))
+                .filter(token -> !token.isEmpty())
+                .flatMap(token -> Mono.just(UsernamePasswordAuthenticationToken.unauthenticated(null,token)));
+
     }
 }

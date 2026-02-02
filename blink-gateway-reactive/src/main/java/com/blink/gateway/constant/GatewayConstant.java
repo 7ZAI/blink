@@ -145,6 +145,11 @@ public interface GatewayConstant {
      */
     String DEFAULT_LANG_CN = "zh_cn";
 
+    /**
+     * 请求客户端ip key
+     */
+    String CLIENT_IP =  "clientIp";
+
     /**---------------------------------------------------Redis relate start--------------------------------------------------------**/
 
     String BLINK_PREFIX = "blink:";
@@ -199,6 +204,8 @@ public interface GatewayConstant {
      * gateway同步 stream key
      */
     String GATEWAY_STREAM_EVENT = BLINK_PREFIX + "stream:gateway:event";
+
+
 
 
     /**---------------------------------------------------Redis relate end--------------------------------------------------------**/

@@ -1,4 +1,4 @@
-package com.blink.gateway.filter;
+package com.blink.gateway.security.filter;
 
 import cn.hutool.core.util.StrUtil;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
@@ -7,10 +7,8 @@ import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.util.GateWayUtil;
 import com.blink.gateway.util.JacksonUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
-import org.springframework.core.Ordered;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -19,6 +17,8 @@ import org.springframework.util.Assert;
 import org.springframework.web.reactive.function.server.HandlerStrategies;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 import java.util.Objects;
@@ -40,7 +40,7 @@ import static org.springframework.cloud.gateway.support.ServerWebExchangeUtils.C
  * @author binblink
  */
 @Slf4j
-public class RequestValidateFilter implements GlobalFilter, Ordered {
+public class RequestValidateFilter implements WebFilter {
 
 
     private final GateWayCacheComponent cacheComponent;
@@ -58,56 +58,46 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
      * @return
      */
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 
         var httpRequest = exchange.getRequest();
         var headers = httpRequest.getHeaders();
 
         log.info("===> 开始校验请求合法性 ");
 
-        return headerValidate(httpRequest).flatMap(isValid -> isValid ? processChecking(exchange, chain, headers)
-                : Mono.error(new BlinkException(ILLEGAL_REQUEST))
-
-        );
-
+        return headerValidate(httpRequest)
+                .filter(isValid -> isValid)
+                .switchIfEmpty(Mono.error(new BlinkException(ILLEGAL_REQUEST)))
+                //校验渠道
+                .flatMap(r -> checkChannel(exchange, headers))
+                .filter(isValid-> isValid)
+                .switchIfEmpty(Mono.error(new BlinkException(ILLEGAL_REQUEST)))
+                .flatMap(r->cacheRequestBody(exchange, chain));
     }
+
 
     /**
      * 校验必填请求头 和 约束http提交方法为POST Content-Type为application/json
      */
     private Mono<Boolean> headerValidate(ServerHttpRequest httpRequest) {
 
-        HttpHeaders headers = httpRequest.getHeaders();
+        return Mono.justOrEmpty(httpRequest.getHeaders())
+                .flatMap(httpHeaders -> {
+                    if (!checkRequestType(httpHeaders, httpRequest.getMethod())) {
+                        log.warn("请求类型校验失败！");
+                        return Mono.just(false);
+                    }
 
-        if (!checkRequestType(headers, httpRequest.getMethod())) {
-            log.error("请求类型校验失败！");
-            return Mono.just(false);
-        }
-
-        if (!checkHeadersData(headers, httpRequest.getPath().value())) {
-            log.error("请求头数据校验失败！");
-            return Mono.just(false);
-        }
-
-        return Mono.just(true);
+                    if (!checkHeadersData(httpHeaders, httpRequest.getPath().value())) {
+                        log.warn("必填请求头或者请求头内容长度校验失败！");
+                        return Mono.just(false);
+                    }
+                    return Mono.just(true);
+                })
+                // 处理 httpHeaders 为空的情况;
+                .defaultIfEmpty(false);
     }
 
-    /**
-     * 继续校验 组装程序处理模块
-     * 拆分为多个方法避免return嵌套 虽然实际上还是 return 回调return
-     * 但是函数单一职责封装 提高了代码可读性
-     *
-     * @param exchange
-     * @param chain
-     * @param headers
-     * @return
-     */
-    private Mono<Void> processChecking(ServerWebExchange exchange, GatewayFilterChain chain, HttpHeaders headers) {
-        return checkChannel(exchange, headers).flatMap(isValid -> isValid
-                ? cacheRequestBody(exchange, chain)
-                : Mono.error(new BlinkException(ILLEGAL_REQUEST)));
-    }
 
     /**
      * 校验渠道信息
@@ -154,22 +144,13 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
      * @param chain
      * @return
      */
-    private Mono<Void> cacheRequestBody(ServerWebExchange exchange, GatewayFilterChain chain) {
+    private Mono<Void> cacheRequestBody(ServerWebExchange exchange, WebFilterChain chain) {
         //只针对post application/json请求类型 缓存body
         if (GateWayUtil.shouldCacheRequestBody(exchange.getRequest())) {
             //缓存body
-            return cacheRequestBodyToAttributes(exchange).flatMap(mutatedRequest ->
-                            //更换装饰后的request请求 继续执行过滤链
-                            chain.filter(exchange.mutate().request(mutatedRequest).build())
-//                            .doFinally(s -> {
-//
-//                        Object backupCachedBody = exchange.getAttributes()
-//                                .get(CACHED_ORIGINAL_REQUEST_BODY_BACKUP_ATTR);
-//                        if (backupCachedBody instanceof DataBuffer dataBuffer) {
-//                            DataBufferUtils.release(dataBuffer);
-//                        }
-//                    })
-            );
+            return cacheRequestBodyToAttributes(exchange)
+                    //更换装饰后的request请求 继续执行过滤链
+                    .flatMap(mutatedRequest ->chain.filter(exchange.mutate().request(mutatedRequest).build()));
         }
         // 继续执行过滤链
         return chain.filter(exchange);
@@ -189,6 +170,7 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
         long contentLength = headers.getContentLength();
         //getContentType 非空
         if (Objects.isNull(currentType) || contentLength == -1) {
+            log.warn("请求未设置ContentType");
             return false;
         }
         //文件上传 放过
@@ -322,13 +304,10 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
                 }
                 log.info("===> 缓存请求体:{}", jsonString);
                 //缓存请求body 字符串到 请求域
-                Object previousCachedBody = exchange.getAttributes()
-                        .put(CACHED_REQUEST_BODY_ATTR, jsonString);
-
+                 exchange.getAttributes().put(CACHED_REQUEST_BODY_ATTR, jsonString);
             }).then(Mono.defer(() -> {
                 //cacheRequestBodyAndRequest方法中 中缓存了 装饰类
-                ServerHttpRequest cachedRequest = exchange
-                        .getAttribute(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
+                ServerHttpRequest cachedRequest = exchange.getAttribute(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
                 Assert.notNull(cachedRequest, "cache request shouldn't be null");
                 exchange.getAttributes().remove(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
                 return Mono.just(cachedRequest);
@@ -336,16 +315,6 @@ public class RequestValidateFilter implements GlobalFilter, Ordered {
         });
     }
 
-
-    /**
-     * order值 越小越优先
-     *
-     * @return
-     */
-    @Override
-    public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE + 101;
-    }
 
 
 }

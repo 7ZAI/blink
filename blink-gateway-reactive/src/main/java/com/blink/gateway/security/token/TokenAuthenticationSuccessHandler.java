@@ -1,4 +1,4 @@
-package com.blink.gateway.security;
+package com.blink.gateway.security.token;
 
 
 import com.blink.framework.common.data.UserInfoRedisDO;
@@ -6,8 +6,6 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.constant.GatewayConstant;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.WebFilterExchange;
 import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler;
@@ -22,11 +20,11 @@ import java.util.Objects;
  * @Author binblink
  */
 @Slf4j
-public class BlinkAuthenticationSuccessHandler implements ServerAuthenticationSuccessHandler {
+public class TokenAuthenticationSuccessHandler implements ServerAuthenticationSuccessHandler {
 
     private final ReactiveRedisClient redisClient;
 
-    public BlinkAuthenticationSuccessHandler(ReactiveRedisClient redisClient) {
+    public TokenAuthenticationSuccessHandler(ReactiveRedisClient redisClient) {
         this.redisClient = redisClient;
     }
 

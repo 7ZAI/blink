@@ -55,7 +55,7 @@ public class WebClientTest {
 
     private final String loginName = "test2";
     private final String password = "123456";
-    private final String token = "95e12312da3940a694a9eacd405b1895";
+    private final String token = "f19154f28a47437794ed24976041f7d9";
     //系统公钥
     private final String systemPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlRqb7VG+lkiTH/8LY4ISQLjD2t+8kZMvthvixlIx57v3d5o994PY0/QFqOPqDdJeXIvxiCA0z/qdMGve3t2lJuUiExNmH+pY46LuNMIyzmiHKliocDCFb1bdVoTWHzJmjDT2TnRxmglVVm4mhlpDS18accZVPXdzESCn32HfmhKkQj+0NTdsPzjlpWsfsXpySToPVa8/U1HupTnRibdsCu80PHCjRwf/3+fj9fBRnNCubJoSlOi4o+koojqQ3vCMc+b+6dW6zYS83g67olT9J77ekOru/+OgWYe3FmBSjhiYAIMSwK1PalyvI9S3V57SdkHkwG72UrnsIP7iE5BSKwIDAQAB";
     //系统私钥

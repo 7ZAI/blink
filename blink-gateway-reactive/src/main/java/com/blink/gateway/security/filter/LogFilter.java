@@ -1,11 +1,8 @@
-package com.blink.gateway.filter;
+package com.blink.gateway.security.filter;
 
 import com.blink.gateway.util.GateWayUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferFactory;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -14,8 +11,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.http.server.reactive.ServerHttpResponseDecorator;
-import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -28,13 +26,13 @@ import java.nio.charset.StandardCharsets;
  * @author binblink
  */
 @Slf4j
-public class GatewayLogFilter implements GlobalFilter, Ordered {
+public class LogFilter implements WebFilter {
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         // 记录开始时间
         long startTime = System.currentTimeMillis();
-        
+
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
         String method = request.getMethod().name();
@@ -43,10 +41,10 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
         String clientIp = GateWayUtil.getClientIp(request);
         var headers = request.getHeaders();
 
-        // 记录请求信息
+        // 记录请求信息 请求体会在初步的合法性验证后 打印
         log.info("===> 请求开始 请求路径: {},请求参数:{}, 请求方法: {}, 客户端IP: {}", path, requestParams,method, clientIp);
         log.info("请求头: {}", headers);
-        
+
 
         // 装饰响应对象以捕获响应体
         ServerHttpResponse originalResponse = exchange.getResponse();
@@ -104,9 +102,9 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
                 })
                 .then(Mono.fromRunnable(() -> {
                     // 如果没有响应体，在这里记录完成信息
-                    if (originalResponse.getStatusCode() != null && 
-                        (originalResponse.getStatusCode().value() == 304 || 
-                         originalResponse.getStatusCode().is3xxRedirection())) {
+                    if (originalResponse.getStatusCode() != null &&
+                            (originalResponse.getStatusCode().value() == 304 ||
+                                    originalResponse.getStatusCode().is3xxRedirection())) {
                         long endTime = System.currentTimeMillis();
                         long duration = endTime - startTime;
                         log.info("<=== 请求结束: {} {}, 状态码: {}, 耗时: {}ms", method, path,originalResponse.getStatusCode().value(), duration);
@@ -114,10 +112,4 @@ public class GatewayLogFilter implements GlobalFilter, Ordered {
                 }));
     }
 
-
-    @Override
-    public int getOrder() {
-        // 设置较高优先级，确保最先执行
-        return Ordered.HIGHEST_PRECEDENCE + 1;
-    }
 }

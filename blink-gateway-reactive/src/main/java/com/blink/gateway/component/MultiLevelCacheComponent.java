@@ -12,9 +12,6 @@ import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Map;
-
 /**
  * 多级缓存基础组件封装
  * 依次从本地 redis 远程服务数据源获取数据
@@ -50,9 +47,10 @@ public class MultiLevelCacheComponent {
     public <T> Mono<T> get(String key, Class<T> clazz, RemoteService<T> service) {
         return getFromLocalCache(key, clazz)
                 //本地缓存为空
-                .switchIfEmpty(Mono.defer(() -> getFromRedis(key, clazz)
-                        //成功则设置本地值
-                        .flatMap(value -> setLocalCache(key, value)
+                .switchIfEmpty(Mono.defer(() ->
+                        getFromRedis(key, clazz)
+                                .flatMap(value -> setLocalCache(key, value))
+                                //成功则设置本地值
                                 //redis 也为空 远程服务调用获取
                                 .switchIfEmpty(Mono.defer(() -> service.call(key, clazz))
                                         //获取成功写回缓存
@@ -63,7 +61,7 @@ public class MultiLevelCacheComponent {
                                             log.error("远程调用异常！{}", e.getMessage(), e);
                                             return Mono.empty();
                                         }))
-                        )));
+                ));
     }
 
     /**
@@ -105,7 +103,7 @@ public class MultiLevelCacheComponent {
         return redisClient.get(key)
                 .mapNotNull(e -> {
                     T value = JacksonUtil.convert(e, clazz);
-                    if(value != null){
+                    if (value != null) {
                         if (value.toString().length() < 1000) {
                             log.info("从Redis获取缓存参数 成功! key:{},value:{}", key, value);
                         } else {

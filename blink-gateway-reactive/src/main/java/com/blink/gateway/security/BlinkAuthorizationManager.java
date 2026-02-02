@@ -15,9 +15,9 @@ import java.util.Set;
 
 
 /**
- * 授权
+ * 授权管理
+ *
  * @Author binblink
- * @Date 2025/8/26
  */
 public class BlinkAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
 

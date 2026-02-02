@@ -64,8 +64,17 @@ public class CryptFilter implements GlobalFilter, Ordered {
 
         // 检查是否需要处理加密解密
         if (shouldProcessCrypt(exchange, channelInfo)) {
-            return processCryptExchange(exchange, chain, channelInfo);
+
+            return decryptRequest(exchange, channelInfo.getSystemPrivatekey())
+                    .filter(isValid->isValid)
+                    .switchIfEmpty(Mono.error(new BlinkException("请求解密失败！")))
+                    .flatMap(result -> {
+                        // 处理响应加密
+                        return chain.filter(exchange.mutate()
+                                .response(createEncryptedResponseDecorator(exchange.getResponse(), channelInfo)).build());
+                    });
         }
+
         return chain.filter(exchange);
     }
 
@@ -83,18 +92,6 @@ public class CryptFilter implements GlobalFilter, Ordered {
         }
         // 请求不是 post application/json
         return GateWayUtil.shouldCacheRequestBody(exchange.getRequest());
-    }
-
-    private Mono<Void> processCryptExchange(ServerWebExchange exchange, GatewayFilterChain chain, ChannelInfoRedisDO channelInfo) {
-        // 处理请求解密
-        Mono<Boolean> decryptedRequest = decryptRequest(exchange, channelInfo.getSystemPrivatekey());
-        Map<String, Object> signParams = getSignParams(channelInfo);
-
-        return decryptedRequest.flatMap(result -> {
-            // 处理响应加密
-            return chain.filter(exchange.mutate()
-                    .response(createEncryptedResponseDecorator(exchange.getResponse(), channelInfo, signParams)).build());
-        });
     }
 
     /**
@@ -124,7 +121,8 @@ public class CryptFilter implements GlobalFilter, Ordered {
 
         String bodyStr = exchange.getAttribute(CACHED_REQUEST_BODY_ATTR);
         if (Objects.isNull(bodyStr)) {
-            return Mono.error(new BlinkException("系统错误!"));
+            log.warn("系统错误! 无法拿到Attribute中缓存的body json字符串");
+            return Mono.just(false);
         }
         log.debug("请求body 字符串：{}", bodyStr);
 
@@ -143,7 +141,8 @@ public class CryptFilter implements GlobalFilter, Ordered {
             exchange.getAttributes().put(CACHED_REQUEST_BODY_ATTR, plainBodyStr);
             log.debug("请求解密 耗时：{} ms", System.currentTimeMillis() - start);
         } catch (Exception e) {
-            return Mono.error(new BlinkException(e, "AES解密错误"));
+            log.error("AES解密错误 {}",e.getMessage(),e);
+            return Mono.just(false);
         }
         return Mono.just(true);
     }
@@ -153,10 +152,9 @@ public class CryptFilter implements GlobalFilter, Ordered {
      *
      * @param originalResponse
      * @param channelInfo
-     * @param signParams
      * @return
      */
-    private ServerHttpResponseDecorator createEncryptedResponseDecorator(ServerHttpResponse originalResponse, ChannelInfoRedisDO channelInfo, Map<String, Object> signParams) {
+    private ServerHttpResponseDecorator createEncryptedResponseDecorator(ServerHttpResponse originalResponse, ChannelInfoRedisDO channelInfo) {
         return new ServerHttpResponseDecorator(originalResponse) {
             @Override
             public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
@@ -196,6 +194,8 @@ public class CryptFilter implements GlobalFilter, Ordered {
                                 byte[] encryptedBytes = encryptedResponse.getBytes(StandardCharsets.UTF_8);
                                 log.debug("响应加密 耗时：{} ms", System.currentTimeMillis() - start);
                                 //签名
+                                // 处理请求解密
+                                Map<String, Object> signParams = getSignParams(channelInfo);
                                 String sign = getSignStr(encryptedResponse, channelInfo.getAppSecret(), signParams);
                                 // 设置响应头
                                 setHttpHeaders(headers, encryptedKey, base64IV, sign, signParams);
@@ -271,6 +271,6 @@ public class CryptFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return Ordered.HIGHEST_PRECEDENCE + 103;
+        return Ordered.HIGHEST_PRECEDENCE + 104;
     }
 }

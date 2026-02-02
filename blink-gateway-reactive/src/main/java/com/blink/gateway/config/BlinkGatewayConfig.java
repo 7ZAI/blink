@@ -20,6 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 
 
 /**
@@ -59,41 +60,23 @@ public class BlinkGatewayConfig {
         return new GlobalExceptionHandlerFilter(cacheComponent);
     }
 
-    /**
-     * 日志记录过滤器 执行filter执行顺序 正是按照当前filter的从上到下的书写顺序
-     * @return
-     */
-    @Bean
-    public GatewayLogFilter gatewayLogFilter() {
-        return new GatewayLogFilter();
-    }
 
     /**
-     * ip 过滤
-     * @param config 属性配置
-     * @return
-     */
-    @Bean
-    public IpFilter ipFilter(BlinkGatewayConfigProperties config) {
-        return new IpFilter(config);
-    }
-
-    /**
-     * 合法性校验filter
-     * @return
-     */
-    @Bean
-    public RequestValidateFilter requestValidateFilter() {
-        return new RequestValidateFilter(cacheComponent);
-    }
-
-    /**
-     * 签名 防重放 filter
+     * 签名  filter
      * @return
      */
     @Bean
     public SignatureFilter signatureFilter() {
-        return new SignatureFilter(redisClient, signatureServiceFactory, cacheComponent);
+        return new SignatureFilter(signatureServiceFactory, cacheComponent);
+    }
+
+    /**
+     *  防重放 filter
+     * @return
+     */
+    @Bean
+    public ReplayAttackPreventionFilter replayAttackPreventionFilter() {
+        return new ReplayAttackPreventionFilter(redisClient, cacheComponent);
     }
 
     /**

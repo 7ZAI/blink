@@ -1,10 +1,6 @@
 package com.blink.gateway.signature;
 
-import cn.hutool.core.util.StrUtil;
-import com.blink.gateway.filter.SignatureFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import lombok.extern.slf4j.Slf4j;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
@@ -16,9 +12,9 @@ import java.util.Map;
 /**
  * HMAC 签名实现
  */
+@Slf4j
 public class HmacSignatureService extends AbstractSignatureService {
 
-    private final Logger logger = LoggerFactory.getLogger(HmacSignatureService.class);
 
     public HmacSignatureService() {
         super("HmacSHA256");
@@ -50,14 +46,14 @@ public class HmacSignatureService extends AbstractSignatureService {
     @Override
     public String sign(String data, String secret, Map<String, Object> params) {
         String stringToSign = buildStringToSign(data, params);
-        logger.debug("sign stringToSign :{}", stringToSign);
+        log.debug("sign stringToSign :{}", stringToSign);
         return sign(stringToSign, secret);
     }
 
     @Override
     public boolean verify(String data, String secret, String signature, Map<String, Object> params) {
         String stringToSign = buildStringToSign(data, params);
-        logger.debug("verify stringToSign :{}", stringToSign);
+        log.debug("verify stringToSign :{}", stringToSign);
         return verify(stringToSign, secret, signature);
     }
 
