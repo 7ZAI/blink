@@ -4,7 +4,7 @@
 - [✨ 简介](#-简介 )
 - [🚀 快速开始](#-快速开始)
 - [💡 功能介绍](#-功能介绍)
-  - [合法性校验](#合法性校验)
+  - [过滤链](#过滤链)
   - [路由转发](#路由转发)
     - [动态路由](#动态路由) 
   - [认证与权限](#认证与权限)
@@ -44,7 +44,40 @@ Blink响应式网关基于spring cloud gateway 实现的API网关。旨在淘汰
 
 ## 功能介绍
 
-### 合法性校验
+### 过滤链
+
+gateway的核心机制或者说本质，其实就是一条过滤链（Filter）。那么过滤链上过滤器的执行顺序，就显得十分重要了。
+
+blink-gateway的过滤链顺序如下：
+
+```java
+   /**
+     * 网关过滤链顺序：
+     * 
+     * 请求进入
+     *   ↓
+     * 日志 (LogFilter)
+     *   ↓
+     * IP过滤检查 (IpFilter)
+     *   ↓
+     * 请求头合法性验证 (RequestHeaderValidationFilter)
+     *   ↓
+     * Security认证鉴权
+     *   ↓
+     * 签名验证 (SignatureFilter)
+     *   ↓
+     * 防重放攻击 (ReplayAttackPreventionFilter)
+     *   ↓
+     * 加密解密 (CryptFilter)
+     *   ↓
+     * 元数据填充 (RewriteRequestBodyFilter)
+     *   ↓
+     * 转发到下游服务
+     */
+
+```
+
+#### 合法性校验
     
 对http请求进行合法性校验，校验内容包括：ip黑白名单，请求方法类型校验，必填请求头校验，请求头和请求体数据长度校验，渠道合法性检验，数据签名验证，防止请求重放校验
 其中 ip、签名、请求重放可以设置参数配置开启或关闭，其余为必校验项；其他的一些校验边界也做了参数化配置；具体参数详情[配置参数](#配置参数)
@@ -197,12 +230,12 @@ token认证: 登入后通过UUID生成一个唯一Id作为用户token凭证，�
 TODO 未来支持
 如果不追求管理用户登录状态，可以采用jwt 双token的方案 后续添加
 
-相关类：[TokenServerAuthenticationConverter](src/main/java/com/blink/gateway/security/TokenServerAuthenticationConverter.java)、
-[BlinkAuthorizationManager](src/main/java/com/blink/gateway/security/BlinkAuthorizationManager.java) 、[BlinkAuthenticationSuccessHandler](src/main/java/com/blink/gateway/security/BlinkAuthenticationSuccessHandler.java)
+相关类：[TokenAuthenticationConverter](src/main/java/com/blink/gateway/security/token/TokenAuthenticationConverter.java)、
+[TokenAuthenticationManager](src/main/java/com/blink/gateway/security/token/TokenAuthenticationManager.java)、[BlinkAuthenticationSuccessHandler](src/main/java/com/blink/gateway/security/token/TokenAuthenticationSuccessHandler.java)
 
 权限校验：是对RBAC权限管理模型的实现。通过redis缓存获取url对应的权限标识，校验用户登入成功时获取的权限集合，是否具有该标识，有则通过 无则拒绝。
 
- 相关类：[TokenAuthenticationManager](src/main/java/com/blink/gateway/security/TokenAuthenticationManager.java)
+ 相关类：[BlinkAuthorizationManager](src/main/java/com/blink/gateway/security/BlinkAuthorizationManager.java)
 
 
 
@@ -249,7 +282,7 @@ TODO 未来支持
 
 ```
 
-链路追踪：
+链路追踪：生成分布式id 组装进报文
 
 
 相关类：[RewriteRequestBodyFilter.java](src/main/java/com/blink/gateway/filter/RewriteRequestBodyFilter.java)
@@ -302,7 +335,7 @@ TODO 未来支持
 
  ### 流量控制
 
-限流：
+限流：适用了spring cloud gateway原生的基于Redis令牌通限流 
 
 熔断：
 
@@ -325,10 +358,12 @@ TODO
  #### ip黑白名单
    
 可以设置ip 白名单和黑名单，白名单黑名单同时开启时 优先校验白名单   
+
 支持设置ipv4和ipv6 
+
 支持网段设置
 
-详情[IpFilter](src/main/java/com/blink/gateway/filter/IpFilter.java)    
+详情[IpFilter](src/main/java/com/blink/gateway/security/filter/IpFilter.java)    
  #### 临时功能下线
 TODO
 
