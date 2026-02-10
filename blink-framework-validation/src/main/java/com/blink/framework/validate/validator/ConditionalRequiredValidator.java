@@ -3,12 +3,14 @@ package com.blink.framework.validate.validator;
 import com.blink.framework.validate.annotation.ConditionalRequired;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanWrapperImpl;
 
 /**
  * @Author binblink
  * @Date 2025/8/25
  */
+@Slf4j
 public class ConditionalRequiredValidator implements ConstraintValidator<ConditionalRequired,Object> {
 
     private String conditionField;
@@ -37,6 +39,7 @@ public class ConditionalRequiredValidator implements ConstraintValidator<Conditi
             }
             return true;
         } catch (Exception e) {
+            log.error("条件校验出现异常{}",e.getMessage(),e);
             return false;
         }
     }

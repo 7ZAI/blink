@@ -3,6 +3,7 @@ package com.blink.framework.validate.validator;
 import com.blink.framework.validate.annotation.IsDate;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.util.function.Supplier;
@@ -12,6 +13,7 @@ import java.util.function.Supplier;
  * @Author binblink
  * @Date 2025/8/25
  */
+@Slf4j
 public class IsDateValidator implements ConstraintValidator<IsDate, Object> {
 
     private Class<? extends Supplier<LocalDate>> dateSupperClazz;
@@ -35,7 +37,7 @@ public class IsDateValidator implements ConstraintValidator<IsDate, Object> {
             return date.isEqual(dateValue);
 
         } catch (Exception e) {
-
+            log.error("IsDateValidator校验出现异常{}",e.getMessage(),e);
             return false;
         }
     }

@@ -3,12 +3,14 @@ package com.blink.framework.validate.validator;
 import com.blink.framework.validate.annotation.SameValue;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanWrapperImpl;
 
 /**
  * @Author binblink
  * @Date 2025/8/25
  */
+@Slf4j
 public class SameValueValidator implements ConstraintValidator<SameValue, Object> {
 
     private String[] fields;
@@ -55,6 +57,7 @@ public class SameValueValidator implements ConstraintValidator<SameValue, Object
             //全部相等
             return true;
         } catch (Exception e) {
+            log.error("SameValueValidator校验出现异常{}",e.getMessage(),e);
             return false;
         }
     }

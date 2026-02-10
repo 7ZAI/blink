@@ -3,12 +3,14 @@ package com.blink.framework.validate.validator;
 import com.blink.framework.validate.annotation.MutuallyExclusive;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanWrapperImpl;
 
 /**
  * @Author binblink
  * @Date 2025/8/25
  */
+@Slf4j
 public class MutuallyExclusiveValidator implements ConstraintValidator<MutuallyExclusive, Object> {
 
     private String field1;
@@ -33,6 +35,7 @@ public class MutuallyExclusiveValidator implements ConstraintValidator<MutuallyE
             return (value1 == null || (value1 instanceof String && ((String) value1).isEmpty())) ||
                     (value2 == null || (value2 instanceof String && ((String) value2).isEmpty()));
         } catch (Exception e) {
+            log.error("MutuallyExclusiveValidator校验出现异常{}",e.getMessage(),e);
             return false;
         }
     }

@@ -3,6 +3,7 @@ package com.blink.framework.validate.validator;
 import com.blink.framework.validate.annotation.StartEndDate;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanWrapperImpl;
 
 import java.time.LocalDate;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
  * @Author binblink
  * @Date 2025/8/25
  */
+@Slf4j
 public class DateRangeValidator implements ConstraintValidator<StartEndDate, Object> {
     private String startDateField;
     private String endDateField;
@@ -35,6 +37,7 @@ public class DateRangeValidator implements ConstraintValidator<StartEndDate, Obj
             }
             return !startDate.isAfter(endDate);
         } catch (Exception e) {
+            log.error("日期校验出现异常{}",e.getMessage(),e);
             return false;
         }
     }

@@ -4,6 +4,7 @@ package com.blink.framework.validate.validator;
 import com.blink.framework.common.data.DictCacheDO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.ApplicationContextUtil;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.CacheComponent;
 import com.blink.framework.validate.DictValidHandler;
 import com.blink.framework.validate.annotation.DataDict;
@@ -42,8 +43,7 @@ public class DataDictConstraintValidator implements ConstraintValidator<DataDict
 
             CacheComponent cacheUtil = ApplicationContextUtil.getBean(CacheComponent.class);
             //从缓存获取获取
-            DictCacheDO dictObject = (DictCacheDO) cacheUtil.getFromAllCache(DICT_KEY_PREFIX + dictName);
-
+            DictCacheDO dictObject = JacksonUtil.convert(cacheUtil.getFromAllCache(DICT_KEY_PREFIX + dictName), DictCacheDO.class); ;
             //缓存获取失败
             if (Objects.isNull(dictObject)) {
                 log.error("{} don't exist record ", DICT_KEY_PREFIX + dictName);
@@ -52,6 +52,7 @@ public class DataDictConstraintValidator implements ConstraintValidator<DataDict
             return DictValidHandler.check(dictObject, value);
 
         } catch (Exception e) {
+            log.error("数据字典校验出现异常{} key:{}",e.getMessage(), DICT_KEY_PREFIX + dictName,e);
             return false;
         }
     }

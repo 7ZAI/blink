@@ -4,6 +4,7 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.validate.annotation.NonNegative;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -13,6 +14,7 @@ import java.math.BigInteger;
  * @Author binblink
  * @Date 2025/8/25
  */
+@Slf4j
 public class IsNoNegativeValidator implements ConstraintValidator<NonNegative, Object> {
 
     private boolean includeZero;
@@ -64,6 +66,7 @@ public class IsNoNegativeValidator implements ConstraintValidator<NonNegative, O
             }
 
         }catch (Exception e){
+            log.error("非负校验 校验出现异常{}",e.getMessage(),e);
             return false;
         }
 

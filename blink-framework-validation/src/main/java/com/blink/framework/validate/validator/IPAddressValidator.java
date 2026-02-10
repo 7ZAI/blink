@@ -4,6 +4,7 @@ import com.blink.framework.common.utils.IPAddressUtils;
 import com.blink.framework.validate.annotation.ValidIPAddress;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
@@ -12,6 +13,7 @@ import java.util.*;
  *
  * @Author binblink
  */
+@Slf4j
 public class IPAddressValidator implements ConstraintValidator<ValidIPAddress, Object> {
 
     private ValidIPAddress.IPType type;
