@@ -5,28 +5,16 @@ import com.blink.framework.core.aop.LogExecutionAspect;
 import com.blink.framework.core.aop.RedisCacheUpdateAspect;
 import com.blink.framework.core.component.RedisCachePreHeatRunner;
 import com.blink.framework.core.config.prop.BlinkWebAppConfigProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import com.blink.framework.core.config.prop.ThreadPoolProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * web应用自动配置类
@@ -35,7 +23,7 @@ import java.time.format.DateTimeFormatter;
  */
 @AutoConfiguration
 @ConditionalOnWebApplication
-@EnableConfigurationProperties(BlinkWebAppConfigProperties.class)
+@EnableConfigurationProperties({BlinkWebAppConfigProperties.class})
 public class BlinkWebAppAutoConfig {
 
     /**

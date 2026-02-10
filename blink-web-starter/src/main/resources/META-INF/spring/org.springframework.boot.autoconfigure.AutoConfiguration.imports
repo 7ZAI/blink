@@ -1,1 +1,2 @@
 com.blink.framework.core.config.BlinkWebAppAutoConfig
+com.blink.framework.core.config.DynamicThreadPoolAutoConfig

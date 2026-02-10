@@ -46,4 +46,17 @@ public interface CoreConstant {
      * 协议版本
      */
     String PROTOCOL_VERSION = "v1";
+
+    /**
+     * CPU密集型线程池bean 名称
+     */
+    String CPU_THREADPOOL = "cpuIntensiveThreadPool";
+    /**
+     * IO密集型线程池bean 名称
+     */
+    String IO_THREADPOOL = "ioIntensiveThreadPool";
+    /**
+     * 定时线程池bean 名称
+     */
+    String SCHEDULED_THREADPOOL = "scheduledThreadPool";
 }
