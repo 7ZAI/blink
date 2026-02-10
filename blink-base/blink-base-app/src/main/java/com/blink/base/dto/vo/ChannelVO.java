@@ -1,14 +1,10 @@
 package com.blink.base.dto.vo;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * @Author binblink
@@ -81,9 +77,9 @@ public class ChannelVO implements Serializable {
     private Byte encryptionSwitch;
 
     /**
-     * 认证token过期开关 0 开启 1关闭
+     * 认证方式 0带状态的token  1 jwt
      */
-    private Byte tokenTimeoutSwitch;
+    private Byte tokenType;
 
     /**
      * 权限校验开关 0 开启 1关闭

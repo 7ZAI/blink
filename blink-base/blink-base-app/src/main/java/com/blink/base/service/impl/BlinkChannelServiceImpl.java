@@ -1,12 +1,12 @@
 package com.blink.base.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.blink.base.component.SecretConfigComponent;
 import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.constans.RedisKeyConstans;
@@ -18,30 +18,21 @@ import com.blink.base.mapper.BlinkChannelMapper;
 import com.blink.base.producer.GateWayStreamMessageProducer;
 import com.blink.base.service.BlinkChannelService;
 import com.blink.datasource.PageUtils;
-import com.blink.framework.common.constrant.SysConstant;
-import com.blink.framework.common.data.ChannelInfoRedisDO;
-import com.blink.framework.common.data.EmptyBody;
-import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.RSAUtils;
-import com.blink.framework.core.annotation.CacheDoubleDelete;
 import com.blink.framework.core.annotation.LogExecution;
-import com.blink.framework.redis.component.CacheComponent;
+import com.blink.framework.core.data.CoreConstant;
 import com.blink.framework.redis.component.RedisClient;
 import jakarta.annotation.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.KeyPair;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 
 /**
@@ -51,6 +42,7 @@ import java.util.stream.Collectors;
  */
 @Transactional(rollbackFor = Exception.class)
 @Service
+@Slf4j
 public class BlinkChannelServiceImpl implements BlinkChannelService {
 
 
@@ -64,6 +56,9 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     private GateWayStreamMessageProducer gateWayStreamMessageProducer;
 
 
+    @Resource
+    private SecretConfigComponent secretConfigComponent;
+
     /**
      * 保存 对接渠道
      *
@@ -74,7 +69,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     @Override
     public void saveBlinkChannel(AddBlinkChannelReqDTO saveParam) throws BlinkException {
 
-        BlinkChannelDO blinkChannelDO = getNewChanelDO(saveParam);
+        BlinkChannelDO blinkChannelDO = createNewChanelDO(saveParam);
 
         var queryWrapper = new LambdaQueryWrapper<BlinkChannelDO>();
         queryWrapper.eq(BlinkChannelDO::getChannelName, blinkChannelDO.getChannelName());
@@ -83,41 +78,31 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
         if (Objects.nonNull(channelCheck)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.CHANNEL_NAME_ALREADY_EXIT);
         }
-
         channelMapper.insert(blinkChannelDO);
+        addChannelSecretConfig(blinkChannelDO);
     }
 
-    /**
-     * 获取新的渠道对象
-     */
-    private BlinkChannelDO getNewChanelDO(AddBlinkChannelReqDTO reqBody) {
-
-        var channel = new BlinkChannelDO();
-        BeanUtils.copyProperties(reqBody, channel);
-
-        channel.setEnable(CommonConstans.SWITCH_OPEN);
-        channel.setChannelId(IdUtil.simpleUUID());
-        channel.setAccessToken(IdUtil.simpleUUID());
-
-        channel.setAppKey(SecureUtil.sha1().digestHex(RandomUtil.randomString(16)));
-        channel.setAppSecret(SecureUtil.hmacSha256().digestBase64(RandomUtil.randomString(32), true));
-
-        KeyPair keyPair = RSAUtils.generateKeyPair();
-        KeyPair sysKeyPair = RSAUtils.generateKeyPair();
-
-        String channelPrivateKey = RSAUtils.generatePrivateKeyToBase64(keyPair);
-        String channelPublicKey = RSAUtils.generatePublicKeyToBase64(keyPair);
-        String sysPrivateKey = RSAUtils.generatePrivateKeyToBase64(sysKeyPair);
-        String sysPublicKey = RSAUtils.generatePublicKeyToBase64(sysKeyPair);
-
-        channel.setChannelPrivatekey(channelPrivateKey);
-        channel.setChannelPublickey(channelPublicKey);
-        channel.setSystemPublickey(sysPublicKey);
-        channel.setSystemPrivatekey(sysPrivateKey);
-
-
-        return channel;
+    @Async(CoreConstant.IO_THREADPOOL)
+    public void addChannelSecretConfig(BlinkChannelDO channelDO) throws BlinkException {
+        try {
+            secretConfigComponent.addChannelSecretConfig(channelDO);
+        } catch (Exception e) {
+            log.error("添加渠道密钥配置异常", e);
+            throw new BlinkException(e, "添加渠道密钥配置异常");
+        }
     }
+
+
+    @Async(CoreConstant.IO_THREADPOOL)
+    public void deleteChannelSecretConfig(String appKey) throws BlinkException {
+        try {
+            secretConfigComponent.deleteChannelSecretConfig(appKey);
+        } catch (Exception e) {
+            log.error("删除渠道密钥配置异常", e);
+            throw new BlinkException(e, "删除渠道密钥配置异常");
+        }
+    }
+
 
     /**
      * 删除 对接渠道
@@ -129,61 +114,28 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     @Override
     public void deleteBlinkChannel(DeleteBlinkChannelReqDTO deleteParam) throws BlinkException {
 
-        var deleteCacheKeys = new ArrayList<String>();
-        //批量删除
-        if (deleteParam.isBatchDelete()) {
-            Optional<List<BlinkChannelDO>> optional = Optional.of(channelMapper.selectBatchIds(deleteParam.getIdList()));
-            List<BlinkChannelDO> channels = optional.get();
-
-            //正在启动的渠道不允许删除
-            List<BlinkChannelDO> allowDeleteList = channels.stream()
-                    .filter(ch -> !CommonConstans.SWITCH_OPEN.equals(ch.getEnable()))
-                    .toList();
-            List<String> filterIds = allowDeleteList.stream()
-                    .map(BlinkChannelDO::getChannelId)
-                    .collect(Collectors.toList());
-
-            if (CollUtil.isNotEmpty(filterIds)) {
-                channelMapper.deleteBatchIds(filterIds);
-                //删除redis 缓存
-                for (BlinkChannelDO chdo : allowDeleteList) {
-                    String cacheKey = RedisKeyConstans.CHANNEL_INFO + chdo.getChannelId();
-                    deleteCacheKeys.add(cacheKey);
-                }
-            }
-
-            //部分成功
-            if (filterIds.size() < deleteParam.getIdList().size()) {
-                BlinkException.throwBusinessException(BaseErrCodeConstant.CHANNEL_NOT_ALLOW_DELETE);
-            }
-
-        } else {
-
-            Optional<BlinkChannelDO> optional = Optional.ofNullable(channelMapper.selectById(deleteParam.getDeleteId()));
-            if (optional.isEmpty()) {
-                BlinkException.throwBusinessException(BaseErrCodeConstant.DATA_NOT_EXIST);
-            }
-
-            BlinkChannelDO blinkChannelDO = optional.get();
-            //正在启动的渠道不允许删除
-            if (CommonConstans.SWITCH_OPEN.equals(blinkChannelDO.getEnable())) {
-                BlinkException.throwBusinessException(BaseErrCodeConstant.CHANNEL_NOT_ALLOW_DELETE);
-            }
-            channelMapper.deleteById(deleteParam.getDeleteId());
-            String cacheKey = RedisKeyConstans.CHANNEL_INFO + blinkChannelDO.getChannelId();
-            deleteCacheKeys.add(cacheKey);
+        Optional<BlinkChannelDO> optional = Optional.ofNullable(channelMapper.selectById(deleteParam.getDeleteId()));
+        if (optional.isEmpty()) {
+            BlinkException.throwBusinessException(BaseErrCodeConstant.DATA_NOT_EXIST);
         }
 
+        BlinkChannelDO blinkChannelDO = optional.get();
+        //正在启用的渠道不允许删除
+        if (CommonConstans.SWITCH_OPEN.equals(blinkChannelDO.getEnable())) {
+            BlinkException.throwBusinessException(BaseErrCodeConstant.CHANNEL_NOT_ALLOW_DELETE);
+        }
+        channelMapper.deleteById(deleteParam.getDeleteId());
+        String cacheKey = RedisKeyConstans.CHANNEL_INFO + blinkChannelDO.getChannelId();
         try {
             Thread.sleep(300);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-        for (String key : deleteCacheKeys) {
-            redisClient.delete(key);
-            gateWayStreamMessageProducer.cacheOnChange(key);
-        }
+        redisClient.delete(cacheKey);
+        gateWayStreamMessageProducer.cacheOnChange(cacheKey);
+
+        deleteChannelSecretConfig(blinkChannelDO.getAppKey());
 
     }
 
@@ -249,14 +201,14 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      */
     @Override
     public ChannelVO getChannel(QueryOneChannelReqDTO queryParam) throws BlinkException {
-        BlinkChannelDO channelDO =  channelMapper.selectOne(new LambdaQueryWrapper<BlinkChannelDO>()
+        BlinkChannelDO channelDO = channelMapper.selectOne(new LambdaQueryWrapper<BlinkChannelDO>()
                 .eq(StrUtil.isNotBlank(queryParam.getChannelId()), BlinkChannelDO::getChannelId, queryParam.getChannelId())
                 .eq(StrUtil.isNotBlank(queryParam.getChannelName()), BlinkChannelDO::getChannelName, queryParam.getChannelName())
                 .eq(StrUtil.isNotBlank(queryParam.getAppKey()), BlinkChannelDO::getAppKey, queryParam.getAppKey()));
 
         var channelVO = new ChannelVO();
-        if(channelDO != null) {
-            BeanUtils.copyProperties(channelDO,channelVO);
+        if (channelDO != null) {
+            BeanUtils.copyProperties(channelDO, channelVO);
         }
 
         return channelVO;
@@ -269,7 +221,6 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * @return {@link BlinkChannelDO}
      * @throws Throwable
      */
-    //    @CacheDoubleDelete(keyPrefix = RedisKeyConstans.CHANNEL_INFO,fieldName="channelId",delayTime = 300L)
     @Override
     public BlinkChannelDO refreshChannelKey(QueryOneChannelReqDTO queryParam) throws BlinkException {
 
@@ -288,29 +239,13 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
 
         String cacheKey = RedisKeyConstans.CHANNEL_INFO + channel.getChannelId();
 
-        redisClient.delete(cacheKey);
-
-        KeyPair keyPair = RSAUtils.generateKeyPair();
-
-        String publicKey = RSAUtils.generatePublicKeyToBase64(keyPair);
-        String privateKey = RSAUtils.generatePrivateKeyToBase64(keyPair);
-
-        channel.setChannelPublickey(publicKey);
-        channel.setChannelPrivatekey(privateKey);
-
-
-        if (channelMapper.updateById(channel) <= 0) {
-            BlinkException.throwBusinessException();
-        }
-
-        //延迟删除
         try {
-            Thread.sleep(300);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            //刷新配置中心密钥配置
+            secretConfigComponent.refreshChannelKeyConfig(channel.getAppKey());
+        } catch (Exception e) {
+            throw new BlinkException(e,e.getMessage());
         }
 
-        redisClient.delete(cacheKey);
         gateWayStreamMessageProducer.cacheOnChange(cacheKey);
 
         return channel;
@@ -339,32 +274,51 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
         }
         String cacheKey = RedisKeyConstans.CHANNEL_INFO + channel.getChannelId();
 
-        redisClient.delete(cacheKey);
-        KeyPair keyPair = RSAUtils.generateKeyPair();
-
-        String publicKey = RSAUtils.generatePublicKeyToBase64(keyPair);
-        String privateKey = RSAUtils.generatePrivateKeyToBase64(keyPair);
-
-        channel.setSystemPublickey(publicKey);
-        channel.setSystemPrivatekey(privateKey);
-
-
-        if (channelMapper.updateById(channel) <= 0) {
-            BlinkException.throwBusinessException();
-        }
-
-        //延迟删除
         try {
-            Thread.sleep(300);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            //刷新配置中心密钥配置
+            secretConfigComponent.refreshSystemKeyConfig(channel.getAppKey());
+        } catch (Exception e) {
+            throw new BlinkException(e,e.getMessage());
         }
 
-        redisClient.delete(cacheKey);
         gateWayStreamMessageProducer.cacheOnChange(cacheKey);
 
         return channel;
 
+    }
+
+
+    /**
+     * 获取新的渠道对象
+     */
+    private BlinkChannelDO createNewChanelDO(AddBlinkChannelReqDTO reqBody) {
+
+        var channel = new BlinkChannelDO();
+        BeanUtils.copyProperties(reqBody, channel);
+
+        channel.setEnable(CommonConstans.SWITCH_OPEN);
+        channel.setChannelId(IdUtil.simpleUUID());
+        channel.setAccessToken(IdUtil.simpleUUID());
+
+        channel.setAppKey(SecureUtil.sha1().digestHex(RandomUtil.randomString(16)));
+        //密钥不再入库 而是加密保存中配置中心
+//        channel.setAppSecret(SecureUtil.hmacSha256().digestBase64(RandomUtil.randomString(32), true));
+//
+//        KeyPair keyPair = RSAUtils.generateKeyPair();
+//        KeyPair sysKeyPair = RSAUtils.generateKeyPair();
+//
+//        String channelPrivateKey = RSAUtils.generatePrivateKeyToBase64(keyPair);
+//        String channelPublicKey = RSAUtils.generatePublicKeyToBase64(keyPair);
+//        String sysPrivateKey = RSAUtils.generatePrivateKeyToBase64(sysKeyPair);
+//        String sysPublicKey = RSAUtils.generatePublicKeyToBase64(sysKeyPair);
+//
+//        channel.setChannelPrivatekey(channelPrivateKey);
+//        channel.setChannelPublickey(channelPublicKey);
+//        channel.setSystemPublickey(sysPublicKey);
+//        channel.setSystemPrivatekey(sysPrivateKey);
+
+
+        return channel;
     }
 
 }

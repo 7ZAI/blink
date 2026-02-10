@@ -36,7 +36,6 @@ class BlinkChannelControllerTest {
         reqParam.setEnable(CommonConstans.SWITCH_OPEN);
         reqParam.setAuthoritySwitch(CommonConstans.SWITCH_CLOSE);
         reqParam.setEncryptionSwitch(CommonConstans.SWITCH_CLOSE);
-        reqParam.setTokenTimeoutSwitch(CommonConstans.SWITCH_CLOSE);
         reqParam.setRelaUserId("1");
 
         MvcResult result = perform("/channel/saveChannel", reqParam);
@@ -69,7 +68,6 @@ class BlinkChannelControllerTest {
         reqParam.setEnable(CommonConstans.SWITCH_CLOSE);
         reqParam.setAuthoritySwitch(CommonConstans.SWITCH_CLOSE);
         reqParam.setEncryptionSwitch(CommonConstans.SWITCH_CLOSE);
-        reqParam.setTokenTimeoutSwitch(CommonConstans.SWITCH_CLOSE);
 
         MvcResult result = perform("/channel/modifyChannel", reqParam);
         ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);

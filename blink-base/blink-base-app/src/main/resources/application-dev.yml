@@ -51,7 +51,17 @@ blink:
     log:
       autoSkip: true
       upperLimit: 1000
-#    preCache:
+    async:
+      thread-pool:
+        io:
+          enable: true
+          coreSize: 4
+          maxSize: 8
+          queueCapacity: 1000
+          keepAliveSeconds: 30
+          dynamicBasedOnCpu: false
+
+    #    preCache:
 #      dictionary: false
 #      errMsgInfo: false
 

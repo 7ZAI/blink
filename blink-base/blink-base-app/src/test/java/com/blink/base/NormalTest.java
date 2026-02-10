@@ -13,6 +13,7 @@ import com.blink.base.entity.RouteDefinitionDO;
 import com.blink.datasource.code.CodeGenerator;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.utils.AESUtils;
+import com.blink.framework.common.utils.EnvReaderUtil;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.common.utils.RSAUtils;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.URI;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.time.LocalDate;
@@ -106,9 +108,14 @@ public class NormalTest {
     }
 
     @Test
-    public void test3(){
-        System.out.println(SecureUtil.sha1().digestHex(RandomUtil.randomString(16)));
-        System.out.println(SecureUtil.hmacSha256().digestBase64(RandomUtil.randomString(32), true));
+    public void test3() throws NoSuchAlgorithmException {
+
+//        System.out.println(AESUtils.encodeToBase64(AESUtils.generateRandomAESKey().getEncoded()));
+        System.out.println(EnvReaderUtil.getEnv("BLINK_SECRET_KEY"));
+        EnvReaderUtil.printEnvSummary();
+
+//        System.out.println(SecureUtil.sha1().digestHex(RandomUtil.randomString(16)));
+//        System.out.println(SecureUtil.hmacSha256().digestBase64(RandomUtil.randomString(32), true));
     }
     @Test
     public void test4(){

@@ -60,5 +60,13 @@ public interface CommonConstans {
      */
     String REDIS_MSG_STATUS_ACK = "3";
 
+    /**
+     * 密钥文件nacos上的dataid
+     */
+    String SECRET_CONFIG_DATA_ID= "secretConfig.json";
 
+    /**
+     * 密钥文件nacos上的 group
+     */
+    String SECRET_CONFIG_GROUP= "DEFAULT_GROUP";
 }

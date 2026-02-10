@@ -25,17 +25,5 @@ public class DeleteBlinkChannelReqDTO implements Serializable {
      */
     private String deleteId;
 
-    /**
-     * 批量删除用户Id集合
-     */
-    private List<String> idList;
-
-
-    /**
-     * 是否批量删除标志
-     */
-    @NotNull
-    private boolean isBatchDelete;
-
 
 }

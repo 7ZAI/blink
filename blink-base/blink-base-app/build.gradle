@@ -13,7 +13,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
-//    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
 
 
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
@@ -22,6 +22,7 @@ dependencies {
     implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-web-spring-boot-starter:1.0.0-SNAPSHOT'
 
+    implementation 'com.alibaba.nacos:nacos-encryption-plugin:2.2.1'
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'cn.hutool:hutool-core'

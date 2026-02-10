@@ -20,14 +20,15 @@ spring:
 
   cloud:
     nacos:
+      config:
+        namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
+        server-addr: 127.0.0.1:8848
+
       discovery:
         namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
         enabled: true
         server-addr: 127.0.0.1:8848
-#      config:
-#        namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
-#        server-addr: 127.0.0.1:8848
-#        file-extension: yaml
+
   ##彩色输出
   output:
     ansi:
