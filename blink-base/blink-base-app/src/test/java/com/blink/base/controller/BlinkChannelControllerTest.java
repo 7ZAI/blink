@@ -49,7 +49,6 @@ class BlinkChannelControllerTest {
         DeleteBlinkChannelReqDTO reqParam = new DeleteBlinkChannelReqDTO();
 
         reqParam.setDeleteId("fea35977-803d-46de-945c-e42916d95c05");
-        reqParam.setBatchDelete(false);
 
 
         MvcResult result = perform("/channel/deleteChannel", reqParam);
