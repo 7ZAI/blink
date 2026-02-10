@@ -13,10 +13,18 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
     implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
+
+    //jwt 开源库
+    implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+    runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
+
     //能够读取源码javadoc注释的库
     annotationProcessor 'com.github.therapi:therapi-runtime-javadoc-scribe:0.15.0'
     // Runtime library
     implementation 'com.github.therapi:therapi-runtime-javadoc:0.13.0'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 // 任务：生成源码JAR
