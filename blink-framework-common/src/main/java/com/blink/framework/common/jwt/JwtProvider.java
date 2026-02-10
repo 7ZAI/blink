@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * JJWT封装工具类
@@ -487,8 +488,16 @@ public class JwtProvider {
         jwtDto.setExpiration(claims.getExpiration());
         jwtDto.setNotBefore(claims.getNotBefore());
         jwtDto.setTokenType(claims.get("tokenType", String.class));
-        jwtDto.setRoles((List<String>) claims.get("roles"));
 
+        Object rolesObj = claims.get("roles");
+        List<String> roles = Collections.emptyList();
+        if (rolesObj instanceof List) {
+            roles = ((List<?>) rolesObj).stream()
+                    .filter(String.class::isInstance)
+                    .map(String.class::cast)
+                    .collect(Collectors.toList());
+        }
+        jwtDto.setRoles(roles);
 
         Map<String, Object> customData = new HashMap<>();
         // 官方核心字段列表（对应jti、iss、sub、aud、exp、nbf、iat）
