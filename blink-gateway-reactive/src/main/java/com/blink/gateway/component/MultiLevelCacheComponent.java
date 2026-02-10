@@ -1,10 +1,10 @@
 package com.blink.gateway.component;
 
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.service.RemoteService;
-import com.blink.gateway.util.JacksonUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
@@ -49,14 +49,14 @@ public class MultiLevelCacheComponent {
                 //本地缓存为空
                 .switchIfEmpty(Mono.defer(() ->
                         getFromRedis(key, clazz)
-                                .flatMap(value -> setLocalCache(key, value))
                                 //成功则设置本地值
+                                .flatMap(value -> setLocalCache(key, value))
                                 //redis 也为空 远程服务调用获取
                                 .switchIfEmpty(Mono.defer(() -> service.call(key, clazz))
                                         //获取成功写回缓存
                                         .flatMap(cache -> setLocalAndRedisCache(key, cache))
-                                        .switchIfEmpty(Mono.empty())
                                         .doOnNext(val -> log.info("远程调用base-app服务成功 返回value:{}", val))
+                                        .switchIfEmpty(Mono.empty())
                                         .onErrorResume(e -> {
                                             log.error("远程调用异常！{}", e.getMessage(), e);
                                             return Mono.empty();
@@ -174,6 +174,8 @@ public class MultiLevelCacheComponent {
 
     /**
      * 删除本地缓存
+     * 注意 key未命中也会返回true
+     * 删除操作成功仅代表当前key不存在，所以特别注意传递的key值
      *
      * @param key
      */
@@ -195,6 +197,8 @@ public class MultiLevelCacheComponent {
 
     /**
      * 删除Redis缓存
+     * 注意 key未命中也会返回true
+     * 删除操作成功仅代表当前key不存在，所以特别注意传递的key值
      *
      * @param key
      */
@@ -202,7 +206,7 @@ public class MultiLevelCacheComponent {
         // 再删除Redis缓存，如果失败会回滚（通过异常传播）
         return redisClient.delete(key)
                 // 这里的 r 通常是 Boolean (表示是否存在并删除) 或 Long (删除的数量)
-                // 无论 r 是 true 还是 false，只要没进 doOnError，业务上都视为成功
+                // 无论 r 是 true 还是 false，只要没进 onErrorResume，业务上都视为成功
                 .map(r -> true)
                 .doOnSuccess(r -> {
                     // 此时 r 永远是 true
@@ -217,7 +221,7 @@ public class MultiLevelCacheComponent {
 
 
     /**
-     * 事务性删除缓存（多级）
+     * 删除缓存（多级）
      */
     public Mono<Boolean> evictTransactional(String key) {
         return Mono.defer(() -> {

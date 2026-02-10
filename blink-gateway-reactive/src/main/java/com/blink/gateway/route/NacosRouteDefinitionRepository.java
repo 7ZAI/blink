@@ -2,8 +2,8 @@ package com.blink.gateway.route;
 
 import com.alibaba.cloud.nacos.NacosConfigManager;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
-import com.blink.gateway.util.JacksonUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.route.RouteDefinition;

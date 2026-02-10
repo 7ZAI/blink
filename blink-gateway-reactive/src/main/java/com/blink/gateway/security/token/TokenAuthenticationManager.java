@@ -1,9 +1,9 @@
 package com.blink.gateway.security.token;
 
 import com.blink.framework.common.data.UserInfoRedisDO;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.constant.GatewayConstant;
-import com.blink.gateway.util.JacksonUtil;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;

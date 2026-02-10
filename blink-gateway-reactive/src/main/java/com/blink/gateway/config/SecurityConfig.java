@@ -46,9 +46,6 @@ public class SecurityConfig {
     @Resource
     private GateWayCacheComponent cacheComponent;
 
-//    @Resource
-//    private WebClient webClient;
-
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {

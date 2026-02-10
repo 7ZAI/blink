@@ -1,16 +1,15 @@
 package com.blink.gateway.route;
 
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
-import com.blink.gateway.util.JacksonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.route.RouteDefinition;
 import org.springframework.cloud.gateway.route.RouteDefinitionRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
 
 
 /**

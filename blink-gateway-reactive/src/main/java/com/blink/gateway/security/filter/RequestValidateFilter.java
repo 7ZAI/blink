@@ -3,12 +3,12 @@ package com.blink.gateway.security.filter;
 import cn.hutool.core.util.StrUtil;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.gateway.component.GateWayCacheComponent;
+import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.util.GateWayUtil;
-import com.blink.gateway.util.JacksonUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
-
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
@@ -70,9 +70,9 @@ public class RequestValidateFilter implements WebFilter {
                 .switchIfEmpty(Mono.error(new BlinkException(ILLEGAL_REQUEST)))
                 //校验渠道
                 .flatMap(r -> checkChannel(exchange, headers))
-                .filter(isValid-> isValid)
+                .filter(isValid -> isValid)
                 .switchIfEmpty(Mono.error(new BlinkException(ILLEGAL_REQUEST)))
-                .flatMap(r->cacheRequestBody(exchange, chain));
+                .flatMap(r -> cacheRequestBody(exchange, chain));
     }
 
 
@@ -117,9 +117,21 @@ public class RequestValidateFilter implements WebFilter {
                 .flatMap(channelDO -> {
                     //渠道开关校验
                     if (SWITCH_OFF.equals(channelDO.getEnable())) {
+                        log.warn("渠道:{}已关闭！拒绝访问！", channelDO.getChannelName());
                         //渠道已关闭
                         return Mono.error(new BlinkException(CHANNEL_CLOSED));
                     }
+
+                    //必填请求头检验 有security检验
+//                    String channelToken = headers.getFirst(X_BLINK_CHANNEL_TOKEN);
+//                    //不为-1 则必填
+//                    if (!CHANNEL_NOT_CHECK_TOKEN.equals(channelDO.getTokenType())) {
+//                        if (Objects.isNull(channelToken) || channelToken.isEmpty()) {
+//                            log.warn("渠道:{}缺少必填请求头！ x-blink--channel-token ", channelDO.getChannelName());
+//                            return Mono.error(new BlinkException(ILLEGAL_REQUEST));
+//                        }
+//                    }
+
                     // 开关校验加密必须项目
                     if (SWITCH_ON.equals(channelDO.getEncryptionSwitch())) {
                         String key = headers.getFirst(X_BLINK_KEY);
@@ -134,6 +146,8 @@ public class RequestValidateFilter implements WebFilter {
                     exchange.getAttributes().put(CHANNEL_INFO, channelDO);
                     return Mono.just(true);
                 });
+
+
     }
 
     /**
@@ -150,7 +164,7 @@ public class RequestValidateFilter implements WebFilter {
             //缓存body
             return cacheRequestBodyToAttributes(exchange)
                     //更换装饰后的request请求 继续执行过滤链
-                    .flatMap(mutatedRequest ->chain.filter(exchange.mutate().request(mutatedRequest).build()));
+                    .flatMap(mutatedRequest -> chain.filter(exchange.mutate().request(mutatedRequest).build()));
         }
         // 继续执行过滤链
         return chain.filter(exchange);
@@ -304,7 +318,7 @@ public class RequestValidateFilter implements WebFilter {
                 }
                 log.info("===> 缓存请求体:{}", jsonString);
                 //缓存请求body 字符串到 请求域
-                 exchange.getAttributes().put(CACHED_REQUEST_BODY_ATTR, jsonString);
+                exchange.getAttributes().put(CACHED_REQUEST_BODY_ATTR, jsonString);
             }).then(Mono.defer(() -> {
                 //cacheRequestBodyAndRequest方法中 中缓存了 装饰类
                 ServerHttpRequest cachedRequest = exchange.getAttribute(CACHED_SERVER_HTTP_REQUEST_DECORATOR_ATTR);
@@ -314,7 +328,6 @@ public class RequestValidateFilter implements WebFilter {
             }));
         });
     }
-
 
 
 }
