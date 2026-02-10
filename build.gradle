@@ -15,6 +15,7 @@ buildscript {
         httpclient5Version='5.2.1'
         caffeineVersion='3.1.8'
         jacksonVersion='2.14.3'
+        jjwtVersion='0.13.0'
     }
 }
 
@@ -23,7 +24,7 @@ plugins {
     id 'idea'
     id 'maven-publish'
     id 'java-library'
-    id 'io.spring.dependency-management'
+    id 'io.spring.dependency-management' version '1.1.4'
     id 'org.springframework.boot' version '3.0.8' apply false
 }
 
@@ -37,6 +38,33 @@ java {
 // 设置Java编译的编码
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
+
+// 核心：覆盖源码集目录为不存在的路径，阻止自动生成
+sourceSets {
+    main {
+        java {
+            // 指向不存在的目录，Gradle不会创建src/main
+            srcDir 'none'
+        }
+        resources {
+            srcDir 'none'
+        }
+    }
+    test {
+        java {
+            srcDir 'none'
+        }
+        resources {
+            srcDir 'none'
+        }
+    }
+}
+
+// 跳过无需执行的任务
+tasks.compileJava.enabled = false
+tasks.processResources.enabled = false
+tasks.test.enabled = false
+tasks.jar.enabled = false
 
 
 subprojects {
