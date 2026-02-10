@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
+
 /**
  * AES 加密解密工具类
  *
@@ -23,8 +24,58 @@ public class AESUtils {
     private static final int AES_KEY_SIZE = 256;
     private static final String ALGORITHM_CBC = "AES/CBC/PKCS5Padding";
 
+    private static final String ALGORITHM_ECB = "AES/ECB/PKCS5Padding";
+
+    /**
+     * ECB 模式加密（不需要 IV）
+     */
+    public static String encrypt(SecretKey aesKey, String plaintext) throws Exception {
+        Cipher cipher = Cipher.getInstance(ALGORITHM_ECB);
+        cipher.init(Cipher.ENCRYPT_MODE, aesKey);
+
+        byte[] ciphertext = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
+        return Base64.getEncoder().encodeToString(ciphertext);
+    }
+
+    /**
+     * ECB 模式解密（不需要 IV）
+     */
+    public static String decrypt(SecretKey aesKey, String ciphertext) throws Exception {
+        Cipher cipher = Cipher.getInstance(ALGORITHM_ECB);
+        cipher.init(Cipher.DECRYPT_MODE, aesKey);
+
+        byte[] plaintext = cipher.doFinal(Base64.getDecoder().decode(ciphertext));
+        return new String(plaintext, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 从字符串生成密钥 ECB
+     *  AES 密钥长度必须是 16/24/32 字节（128/192/256位）
+     */
+    public static SecretKey generateKey(String key,int keySize) throws Exception {
+        // AES 密钥长度必须是 16/24/32 字节（128/192/256位）
+        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+        // 使用 128位
+        byte[] adjustedKey = new byte[keySize];
+
+        // 确保密钥长度为 32 字节
+        System.arraycopy(keyBytes, 0, adjustedKey, 0, Math.min(keyBytes.length, keySize));
+        return new SecretKeySpec(adjustedKey, ALGORITHM_ECB);
+    }
+
+    /**
+     * 使用 KeyGenerator 生成随机密钥
+     * @param keySize 密钥长度：128, 192, 256
+     */
+    public static SecretKey generateRandomKey(int keySize) throws NoSuchAlgorithmException {
+        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+        keyGenerator.init(keySize, new SecureRandom());
+        return keyGenerator.generateKey();
+    }
+
     /**
      * 生成随机 AES 密钥
+     * 256位
      */
     public static SecretKey generateRandomAESKey() throws NoSuchAlgorithmException {
         KeyGenerator kg = KeyGenerator.getInstance("AES");
@@ -143,9 +194,17 @@ public class AESUtils {
             this.key = key;
         }
 
-        public String getEncryptedData() { return encryptedData; }
-        public String getIv() { return iv; }
-        public String getKey() { return key; }
+        public String getEncryptedData() {
+            return encryptedData;
+        }
+
+        public String getIv() {
+            return iv;
+        }
+
+        public String getKey() {
+            return key;
+        }
 
         /**
          * 转换为传输格式
@@ -177,56 +236,59 @@ public class AESUtils {
     }
 
 
-
-
-
     // ==================== 使用示例 ====================
 
-    public static void main(String[] args) {
-        try {
-            String originalText = "这是需要加密的敏感数据";
+//    public static void main(String[] args) {
+//        try {
+//            String originalText = "这是需要加密的敏感数据";
+//
+//            System.out.println("=== 随机密钥 + 随机IV AES-CBC 加密测试 ===");
+//            System.out.println("原始文本: " + originalText);
+//
+//            SecretKey secretKey = generateRandomKey(256);
+//            System.out.println("密钥："+ encodeToBase64(secretKey.getEncoded()));
+//            String encodeStr = encrypt(secretKey,originalText);
+//            System.out.println("ECB加密后："+encodeStr);
+//            System.out.println("ECB解密："+decrypt(secretKey,encodeStr));
 
-            System.out.println("=== 随机密钥 + 随机IV AES-CBC 加密测试 ===");
-            System.out.println("原始文本: " + originalText);
+//            // 方法1: 一键加密
+//            CompleteEncryptionResult result = encryptComplete(originalText);
+//            System.out.println("加密结果: " + result.getEncryptedData());
+//            System.out.println("随机IV: " + result.getIv());
+//            System.out.println("随机密钥: " + result.getKey());
+//
+//            // 传输测试
+//            String transportString = result.toTransportString();
+//            System.out.println("传输格式: " + transportString);
+//
+//            // 解密
+//            CompleteEncryptionResult receivedResult = CompleteEncryptionResult.fromTransportString(transportString);
+//            String decryptedText = decryptComplete(receivedResult);
+//            System.out.println("解密结果: " + decryptedText);
+//            System.out.println("验证成功: " + originalText.equals(decryptedText));
+//
+//            // 方法2: 分别使用密钥和IV
+//            System.out.println("\n=== 分别使用密钥和IV加密 ===");
+//            SecretKey key = generateRandomAESKey();
+//            byte[] iv = generateIV();
+//
+//            String encrypted = encrypt(key, iv, originalText);
+//            String decrypted = decrypt(key, iv, encrypted);
+//            System.out.println("分别加解密验证: " + originalText.equals(decrypted));
+//
+//            // 性能测试
+//            System.out.println("\n=== 性能测试 ===");
+//            long startTime = System.currentTimeMillis();
+//            int testRounds = 1000;
+//            for (int i = 0; i < testRounds; i++) {
+//                CompleteEncryptionResult testResult = encryptComplete("测试数据" + i);
+//                decryptComplete(testResult);
+//            }
+//            long endTime = System.currentTimeMillis();
+//            System.out.println(testRounds + "次加解密耗时: " + (endTime - startTime) + "ms");
 
-            // 方法1: 一键加密
-            CompleteEncryptionResult result = encryptComplete(originalText);
-            System.out.println("加密结果: " + result.getEncryptedData());
-            System.out.println("随机IV: " + result.getIv());
-            System.out.println("随机密钥: " + result.getKey());
-
-            // 传输测试
-            String transportString = result.toTransportString();
-            System.out.println("传输格式: " + transportString);
-
-            // 解密
-            CompleteEncryptionResult receivedResult = CompleteEncryptionResult.fromTransportString(transportString);
-            String decryptedText = decryptComplete(receivedResult);
-            System.out.println("解密结果: " + decryptedText);
-            System.out.println("验证成功: " + originalText.equals(decryptedText));
-
-            // 方法2: 分别使用密钥和IV
-            System.out.println("\n=== 分别使用密钥和IV加密 ===");
-            SecretKey key = generateRandomAESKey();
-            byte[] iv = generateIV();
-
-            String encrypted = encrypt(key, iv, originalText);
-            String decrypted = decrypt(key, iv, encrypted);
-            System.out.println("分别加解密验证: " + originalText.equals(decrypted));
-
-            // 性能测试
-            System.out.println("\n=== 性能测试 ===");
-            long startTime = System.currentTimeMillis();
-            int testRounds = 1000;
-            for (int i = 0; i < testRounds; i++) {
-                CompleteEncryptionResult testResult = encryptComplete("测试数据" + i);
-                decryptComplete(testResult);
-            }
-            long endTime = System.currentTimeMillis();
-            System.out.println(testRounds + "次加解密耗时: " + (endTime - startTime) + "ms");
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 }

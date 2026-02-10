@@ -17,6 +17,11 @@ public interface SysConstant {
 
    String APPLICATION_JSON_UTF8_VALUE = "application/json;charset=UTF-8";
 
+   /**
+    * 密钥环境变量名
+    */
+   String BLINK_SECRET_KEY = "BLINK_SECRET_KEY";
+
    /**----------------------------------------------自定义请求头常量-----------------------------------------------------------**/
 
    /**
@@ -63,6 +68,11 @@ public interface SysConstant {
     * 用户token
     */
    String X_BLINK_TOKEN = "x-blink-token";
+
+   /**
+    * 渠道token
+    */
+   String X_BLINK_CHANNEL_TOKEN = "x-blink--channel-token";
 
    /**
     * 应用key

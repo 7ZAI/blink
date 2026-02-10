@@ -13,7 +13,6 @@ import java.io.Serializable;
 public class ChannelInfoRedisDO implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
     /**
      * 渠道ID
      */
@@ -30,11 +29,6 @@ public class ChannelInfoRedisDO implements Serializable {
     private String appKey;
 
     /**
-     * 应用秘钥
-     */
-    private String appSecret;
-
-    /**
      * 关联用户
      */
     private String relaUserId;
@@ -43,21 +37,6 @@ public class ChannelInfoRedisDO implements Serializable {
      * 认证token
      */
     private String accessToken;
-
-    /**
-     * 系统公钥
-     */
-    private String systemPublickey;
-
-    /**
-     * 系统私钥
-     */
-    private String systemPrivatekey;
-
-    /**
-     * 渠道公钥
-     */
-    private String channelPublickey;
 
 
     /**
@@ -71,7 +50,7 @@ public class ChannelInfoRedisDO implements Serializable {
     private Byte encryptionSwitch;
 
     /**
-     * 认证方式 0带状态的token  1 jwt
+     * 认证方式 -1不认证 0 固定token  1 jwt
      */
     private Byte tokenType;
 
@@ -109,14 +88,6 @@ public class ChannelInfoRedisDO implements Serializable {
         this.appKey = appKey;
     }
 
-    public String getAppSecret() {
-        return appSecret;
-    }
-
-    public void setAppSecret(String appSecret) {
-        this.appSecret = appSecret;
-    }
-
     public String getRelaUserId() {
         return relaUserId;
     }
@@ -131,30 +102,6 @@ public class ChannelInfoRedisDO implements Serializable {
 
     public void setAccessToken(String accessToken) {
         this.accessToken = accessToken;
-    }
-
-    public String getSystemPublickey() {
-        return systemPublickey;
-    }
-
-    public void setSystemPublickey(String systemPublickey) {
-        this.systemPublickey = systemPublickey;
-    }
-
-    public String getSystemPrivatekey() {
-        return systemPrivatekey;
-    }
-
-    public void setSystemPrivatekey(String systemPrivatekey) {
-        this.systemPrivatekey = systemPrivatekey;
-    }
-
-    public String getChannelPublickey() {
-        return channelPublickey;
-    }
-
-    public void setChannelPublickey(String channelPublickey) {
-        this.channelPublickey = channelPublickey;
     }
 
     public Byte getEnable() {
@@ -203,12 +150,8 @@ public class ChannelInfoRedisDO implements Serializable {
                 "channelId='" + channelId + '\'' +
                 ", channelName='" + channelName + '\'' +
                 ", appKey='" + appKey + '\'' +
-                ", appSecret='" + appSecret + '\'' +
                 ", relaUserId='" + relaUserId + '\'' +
                 ", accessToken='" + accessToken + '\'' +
-                ", systemPublickey='" + systemPublickey + '\'' +
-                ", systemPrivatekey='" + systemPrivatekey + '\'' +
-                ", channelPublickey='" + channelPublickey + '\'' +
                 ", enable=" + enable +
                 ", encryptionSwitch=" + encryptionSwitch +
                 ", tokenType=" + tokenType +
