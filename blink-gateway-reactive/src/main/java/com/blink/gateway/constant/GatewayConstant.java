@@ -124,6 +124,15 @@ public interface GatewayConstant {
     String NACOS_GATEWAY_ROUTES_DEFAULT_GROUP = "DEFAULT_GROUP";
 
     /**
+     * 渠道token校验 token 类型 -1 不校验 0jwt 1 固定token
+     */
+    Byte CHANNEL_NOT_CHECK_TOKEN = -1;
+
+    Byte CHANNEL_CHECK_BY_JWT = 0;
+
+    Byte CHANNEL_CHECK_BY_TOKEN = 1;
+
+    /**
      * 当前登入用户信息 认证成功后的用户信息
      * 会写入attribute
      */
@@ -149,6 +158,16 @@ public interface GatewayConstant {
      * 请求客户端ip key
      */
     String CLIENT_IP =  "clientIp";
+
+    /**
+     * 密钥文件nacos上的dataid
+     */
+    String SECRET_CONFIG_DATA_ID = "secretConfig.json";
+
+    /**
+     * 密钥文件nacos上的 group
+     */
+    String SECRET_CONFIG_GROUP= "DEFAULT_GROUP";
 
     /**---------------------------------------------------Redis relate start--------------------------------------------------------**/
 
@@ -204,7 +223,6 @@ public interface GatewayConstant {
      * gateway同步 stream key
      */
     String GATEWAY_STREAM_EVENT = BLINK_PREFIX + "stream:gateway:event";
-
 
 
 
