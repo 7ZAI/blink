@@ -219,7 +219,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
      * @param token     登入凭证
      * @return 返回用户信息
      */
-    private SysLoginRspDTO getLoginUserInfo(SysUserDO loginUser, String token) {
+    public SysLoginRspDTO getLoginUserInfo(SysUserDO loginUser, String token) {
 
         var queryUserRolesReqDTO = new QueryUserRolesReqDTO();
         queryUserRolesReqDTO.setUserId(loginUser.getUserId());

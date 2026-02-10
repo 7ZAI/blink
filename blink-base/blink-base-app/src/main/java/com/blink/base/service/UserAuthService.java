@@ -3,6 +3,7 @@ package com.blink.base.service;
 import com.blink.base.dto.req.SysLoginReqDTO;
 import com.blink.base.dto.req.SysLogoutReqDTO;
 import com.blink.base.dto.rsp.SysLoginRspDTO;
+import com.blink.base.entity.SysUserDO;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -31,4 +32,13 @@ public interface UserAuthService {
      * @throws BlinkException
      */
     void logout(SysLogoutReqDTO logoutParam) throws BlinkException;
+
+    /**
+     * 获取登入用户信息
+     * @param loginUser 用户实体
+     * @param token 认证token
+     * @return 登入用户封装DTO
+     * @throws BlinkException
+     */
+    SysLoginRspDTO getLoginUserInfo(SysUserDO loginUser, String token) throws BlinkException;
 }

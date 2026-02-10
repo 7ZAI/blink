@@ -1,5 +1,6 @@
 package com.blink.base.dto.rsp;
 
+import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.framework.common.data.PageDTO;
 import lombok.Data;
 import lombok.Getter;
@@ -20,7 +21,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-public class QuerySysRoleRspDTO extends PageDTO implements Serializable {
+public class QuerySysRoleRspDTO extends PageDTO<SysRoleVO> implements Serializable {
 
   private static final long serialVersionUID = 1L;
 

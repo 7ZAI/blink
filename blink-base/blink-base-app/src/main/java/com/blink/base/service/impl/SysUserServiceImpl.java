@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -161,14 +162,18 @@ public class SysUserServiceImpl implements SysUserService {
             //删除所有角色关联
             sysUserRoleRelaMapper.delete(new LambdaQueryWrapper<SysUserRoleRelaDO>().eq(SysUserRoleRelaDO::getUserId, userId));
             // 插入新的角色关联
-            updateParam.getRoleIdList().forEach(roleId -> {
+            List<Integer> roleIds = updateParam.getRoleIdList();
+            if(Objects.nonNull(roleIds) && !roleIds.isEmpty()){
+                roleIds.forEach(roleId -> {
 
-                SysUserRoleRelaDO newUserRoleRela = new SysUserRoleRelaDO();
-                newUserRoleRela.setUserId(userId);
-                newUserRoleRela.setRoleId(roleId);
+                    SysUserRoleRelaDO newUserRoleRela = new SysUserRoleRelaDO();
+                    newUserRoleRela.setUserId(userId);
+                    newUserRoleRela.setRoleId(roleId);
 
-                sysUserRoleRelaMapper.insert(newUserRoleRela);
-            });
+                    sysUserRoleRelaMapper.insert(newUserRoleRela);
+                });
+            }
+
         }
 
         //判断是否相同 相同则不更新
@@ -176,13 +181,16 @@ public class SysUserServiceImpl implements SysUserService {
             //删除所有组关联
             sysUserGroupRelaMapper.delete(new LambdaQueryWrapper<SysUserGroupRelaDO>().eq(SysUserGroupRelaDO::getUserId, userId));
             // 插入新的组关联
-            updateParam.getGroupIdList().forEach(groupId -> {
+            List<Integer> groups = updateParam.getGroupIdList();
+            if(Objects.nonNull(groups) && !groups.isEmpty()){
+                groups.forEach(groupId -> {
 
-                SysUserGroupRelaDO ugRela = new SysUserGroupRelaDO();
-                ugRela.setUserId(userId);
-                ugRela.setGroupId(groupId);
-                sysUserGroupRelaMapper.insert(ugRela);
-            });
+                    SysUserGroupRelaDO ugRela = new SysUserGroupRelaDO();
+                    ugRela.setUserId(userId);
+                    ugRela.setGroupId(groupId);
+                    sysUserGroupRelaMapper.insert(ugRela);
+                });
+            }
         }
 
         sysUserMapper.updateById(sysUserDO);

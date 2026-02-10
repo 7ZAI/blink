@@ -143,6 +143,7 @@ public class SysRoleServiceImpl implements SysRoleService {
     public QuerySysRoleRspDTO getSysRoleList(QuerySysRoleReqDTO queryParam) throws BlinkException {
 
         var pageRsp = new QuerySysRoleRspDTO();
+
         PageUtils.queryPage(queryParam, () -> sysRoleMapper.findSysRoleList(queryParam), pageRsp);
 
         return pageRsp;

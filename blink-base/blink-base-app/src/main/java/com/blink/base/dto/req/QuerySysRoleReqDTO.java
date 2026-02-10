@@ -18,9 +18,7 @@ import java.time.LocalDateTime;
  * @author binblink
  * @since 2024-01-03
  */
-@Getter
-@Setter
-@ToString
+@Data
 public class QuerySysRoleReqDTO extends PageDTO implements Serializable {
 
   private static final long serialVersionUID = 1L;
