@@ -3,24 +3,15 @@ package com.blink.gateway.config;
 
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.id.ReactiveIdGenerator;
+import com.blink.gateway.component.ChannelSecretCache;
 import com.blink.gateway.component.GateWayCacheComponent;
-import com.blink.gateway.config.prop.BlinkGatewayConfigProperties;
 import com.blink.gateway.filter.*;
 import com.blink.gateway.signature.SignatureServiceFactory;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 
 
 /**
@@ -29,6 +20,7 @@ import org.springframework.security.config.annotation.web.reactive.EnableWebFlux
  * RequestValidateFilter(合法性校验) --> SignatureFilter(签名) --> RequestBodyTransformFliter（转换报文）
  * <p>
  * <p>
+ *
  * @author binblink
  */
 @Slf4j
@@ -47,6 +39,9 @@ public class BlinkGatewayConfig {
     @Resource
     private SignatureServiceFactory signatureServiceFactory;
 
+    @Resource
+    private ChannelSecretCache channelSecretCache;
+
 
     /**
      * 全局异常处理
@@ -63,15 +58,17 @@ public class BlinkGatewayConfig {
 
     /**
      * 签名  filter
+     *
      * @return
      */
     @Bean
     public SignatureFilter signatureFilter() {
-        return new SignatureFilter(signatureServiceFactory, cacheComponent);
+        return new SignatureFilter(signatureServiceFactory, cacheComponent,channelSecretCache);
     }
 
     /**
-     *  防重放 filter
+     * 防重放 filter
+     *
      * @return
      */
     @Bean
@@ -81,15 +78,17 @@ public class BlinkGatewayConfig {
 
     /**
      * 加密 解密 filter
+     *
      * @return
      */
     @Bean
     public CryptFilter cryptFilter() {
-        return new CryptFilter(signatureServiceFactory);
+        return new CryptFilter(signatureServiceFactory, channelSecretCache);
     }
 
     /**
      * 元数据组装filter
+     *
      * @return
      */
     @Bean

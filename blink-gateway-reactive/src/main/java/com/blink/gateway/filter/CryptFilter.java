@@ -2,9 +2,11 @@ package com.blink.gateway.filter;
 
 import cn.hutool.core.lang.UUID;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
+import com.blink.framework.common.data.ChannelSecretKey;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.AESUtils;
 import com.blink.framework.common.utils.RSAUtils;
+import com.blink.gateway.component.ChannelSecretCache;
 import com.blink.gateway.signature.HmacSignatureService;
 import com.blink.gateway.signature.SignatureServiceFactory;
 import com.blink.gateway.util.GateWayUtil;
@@ -49,8 +51,11 @@ public class CryptFilter implements GlobalFilter, Ordered {
 
     private final SignatureServiceFactory signatureServiceFactory;
 
-    public CryptFilter(SignatureServiceFactory signatureServiceFactory) {
+    private final ChannelSecretCache channelSecretCache;
+
+    public CryptFilter(SignatureServiceFactory signatureServiceFactory, ChannelSecretCache channelSecretCache) {
         this.signatureServiceFactory = signatureServiceFactory;
+        this.channelSecretCache = channelSecretCache;
     }
 
 
@@ -61,17 +66,17 @@ public class CryptFilter implements GlobalFilter, Ordered {
         if (Objects.isNull(channelInfo)) {
             return Mono.error(new BlinkException("系统错误!"));
         }
-
+        ChannelSecretKey secretKeyInfo = channelSecretCache.getChannelSecretConfigs().get(channelInfo.getAppKey());
         // 检查是否需要处理加密解密
         if (shouldProcessCrypt(exchange, channelInfo)) {
 
-            return decryptRequest(exchange, channelInfo.getSystemPrivatekey())
+            return decryptRequest(exchange,secretKeyInfo.getSystemPrivatekey())
                     .filter(isValid->isValid)
                     .switchIfEmpty(Mono.error(new BlinkException("请求解密失败！")))
                     .flatMap(result -> {
                         // 处理响应加密
                         return chain.filter(exchange.mutate()
-                                .response(createEncryptedResponseDecorator(exchange.getResponse(), channelInfo)).build());
+                                .response(createEncryptedResponseDecorator(exchange.getResponse(), channelInfo,secretKeyInfo)).build());
                     });
         }
 
@@ -154,12 +159,13 @@ public class CryptFilter implements GlobalFilter, Ordered {
      * @param channelInfo
      * @return
      */
-    private ServerHttpResponseDecorator createEncryptedResponseDecorator(ServerHttpResponse originalResponse, ChannelInfoRedisDO channelInfo) {
+    private ServerHttpResponseDecorator createEncryptedResponseDecorator(ServerHttpResponse originalResponse, ChannelInfoRedisDO channelInfo,ChannelSecretKey secretKeyInfo) {
         return new ServerHttpResponseDecorator(originalResponse) {
             @Override
             public Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
                 if (body instanceof Flux) {
-                    Flux<DataBuffer> fluxBody = (Flux<DataBuffer>) body;
+
+                    Flux<DataBuffer> fluxBody = ((Flux<?>) body).cast(DataBuffer.class);
 
                     return super.writeWith(fluxBody.collectList().flatMap(dataBuffers -> {
                         try {
@@ -175,7 +181,7 @@ public class CryptFilter implements GlobalFilter, Ordered {
                             log.debug("响应加密 aesKeyBase64:{}", plainKey);
 
                             // 使用RSA加密AES密钥和IV
-                            String encryptedKey = RSAUtils.encryptToBase64(plainKey, RSAUtils.base64ToPublicKey(channelInfo.getChannelPublickey()));
+                            String encryptedKey = RSAUtils.encryptToBase64(plainKey, RSAUtils.base64ToPublicKey(secretKeyInfo.getChannelPublicKey()));
 
 
                             HttpHeaders headers = getDelegate().getHeaders();
@@ -196,7 +202,7 @@ public class CryptFilter implements GlobalFilter, Ordered {
                                 //签名
                                 // 处理请求解密
                                 Map<String, Object> signParams = getSignParams(channelInfo);
-                                String sign = getSignStr(encryptedResponse, channelInfo.getAppSecret(), signParams);
+                                String sign = getSignStr(encryptedResponse, secretKeyInfo.getAppSecret(), signParams);
                                 // 设置响应头
                                 setHttpHeaders(headers, encryptedKey, base64IV, sign, signParams);
 

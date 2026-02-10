@@ -30,12 +30,12 @@ public class BlinkGatewayProperties {
     /**
      * 配置文件在nacos中的id 用于监听配置文件改动
      */
-    private String configDataId;
+    private String channelConfigId;
 
     /**
      * 配置文件在nacos中的组别
      */
-    private String configGroup;
+    private String channelConfigGroup;
 
     /**
      * 动态路由配置类
@@ -77,20 +77,20 @@ public class BlinkGatewayProperties {
         this.dynamicroute = dynamicroute;
     }
 
-    public String getConfigGroup() {
-        return configGroup;
+    public String getChannelConfigId() {
+        return channelConfigId;
     }
 
-    public void setConfigGroup(String configGroup) {
-        this.configGroup = configGroup;
+    public void setChannelConfigId(String channelConfigId) {
+        this.channelConfigId = channelConfigId;
     }
 
-    public String getConfigDataId() {
-        return configDataId;
+    public String getChannelConfigGroup() {
+        return channelConfigGroup;
     }
 
-    public void setConfigDataId(String configDataId) {
-        this.configDataId = configDataId;
+    public void setChannelConfigGroup(String channelConfigGroup) {
+        this.channelConfigGroup = channelConfigGroup;
     }
 
     public Boolean getEventStreamEnable() {

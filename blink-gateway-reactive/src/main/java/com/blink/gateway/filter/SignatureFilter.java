@@ -1,8 +1,9 @@
 package com.blink.gateway.filter;
 
 import com.blink.framework.common.data.ChannelInfoRedisDO;
+import com.blink.framework.common.data.ChannelSecretKey;
 import com.blink.framework.common.exception.BlinkException;
-import com.blink.framework.redis.component.ReactiveRedisClient;
+import com.blink.gateway.component.ChannelSecretCache;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.constant.GateWayErrMsgCode;
 import com.blink.gateway.signature.HmacSignatureService;
@@ -17,7 +18,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -35,12 +35,14 @@ public class SignatureFilter implements GlobalFilter, Ordered {
 
     private final SignatureServiceFactory signatureServiceFactory;
 
-
     private final GateWayCacheComponent cacheComponent;
 
-    public SignatureFilter(SignatureServiceFactory signatureServiceFactory, GateWayCacheComponent cacheComponent) {
+    private final ChannelSecretCache channelSecretCache;
+
+    public SignatureFilter(SignatureServiceFactory signatureServiceFactory, GateWayCacheComponent cacheComponent,ChannelSecretCache channelSecretCache) {
         this.signatureServiceFactory = signatureServiceFactory;
         this.cacheComponent = cacheComponent;
+        this.channelSecretCache = channelSecretCache;
     }
 
     /**
@@ -85,6 +87,13 @@ public class SignatureFilter implements GlobalFilter, Ordered {
             return Mono.error(new BlinkException("校验错误"));
         }
 
+        ChannelSecretKey channelSecretKey = channelSecretCache.getChannelSecretConfigs().get(channelDO.getAppKey());
+        if(Objects.isNull(channelSecretKey)){
+            return Mono.error(new BlinkException("获取渠道密钥配置失败"));
+        }
+
+        String appSecret = channelSecretKey.getAppSecret();
+
         String appKey = headers.getFirst(X_BLINK_APPKEY);
         String sign = headers.getFirst(X_BLINK_SIGN);
         String timeStamp = headers.getFirst(X_BLINK_TIMESTAMP);
@@ -108,7 +117,7 @@ public class SignatureFilter implements GlobalFilter, Ordered {
 
         }
 
-        return Mono.just(signatureService.verify(data, channelDO.getAppSecret(), sign, parameMap));
+        return Mono.just(signatureService.verify(data, appSecret, sign, parameMap));
     }
 
 
