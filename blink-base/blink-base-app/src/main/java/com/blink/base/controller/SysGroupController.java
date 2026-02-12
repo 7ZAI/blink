@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
  *  组 管理API
  *
  *
- * @module blink
  * @author blink
  * @since 2025-10-16
  */

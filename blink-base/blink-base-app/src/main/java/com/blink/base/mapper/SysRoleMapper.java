@@ -21,7 +21,7 @@ import java.util.List;
 public interface SysRoleMapper extends BaseMapper<SysRoleDO> {
 
 
-    List<SysRoleVO> findSysRoleList(QuerySysRoleReqDTO reqDTO);
+    List<SysRoleVO> findSysRoleList(SysRoleDO sysRoleDO);
 
     List<SysRoleDO> findSysRolesByUser(QueryUserRolesReqDTO queryUserRolesReqDTO);
 }

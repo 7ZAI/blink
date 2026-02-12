@@ -20,6 +20,26 @@ public interface CommonConstans {
     //功能菜单
     Byte MENU_FUNCTION = 1;
 
+    /**
+     * 菜单权限
+     */
+    Integer PERMISSION_MENU_TYPE = 0;
+
+    /**
+     * 功能权限
+     */
+    Integer PERMISSION_FUNCTION_TYPE = 1;
+
+    /**
+     * 接口权限
+     */
+    Integer PERMISSION_API_TYPE = 2;
+
+    /**
+     * 数据权限
+     */
+    Integer PERMISSION_DATA_TYPE = 3;
+
     Long LONG_ZERO = Long.valueOf(0);
 
     //超级管理员角色 id 1

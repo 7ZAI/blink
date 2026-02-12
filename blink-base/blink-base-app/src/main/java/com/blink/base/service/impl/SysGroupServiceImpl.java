@@ -208,7 +208,9 @@ public class SysGroupServiceImpl implements SysGroupService {
     public QuerySysGroupRspDTO getSysGroupList(QuerySysGroupReqDTO queryParam) throws BlinkException {
 
         var pageRsp = new QuerySysGroupRspDTO();
-        pageRsp = PageUtils.queryPage(queryParam, () -> sysGroupMapper.findSysGroupList(queryParam), pageRsp);
+        var param = new SysGroupDO();
+        BeanUtil.copyProperties(queryParam, param);
+        PageUtils.queryPage(queryParam, () -> sysGroupMapper.findSysGroupList(param), pageRsp);
 
         return pageRsp;
     }

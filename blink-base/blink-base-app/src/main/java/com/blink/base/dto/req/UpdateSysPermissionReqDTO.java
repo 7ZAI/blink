@@ -69,7 +69,7 @@ public class UpdateSysPermissionReqDTO implements Serializable {
     /**
      * 权限地址
      */
-    @DataDict(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @DataDict(name = "url", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String url;
 
 

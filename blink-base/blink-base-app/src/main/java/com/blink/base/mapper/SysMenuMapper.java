@@ -1,5 +1,7 @@
 package com.blink.base.mapper;
 
+import com.blink.base.dto.req.QueryShowMenuReqDTO;
+import com.blink.base.dto.vo.SysMenuVO;
 import com.blink.base.entity.SysMenuDO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.blink.base.dto.req.QuerySysMenuReqDTO;
@@ -19,5 +21,8 @@ import org.apache.ibatis.annotations.Mapper;
 public interface SysMenuMapper extends BaseMapper<SysMenuDO> {
 
 
-       List<SysMenuDO> findSysMenuList(QuerySysMenuReqDTO reqDTO);
+       List<SysMenuDO> findSysMenuList(SysMenuDO sysMenuDO);
+
+
+       List<SysMenuVO> findSysMenuListByRole(QueryShowMenuReqDTO reqDTO);
 }

@@ -17,5 +17,5 @@ import org.apache.ibatis.annotations.Mapper;
  */
 @Mapper
 public interface SysGroupMapper extends BaseMapper<SysGroupDO> {
-       List<SysGroupDO> findSysGroupList(QuerySysGroupReqDTO reqDTO);
+       List<SysGroupDO> findSysGroupList(SysGroupDO reqDTO);
 }

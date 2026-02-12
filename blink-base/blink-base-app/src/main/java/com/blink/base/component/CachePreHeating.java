@@ -129,7 +129,9 @@ public class CachePreHeating {
     private Map<String, Object> cachePermissions() {
 
         List<SysPermissionDO> permissionList = permissionMapper.selectList(new LambdaQueryWrapper<SysPermissionDO>()
-                .eq(SysPermissionDO::getStatus, 0));
+                .eq(SysPermissionDO::getStatus, 0)
+                .eq(SysPermissionDO::getAcType,3));
+
         return permissionList.stream()
                 .collect(Collectors.toMap(p -> RedisKeyConstans.URL_PERMISSION + p.getUrl(), SysPermissionDO::getAcIdentity));
     }

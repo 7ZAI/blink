@@ -4,6 +4,9 @@ import com.blink.base.entity.SysRolePermRelaDO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 /**
  * <p>
@@ -16,5 +19,5 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface SysRolePermRelaMapper extends BaseMapper<SysRolePermRelaDO> {
 
-
+    int  batchInsert(@Param("list") List<SysRolePermRelaDO> list);
 }

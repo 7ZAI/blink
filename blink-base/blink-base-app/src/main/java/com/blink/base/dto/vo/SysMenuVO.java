@@ -94,7 +94,7 @@ public class SysMenuVO implements Serializable {
     /**
      * 标识
      */
-    private String identity;
+    private String acIdentity;
 
 
 }

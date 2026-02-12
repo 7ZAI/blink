@@ -12,6 +12,7 @@ import com.blink.base.dto.vo.SysMenuVO;
 import com.blink.base.entity.SysMenuDO;
 import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.mapper.SysMenuMapper;
+import com.blink.base.mapper.SysMenuPermRelaMapper;
 import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.mapper.SysRoleMapper;
 import com.blink.base.service.SysMenuService;
@@ -22,15 +23,13 @@ import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -41,15 +40,17 @@ import java.util.stream.Collectors;
  */
 @Transactional(rollbackFor = Exception.class)
 @Service
+@Slf4j
 public class SysMenuServiceImpl implements SysMenuService {
-
-    private final Logger logger = LoggerFactory.getLogger(SysMenuServiceImpl.class);
 
     @Resource
     private SysMenuMapper sysMenuMapper;
 
     @Resource
     private SysPermissionMapper sysPermissionMapper;
+
+    @Resource
+    private SysMenuPermRelaMapper menuPermRelaMapper;
 
     @Resource
     private SysRoleMapper roleMapper;
@@ -137,16 +138,17 @@ public class SysMenuServiceImpl implements SysMenuService {
         if (ObjectUtil.isNull(sysMenuDO)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.MENU_NOT_EXIST);
         }
-        SysMenuDO sysMenuParent = sysMenuMapper.selectById(updateParam.getParentId());
-
-        //父菜单不存在
-        if (ObjectUtil.isNull(sysMenuParent)) {
-            BlinkException.throwBusinessException(BaseErrCodeConstant.MENU_PARENT_NOT_EXIST);
+        //更换父节点
+        if(Objects.nonNull(updateParam.getParentId())){
+            SysMenuDO sysMenuParent = sysMenuMapper.selectById(updateParam.getParentId());
+            //父节点不存在
+            if (ObjectUtil.isNull(sysMenuParent)) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.MENU_PARENT_NOT_EXIST);
+            }
         }
 
         BeanUtil.copyProperties(updateParam, sysMenuDO);
         sysMenuMapper.updateById(sysMenuDO);
-
         var sysMenuVO = new SysMenuVO();
         BeanUtil.copyProperties(sysMenuDO, sysMenuVO);
 
@@ -156,16 +158,17 @@ public class SysMenuServiceImpl implements SysMenuService {
     /**
      * 查询 系统菜单 列表
      *
-     * @param queryParam
+     * @param param
      * @return
      * @throws BlinkException
      */
     @Override
-    public QuerySysMenuRspDTO getSysMenuList(QuerySysMenuReqDTO queryParam) throws BlinkException {
+    public QuerySysMenuRspDTO getSysMenuList(QuerySysMenuReqDTO param) throws BlinkException {
 
         var pageRsp = new QuerySysMenuRspDTO();
-        pageRsp = PageUtils.queryPage(queryParam, () -> sysMenuMapper.findSysMenuList(queryParam), pageRsp);
-
+        var queryParam = new SysMenuDO();
+        BeanUtil.copyProperties(param, queryParam);
+        PageUtils.queryPage(param, () -> sysMenuMapper.findSysMenuList(queryParam), pageRsp);
         return pageRsp;
     }
 
@@ -179,64 +182,20 @@ public class SysMenuServiceImpl implements SysMenuService {
     @Override
     public QueryShowMenuRspDTO getSysMenusByRoles(QueryShowMenuReqDTO queryParam) throws BlinkException {
 
+        //菜单权限(包含功能权限)
+        List<SysMenuVO> menuVos = sysMenuMapper.findSysMenuListByRole(queryParam);
 
-        List<SysMenuDO> menus = Optional.of(sysMenuMapper.selectList(null)).orElse(new ArrayList<>());
-
-        //所有受管理权限
-        List<SysPermissionDO> permissionDOList = Optional.of(sysPermissionMapper.selectList(null)).orElse(new ArrayList<>());
-
-        List<Integer> roleIds = queryParam.getRoleIds();
-
-        //角色拥有的权限
-        List<SysPermissionDO> permissions = sysPermissionMapper.findRolesPermissions(roleIds);
-
-        //转成map 好比较
-        Map<String, SysPermissionDO> perMap = permissions.stream().collect(Collectors.toMap(SysPermissionDO::getUrl, p -> p));
-        Map<String, SysPermissionDO> allPerMap = permissionDOList.stream().collect(Collectors.toMap(SysPermissionDO::getUrl, p -> p));
-
-        var vos = new ArrayList<SysMenuVO>(menus.size());
-
-        BeanUtil.copyProperties(menus, vos);
-
-        List<SysMenuVO> menuOfLefSide = vos.stream().filter(
-                        menu -> {
-                            if (CommonConstans.MENU_ORIGIN.equals(menu.getType())) {
-                                String url = menu.getUrl();
-                                //该菜单未加入 权限管理
-                                if (ObjectUtil.isNull(allPerMap.get(url))) {
-                                    return true;
-                                }
-                                //有权限
-                                return ObjectUtil.isNotNull(perMap.get(url));
-                            }
-
-                            //无权限
-                            return false;
-                        })
-                .collect(Collectors.toList());
-
-        List<SysMenuVO> menusFunc = vos.stream().filter(
-                        menu -> {
-
-                            if (CommonConstans.MENU_FUNCTION.equals(menu.getType())) {
-                                String url = menu.getUrl();
-                                //该菜单未加入 权限管理
-                                if (ObjectUtil.isNull(allPerMap.get(url))) {
-                                    return true;
-                                }
-                                menu.setIdentity(allPerMap.get(url).getAcIdentity());
-                                //有权限
-                                return ObjectUtil.isNotNull(perMap.get(url));
-                            }
-                            //无权限
-                            return false;
-                        })
-                .collect(Collectors.toList());
+        List<SysMenuVO> menus = menuVos.stream()
+                .filter(menu->menu.getType().equals(CommonConstans.MENU_ORIGIN))
+                .toList();
+        List<SysMenuVO> functionMenus = menuVos.stream()
+                .filter(menu->menu.getType().equals(CommonConstans.MENU_FUNCTION))
+                .toList();
 
         var queryShowMenuRspDTO = new QueryShowMenuRspDTO();
+        queryShowMenuRspDTO.setFunctionMenu(functionMenus);
+        queryShowMenuRspDTO.setMenus(menus);
 
-        queryShowMenuRspDTO.setMenus(menuOfLefSide);
-        queryShowMenuRspDTO.setFunctionMenu(menusFunc);
         return queryShowMenuRspDTO;
     }
 

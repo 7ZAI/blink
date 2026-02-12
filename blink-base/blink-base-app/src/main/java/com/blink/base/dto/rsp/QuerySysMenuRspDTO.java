@@ -1,5 +1,6 @@
 package com.blink.base.dto.rsp;
 
+import com.blink.base.entity.SysMenuDO;
 import com.blink.framework.common.data.PageDTO;
 
 
@@ -17,7 +18,7 @@ import java.io.Serializable;
  */
 
 
-public class QuerySysMenuRspDTO<T> extends PageDTO<T> implements Serializable {
+public class QuerySysMenuRspDTO extends PageDTO<SysMenuDO> implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 1L;
