@@ -134,7 +134,7 @@ public class BlinkControllerLogAspect {
                 方法名: %s
                 执行异常: %s
                 耗时: %s ms
-                """.formatted(className, methodName, costTime,e.getMessage());
+                """.formatted(className, methodName,e.getMessage(),costTime);
             log.error(exLog,e);
             // 重新抛出异常，不影响原业务的异常处理
             throw e;
