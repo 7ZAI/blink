@@ -48,12 +48,12 @@
                 #{configType}
             </if>
 
-<!--            <if test="groupIds != null and !groupIds.isEmpty()">-->
-<!--                group_id IN-->
-<!--                <foreach collection="groupIds" item="gid" open="(" close=")" separator=",">-->
-<!--                    #{gid}-->
-<!--                </foreach>-->
-<!--            </if>-->
+            <!--            <if test="groupIds != null and !groupIds.isEmpty()">-->
+            <!--                group_id IN-->
+            <!--                <foreach collection="groupIds" item="gid" open="(" close=")" separator=",">-->
+            <!--                    #{gid}-->
+            <!--                </foreach>-->
+            <!--            </if>-->
 
             <if test="readonly != null and readonly != ''">and readonly =
                 #{readonly}
@@ -67,7 +67,7 @@
                 #{createBy}
             </if>
 
-            <if test="createTime != null and createTime != ''">and create_time =
+            <if test="createTime != null ">and create_time =
                 #{createTime}
             </if>
 
@@ -75,7 +75,7 @@
                 #{updateBy}
             </if>
 
-            <if test="updateTime != null and updateTime != ''">and update_time =
+            <if test="updateTime != null ">and update_time =
                 #{updateTime}
             </if>
 

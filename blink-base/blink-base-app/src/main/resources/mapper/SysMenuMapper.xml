@@ -57,11 +57,11 @@
 
             <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
 
-            <if test="createTime != null and createTime != ''">and create_time = #{createTime}</if>
+            <if test="createTime != null ">and create_time = #{createTime}</if>
 
             <if test="updateBy != null and updateBy != ''">and update_by = #{updateBy}</if>
 
-            <if test="updateTime != null and updateTime != ''">and update_time = #{updateTime}</if>
+            <if test="updateTime != null ">and update_time = #{updateTime}</if>
 
             <if test="delFlag != null and delFlag != ''">and delFlag = #{delFlag}</if>
 
@@ -69,13 +69,33 @@
     </sql>
 
 
-    <select id="findSysMenuList" parameterType="com.blink.base.dto.req.QuerySysMenuReqDTO" resultMap="BaseResultMap">
+    <select id="findSysMenuList" parameterType="com.blink.base.entity.SysMenuDO" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
         from sys_menu
         <include refid="Condition_where"/>
     </select>
 
+    <!-- 根据角色查询能访问的所有菜单-->
+    <select id="findSysMenuListByRole" resultType="com.blink.base.dto.vo.SysMenuVO">
+--         已分配权限的菜单
+        select sp.ac_identity,sm.* from
+            sys_menu sm
+        left join sys_menu_perm_rela smpr on smpr.menu_id= sm.menu_id
+        left join sys_permission sp on smpr.ac_id = sp.ac_id
+        left join sys_role_perm_rela srpr on sp.ac_id =srpr.ac_id
+        where srpr.role_id in
+        <foreach collection="roleIds" item="roleId" index="index" open="(" close=")" separator=",">
+            #{roleId}
+        </foreach>
+               and sp.ac_type in(0,1) and sp.status = 0
+        UNION ALL
+--         未纳入权限管理的菜单
+        select null as ac_identity , sm.* from
+              sys_menu sm
+        left join sys_menu_perm_rela smpr on smpr.menu_id= sm.menu_id
+        where smpr.menu_id IS NULL
+    </select>
 
 
 </mapper>

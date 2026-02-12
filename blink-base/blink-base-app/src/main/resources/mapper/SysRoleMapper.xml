@@ -21,7 +21,7 @@
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         role_id
-        , role_name, role_en_name, status, role_code, group_id, role_type, create_by, update_by, create_time, update_time, delFlag
+        , role_name, role_en_name, status, role_code, role_type, create_by, update_by, create_time, update_time, delFlag
     </sql>
 
 
@@ -43,9 +43,9 @@
 
             <if test="updateBy != null and updateBy != ''">and update_by = #{updateBy}</if>
 
-            <if test="createTime != null and createTime != ''">and create_time = #{createTime}</if>
+            <if test="createTime != null ">and create_time = #{createTime}</if>
 
-            <if test="updateTime != null and updateTime != ''">and update_time = #{updateTime}</if>
+            <if test="updateTime != null ">and update_time = #{updateTime}</if>
 
             <if test="delFlag != null and delFlag != ''">and delFlag = #{delFlag}</if>
 
@@ -53,7 +53,7 @@
     </sql>
 
 
-    <select id="findSysRoleList" parameterType="com.blink.base.dto.req.QuerySysRoleReqDTO" resultMap="BaseResultMap">
+    <select id="findSysRoleList" parameterType="com.blink.base.entity.SysRoleDO" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
         from sys_role
@@ -61,15 +61,15 @@
     </select>
 
 
-    <select id="findSysRolesByUser" parameterType="com.blink.base.dto.req.QueryUserRolesReqDTO" resultMap="BaseResultMap">
-        select sr.role_id , role_name, role_en_name, status, role_code
-            from sys_role  sr, sys_user_role_rela sur
-            where sr.role_id = sur.role_id and sur.user_id = #{userId}
+    <select id="findSysRolesByUser" parameterType="com.blink.base.dto.req.QueryUserRolesReqDTO"
+            resultMap="BaseResultMap">
+        select sr.role_id, role_name, role_en_name, status, role_code
+        from sys_role sr,
+             sys_user_role_rela sur
+        where sr.role_id = sur.role_id
+          and sur.user_id = #{userId}
 
     </select>
-
-
-
 
 
 </mapper>

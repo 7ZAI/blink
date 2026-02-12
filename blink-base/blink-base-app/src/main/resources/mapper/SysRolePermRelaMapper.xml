@@ -5,13 +5,20 @@
             <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="com.blink.base.entity.SysRolePermRelaDO">
         <id column="role_id" property="roleId" />
-            <id column="ac_id" property="acId" />
-                </resultMap>
+        <id column="ac_id" property="acId" />
+    </resultMap>
         <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         role_id, ac_id
    </sql>
 
+    <insert id="batchInsert">
+        INSERT INTO sys_role_perm_rela (role_id, ac_id) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.roleId}, #{item.acId})
+        </foreach>
+        ON DUPLICATE KEY UPDATE role_id = VALUES(role_id)
+    </insert>
 
 
 </mapper>

@@ -57,9 +57,9 @@
 
             <if test="email != null and email != ''">and email = #{email}</if>
 
-            <if test="lastLoginTime != null and lastLoginTime != ''">and last_login_time = #{lastLoginTime}</if>
+            <if test="lastLoginTime != null ">and last_login_time = #{lastLoginTime}</if>
 
-            <if test="createTime != null and createTime != ''">and create_time = #{createTime}</if>
+            <if test="createTime != null ">and create_time = #{createTime}</if>
         </trim>
     </sql>
 
@@ -91,9 +91,9 @@
             <if test="sex != null and sex != ''">and sex = #{sex}</if>
 
 
-            <if test="startDate != null and startDate != ''">and create_time <![CDATA[ >= ]]> #{startDate}</if>
+            <if test="startDate != null ">and create_time <![CDATA[ >= ]]> #{startDate}</if>
 
-            <if test="endDate != null and endDate != ''">and create_time <![CDATA[ <= ]]> #{endDate}</if>
+            <if test="endDate != null ">and create_time <![CDATA[ <= ]]> #{endDate}</if>
         </trim>
     </select>
 </mapper>
