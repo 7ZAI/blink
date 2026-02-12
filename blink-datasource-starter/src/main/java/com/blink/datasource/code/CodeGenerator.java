@@ -75,7 +75,7 @@ public class CodeGenerator {
      * 根据自定义模板生成
      * 模板分为 传统 DTO 和 record DTO两种
      *
-     * @param url 数据库连接
+     * @param url      数据库连接
      * @param username 数据库用户名
      * @param password 数据库密码
      */
@@ -93,8 +93,8 @@ public class CodeGenerator {
         System.out.println("请输入要过滤的表前缀，多个英文逗号分隔 都不过滤输入none字符串！");
         String tablePrefix = scanner.nextLine();
 
-        System.out.println("请选择模板类型输入1或者2（1.DTO 2.record）");
-        String templateType = scanner.nextLine();
+//        System.out.println("请选择模板类型输入1或者2（1.DTO 2.record）");
+//        String templateType = scanner.nextLine();
 
         scanner.close();
         // 全局配置
@@ -143,15 +143,16 @@ public class CodeGenerator {
                 .build();
 
         TemplateConfig.Builder tcb = new TemplateConfig.Builder();
-
+        // 配置dto模板
+        tcb.controller("/codeTemplate/controller.java.vm");
         //DTO
-        if("1".equals(templateType.trim())){
-            // 配置dto模板
-            tcb.controller("/codeTemplate/controller.java.vm");
-        }else{
-            // 配置record模板
-            tcb.controller("/codeTemplate/record/controller.java.vm");
-        }
+//        if ("1".equals(templateType.trim())) {
+//            // 配置dto模板
+//            tcb.controller("/codeTemplate/controller.java.vm");
+//        } else {
+//            // 配置record模板
+//            tcb.controller("/codeTemplate/record/controller.java.vm");
+//        }
 
         tcb.service("/codeTemplate/service.java.vm")
                 .serviceImpl("/codeTemplate/serviceImpl.java.vm")
@@ -169,7 +170,7 @@ public class CodeGenerator {
                 // 策略配置
                 .strategy(strategyConfig)
                 //自定义模板配置
-                .injection(getInjectionConfig(templateType.trim()))
+                .injection(getInjectionConfig("1"))
                 // 默认模板配置
                 .template(templateConfig)
                 // 执行
@@ -179,7 +180,6 @@ public class CodeGenerator {
     /**
      * 默认配置文件  datasource-dev.yml
      * 根据配置的数据库源 按默认模板生成
-     *
      */
     public static void generate() {
         loadYmltoGeneral("datasource-dev.yml", System.getProperty("user.dir"));
@@ -205,6 +205,7 @@ public class CodeGenerator {
         YamlPropertiesFactoryBean yamlProFb = new YamlPropertiesFactoryBean();
         yamlProFb.setResources(new ClassPathResource(res));
         Properties properties = yamlProFb.getObject();
+        assert properties != null;
         String url = properties.getProperty("generator.url");
         String username = properties.getProperty("generator.username");
         String password = properties.getProperty("generator.password");
@@ -232,7 +233,7 @@ public class CodeGenerator {
      */
     private static InjectionConfig getInjectionConfig(String type) {
 
-        List<CustomFile> customFiles = "1".equals(type) ? getDtoCustomFile():getRecordCustomFile();
+        List<CustomFile> customFiles = "1".equals(type) ? getDtoCustomFile() : getRecordCustomFile();
 
         //自定义模板文件上下文属性配置 用于生成正确类名
         return new InjectionConfig.Builder().beforeOutputFile((tableInfo, stringMap) -> {
@@ -255,7 +256,7 @@ public class CodeGenerator {
                 .build();
     }
 
-    private static List<CustomFile> getDtoCustomFile(){
+    private static List<CustomFile> getDtoCustomFile() {
 
 
         List<CustomFile> customFiles = new ArrayList<>();
@@ -307,7 +308,7 @@ public class CodeGenerator {
         return customFiles;
     }
 
-    private static List<CustomFile> getRecordCustomFile(){
+    private static List<CustomFile> getRecordCustomFile() {
 
 
         List<CustomFile> customFiles = new ArrayList<>();
@@ -451,9 +452,7 @@ public class CodeGenerator {
         String url = "jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8";
         String username = "root";
         String password = "123456";
-
-        var codeGenerator = new CodeGenerator();
-        codeGenerator.generateByCustomTemplate(url, username, password);
+        CodeGenerator.generateByCustomTemplate(url, username, password);
 
     }
 
