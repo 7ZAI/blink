@@ -59,6 +59,6 @@ public class QuerySysUserReqDTO extends PageDTO implements Serializable   {
      * 组Id
      */
     @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
-    private List<Integer> groupId;
+    private Integer groupId;
 
 }

@@ -1,6 +1,7 @@
 package com.blink.gateway.component;
 
 import com.blink.base.dto.rsp.QueryErrMsgRspDTO;
+import com.blink.base.dto.rsp.QueryUserPermissionRspDTO;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.gateway.service.BaseAppService;
@@ -8,6 +9,8 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+
+import java.util.Set;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
 
@@ -38,7 +41,7 @@ public class GateWayCacheComponent {
 
         String cacheKey = GATEWAY_CONFIG_KEY_PREFIX + configKey;
 
-        return multiLevelCacheComponent.get(cacheKey, SysConfigCacheDO.class,(key, clazz) -> baseAppService.getOneConfig(key))
+        return multiLevelCacheComponent.get(cacheKey, SysConfigCacheDO.class, (key, clazz) -> baseAppService.getOneConfig(key))
                 .onErrorResume(e -> Mono.empty());
     }
 
@@ -52,7 +55,7 @@ public class GateWayCacheComponent {
 
         String cacheKey = BLINK_CHANNEL_PREFIX + appKey;
 
-        return multiLevelCacheComponent.get(cacheKey, ChannelInfoRedisDO.class,(key, clazz) -> baseAppService.getChannelInfo(key))
+        return multiLevelCacheComponent.get(cacheKey, ChannelInfoRedisDO.class, (key, clazz) -> baseAppService.getChannelInfo(key))
                 .onErrorResume(e -> Mono.empty());
     }
 
@@ -70,6 +73,20 @@ public class GateWayCacheComponent {
         return multiLevelCacheComponent.get(cacheKey, String.class,
                         (key, clazz) -> baseAppService.getErrorMsgInfo(errCode, local).map(QueryErrMsgRspDTO::getMsgInfo))
                 .onErrorResume(e -> Mono.empty());
+    }
+
+    /**
+     * 多级缓存获取 权限信息
+     *
+     * @param userId 用户id
+     * @return Set<String> 权限标识集合
+     */
+    public Mono<QueryUserPermissionRspDTO> getPermissionsByUserId(Integer userId) {
+        String cacheKey = ERR_MSG_PREFIX + userId + ":";
+        return multiLevelCacheComponent.get(cacheKey, QueryUserPermissionRspDTO.class,
+                        (key, clazz) -> baseAppService.getUserPermissions(userId))
+                .onErrorResume(e -> Mono.empty());
+
     }
 
 

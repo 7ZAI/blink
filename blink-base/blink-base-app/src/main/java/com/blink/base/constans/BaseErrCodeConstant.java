@@ -169,6 +169,11 @@ public interface BaseErrCodeConstant {
      */
     String ERR_MSG_NOT_EXIST = "BUSS0026";
 
+    /**
+     * 超级管理员无法删除
+     */
+    String NOT_ALLOW_DELETE = "BUSS0027";
+
 
     /***************************错误码---end ********************************/
 

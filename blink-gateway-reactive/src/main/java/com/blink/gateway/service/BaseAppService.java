@@ -4,7 +4,9 @@ package com.blink.gateway.service;
 import com.blink.base.dto.req.QueryErrMsgReqDTO;
 import com.blink.base.dto.req.QueryOneChannelReqDTO;
 import com.blink.base.dto.req.QueryOneSysConfigReqDTO;
+import com.blink.base.dto.req.QueryUserPermissionReqDTO;
 import com.blink.base.dto.rsp.QueryErrMsgRspDTO;
+import com.blink.base.dto.rsp.QueryUserPermissionRspDTO;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
@@ -103,6 +105,27 @@ public class BaseAppService {
         return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_ERR_MSG_URL,requestDTO,new QueryErrMsgRspDTO(),new ParameterizedTypeReference<ResponseDTO<QueryErrMsgRspDTO>>(){});
 
     }
+
+
+    /**
+     * 获取用户权限标识
+     *
+     * @param userId 用户id
+     * @return Mono<QueryErrMsgRspDTO>
+     */
+    public Mono<QueryUserPermissionRspDTO> getUserPermissions(Integer userId) {
+
+        log.info("调用远程服务获取用户权限标识 userId:{}", userId);
+
+        var  requestDTO = new RequestDTO<QueryUserPermissionReqDTO>();
+        var param = new QueryUserPermissionReqDTO();
+        param.setUserId(userId);
+        requestDTO.setBody(param);
+
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_USER_PERMISSION_URL,requestDTO,new QueryUserPermissionRspDTO(),new ParameterizedTypeReference<ResponseDTO<QueryUserPermissionRspDTO>>(){});
+
+    }
+
 
 
 }

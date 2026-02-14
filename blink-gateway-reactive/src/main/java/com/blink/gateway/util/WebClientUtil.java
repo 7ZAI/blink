@@ -30,7 +30,7 @@ public class WebClientUtil {
      * @param url        请求url
      * @return Mono<R>
      */
-    public static <T, R, V extends ResponseDTO> Mono<R> webClientPost(WebClient webClient, String url, RequestDTO<T> requestDTO, R r, ParameterizedTypeReference<V> v) {
+    public static <T, R, V extends ResponseDTO<?>> Mono<R> webClientPost(WebClient webClient, String url, RequestDTO<T> requestDTO, R r, ParameterizedTypeReference<V> v) {
         log.info("=====>开始发送请求 url:{}, 请求体：{}", url, requestDTO);
         return webClient.post()
                 .uri(url)
@@ -63,7 +63,7 @@ public class WebClientUtil {
      * @param url        请求url
      * @return Mono<V> ResponseDTO<?>
      */
-    public static <T, V extends ResponseDTO> Mono<V> webClientPost(WebClient webClient, String url, RequestDTO<T> requestDTO, ParameterizedTypeReference<V> v) {
+    public static <T, V extends ResponseDTO<?>> Mono<V> webClientPost(WebClient webClient, String url, RequestDTO<T> requestDTO, ParameterizedTypeReference<V> v) {
 
         log.info("=====>开始发送请求 url:{}, 请求体：{}", url, requestDTO);
 

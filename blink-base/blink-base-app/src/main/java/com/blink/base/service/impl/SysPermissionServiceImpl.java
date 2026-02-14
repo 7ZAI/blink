@@ -7,36 +7,27 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.constans.RedisKeyConstans;
-import com.blink.base.dto.req.AddSysPermissionReqDTO;
-import com.blink.base.dto.req.DeleteSysPermissionReqDTO;
-import com.blink.base.dto.req.QuerySysPermissionReqDTO;
-import com.blink.base.dto.req.UpdateSysPermissionReqDTO;
+import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.QueryPermissionIdentityRspDTO;
 import com.blink.base.dto.rsp.QuerySysPermissionRspDTO;
+import com.blink.base.dto.rsp.QueryUserPermissionRspDTO;
 import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.entity.SysRolePermRelaDO;
+import com.blink.base.entity.SysUserRoleRelaDO;
 import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.mapper.SysRolePermRelaMapper;
+import com.blink.base.mapper.SysUserRoleRelaMapper;
 import com.blink.base.service.SysPermissionService;
 import com.blink.datasource.PageUtils;
-import com.blink.framework.common.constrant.SysConstant;
-import com.blink.framework.common.data.EmptyBody;
-import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.CacheComponent;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -55,6 +46,9 @@ public class SysPermissionServiceImpl implements SysPermissionService {
 
     @Resource
     private SysRolePermRelaMapper rolePermRelaMapper;
+
+    @Resource
+    private SysUserRoleRelaMapper userRoleRelaMapper;
 
     @Resource
     private CacheComponent cacheComponent;
@@ -138,7 +132,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
 
         SysPermissionDO sysPermissionDO = sysPermissionMapper.selectById(updateParam.getAcId());
         //不存在
-        if(Objects.isNull(sysPermissionDO)){
+        if (Objects.isNull(sysPermissionDO)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PERMISSION_NOT_EXIST);
         }
 
@@ -185,6 +179,36 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         }
         return permissions.stream().map(SysPermissionDO::getAcIdentity).collect(Collectors.toSet());
 
+    }
+
+    /**
+     * 根据角色获取权限集合 取角色权限交集
+     *
+     * @param reqDTO 用户id DTO
+     * @return 权限集合
+     * @throws BlinkException
+     */
+    @Override
+    public QueryUserPermissionRspDTO getPermissionsByUserId(QueryUserPermissionReqDTO reqDTO) throws BlinkException {
+        Integer userId = reqDTO.getUserId();
+        List<SysUserRoleRelaDO> roleRela = userRoleRelaMapper.selectList(new LambdaQueryWrapper<SysUserRoleRelaDO>()
+                .eq(SysUserRoleRelaDO::getUserId, userId));
+
+        Set<String> permissions = new HashSet<>();
+        QueryUserPermissionRspDTO rspDTO = new QueryUserPermissionRspDTO();
+
+        if (roleRela.isEmpty()) {
+            log.warn("用户未分配角色！ userId:{}", userId);
+            rspDTO.setPermissions(permissions);
+            return rspDTO;
+        }
+        List<Integer> roleIds = roleRela.stream().map(SysUserRoleRelaDO::getRoleId).toList();
+        List<SysPermissionDO> permissionDOList = sysPermissionMapper.findRolesPermissions(roleIds);
+
+        permissionDOList.stream().map(SysPermissionDO::getAcIdentity).forEach(permissions::add);
+
+        rspDTO.setPermissions(permissions);
+        return rspDTO;
     }
 
     /**

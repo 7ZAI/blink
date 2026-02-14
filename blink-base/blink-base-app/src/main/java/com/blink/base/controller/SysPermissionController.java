@@ -1,14 +1,12 @@
 package com.blink.base.controller;
 
+import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.QueryPermissionIdentityRspDTO;
+import com.blink.base.dto.rsp.QuerySysPermissionRspDTO;
+import com.blink.base.dto.rsp.QueryUserPermissionRspDTO;
 import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.service.SysPermissionService;
-import com.blink.base.dto.req.AddSysPermissionReqDTO;
-import com.blink.base.dto.req.DeleteSysPermissionReqDTO;
-import com.blink.base.dto.req.UpdateSysPermissionReqDTO;
-import com.blink.base.dto.req.QuerySysPermissionReqDTO;
-import com.blink.base.dto.rsp.QuerySysPermissionRspDTO;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -21,11 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
+ * 权限菜单 管理API
  *
- *  权限菜单 管理API
- *
- * @module blink
  * @author binblink
+ * @module blink
  * @since 2024-01-13
  */
 @RestController
@@ -88,9 +85,10 @@ public class SysPermissionController {
 
     /**
      * 根据url 查询 权限标识
+     *
      * @param reqDto
      * @return {@link ResponseDTO<QueryPermissionIdentityRspDTO>}
-     * @throws Throwable
+     * @throws BlinkException
      */
     @PostMapping("/getPermissionByUrl")
     public ResponseDTO<QueryPermissionIdentityRspDTO> getPermissionByUrl(@RequestBody @Validated RequestDTO<QuerySysPermissionReqDTO> reqDto) throws BlinkException {
@@ -98,6 +96,17 @@ public class SysPermissionController {
     }
 
 
+    /**
+     * 根据用户id 查询权限标识
+     *
+     * @param reqDto 入参
+     * @return {@link ResponseDTO<QueryUserPermissionRspDTO>}
+     * @throws BlinkException
+     */
+    @PostMapping("/getPermissionsByUserId")
+    public ResponseDTO<QueryUserPermissionRspDTO> getPermissionsByUserId(@RequestBody @Validated RequestDTO<QueryUserPermissionReqDTO> reqDto) throws BlinkException {
+        return ResponseDTO.newSuccessInstance(sysPermissionService.getPermissionsByUserId(reqDto.getBody()));
+    }
 
 
 }

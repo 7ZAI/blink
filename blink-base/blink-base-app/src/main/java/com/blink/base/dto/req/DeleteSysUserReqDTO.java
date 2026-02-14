@@ -1,19 +1,24 @@
 package com.blink.base.dto.req;
 
 import com.blink.base.constans.BaseErrCodeConstant;
+import com.blink.framework.validate.annotation.ConditionalRequired;
 import com.blink.framework.validate.annotation.DataDict;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
 /**
  * DeleteSysUserReqDTO 删除用户请求参数 支持批量删除
+ * @author binblink
  */
 @Data
+@ConditionalRequired(conditionField="isBatchDelete",conditionValue = "true", requiredField ="userIdList")
 public class DeleteSysUserReqDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = -1062964850752777049L;
 
     /**

@@ -1,11 +1,9 @@
 package com.blink.base.service;
 
-import com.blink.base.dto.req.AddSysPermissionReqDTO;
-import com.blink.base.dto.req.DeleteSysPermissionReqDTO;
-import com.blink.base.dto.req.QuerySysPermissionReqDTO;
-import com.blink.base.dto.req.UpdateSysPermissionReqDTO;
+import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.QueryPermissionIdentityRspDTO;
 import com.blink.base.dto.rsp.QuerySysPermissionRspDTO;
+import com.blink.base.dto.rsp.QueryUserPermissionRspDTO;
 import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.entity.SysPermissionDO;
 import com.blink.framework.common.exception.BlinkException;
@@ -61,6 +59,7 @@ public interface SysPermissionService {
 
     /**
      * 根据url 查询 权限标识
+     *
      * @param queryParam
      * @return {@link QueryPermissionIdentityRspDTO}
      * @throws Throwable
@@ -75,4 +74,13 @@ public interface SysPermissionService {
      * @throws BlinkException
      */
     Set<String> getPermissionsByRoles(List<Integer> roleIds) throws BlinkException;
+
+    /**
+     * 根据角色获取权限集合 取角色权限交集
+     *
+     * @param reqDTO 用户id DTO
+     * @return 权限集合
+     * @throws BlinkException
+     */
+    QueryUserPermissionRspDTO getPermissionsByUserId(QueryUserPermissionReqDTO reqDTO) throws BlinkException;
 }

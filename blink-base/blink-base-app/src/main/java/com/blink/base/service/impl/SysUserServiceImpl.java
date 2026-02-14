@@ -131,14 +131,28 @@ public class SysUserServiceImpl implements SysUserService {
     public void deleteSysUser(DeleteSysUserReqDTO deleteParam) throws BlinkException {
 
         if (deleteParam.isBatchDelete()) {
-            sysUserMapper.deleteBatchIds(deleteParam.getUserIdList());
-            sysUserRoleRelaMapper.deleteBatchIds(deleteParam.getUserIdList());
-            sysUserGroupRelaMapper.deleteBatchIds(deleteParam.getUserIdList());
+            List<Integer> delList = deleteParam.getUserIdList();
+
+
+            sysUserMapper.deleteBatchIds(delList);
+            sysUserRoleRelaMapper.deleteBatchIds(delList);
+            sysUserGroupRelaMapper.deleteBatchIds(delList);
 
         } else {
-            sysUserMapper.deleteById(deleteParam.getUserId());
-            sysUserRoleRelaMapper.deleteById(deleteParam.getUserId());
-            sysUserGroupRelaMapper.deleteById(deleteParam.getUserId());
+            Integer userId = deleteParam.getUserId();
+            SysUserDO user = sysUserMapper.selectById(userId);
+
+            if(Objects.isNull(user)) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIST);
+            }
+
+            if(user.getSuperFlag().equals(CommonConstans.SUPER_ADMIN_ID)){
+                BlinkException.throwBusinessException(BaseErrCodeConstant.NOT_ALLOW_DELETE);
+            }
+
+            sysUserMapper.deleteById(userId);
+            sysUserRoleRelaMapper.deleteById(userId);
+            sysUserGroupRelaMapper.deleteById(userId);
         }
     }
 
@@ -227,7 +241,7 @@ public class SysUserServiceImpl implements SysUserService {
      * @return 分页封装 SysUserRspDTO<SysUserVO>
      */
     @Override
-    public SysUserRspDTO<SysUserVO> getSysUserList(QuerySysUserReqDTO queryParam) throws BlinkException {
+    public SysUserRspDTO getSysUserList(QuerySysUserReqDTO queryParam) throws BlinkException {
 
 
         //如果为空
@@ -245,7 +259,7 @@ public class SysUserServiceImpl implements SysUserService {
 //            sysUserGroupRelaMapper.selectList(new LambdaQueryWrapper<SysUserGroupRelaDO>().eq(SysUserGroupRelaDO::getUserId, currentUser.getUserId()));
 //        }
 
-        var sysUserRspDTO = new SysUserRspDTO<SysUserVO>();
+        var sysUserRspDTO = new SysUserRspDTO();
         PageUtils.queryPage(queryParam, () -> sysUserMapper.findSysUserList(queryParam), sysUserRspDTO);
         return sysUserRspDTO;
     }

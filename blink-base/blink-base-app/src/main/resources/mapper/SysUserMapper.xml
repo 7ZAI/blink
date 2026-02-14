@@ -91,15 +91,16 @@
 
 
     <select id="findSysUserList" parameterType="com.blink.base.dto.req.QuerySysUserReqDTO" resultMap="VoResultMap">
-        select user_id,login_name,username,sex,phone,email,last_login_time
+        select user_id,login_name,username,sex,phone,email,last_login_time,sg.group_name,sg.group_id
         from sys_user su
+        left join sys_group sg  on  sg.user_id = su.user_id
         <trim prefix="where" prefixOverrides="and | or ">
-            <if test="loginName != null and loginName != ''">and login_name = #{loginName}</if>
 
             <if test="username != null and username != ''">and username = #{username}</if>
 
             <if test="sex != null ">and sex = #{sex}</if>
 
+            <if test="groupId != null ">and group_id =#{groupId} #{endDate}</if>
 
             <if test="startDate != null ">and create_time <![CDATA[ >= ]]> #{startDate}</if>
 
