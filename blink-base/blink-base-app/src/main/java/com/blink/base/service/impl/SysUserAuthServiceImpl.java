@@ -38,7 +38,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,8 +52,9 @@ import java.util.stream.Collectors;
 public class SysUserAuthServiceImpl implements UserAuthService {
 
     private final Logger logger = LoggerFactory.getLogger(SysUserAuthServiceImpl.class);
-    @Resource
-    private CaptchaService captchaService;
+
+//    @Resource
+//    private CaptchaService captchaService;
 
     @Resource
     private SysUserMapper userMapper;
@@ -80,17 +80,17 @@ public class SysUserAuthServiceImpl implements UserAuthService {
             CaptchaVO captchaVO = new CaptchaVO();
             BeanUtil.copyProperties(loginParam.getCaptchaVO(), captchaVO);
             //验证码验证错误
-            if (!captchaService.verification(captchaVO).isSuccess()) {
-                //验证码校验失败，返回信息告诉前端
-                //repCode  0000  无异常，代表成功
-                //repCode  9999  服务器内部异常
-                //repCode  0011  参数不能为空
-                //repCode  6110  验证码已失效，请重新获取
-                //repCode  6111  验证失败
-                //repCode  6112  获取验证码失败,请联系管理员
-                logger.info("登入失败");
-                BlinkException.throwBusinessException(BaseErrCodeConstant.INCORRECT_CAPTCHA);
-            }
+//            if (!captchaService.verification(captchaVO).isSuccess()) {
+//                //验证码校验失败，返回信息告诉前端
+//                //repCode  0000  无异常，代表成功
+//                //repCode  9999  服务器内部异常
+//                //repCode  0011  参数不能为空
+//                //repCode  6110  验证码已失效，请重新获取
+//                //repCode  6111  验证失败
+//                //repCode  6112  获取验证码失败,请联系管理员
+//                logger.info("登入失败");
+//                BlinkException.throwBusinessException(BaseErrCodeConstant.INCORRECT_CAPTCHA);
+//            }
         }
 
         String username = loginParam.getUsername();

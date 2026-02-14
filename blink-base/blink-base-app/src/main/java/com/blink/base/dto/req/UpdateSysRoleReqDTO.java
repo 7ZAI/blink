@@ -67,12 +67,14 @@ public class UpdateSysRoleReqDTO implements Serializable {
     private Byte roleType;
 
     /**
-     * 角色删除的权限id集合
+     * 角色当前权限id集合
      */
-    private List<Integer> deletePermissionIds;
+    private List<Integer> permissionIds;
 
     /**
-     * 角色添加的权限id集合
+     * 角色当前菜单id集合
      */
-    private List<Integer> addPermissionIds;
+    private List<Integer> menuIds;
+
+
 }

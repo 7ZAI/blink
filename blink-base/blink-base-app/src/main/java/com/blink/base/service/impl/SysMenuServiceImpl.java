@@ -12,7 +12,6 @@ import com.blink.base.dto.vo.SysMenuVO;
 import com.blink.base.entity.SysMenuDO;
 import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.mapper.SysMenuMapper;
-import com.blink.base.mapper.SysMenuPermRelaMapper;
 import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.mapper.SysRoleMapper;
 import com.blink.base.service.SysMenuService;
@@ -49,8 +48,6 @@ public class SysMenuServiceImpl implements SysMenuService {
     @Resource
     private SysPermissionMapper sysPermissionMapper;
 
-    @Resource
-    private SysMenuPermRelaMapper menuPermRelaMapper;
 
     @Resource
     private SysRoleMapper roleMapper;

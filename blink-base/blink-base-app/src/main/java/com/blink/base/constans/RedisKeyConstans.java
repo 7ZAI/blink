@@ -27,6 +27,6 @@ public interface RedisKeyConstans {
     String GATEWAY_STREAM_EVENT = BLINK_PREFIX + "stream:gateway:event";
 
 
-
+    String CHANNEL_PERMISSION = BLINK_PREFIX + "permission:";
 
 }

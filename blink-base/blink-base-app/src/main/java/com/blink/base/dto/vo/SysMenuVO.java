@@ -2,12 +2,17 @@ package com.blink.base.dto.vo;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/**
+ * @author binblink
+ */
 @Data
 public class SysMenuVO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -89,12 +94,6 @@ public class SysMenuVO implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
-
-
-    /**
-     * 标识
-     */
-    private String acIdentity;
 
 
 }

@@ -5,9 +5,10 @@ import com.blink.base.dto.rsp.QueryBlinkChannelRspDTO;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.framework.common.exception.BlinkException;
+
 /**
  * <p>
- *  对接渠道 服务类
+ * 对接渠道 服务类
  * </p>
  *
  * @author binblink
@@ -30,7 +31,7 @@ public interface BlinkChannelService {
      * @param deleteParam
      * @throws BlinkException
      */
-    void deleteBlinkChannel(DeleteBlinkChannelReqDTO  deleteParam) throws BlinkException;
+    void deleteBlinkChannel(DeleteBlinkChannelReqDTO deleteParam) throws BlinkException;
 
     /**
      * 更新 对接渠道
@@ -38,7 +39,7 @@ public interface BlinkChannelService {
      * @param updateParam
      * @throws BlinkException
      */
-     void modifyBlinkChannel(UpdateBlinkChannelReqDTO updateParam) throws BlinkException;
+    void modifyBlinkChannel(UpdateBlinkChannelReqDTO updateParam) throws BlinkException;
 
     /**
      * 查询 对接渠道 列表
@@ -51,8 +52,9 @@ public interface BlinkChannelService {
 
     /**
      * 根据查询条件查询单个渠道信息
-     * @return {@link BlinkChannelDO}
+     *
      * @param queryParam
+     * @return {@link BlinkChannelDO}
      * @throws Throwable
      */
     ChannelVO getChannel(QueryOneChannelReqDTO queryParam) throws BlinkException;
@@ -73,7 +75,7 @@ public interface BlinkChannelService {
      * @return {@link BlinkChannelDO}
      * @throws Throwable
      */
-    BlinkChannelDO refreshSystemKey(QueryOneChannelReqDTO queryParam)  throws BlinkException;
+    BlinkChannelDO refreshSystemKey(QueryOneChannelReqDTO queryParam) throws BlinkException;
 
 
 }

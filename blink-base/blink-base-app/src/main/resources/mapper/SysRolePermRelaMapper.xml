@@ -20,5 +20,13 @@
         ON DUPLICATE KEY UPDATE role_id = VALUES(role_id)
     </insert>
 
+    <delete id="deleteBatchByPermIds">
+        DELETE FROM sys_role_perm_rela
+        WHERE ac_id IN
+        <foreach collection="deleteList" item="acId" index="index" open="(" close=")" separator=",">
+            #{acId}
+        </foreach>
+    </delete>
+
 
 </mapper>

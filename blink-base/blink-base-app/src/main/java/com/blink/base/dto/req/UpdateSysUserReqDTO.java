@@ -7,15 +7,19 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
 /**
  * UpdateSysUserReqDTO 修改系统用户信息请求参数
+ *
+ * @author binblink
  */
 @Data
 public class UpdateSysUserReqDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = -1646188349760643295L;
 
     /**

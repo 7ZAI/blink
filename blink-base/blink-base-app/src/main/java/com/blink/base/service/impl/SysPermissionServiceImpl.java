@@ -110,13 +110,6 @@ public class SysPermissionServiceImpl implements SysPermissionService {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_RELA_DATA);
             }
 
-            count = sysPermissionMapper.selectCount(new LambdaQueryWrapper<SysPermissionDO>()
-                    .in(SysPermissionDO::getParentId, deleteParam.getIdList()));
-            //存在子节点数据 无法删除
-            if (count > 0) {
-                BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_SON_DATA);
-            }
-
             sysPermissionMapper.deleteBatchIds(deleteParam.getIdList());
         } else {
 
@@ -126,14 +119,6 @@ public class SysPermissionServiceImpl implements SysPermissionService {
             //存在关联数据 无法删除
             if (count > 0) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_RELA_DATA);
-            }
-
-            count = sysPermissionMapper.selectCount(new LambdaQueryWrapper<SysPermissionDO>()
-                    .eq(SysPermissionDO::getParentId, deleteParam.getDeleteId()));
-
-            //存在子节点数据 无法删除
-            if (count > 0) {
-                BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_SON_DATA);
             }
 
             sysPermissionMapper.deleteById(deleteParam.getDeleteId());

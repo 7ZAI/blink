@@ -40,4 +40,11 @@ public interface SysPermissionMapper extends BaseMapper<SysPermissionDO> {
      * @return 角色指定类型权限集合
      */
     List<SysPermissionDO> findRolesPermissionsWithType(QueryRolePermissionReqDTO reqDTO);
+
+    /**
+     * 获取渠道的所有权限
+     * @param channelId 渠道id
+     * @return 渠道权限列表
+     */
+    List<SysPermissionDO>  getChannelPermissions(String channelId);
 }

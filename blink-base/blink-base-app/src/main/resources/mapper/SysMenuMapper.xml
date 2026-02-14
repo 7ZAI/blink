@@ -79,22 +79,14 @@
     <!-- 根据角色查询能访问的所有菜单-->
     <select id="findSysMenuListByRole" resultType="com.blink.base.dto.vo.SysMenuVO">
 --         已分配权限的菜单
-        select sp.ac_identity,sm.* from
+        select sm.* from
             sys_menu sm
-        left join sys_menu_perm_rela smpr on smpr.menu_id= sm.menu_id
-        left join sys_permission sp on smpr.ac_id = sp.ac_id
-        left join sys_role_perm_rela srpr on sp.ac_id =srpr.ac_id
-        where srpr.role_id in
+        left join sys_role_menu_rela srmr on srmr.menu_id= sm.menu_id
+        where srmr.role_id in
         <foreach collection="roleIds" item="roleId" index="index" open="(" close=")" separator=",">
             #{roleId}
         </foreach>
-               and sp.ac_type in(0,1) and sp.status = 0
-        UNION ALL
---         未纳入权限管理的菜单
-        select null as ac_identity , sm.* from
-              sys_menu sm
-        left join sys_menu_perm_rela smpr on smpr.menu_id= sm.menu_id
-        where smpr.menu_id IS NULL
+
     </select>
 
 

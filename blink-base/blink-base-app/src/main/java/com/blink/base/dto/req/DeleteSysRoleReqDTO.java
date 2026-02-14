@@ -4,6 +4,7 @@ import com.blink.base.constans.BaseErrCodeConstant;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -18,6 +19,7 @@ import java.util.List;
 @Data
 public class DeleteSysRoleReqDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

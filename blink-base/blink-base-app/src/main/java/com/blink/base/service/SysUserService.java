@@ -5,6 +5,7 @@ import com.blink.base.dto.req.DeleteSysUserReqDTO;
 import com.blink.base.dto.req.QuerySysUserReqDTO;
 import com.blink.base.dto.req.UpdateSysUserReqDTO;
 import com.blink.base.dto.rsp.SysUserRspDTO;
+import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.entity.SysUserDO;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
@@ -65,5 +66,5 @@ public interface SysUserService {
      * @return
      * @throws BlinkException
      */
-    SysUserDO getSysUserDetail(QuerySysUserReqDTO queryParam) throws BlinkException;
+    SysUserVO getSysUserDetail(QuerySysUserReqDTO queryParam) throws BlinkException;
 }

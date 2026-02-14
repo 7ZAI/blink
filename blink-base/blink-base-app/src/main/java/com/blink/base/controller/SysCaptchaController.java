@@ -16,11 +16,11 @@ import org.springframework.web.bind.annotation.*;
  * @module blink
  * @author binblink
  */
-@RestController
-@RequestMapping("/captcha")
+//@RestController
+//@RequestMapping("/captcha")
 public class SysCaptchaController {
 
-    @Autowired
+//    @Autowired
     private CaptchaService captchaService;
 
     @PostMapping("/get")

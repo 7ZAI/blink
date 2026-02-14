@@ -84,7 +84,6 @@ public class CachePreHeating {
 
     /**
      * 渠道绑定用户 自动登入 token永不过期
-     * @param channelMap
      */
     private void autoLogInChannelUser(Map<String, Object> channelMap){
         channelMap.forEach((k, v) -> {
@@ -128,9 +127,7 @@ public class CachePreHeating {
 
     private Map<String, Object> cachePermissions() {
 
-        List<SysPermissionDO> permissionList = permissionMapper.selectList(new LambdaQueryWrapper<SysPermissionDO>()
-                .eq(SysPermissionDO::getStatus, 0)
-                .eq(SysPermissionDO::getAcType,3));
+        List<SysPermissionDO> permissionList = permissionMapper.selectList(new LambdaQueryWrapper<SysPermissionDO>().eq(SysPermissionDO::getAcType,1));
 
         return permissionList.stream()
                 .collect(Collectors.toMap(p -> RedisKeyConstans.URL_PERMISSION + p.getUrl(), SysPermissionDO::getAcIdentity));

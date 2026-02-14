@@ -15,11 +15,11 @@ import com.blink.base.dto.rsp.QueryBlinkChannelRspDTO;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.base.mapper.BlinkChannelMapper;
+import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.producer.GateWayStreamMessageProducer;
 import com.blink.base.service.BlinkChannelService;
 import com.blink.datasource.PageUtils;
 import com.blink.framework.common.exception.BlinkException;
-import com.blink.framework.common.utils.RSAUtils;
 import com.blink.framework.core.annotation.LogExecution;
 import com.blink.framework.core.data.CoreConstant;
 import com.blink.framework.redis.component.RedisClient;
@@ -30,7 +30,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.KeyPair;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -55,16 +56,17 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     @Resource
     private GateWayStreamMessageProducer gateWayStreamMessageProducer;
 
-
     @Resource
     private SecretConfigComponent secretConfigComponent;
+
+    @Resource
+    private SysPermissionMapper permissionMapper;
+
 
     /**
      * 保存 对接渠道
      *
-     * @param saveParam
-     * @return
-     * @throws BlinkException
+     * @param saveParam 入参
      */
     @Override
     public void saveBlinkChannel(AddBlinkChannelReqDTO saveParam) throws BlinkException {
@@ -108,8 +110,6 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * 删除 对接渠道
      *
      * @param deleteParam
-     * @return
-     * @throws BlinkException
      */
     @Override
     public void deleteBlinkChannel(DeleteBlinkChannelReqDTO deleteParam) throws BlinkException {
@@ -143,8 +143,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * 更新 对接渠道
      * 仅能更改开关 名称 其他的秘钥重新生成有专门接口
      *
-     * @param updateParam
-     * @return
+     * @param updateParam 入参
      * @throws BlinkException
      */
     @Override
@@ -179,7 +178,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * 查询 对接渠道 列表
      *
      * @param queryParam
-     * @return
+     * @return QueryBlinkChannelRspDTO
      * @throws BlinkException
      */
     @LogExecution()
@@ -243,7 +242,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
             //刷新配置中心密钥配置
             secretConfigComponent.refreshChannelKeyConfig(channel.getAppKey());
         } catch (Exception e) {
-            throw new BlinkException(e,e.getMessage());
+            throw new BlinkException(e, e.getMessage());
         }
 
         gateWayStreamMessageProducer.cacheOnChange(cacheKey);
@@ -278,7 +277,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
             //刷新配置中心密钥配置
             secretConfigComponent.refreshSystemKeyConfig(channel.getAppKey());
         } catch (Exception e) {
-            throw new BlinkException(e,e.getMessage());
+            throw new BlinkException(e, e.getMessage());
         }
 
         gateWayStreamMessageProducer.cacheOnChange(cacheKey);
@@ -286,6 +285,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
         return channel;
 
     }
+
 
 
     /**

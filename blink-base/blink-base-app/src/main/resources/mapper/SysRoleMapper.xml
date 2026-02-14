@@ -61,13 +61,12 @@
     </select>
 
 
-    <select id="findSysRolesByUser" parameterType="com.blink.base.dto.req.QueryUserRolesReqDTO"
-            resultMap="BaseResultMap">
+    <select id="findSysRolesByUser" parameterType="com.blink.base.dto.req.QueryUserRolesReqDTO" resultMap="BaseResultMap">
         select sr.role_id, role_name, role_en_name, status, role_code
         from sys_role sr,
              sys_user_role_rela sur
-        where sr.role_id = sur.role_id
-          and sur.user_id = #{userId}
+        where sr.role_id = sur.role_id  and sur.user_id = #{userId}
+
 
     </select>
 

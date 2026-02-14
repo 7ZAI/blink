@@ -22,8 +22,9 @@ import java.util.Properties;
 /**
  * TODO
  * 验证码配置 来自验证码开源jar com.anji-plus:captcha
+ * @author binblink
  */
-@Configuration
+//@Configuration
 public class CaptchaConfig {
 
     @Bean(name = "AjCaptchaCacheService")

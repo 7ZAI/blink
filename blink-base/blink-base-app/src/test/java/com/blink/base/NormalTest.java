@@ -2,6 +2,7 @@ package com.blink.base;
 
 
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.crypto.asymmetric.RSA;
@@ -241,6 +242,31 @@ public class NormalTest {
         routeDefinitionDO.setFilters(Collections.singletonList(filterDefinitionDO));
 
         System.out.println(JacksonUtil.toJson(routeDefinitionDO));
+    }
+
+    @Test
+    void colUtilsTest(){
+
+        List<Integer> list1 = new ArrayList<>();
+//        list1.add(1);
+//        list1.add(2);
+//        list1.add(3);
+//        list1.add(4);
+//        list1.add(5);
+//        list1.add(22);
+        List<Integer> list2 = new ArrayList<>();
+        list2.add(1);
+        list2.add(4);
+        list2.add(9);
+        list2.add(4);
+        list2.add(5);
+        list2.add(3);
+
+        List<Integer> reuslt1 = CollUtil.subtractToList(list1,list2);
+        List<Integer> reuslt2 = CollUtil.subtractToList(list2,list1);
+
+        System.out.println(reuslt1);
+        System.out.println(reuslt2);
     }
 
     public static void main(String[] args) {

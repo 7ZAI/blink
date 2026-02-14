@@ -37,6 +37,16 @@
         <result column="locked" property="locked" />
         <result column="remark" property="remark" />
         <result column="create_time" property="createTime" />
+        <!-- association 映射关联对象 -->
+        <association property="group" javaType="com.blink.base.dto.vo.SysGroupVO">
+            <id property="groupId" column="group_id"/>
+            <result property="groupName" column="group_name"/>
+        </association>
+
+        <collection property="roles" ofType="com.blink.base.dto.vo.SysRoleVO">
+            <id property="roleId" column="role_id"/>
+            <result property="roleName" column="role_name"/>
+        </collection>
     </resultMap>
 
     <!-- 通用查询结果列 -->
@@ -88,12 +98,24 @@
 
             <if test="username != null and username != ''">and username = #{username}</if>
 
-            <if test="sex != null and sex != ''">and sex = #{sex}</if>
+            <if test="sex != null ">and sex = #{sex}</if>
 
 
             <if test="startDate != null ">and create_time <![CDATA[ >= ]]> #{startDate}</if>
 
             <if test="endDate != null ">and create_time <![CDATA[ <= ]]> #{endDate}</if>
         </trim>
+    </select>
+
+    <select id="findUserDetail" parameterType="com.blink.base.dto.req.QuerySysUserReqDTO" resultMap="VoResultMap">
+        select su.user_id,su.login_name,su.username,su.sex,su.phone,su.email,su.last_login_time,
+               sg.group_name,sg.group_id,
+               sr.role_name,sr.role_id
+        from sys_user su
+                 left join sys_user_role_rela surr on su.user_id = surr.user_id
+                 left join sys_role sr on sr.role_id = surr.role_id
+                 left join sys_user_group_rela sugr on su.user_id = sugr.user_id
+                 left join sys_group sg  on  sg.group_id = sugr.group_id
+        where su.login_name = #{loginName}
     </select>
 </mapper>

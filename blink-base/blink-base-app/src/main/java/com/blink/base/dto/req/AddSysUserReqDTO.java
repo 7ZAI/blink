@@ -11,6 +11,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
 
 /**
@@ -74,6 +75,15 @@ public class AddSysUserReqDTO implements Serializable {
     @Email(message = BaseErrCodeConstant.EMAIL_FORMAT_ERR)
     private String email;
 
+    /**
+     * 角色id
+     */
+    private List<Integer> roles;
+
+    /**
+     * 组织id
+     */
+    private Integer groupId;
 
 
 }

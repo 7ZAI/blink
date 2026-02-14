@@ -6,6 +6,7 @@ import com.blink.framework.validate.annotation.DataDict;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.List;
 @Data
 public class AddSysRoleReqDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
 
@@ -64,6 +66,12 @@ public class AddSysRoleReqDTO implements Serializable {
      * 角色分配的权限列表
      */
     private List<Integer> permissionIds;
+
+
+    /**
+     * 角色分配的菜单
+     */
+    private List<Integer> menuIds;
 
 
 }

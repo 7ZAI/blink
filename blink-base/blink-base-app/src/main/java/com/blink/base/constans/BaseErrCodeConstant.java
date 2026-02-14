@@ -67,7 +67,7 @@ public interface BaseErrCodeConstant {
     String HAVE_RELA_DATA = "BUSS0005";
 
     /**
-     * 当前角色不存在
+     * 角色不存在
      */
     String ROLE_NOT_EXIST = "BUSS0006";
 

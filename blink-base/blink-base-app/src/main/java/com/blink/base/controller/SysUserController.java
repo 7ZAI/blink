@@ -5,7 +5,7 @@ import com.blink.base.dto.req.DeleteSysUserReqDTO;
 import com.blink.base.dto.req.QuerySysUserReqDTO;
 import com.blink.base.dto.req.UpdateSysUserReqDTO;
 import com.blink.base.dto.rsp.SysUserRspDTO;
-import com.blink.base.entity.SysUserDO;
+import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.service.SysUserService;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
@@ -36,7 +36,6 @@ public class SysUserController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/saveSysUser")
     public ResponseDTO<EmptyBody> saveSysUser(@RequestBody @Validated RequestDTO<AddSysUserReqDTO> reqDto) throws BlinkException {
@@ -49,7 +48,6 @@ public class SysUserController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/deleteSysUser")
     public ResponseDTO<EmptyBody> deleteSysUser(@RequestBody @Validated RequestDTO<DeleteSysUserReqDTO> reqDto) throws BlinkException {
@@ -62,7 +60,6 @@ public class SysUserController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/modifySysUser")
     public ResponseDTO<EmptyBody> modifySysUser(@RequestBody @Validated RequestDTO<UpdateSysUserReqDTO> reqDto) throws BlinkException {
@@ -75,7 +72,6 @@ public class SysUserController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/getSysUserList")
     public ResponseDTO<SysUserRspDTO> getSysUserList(@RequestBody @Validated RequestDTO<QuerySysUserReqDTO> reqDto) throws BlinkException {
@@ -87,10 +83,9 @@ public class SysUserController {
      * 根据用户名查询系统用户详情
      * @param reqDto
      * @return
-     * @throws BlinkException
      */
     @PostMapping("/getSysUserDetail")
-    public ResponseDTO<SysUserDO> getSysUserDetail(@RequestBody @Validated RequestDTO<QuerySysUserReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysUserVO> getSysUserDetail(@RequestBody @Validated RequestDTO<QuerySysUserReqDTO> reqDto) throws BlinkException {
         return  ResponseDTO.newSuccessInstance(sysUserService.getSysUserDetail(reqDto.getBody()));
     }
 }

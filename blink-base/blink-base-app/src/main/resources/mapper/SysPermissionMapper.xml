@@ -11,8 +11,6 @@
         <result column="ac_type" property="acType"/>
         <result column="icon" property="icon"/>
         <result column="url" property="url"/>
-        <result column="status" property="status"/>
-        <result column="parent_id" property="parentId"/>
         <result column="data_filter_id" property="dataFilterId"/>
         <result column="create_by" property="createBy"/>
         <result column="create_time" property="createTime"/>
@@ -42,10 +40,6 @@
 
             <if test="url != null and url != ''">and url = #{url}</if>
 
-            <if test="status != null and status != ''">and status = #{status}</if>
-
-            <if test="parentId != null and parentId != ''">and parent_id = #{parentId}</if>
-
             <if test="dataFilterId != null and dataFilterId != ''">and data_filter_id = #{dataFilterId}</if>
 
             <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
@@ -71,7 +65,7 @@
 
     <select id="findRolesPermissions" parameterType="java.util.List" resultMap="BaseResultMap">
         SELECT
-        DISTINCT sp.ac_id, ac_name, ac_en_name, ac_identity, ac_type, icon, url, status, parent_id, data_filter_id,
+        DISTINCT sp.ac_id, ac_name, ac_en_name, ac_identity, ac_type, icon, url, data_filter_id,
         create_by, create_time, update_by, update_time
 
         FROM sys_permission sp,sys_role_perm_rela sr
@@ -83,7 +77,7 @@
 
     <select id="findRolesPermissionsWithType" parameterType="com.blink.base.dto.req.QueryRolePermissionReqDTO" resultMap="BaseResultMap">
         SELECT
-        DISTINCT sp.ac_id, ac_name, ac_en_name, ac_identity, ac_type, icon, url, status, parent_id, data_filter_id,
+        DISTINCT sp.ac_id, ac_name, ac_en_name, ac_identity, ac_type, icon, url,data_filter_id,
         create_by, create_time, update_by, update_time
 
         FROM sys_permission sp,sys_role_perm_rela sr
@@ -95,6 +89,21 @@
         <foreach collection="acTypes" item="acType" index="index" open="(" close=")" separator=",">
             #{acType}
         </foreach>
+
+    </select>
+
+    <select id="getChannelPermissions" resultType="com.blink.base.entity.SysPermissionDO">
+        SELECT DISTINCT sp.ac_id,
+                        ac_name,
+                        ac_en_name,
+                        ac_identity,
+                        ac_type,
+                        icon,
+                        url,
+                        data_filter_id
+        FROM sys_permission sp
+                 LEFT JOIN sys_channel_perm_rela scpr on sp.ac_id = scpr.ac_Id
+        WHERE scpr.channel_id = #{channelId}
 
     </select>
 

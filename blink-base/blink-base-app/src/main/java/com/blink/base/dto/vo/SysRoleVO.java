@@ -2,12 +2,17 @@ package com.blink.base.dto.vo;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+/**
+ * @author binblink
+ */
 @Data
 public class SysRoleVO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 2368841350409243359L;
     /**
      * 角色id

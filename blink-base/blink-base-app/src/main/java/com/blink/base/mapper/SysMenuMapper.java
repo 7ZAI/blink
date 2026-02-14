@@ -4,7 +4,6 @@ import com.blink.base.dto.req.QueryShowMenuReqDTO;
 import com.blink.base.dto.vo.SysMenuVO;
 import com.blink.base.entity.SysMenuDO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blink.base.dto.req.QuerySysMenuReqDTO;
 
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;

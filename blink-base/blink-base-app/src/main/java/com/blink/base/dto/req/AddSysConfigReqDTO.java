@@ -1,6 +1,9 @@
 
 package com.blink.base.dto.req;
+
 import lombok.Data;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -10,13 +13,15 @@ import java.time.LocalDateTime;
  * </p>
  * ${dtoName}
  * sys_config
+ *
  * @author blink
  * @since 2025-09-05
  */
 @Data
 public class AddSysConfigReqDTO implements Serializable {
 
-  private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
 
     /**

@@ -2,12 +2,18 @@ package com.blink.base.dto.vo;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
+/**
+ * @author binblink
+ */
 @Data
 public class SysUserVO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -68,4 +74,15 @@ public class SysUserVO implements Serializable {
      * 备注
      */
     private String remark;
+
+
+    /**
+     * 组信息
+     */
+    private SysGroupVO group;
+
+    /**
+     * 角色信息
+     */
+    private List<SysRoleVO> roles;
 }

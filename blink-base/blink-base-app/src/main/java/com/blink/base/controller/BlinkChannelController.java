@@ -1,6 +1,5 @@
 package com.blink.base.controller;
 
-import com.blink.base.component.SecretConfigComponent;
 import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.QueryBlinkChannelRspDTO;
 import com.blink.base.dto.vo.ChannelVO;
@@ -18,12 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * <p>
- * 对接渠道 管理API
- * </p>
+ *
+ * 对接渠道管理
  *
  * @author binblink
- * @module blink
  */
 @RestController
 @RequestMapping("/channel")
@@ -38,7 +35,6 @@ public class BlinkChannelController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/saveChannel")
     public ResponseDTO<EmptyBody> saveBlinkChannel(@RequestBody @Validated RequestDTO<AddBlinkChannelReqDTO> reqDto) throws BlinkException {
@@ -51,7 +47,6 @@ public class BlinkChannelController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/deleteChannel")
     public ResponseDTO<EmptyBody> deleteBlinkChannel(@RequestBody @Validated RequestDTO<DeleteBlinkChannelReqDTO> reqDto) throws BlinkException {
@@ -64,7 +59,6 @@ public class BlinkChannelController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/modifyChannel")
     public ResponseDTO<EmptyBody> modifyBlinkChannel(@RequestBody @Validated RequestDTO<UpdateBlinkChannelReqDTO> reqDto) throws BlinkException {
@@ -77,7 +71,6 @@ public class BlinkChannelController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/getChannelList")
     public ResponseDTO<QueryBlinkChannelRspDTO> getBlinkChannelList(@RequestBody @Validated RequestDTO<QueryBlinkChannelReqDTO> reqDto) throws BlinkException {
@@ -91,7 +84,6 @@ public class BlinkChannelController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/getChannel")
     public ResponseDTO<ChannelVO> getChannel(@RequestBody @Validated RequestDTO<QueryOneChannelReqDTO> reqDto) throws BlinkException {
@@ -103,7 +95,6 @@ public class BlinkChannelController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/refreshChannelKey")
     public ResponseDTO<BlinkChannelDO> refreshChannelKey(@RequestBody @Validated RequestDTO<QueryOneChannelReqDTO> reqDto) throws BlinkException {
@@ -116,12 +107,12 @@ public class BlinkChannelController {
      *
      * @param reqDto
      * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
      */
     @PostMapping("/refreshSystemKey")
     public ResponseDTO<BlinkChannelDO> refreshSystemKey(@RequestBody @Validated RequestDTO<QueryOneChannelReqDTO> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(blinkChannelService.refreshSystemKey(reqDto.getBody()));
     }
+
 
 
 }

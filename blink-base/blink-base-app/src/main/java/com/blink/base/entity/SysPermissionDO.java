@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 @TableName("sys_permission")
 public class SysPermissionDO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -47,7 +49,7 @@ public class SysPermissionDO implements Serializable {
     private String acIdentity;
 
     /**
-     * 权限类型 0 菜单权限 1数据权限 2功能权限 3接口权限
+     * 权限类型  1接口权限 2数据权限
      */
     @TableField("ac_type")
     private Byte acType;
@@ -64,17 +66,6 @@ public class SysPermissionDO implements Serializable {
     @TableField("url")
     private String url;
 
-    /**
-     * 状态 0启动 1禁用 2隐藏
-     */
-    @TableField("status")
-    private Byte status;
-
-    /**
-     * 父权限id
-     */
-    @TableField("parent_id")
-    private Integer parentId;
 
     /**
      * 数据过滤器id

@@ -20,4 +20,6 @@ import java.util.List;
 public interface SysRolePermRelaMapper extends BaseMapper<SysRolePermRelaDO> {
 
     int  batchInsert(@Param("list") List<SysRolePermRelaDO> list);
+
+    int deleteBatchByPermIds(List<Integer> deleteList);
 }
