@@ -7,7 +7,7 @@ import lombok.Data;
  * @Date 2025/10/15
  */
 @Data
-public class QueryOneSysConfigReqDTO {
+public class QueryOneSysConfigReq {
 
     /**
      * 主键ID

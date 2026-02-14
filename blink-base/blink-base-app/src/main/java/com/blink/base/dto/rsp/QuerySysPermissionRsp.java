@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @author binblink
  */
 
-public class QuerySysPermissionRspDTO<T> extends PageDTO<T> implements Serializable {
+public class QuerySysPermissionRsp<T> extends PageDTO<T> implements Serializable {
 
   @Serial
   private static final long serialVersionUID = 1L;

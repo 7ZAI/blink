@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 @Data
-public class SysLoginRspDTO {
+public class SysLoginRsp {
 
     /**
      * 用户信息

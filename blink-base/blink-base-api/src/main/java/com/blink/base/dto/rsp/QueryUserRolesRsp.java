@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class QueryUserRolesRspDTO implements Serializable {
+public class QueryUserRolesRsp implements Serializable {
 
     private List<SysRoleVO> roles;
 }

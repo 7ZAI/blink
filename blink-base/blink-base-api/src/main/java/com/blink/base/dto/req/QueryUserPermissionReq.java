@@ -12,7 +12,7 @@ import lombok.Data;
  * @Date 2026/2/14
  */
 @Data
-public class QueryUserPermissionReqDTO {
+public class QueryUserPermissionReq {
 
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)

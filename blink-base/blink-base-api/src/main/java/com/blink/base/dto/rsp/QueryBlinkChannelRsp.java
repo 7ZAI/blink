@@ -1,22 +1,25 @@
-package com.blink.base.dto.req;
+package com.blink.base.dto.rsp;
 
 import com.blink.framework.common.data.PageDTO;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
  * <p>
- * QueryBlinkChannelReqDTO 查询列表对接渠道请求参数对象
+ * QueryBlinkChannelRspDTO 新增对接渠道请求参数对象
  * </p>
  *
  * @author binblink
+ * @since 2024-07-29
  */
-@Data
-@EqualsAndHashCode(callSuper = false)
-public class QueryBlinkChannelReqDTO extends PageDTO implements Serializable {
+@Getter
+@Setter
+@ToString
+public class QueryBlinkChannelRsp extends PageDTO implements Serializable {
 
   private static final long serialVersionUID = 1L;
 

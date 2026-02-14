@@ -10,7 +10,7 @@ import java.io.Serializable;
  * @Date 2025/8/24
  */
 @Data
-public class QueryPermissionIdentityRspDTO implements Serializable {
+public class QueryPermissionIdentityRsp implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 4121061350500172869L;

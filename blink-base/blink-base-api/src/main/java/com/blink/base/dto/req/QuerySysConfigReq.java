@@ -19,7 +19,7 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class QuerySysConfigReqDTO extends PageDTO implements Serializable {
+public class QuerySysConfigReq extends PageDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

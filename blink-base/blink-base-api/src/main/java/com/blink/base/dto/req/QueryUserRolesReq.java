@@ -8,7 +8,7 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class QueryUserRolesReqDTO implements Serializable {
+public class QueryUserRolesReq implements Serializable {
 
     /**
      * 登录id

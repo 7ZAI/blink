@@ -8,7 +8,7 @@ import lombok.Data;
  * @Author binblink
  */
 @Data
-public class QueryErrMsgRspDTO {
+public class QueryErrMsgRsp {
 
     /**
      * 错误消息ID

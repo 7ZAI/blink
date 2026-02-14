@@ -19,7 +19,7 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-public class QuerySysUserReqDTO extends PageDTO implements Serializable   {
+public class QuerySysUserReq extends PageDTO implements Serializable   {
 
     @Serial
     private static final long serialVersionUID = -951055160080394698L;

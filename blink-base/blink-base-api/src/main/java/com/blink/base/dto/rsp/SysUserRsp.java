@@ -10,7 +10,7 @@ import java.io.Serializable;
  * 用户列表数据
  * @author binblink
  */
-public class SysUserRspDTO<T> extends PageDTO<T> implements Serializable {
+public class SysUserRsp<T> extends PageDTO<T> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

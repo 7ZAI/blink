@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @since 2024-07-29
  */
 @Data
-public class QueryOneChannelReqDTO implements Serializable {
+public class QueryOneChannelReq implements Serializable {
 
     private static final long serialVersionUID = 3925418753803274699L;
 

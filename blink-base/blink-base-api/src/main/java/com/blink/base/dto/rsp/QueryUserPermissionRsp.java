@@ -11,7 +11,7 @@ import java.util.Set;
  * @Date 2026/2/14
  */
 @Data
-public class QueryUserPermissionRspDTO {
+public class QueryUserPermissionRsp {
 
     /**
      * 权限标识

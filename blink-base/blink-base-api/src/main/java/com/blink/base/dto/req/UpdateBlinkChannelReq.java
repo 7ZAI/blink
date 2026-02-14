@@ -16,7 +16,7 @@ import java.io.Serializable;
  * @since 2024-07-29
  */
 @Data
-public class UpdateBlinkChannelReqDTO implements Serializable {
+public class UpdateBlinkChannelReq implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

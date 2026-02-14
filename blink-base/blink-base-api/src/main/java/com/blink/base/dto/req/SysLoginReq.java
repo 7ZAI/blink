@@ -3,7 +3,7 @@ package com.blink.base.dto.req;
 import com.blink.base.dto.vo.CaptchaVO;
 import jakarta.validation.constraints.NotBlank;
 
-public class SysLoginReqDTO {
+public class SysLoginReq {
 
     @NotBlank
     private String username;

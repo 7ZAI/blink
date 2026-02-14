@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class QuerySysConfigGroupRspDTO extends PageDTO implements Serializable {
+public class QuerySysConfigGroupRsp extends PageDTO implements Serializable {
 
   private static final long serialVersionUID = 1L;
 

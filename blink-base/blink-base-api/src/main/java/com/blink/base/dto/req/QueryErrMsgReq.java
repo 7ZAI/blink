@@ -9,7 +9,7 @@ import lombok.Data;
  * @Author binblink
  */
 @Data
-public class QueryErrMsgReqDTO {
+public class QueryErrMsgReq {
     /**
      * 错误码
      */

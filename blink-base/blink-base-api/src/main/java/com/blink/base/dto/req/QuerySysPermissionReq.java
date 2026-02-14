@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -19,8 +20,9 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-public class QuerySysPermissionReqDTO extends PageDTO implements Serializable {
+public class QuerySysPermissionReq extends PageDTO implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 
