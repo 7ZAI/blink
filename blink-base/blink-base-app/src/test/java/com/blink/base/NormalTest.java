@@ -4,10 +4,9 @@ package com.blink.base;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.RandomUtil;
-import cn.hutool.crypto.SecureUtil;
 import cn.hutool.crypto.asymmetric.RSA;
-import com.blink.base.dto.req.AddSysUserReqDTO;
-import com.blink.base.dto.req.SysLoginReqDTO;
+import com.blink.base.dto.req.AddSysUserReq;
+import com.blink.base.dto.req.SysLoginReq;
 import com.blink.base.entity.FilterDefinitionDO;
 import com.blink.base.entity.PredicateDefinitionDO;
 import com.blink.base.entity.RouteDefinitionDO;
@@ -120,14 +119,14 @@ public class NormalTest {
     }
     @Test
     public void test4(){
-        RequestDTO<SysLoginReqDTO> requestDTO = new RequestDTO<>();
-        SysLoginReqDTO sysLoginReqDTO = new SysLoginReqDTO();
-        sysLoginReqDTO.setPassword("123456");
-        sysLoginReqDTO.setUsername("test");
+        RequestDTO<SysLoginReq> requestDTO = new RequestDTO<>();
+        SysLoginReq sysLoginReq = new SysLoginReq();
+        sysLoginReq.setPassword("123456");
+        sysLoginReq.setUsername("test");
         requestDTO.setChannel("test");
         requestDTO.setVersion("v1");
         requestDTO.setClientIp("192.168.1.3");
-        requestDTO.setBody(sysLoginReqDTO);
+        requestDTO.setBody(sysLoginReq);
         System.out.println(JacksonUtil.toJson(requestDTO));
     }
 
@@ -161,8 +160,8 @@ public class NormalTest {
 
         System.out.println("keypalin:  "+key);
 
-        RequestDTO<AddSysUserReqDTO> reqDTO = new RequestDTO<>();
-        AddSysUserReqDTO req = new AddSysUserReqDTO();
+        RequestDTO<AddSysUserReq> reqDTO = new RequestDTO<>();
+        AddSysUserReq req = new AddSysUserReq();
 
         req.setPassword("123456");
         req.setLoginName("bllink");

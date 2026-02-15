@@ -1,8 +1,8 @@
 package com.blink.base.service;
 
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QuerySysRoleRspDTO;
-import com.blink.base.dto.rsp.QueryUserRolesRspDTO;
+import com.blink.base.dto.rsp.QuerySysRoleRsp;
+import com.blink.base.dto.rsp.QueryUserRolesRsp;
 import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.framework.common.exception.BlinkException;
 
@@ -23,7 +23,7 @@ public interface SysRoleService {
      * @return
      * @throws BlinkException
      */
-    SysRoleVO saveSysRole(AddSysRoleReqDTO saveParam) throws BlinkException;
+    SysRoleVO saveSysRole(AddSysRoleReq saveParam) throws BlinkException;
 
     /**
      * 删除 系统角色
@@ -32,7 +32,7 @@ public interface SysRoleService {
      * @return
      * @throws BlinkException
      */
-    void deleteSysRole(DeleteSysRoleReqDTO deleteParam) throws BlinkException;
+    void deleteSysRole(DeleteSysRoleReq deleteParam) throws BlinkException;
 
     /**
      * 更新 系统角色
@@ -41,7 +41,7 @@ public interface SysRoleService {
      * @return
      * @throws BlinkException
      */
-    SysRoleVO modifySysRole(UpdateSysRoleReqDTO updateParam) throws BlinkException;
+    SysRoleVO modifySysRole(UpdateSysRoleReq updateParam) throws BlinkException;
 
     /**
      * 查询 系统角色 列表
@@ -50,14 +50,14 @@ public interface SysRoleService {
      * @return
      * @throws BlinkException
      */
-    QuerySysRoleRspDTO getSysRoleList(QuerySysRoleReqDTO queryParam) throws BlinkException;
+    QuerySysRoleRsp getSysRoleList(QuerySysRoleReq queryParam) throws BlinkException;
 
     /**
      * 根据用户信息查询 用户角色
      *
      * @param queryParam
-     * @return {@link QueryUserRolesRspDTO}
+     * @return {@link QueryUserRolesRsp}
      * @throws BlinkException
      */
-    QueryUserRolesRspDTO getSysRolesByUser(QueryUserRolesReqDTO queryParam) throws BlinkException;
+    QueryUserRolesRsp getSysRolesByUser(QueryUserRolesReq queryParam) throws BlinkException;
 }

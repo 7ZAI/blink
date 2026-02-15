@@ -6,11 +6,11 @@ import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
-import com.blink.base.dto.req.AddSysUserReqDTO;
-import com.blink.base.dto.req.DeleteSysUserReqDTO;
-import com.blink.base.dto.req.QuerySysUserReqDTO;
-import com.blink.base.dto.req.UpdateSysUserReqDTO;
-import com.blink.base.dto.rsp.SysUserRspDTO;
+import com.blink.base.dto.req.AddSysUserReq;
+import com.blink.base.dto.req.DeleteSysUserReq;
+import com.blink.base.dto.req.QuerySysUserReq;
+import com.blink.base.dto.req.UpdateSysUserReq;
+import com.blink.base.dto.rsp.SysUserRsp;
 import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.entity.*;
 import com.blink.base.mapper.*;
@@ -60,7 +60,7 @@ public class SysUserServiceImpl implements SysUserService {
      * @param saveParam 用户参数
      */
     @Override
-    public void saveSysUser(AddSysUserReqDTO saveParam) throws BlinkException {
+    public void saveSysUser(AddSysUserReq saveParam) throws BlinkException {
 
 
         var sysUserDO = new SysUserDO();
@@ -128,11 +128,22 @@ public class SysUserServiceImpl implements SysUserService {
      * @param deleteParam 删除参数
      */
     @Override
-    public void deleteSysUser(DeleteSysUserReqDTO deleteParam) throws BlinkException {
+    public void deleteSysUser(DeleteSysUserReq deleteParam) throws BlinkException {
 
         if (deleteParam.isBatchDelete()) {
             List<Integer> delList = deleteParam.getUserIdList();
+            List<SysUserDO> existIds = sysUserMapper.selectBatchIds(delList);
 
+            //存在非法id
+            if (delList.size() != existIds.size()) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIST);
+            }
+
+            List<SysUserDO> superAdminUser = existIds.stream().filter(u -> u.getSuperFlag().equals(CommonConstans.SUPER_ADMIN_ID)).toList();
+            //包含超级管理员 无法删除
+            if (!superAdminUser.isEmpty()) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.NOT_ALLOW_DELETE);
+            }
 
             sysUserMapper.deleteBatchIds(delList);
             sysUserRoleRelaMapper.deleteBatchIds(delList);
@@ -141,12 +152,12 @@ public class SysUserServiceImpl implements SysUserService {
         } else {
             Integer userId = deleteParam.getUserId();
             SysUserDO user = sysUserMapper.selectById(userId);
-
-            if(Objects.isNull(user)) {
+            // 不存在的userId
+            if (Objects.isNull(user)) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIST);
             }
-
-            if(user.getSuperFlag().equals(CommonConstans.SUPER_ADMIN_ID)){
+            //超级管理员 无法删除
+            if (user.getSuperFlag().equals(CommonConstans.SUPER_ADMIN_ID)) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.NOT_ALLOW_DELETE);
             }
 
@@ -162,7 +173,7 @@ public class SysUserServiceImpl implements SysUserService {
      * @param updateParam 入参
      */
     @Override
-    public void modifySysUser(UpdateSysUserReqDTO updateParam) throws BlinkException {
+    public void modifySysUser(UpdateSysUserReq updateParam) throws BlinkException {
 
         Integer userId = updateParam.getUserId();
 
@@ -241,25 +252,8 @@ public class SysUserServiceImpl implements SysUserService {
      * @return 分页封装 SysUserRspDTO<SysUserVO>
      */
     @Override
-    public SysUserRspDTO getSysUserList(QuerySysUserReqDTO queryParam) throws BlinkException {
-
-
-        //如果为空
-//        if(CollUtil.isEmpty(queryDTO.getGroupId())){
-//        //TODO 从登入记录拿到当前用户所在部门
-//            List<Integer> groupId = new ArrayList<>();
-//            queryDTO.setGroupId(groupId);
-//        }
-//        //TODO校验 传入的组id 是否是在授权内的可查的组id
-//
-//        //TODO 超级管理员处理
-//
-//        if(BeanUtil.isEmpty(queryDTO.getGroupId())){
-//            SysUserDO currentUser =  sysUserMapper.selectOne(new LambdaQueryWrapper<SysUserDO>().eq(SysUserDO::getLoginName,reqDto.getLoginName()));
-//            sysUserGroupRelaMapper.selectList(new LambdaQueryWrapper<SysUserGroupRelaDO>().eq(SysUserGroupRelaDO::getUserId, currentUser.getUserId()));
-//        }
-
-        var sysUserRspDTO = new SysUserRspDTO();
+    public SysUserRsp getSysUserList(QuerySysUserReq queryParam) throws BlinkException {
+        var sysUserRspDTO = new SysUserRsp();
         PageUtils.queryPage(queryParam, () -> sysUserMapper.findSysUserList(queryParam), sysUserRspDTO);
         return sysUserRspDTO;
     }
@@ -271,7 +265,7 @@ public class SysUserServiceImpl implements SysUserService {
      * @return 用户详情信息
      */
     @Override
-    public SysUserVO getSysUserDetail(QuerySysUserReqDTO queryParam) throws BlinkException {
-        return  sysUserMapper.findUserDetail(queryParam);
+    public SysUserVO getSysUserDetail(QuerySysUserReq queryParam) throws BlinkException {
+        return sysUserMapper.findUserDetail(queryParam);
     }
 }

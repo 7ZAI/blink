@@ -1,7 +1,7 @@
 package com.blink.base.controller;
 
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QuerySysConfigRspDTO;
+import com.blink.base.dto.rsp.QuerySysConfigRsp;
 import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.base.service.SysConfigService;
 import com.blink.framework.common.data.EmptyBody;
@@ -39,7 +39,7 @@ public class SysConfigController {
      * @throws Throwable
      */
     @PostMapping("/saveSysConfig")
-    public ResponseDTO<EmptyBody> saveSysConfig(@RequestBody @Validated RequestDTO<AddSysConfigReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> saveSysConfig(@RequestBody @Validated RequestDTO<AddSysConfigReq> reqDto) throws BlinkException {
         sysConfigService.saveSysConfig(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -52,7 +52,7 @@ public class SysConfigController {
      * @throws Throwable
      */
     @PostMapping("/deleteSysConfig")
-    public ResponseDTO<EmptyBody> deleteSysConfig(@RequestBody @Validated RequestDTO<DeleteSysConfigReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> deleteSysConfig(@RequestBody @Validated RequestDTO<DeleteSysConfigReq> reqDto) throws BlinkException {
         sysConfigService.deleteSysConfig(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -65,7 +65,7 @@ public class SysConfigController {
      * @throws Throwable
      */
     @PostMapping("/modifySysConfig")
-    public ResponseDTO<EmptyBody> modifySysConfig(@RequestBody @Validated RequestDTO<UpdateSysConfigReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> modifySysConfig(@RequestBody @Validated RequestDTO<UpdateSysConfigReq> reqDto) throws BlinkException {
         sysConfigService.modifySysConfig(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -78,7 +78,7 @@ public class SysConfigController {
      * @throws Throwable
      */
     @PostMapping("/getSysConfigList")
-    public ResponseDTO<QuerySysConfigRspDTO> getSysConfigList(@RequestBody @Validated RequestDTO<QuerySysConfigReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QuerySysConfigRsp> getSysConfigList(@RequestBody @Validated RequestDTO<QuerySysConfigReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysConfigService.getSysConfigList(reqDto.getBody()));
     }
 
@@ -90,7 +90,7 @@ public class SysConfigController {
      * @throws Throwable
      */
     @PostMapping("/getConfigFromDB")
-    public ResponseDTO<SysConfigVO> getOneConfigFromDataBase(@RequestBody @Validated RequestDTO<QueryOneSysConfigReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysConfigVO> getOneConfigFromDataBase(@RequestBody @Validated RequestDTO<QueryOneSysConfigReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysConfigService.getOneConfigFromDataBase(reqDto.getBody()));
     }
 
@@ -103,7 +103,7 @@ public class SysConfigController {
      * @throws Throwable
      */
     @PostMapping("/getConfigFromCache")
-    public ResponseDTO<SysConfigVO> getOneConfigFromCacheOrDataBase(@RequestBody @Validated RequestDTO<QueryOneSysConfigReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysConfigVO> getOneConfigFromCacheOrDataBase(@RequestBody @Validated RequestDTO<QueryOneSysConfigReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysConfigService.getOneConfigFromCacheOrDataBase(reqDto.getBody()));
     }
 

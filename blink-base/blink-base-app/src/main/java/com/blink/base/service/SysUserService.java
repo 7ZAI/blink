@@ -1,15 +1,11 @@
 package com.blink.base.service;
 
-import com.blink.base.dto.req.AddSysUserReqDTO;
-import com.blink.base.dto.req.DeleteSysUserReqDTO;
-import com.blink.base.dto.req.QuerySysUserReqDTO;
-import com.blink.base.dto.req.UpdateSysUserReqDTO;
-import com.blink.base.dto.rsp.SysUserRspDTO;
+import com.blink.base.dto.req.AddSysUserReq;
+import com.blink.base.dto.req.DeleteSysUserReq;
+import com.blink.base.dto.req.QuerySysUserReq;
+import com.blink.base.dto.req.UpdateSysUserReq;
+import com.blink.base.dto.rsp.SysUserRsp;
 import com.blink.base.dto.vo.SysUserVO;
-import com.blink.base.entity.SysUserDO;
-import com.blink.framework.common.data.EmptyBody;
-import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 
 /**
@@ -29,7 +25,7 @@ public interface SysUserService {
      * @return
      * @throws BlinkException
      */
-    void saveSysUser(AddSysUserReqDTO saveParam) throws BlinkException;
+    void saveSysUser(AddSysUserReq saveParam) throws BlinkException;
 
     /**
      * 删除 系统用户
@@ -38,7 +34,7 @@ public interface SysUserService {
      * @return
      * @throws BlinkException
      */
-    void deleteSysUser(DeleteSysUserReqDTO deleteParam) throws BlinkException;
+    void deleteSysUser(DeleteSysUserReq deleteParam) throws BlinkException;
 
     /**
      * 更新 系统用户
@@ -47,7 +43,7 @@ public interface SysUserService {
      * @return
      * @throws BlinkException
      */
-    void modifySysUser(UpdateSysUserReqDTO updateParam) throws BlinkException;
+    void modifySysUser(UpdateSysUserReq updateParam) throws BlinkException;
 
     /**
      * 查询 系统用户 列表
@@ -56,7 +52,7 @@ public interface SysUserService {
      * @return
      * @throws BlinkException
      */
-    SysUserRspDTO getSysUserList(QuerySysUserReqDTO queryParam) throws BlinkException;
+    SysUserRsp getSysUserList(QuerySysUserReq queryParam) throws BlinkException;
 
 
     /**
@@ -66,5 +62,5 @@ public interface SysUserService {
      * @return
      * @throws BlinkException
      */
-    SysUserVO getSysUserDetail(QuerySysUserReqDTO queryParam) throws BlinkException;
+    SysUserVO getSysUserDetail(QuerySysUserReq queryParam) throws BlinkException;
 }

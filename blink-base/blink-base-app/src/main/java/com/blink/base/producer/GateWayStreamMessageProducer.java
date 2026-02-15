@@ -1,8 +1,9 @@
 package com.blink.base.producer;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.blink.base.dto.CacheMsgDTO;
-import com.blink.base.dto.RouteSyncMsgDTO;
+
+import com.blink.base.dto.CacheMsg;
+import com.blink.base.dto.RouteSyncMsg;
 import com.blink.base.entity.RedisMqDO;
 import com.blink.base.mapper.RedisMqMapper;
 import com.blink.framework.common.utils.JacksonUtil;
@@ -51,14 +52,14 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
      * @param cacheKey
      */
     public void cacheOnChange(String cacheKey) {
-        CacheMsgDTO cacheMsgDTO = new CacheMsgDTO();
-        cacheMsgDTO.setKey(cacheKey);
+        CacheMsg cacheMsg = new CacheMsg();
+        cacheMsg.setKey(cacheKey);
         //发送通知同步
-        StreamMessage<CacheMsgDTO> msg = StreamMessage.of(GATEWAY_STREAM_EVENT, MessageType.EVENT, cacheMsgDTO);
+        StreamMessage<CacheMsg> msg = StreamMessage.of(GATEWAY_STREAM_EVENT, MessageType.EVENT, cacheMsg);
         msg.setSender(appName);
-        msg.setPayloadClass(CacheMsgDTO.class.getName());
+        msg.setPayloadClass(CacheMsg.class.getName());
         //发送并记录
-        sendAndRecord(msg, cacheMsgDTO);
+        sendAndRecord(msg, cacheMsg);
     }
 
     /**
@@ -67,12 +68,12 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
      */
     public void routesOnChange(String dynamicRouteKey) {
 
-        RouteSyncMsgDTO routeSyncMsgDTO = new RouteSyncMsgDTO();
+        RouteSyncMsg routeSyncMsgDTO = new RouteSyncMsg();
         routeSyncMsgDTO.setDynamicRouteKey(dynamicRouteKey);
         //发送消息通知同步
-        StreamMessage<RouteSyncMsgDTO> msg = StreamMessage.of(GATEWAY_STREAM_EVENT,MessageType.EVENT, routeSyncMsgDTO);
+        StreamMessage<RouteSyncMsg> msg = StreamMessage.of(GATEWAY_STREAM_EVENT,MessageType.EVENT, routeSyncMsgDTO);
         msg.setSender(appName);
-        msg.setPayloadClass(RouteSyncMsgDTO.class.getName());
+        msg.setPayloadClass(RouteSyncMsg.class.getName());
         //发送并记录
         sendAndRecord(msg, routeSyncMsgDTO);
 

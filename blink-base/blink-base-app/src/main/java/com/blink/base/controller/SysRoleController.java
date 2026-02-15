@@ -1,10 +1,10 @@
 package com.blink.base.controller;
 
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QueryUserRolesRspDTO;
+import com.blink.base.dto.rsp.QueryUserRolesRsp;
 import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.base.service.SysRoleService;
-import com.blink.base.dto.rsp.QuerySysRoleRspDTO;
+import com.blink.base.dto.rsp.QuerySysRoleRsp;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -38,7 +38,7 @@ public class SysRoleController {
      * @throws Throwable
      */
     @PostMapping("/saveSysRole")
-    public ResponseDTO<SysRoleVO> saveSysRole(@RequestBody @Validated RequestDTO<AddSysRoleReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysRoleVO> saveSysRole(@RequestBody @Validated RequestDTO<AddSysRoleReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysRoleService.saveSysRole(reqDto.getBody()));
     }
 
@@ -50,7 +50,7 @@ public class SysRoleController {
      * @throws Throwable
      */
     @PostMapping("/deleteSysRole")
-    public ResponseDTO<EmptyBody> deleteSysRole(@RequestBody @Validated RequestDTO<DeleteSysRoleReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> deleteSysRole(@RequestBody @Validated RequestDTO<DeleteSysRoleReq> reqDto) throws BlinkException {
         sysRoleService.deleteSysRole(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -63,7 +63,7 @@ public class SysRoleController {
      * @throws Throwable
      */
     @PostMapping("/modifySysRole")
-    public ResponseDTO<SysRoleVO> modifySysRole(@RequestBody @Validated RequestDTO<UpdateSysRoleReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysRoleVO> modifySysRole(@RequestBody @Validated RequestDTO<UpdateSysRoleReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysRoleService.modifySysRole(reqDto.getBody()));
     }
 
@@ -75,7 +75,7 @@ public class SysRoleController {
      * @throws Throwable
      */
     @PostMapping("/getSysRoleList")
-    public ResponseDTO<QuerySysRoleRspDTO> getSysRoleList(@RequestBody @Validated RequestDTO<QuerySysRoleReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QuerySysRoleRsp> getSysRoleList(@RequestBody @Validated RequestDTO<QuerySysRoleReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysRoleService.getSysRoleList(reqDto.getBody()));
     }
 
@@ -84,11 +84,11 @@ public class SysRoleController {
      * 根据用户信息查询 用户角色
      *
      * @param reqDto
-     * @return {@link ResponseDTO<QueryUserRolesReqDTO>}
+     * @return {@link ResponseDTO< QueryUserRolesReq >}
      * @throws BlinkException
      */
     @PostMapping("/getSysRolesByUser")
-    public ResponseDTO<QueryUserRolesRspDTO> getSysRolesByUser(@RequestBody @Validated RequestDTO<QueryUserRolesReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QueryUserRolesRsp> getSysRolesByUser(@RequestBody @Validated RequestDTO<QueryUserRolesReq> reqDto) throws BlinkException {
         return  ResponseDTO.newSuccessInstance(sysRoleService.getSysRolesByUser(reqDto.getBody()));
     }
 

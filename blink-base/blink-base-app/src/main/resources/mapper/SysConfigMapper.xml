@@ -84,7 +84,7 @@
     </sql>
 
 
-    <select id="findSysConfigList" parameterType="com.blink.base.dto.req.QuerySysConfigReqDTO"
+    <select id="findSysConfigList" parameterType="com.blink.base.dto.req.QuerySysConfigReq"
             resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>

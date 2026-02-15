@@ -1,10 +1,10 @@
 package com.blink.base.controller;
 
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QueryShowMenuRspDTO;
+import com.blink.base.dto.rsp.QueryShowMenuRsp;
 import com.blink.base.dto.vo.SysMenuVO;
 import com.blink.base.service.SysMenuService;
-import com.blink.base.dto.rsp.QuerySysMenuRspDTO;
+import com.blink.base.dto.rsp.QuerySysMenuRsp;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -39,7 +39,7 @@ public class SysMenuController {
      * @throws Throwable
      */
     @PostMapping("/saveSysMenu")
-    public ResponseDTO<SysMenuVO> saveSysMenu(@RequestBody @Validated RequestDTO<AddSysMenuReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysMenuVO> saveSysMenu(@RequestBody @Validated RequestDTO<AddSysMenuReq> reqDto) throws BlinkException {
 
         return ResponseDTO.newSuccessInstance(sysMenuService.saveSysMenu(reqDto.getBody()));
     }
@@ -52,7 +52,7 @@ public class SysMenuController {
      * @throws Throwable
      */
     @PostMapping("/deleteSysMenu")
-    public ResponseDTO<EmptyBody> deleteSysMenu(@RequestBody @Validated RequestDTO<DeleteSysMenuReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> deleteSysMenu(@RequestBody @Validated RequestDTO<DeleteSysMenuReq> reqDto) throws BlinkException {
         sysMenuService.deleteSysMenu(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -65,7 +65,7 @@ public class SysMenuController {
      * @throws Throwable
      */
     @PostMapping("/modifySysMenu")
-    public ResponseDTO<SysMenuVO> modifySysMenu(@RequestBody @Validated RequestDTO<UpdateSysMenuReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysMenuVO> modifySysMenu(@RequestBody @Validated RequestDTO<UpdateSysMenuReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysMenuService.modifySysMenu(reqDto.getBody()));
     }
 
@@ -77,7 +77,7 @@ public class SysMenuController {
      * @throws Throwable
      */
     @PostMapping("/getSysMenuList")
-    public ResponseDTO<QuerySysMenuRspDTO> getSysMenuList(@RequestBody @Validated RequestDTO<QuerySysMenuReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QuerySysMenuRsp> getSysMenuList(@RequestBody @Validated RequestDTO<QuerySysMenuReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysMenuService.getSysMenuList(reqDto.getBody()));
     }
 
@@ -85,11 +85,11 @@ public class SysMenuController {
      * 根据用户查询其菜单 登入成功
      *
      * @param reqDto
-     * @return {@link ResponseDTO<QueryShowMenuReqDTO>}
+     * @return {@link ResponseDTO< QueryShowMenuReq >}
      * @throws BlinkException
      */
     @PostMapping("/getSysMenusByRoles")
-    public ResponseDTO<QueryShowMenuRspDTO> getSysMenusByRoles(@RequestBody @Validated RequestDTO<QueryShowMenuReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QueryShowMenuRsp> getSysMenusByRoles(@RequestBody @Validated RequestDTO<QueryShowMenuReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysMenuService.getSysMenusByRoles(reqDto.getBody()));
     }
 

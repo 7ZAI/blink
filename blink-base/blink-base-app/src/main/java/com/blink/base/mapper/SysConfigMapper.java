@@ -2,7 +2,7 @@ package com.blink.base.mapper;
 
 import com.blink.base.entity.SysConfigDO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blink.base.dto.req.QuerySysConfigReqDTO;
+import com.blink.base.dto.req.QuerySysConfigReq;
 
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
@@ -19,5 +19,5 @@ import org.apache.ibatis.annotations.Mapper;
 public interface SysConfigMapper extends BaseMapper<SysConfigDO> {
 
 
-       List<SysConfigDO> findSysConfigList(QuerySysConfigReqDTO reqDTO);
+       List<SysConfigDO> findSysConfigList(QuerySysConfigReq reqDTO);
  }

@@ -1,7 +1,7 @@
 package com.blink.base.service;
 
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QueryBlinkChannelRspDTO;
+import com.blink.base.dto.rsp.QueryBlinkChannelRsp;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.framework.common.exception.BlinkException;
@@ -23,7 +23,7 @@ public interface BlinkChannelService {
      * @return
      * @throws BlinkException
      */
-    void saveBlinkChannel(AddBlinkChannelReqDTO saveParam) throws BlinkException;
+    void saveBlinkChannel(AddBlinkChannelReq saveParam) throws BlinkException;
 
     /**
      * 删除 对接渠道
@@ -31,7 +31,7 @@ public interface BlinkChannelService {
      * @param deleteParam
      * @throws BlinkException
      */
-    void deleteBlinkChannel(DeleteBlinkChannelReqDTO deleteParam) throws BlinkException;
+    void deleteBlinkChannel(DeleteBlinkChannelReq deleteParam) throws BlinkException;
 
     /**
      * 更新 对接渠道
@@ -39,7 +39,7 @@ public interface BlinkChannelService {
      * @param updateParam
      * @throws BlinkException
      */
-    void modifyBlinkChannel(UpdateBlinkChannelReqDTO updateParam) throws BlinkException;
+    void modifyBlinkChannel(UpdateBlinkChannelReq updateParam) throws BlinkException;
 
     /**
      * 查询 对接渠道 列表
@@ -48,7 +48,7 @@ public interface BlinkChannelService {
      * @return QueryBlinkChannelRspDTO
      * @throws BlinkException
      */
-    QueryBlinkChannelRspDTO getBlinkChannelList(QueryBlinkChannelReqDTO queryParam) throws BlinkException;
+    QueryBlinkChannelRsp getBlinkChannelList(QueryBlinkChannelReq queryParam) throws BlinkException;
 
     /**
      * 根据查询条件查询单个渠道信息
@@ -57,7 +57,7 @@ public interface BlinkChannelService {
      * @return {@link BlinkChannelDO}
      * @throws Throwable
      */
-    ChannelVO getChannel(QueryOneChannelReqDTO queryParam) throws BlinkException;
+    ChannelVO getChannel(QueryOneChannelReq queryParam) throws BlinkException;
 
     /**
      * 刷新渠道密钥对 重新生成密钥对
@@ -66,7 +66,7 @@ public interface BlinkChannelService {
      * @return {@link BlinkChannelDO}
      * @throws Throwable
      */
-    BlinkChannelDO refreshChannelKey(QueryOneChannelReqDTO queryParam) throws BlinkException;
+    BlinkChannelDO refreshChannelKey(QueryOneChannelReq queryParam) throws BlinkException;
 
     /**
      * 刷新系统密钥对 重新生成密钥对
@@ -75,7 +75,7 @@ public interface BlinkChannelService {
      * @return {@link BlinkChannelDO}
      * @throws Throwable
      */
-    BlinkChannelDO refreshSystemKey(QueryOneChannelReqDTO queryParam) throws BlinkException;
+    BlinkChannelDO refreshSystemKey(QueryOneChannelReq queryParam) throws BlinkException;
 
 
 }

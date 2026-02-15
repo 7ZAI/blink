@@ -73,7 +73,7 @@
     </sql>
 
 
-    <select id="findSysConfigGroupList" parameterType="com.blink.base.dto.req.QuerySysConfigGroupReqDTO"
+    <select id="findSysConfigGroupList" parameterType="com.blink.base.dto.req.QuerySysConfigGroupReq"
             resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>

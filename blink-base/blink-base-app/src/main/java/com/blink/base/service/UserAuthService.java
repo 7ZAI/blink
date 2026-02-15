@@ -1,12 +1,9 @@
 package com.blink.base.service;
 
-import com.blink.base.dto.req.SysLoginReqDTO;
-import com.blink.base.dto.req.SysLogoutReqDTO;
-import com.blink.base.dto.rsp.SysLoginRspDTO;
+import com.blink.base.dto.req.SysLoginReq;
+import com.blink.base.dto.req.SysLogoutReq;
+import com.blink.base.dto.rsp.SysLoginRsp;
 import com.blink.base.entity.SysUserDO;
-import com.blink.framework.common.data.EmptyBody;
-import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 
 
@@ -22,7 +19,7 @@ public interface UserAuthService {
      * @return
      * @throws BlinkException
      */
-    SysLoginRspDTO login(SysLoginReqDTO loginParam) throws BlinkException;
+    SysLoginRsp login(SysLoginReq loginParam) throws BlinkException;
 
     /**
      * 登出
@@ -31,7 +28,7 @@ public interface UserAuthService {
      * @return
      * @throws BlinkException
      */
-    void logout(SysLogoutReqDTO logoutParam) throws BlinkException;
+    void logout(SysLogoutReq logoutParam) throws BlinkException;
 
     /**
      * 获取登入用户信息
@@ -40,5 +37,5 @@ public interface UserAuthService {
      * @return 登入用户封装DTO
      * @throws BlinkException
      */
-    SysLoginRspDTO getLoginUserInfo(SysUserDO loginUser, String token) throws BlinkException;
+    SysLoginRsp getLoginUserInfo(SysUserDO loginUser, String token) throws BlinkException;
 }

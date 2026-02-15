@@ -1,8 +1,8 @@
 package com.blink.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blink.base.dto.req.QueryRolePermissionReqDTO;
-import com.blink.base.dto.req.QuerySysPermissionReqDTO;
+import com.blink.base.dto.req.QueryRolePermissionReq;
+import com.blink.base.dto.req.QuerySysPermissionReq;
 import com.blink.base.entity.SysPermissionDO;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -24,7 +24,7 @@ public interface SysPermissionMapper extends BaseMapper<SysPermissionDO> {
      * @param reqDTO 入参
      * @return 权限列表
      */
-    List<SysPermissionDO> findSysPermissionList(QuerySysPermissionReqDTO reqDTO);
+    List<SysPermissionDO> findSysPermissionList(QuerySysPermissionReq reqDTO);
 
     /**
      * 根据角色查询权限
@@ -39,7 +39,7 @@ public interface SysPermissionMapper extends BaseMapper<SysPermissionDO> {
      * @param reqDTO
      * @return 角色指定类型权限集合
      */
-    List<SysPermissionDO> findRolesPermissionsWithType(QueryRolePermissionReqDTO reqDTO);
+    List<SysPermissionDO> findRolesPermissionsWithType(QueryRolePermissionReq reqDTO);
 
     /**
      * 获取渠道的所有权限

@@ -6,30 +6,24 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QueryShowMenuRspDTO;
-import com.blink.base.dto.rsp.QuerySysMenuRspDTO;
+import com.blink.base.dto.rsp.QueryShowMenuRsp;
+import com.blink.base.dto.rsp.QuerySysMenuRsp;
 import com.blink.base.dto.vo.SysMenuVO;
 import com.blink.base.entity.SysMenuDO;
-import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.mapper.SysMenuMapper;
 import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.mapper.SysRoleMapper;
 import com.blink.base.service.SysMenuService;
 import com.blink.datasource.PageUtils;
-import com.blink.framework.common.constrant.SysConstant;
-import com.blink.framework.common.data.EmptyBody;
-import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.common.data.ResponseDTO;
+
 import com.blink.framework.common.exception.BlinkException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 系统菜单 服务实现类
@@ -60,7 +54,7 @@ public class SysMenuServiceImpl implements SysMenuService {
      * @throws BlinkException
      */
     @Override
-    public SysMenuVO saveSysMenu(AddSysMenuReqDTO saveParam) throws BlinkException {
+    public SysMenuVO saveSysMenu(AddSysMenuReq saveParam) throws BlinkException {
 
 
         //父节点不存在
@@ -88,7 +82,7 @@ public class SysMenuServiceImpl implements SysMenuService {
      * @throws BlinkException
      */
     @Override
-    public void deleteSysMenu(DeleteSysMenuReqDTO deleteParam) throws BlinkException {
+    public void deleteSysMenu(DeleteSysMenuReq deleteParam) throws BlinkException {
 
 
         //TODO 暂时缺少 删除菜单后权限变化逻辑
@@ -127,7 +121,7 @@ public class SysMenuServiceImpl implements SysMenuService {
      * @throws BlinkException
      */
     @Override
-    public SysMenuVO modifySysMenu(UpdateSysMenuReqDTO updateParam) throws BlinkException {
+    public SysMenuVO modifySysMenu(UpdateSysMenuReq updateParam) throws BlinkException {
 
 
         SysMenuDO sysMenuDO = sysMenuMapper.selectById(updateParam.getMenuId());
@@ -160,9 +154,9 @@ public class SysMenuServiceImpl implements SysMenuService {
      * @throws BlinkException
      */
     @Override
-    public QuerySysMenuRspDTO getSysMenuList(QuerySysMenuReqDTO param) throws BlinkException {
+    public QuerySysMenuRsp getSysMenuList(QuerySysMenuReq param) throws BlinkException {
 
-        var pageRsp = new QuerySysMenuRspDTO();
+        var pageRsp = new QuerySysMenuRsp();
         var queryParam = new SysMenuDO();
         BeanUtil.copyProperties(param, queryParam);
         PageUtils.queryPage(param, () -> sysMenuMapper.findSysMenuList(queryParam), pageRsp);
@@ -173,11 +167,11 @@ public class SysMenuServiceImpl implements SysMenuService {
      * 根据用户查询其菜单 （登入成功）
      *
      * @param queryParam
-     * @return {@link QueryShowMenuRspDTO }
+     * @return {@link QueryShowMenuRsp }
      * @throws BlinkException
      */
     @Override
-    public QueryShowMenuRspDTO getSysMenusByRoles(QueryShowMenuReqDTO queryParam) throws BlinkException {
+    public QueryShowMenuRsp getSysMenusByRoles(QueryShowMenuReq queryParam) throws BlinkException {
 
         //菜单权限(包含功能权限)
         List<SysMenuVO> menuVos = sysMenuMapper.findSysMenuListByRole(queryParam);
@@ -189,7 +183,7 @@ public class SysMenuServiceImpl implements SysMenuService {
                 .filter(menu->menu.getType().equals(CommonConstans.MENU_FUNCTION))
                 .toList();
 
-        var queryShowMenuRspDTO = new QueryShowMenuRspDTO();
+        var queryShowMenuRspDTO = new QueryShowMenuRsp();
         queryShowMenuRspDTO.setFunctionMenu(functionMenus);
         queryShowMenuRspDTO.setMenus(menus);
 

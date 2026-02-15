@@ -1,11 +1,11 @@
 package com.blink.base.service;
 
-import com.blink.base.dto.req.AddSysGroupReqDTO;
-import com.blink.base.dto.req.DeleteSysGroupReqDTO;
-import com.blink.base.dto.req.QuerySysGroupReqDTO;
-import com.blink.base.dto.req.UpdateSysGroupReqDTO;
-import com.blink.base.dto.rsp.QuerySysGroupRspDTO;
-import com.blink.base.dto.rsp.SysGroupRspDTO;
+import com.blink.base.dto.req.AddSysGroupReq;
+import com.blink.base.dto.req.DeleteSysGroupReq;
+import com.blink.base.dto.req.QuerySysGroupReq;
+import com.blink.base.dto.req.UpdateSysGroupReq;
+import com.blink.base.dto.rsp.QuerySysGroupRsp;
+import com.blink.base.dto.rsp.SysGroupRsp;
 import com.blink.framework.common.exception.BlinkException;
 
 /**
@@ -25,7 +25,7 @@ public interface SysGroupService {
      * @return
      * @throws BlinkException
      */
-    SysGroupRspDTO saveSysGroup(AddSysGroupReqDTO saveParam) throws BlinkException;
+    SysGroupRsp saveSysGroup(AddSysGroupReq saveParam) throws BlinkException;
 
     /**
      * 删除 组
@@ -33,7 +33,7 @@ public interface SysGroupService {
      * @param deleteParam
      * @throws BlinkException
      */
-    void deleteSysGroup(DeleteSysGroupReqDTO deleteParam) throws BlinkException;
+    void deleteSysGroup(DeleteSysGroupReq deleteParam) throws BlinkException;
 
     /**
      * 更新 组
@@ -42,7 +42,7 @@ public interface SysGroupService {
      * @return SysGroupRspDTO
      * @throws BlinkException
      */
-    SysGroupRspDTO modifySysGroup(UpdateSysGroupReqDTO updateParam) throws BlinkException;
+    SysGroupRsp modifySysGroup(UpdateSysGroupReq updateParam) throws BlinkException;
 
     /**
      * 查询 组 列表
@@ -51,7 +51,7 @@ public interface SysGroupService {
      * @return
      * @throws BlinkException
      */
-    QuerySysGroupRspDTO getSysGroupList(QuerySysGroupReqDTO queryParam) throws BlinkException;
+    QuerySysGroupRsp getSysGroupList(QuerySysGroupReq queryParam) throws BlinkException;
 
 
 }

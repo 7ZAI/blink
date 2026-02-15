@@ -6,12 +6,12 @@ import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
-import com.blink.base.dto.req.AddSysGroupReqDTO;
-import com.blink.base.dto.req.DeleteSysGroupReqDTO;
-import com.blink.base.dto.req.QuerySysGroupReqDTO;
-import com.blink.base.dto.req.UpdateSysGroupReqDTO;
-import com.blink.base.dto.rsp.QuerySysGroupRspDTO;
-import com.blink.base.dto.rsp.SysGroupRspDTO;
+import com.blink.base.dto.req.AddSysGroupReq;
+import com.blink.base.dto.req.DeleteSysGroupReq;
+import com.blink.base.dto.req.QuerySysGroupReq;
+import com.blink.base.dto.req.UpdateSysGroupReq;
+import com.blink.base.dto.rsp.QuerySysGroupRsp;
+import com.blink.base.dto.rsp.SysGroupRsp;
 import com.blink.base.entity.SysGroupDO;
 import com.blink.base.entity.SysUserGroupRelaDO;
 import com.blink.base.mapper.SysGroupMapper;
@@ -51,7 +51,7 @@ public class SysGroupServiceImpl implements SysGroupService {
      * @throws BlinkException
      */
     @Override
-    public SysGroupRspDTO saveSysGroup(AddSysGroupReqDTO saveParam) throws BlinkException {
+    public SysGroupRsp saveSysGroup(AddSysGroupReq saveParam) throws BlinkException {
 
 
         List<SysGroupDO> groupDOList = sysGroupMapper.selectList(new LambdaQueryWrapper<SysGroupDO>()
@@ -83,7 +83,7 @@ public class SysGroupServiceImpl implements SysGroupService {
 
         sysGroupMapper.insert(sysGroupDO);
 
-        var rspDTO = new SysGroupRspDTO();
+        var rspDTO = new SysGroupRsp();
         BeanUtil.copyProperties(sysGroupDO, rspDTO);
 
         return rspDTO;
@@ -96,7 +96,7 @@ public class SysGroupServiceImpl implements SysGroupService {
      * @throws BlinkException
      */
     @Override
-    public void deleteSysGroup(DeleteSysGroupReqDTO deleteParam) throws BlinkException {
+    public void deleteSysGroup(DeleteSysGroupReq deleteParam) throws BlinkException {
 
 
         if (deleteParam.isBatchDelete()) {
@@ -149,7 +149,7 @@ public class SysGroupServiceImpl implements SysGroupService {
      * @throws BlinkException
      */
     @Override
-    public SysGroupRspDTO modifySysGroup(UpdateSysGroupReqDTO updateParam) throws BlinkException {
+    public SysGroupRsp modifySysGroup(UpdateSysGroupReq updateParam) throws BlinkException {
 
         SysGroupDO sysGroupOld = sysGroupMapper.selectById(updateParam.getGroupId());
 
@@ -191,7 +191,7 @@ public class SysGroupServiceImpl implements SysGroupService {
 
         sysGroupMapper.updateById(sysGroupNew);
 
-        var rspDTO = new SysGroupRspDTO();
+        var rspDTO = new SysGroupRsp();
         BeanUtil.copyProperties(sysGroupNew, rspDTO);
 
         return rspDTO;
@@ -205,9 +205,9 @@ public class SysGroupServiceImpl implements SysGroupService {
      * @throws BlinkException
      */
     @Override
-    public QuerySysGroupRspDTO getSysGroupList(QuerySysGroupReqDTO queryParam) throws BlinkException {
+    public QuerySysGroupRsp getSysGroupList(QuerySysGroupReq queryParam) throws BlinkException {
 
-        var pageRsp = new QuerySysGroupRspDTO();
+        var pageRsp = new QuerySysGroupRsp();
         var param = new SysGroupDO();
         BeanUtil.copyProperties(queryParam, param);
         PageUtils.queryPage(queryParam, () -> sysGroupMapper.findSysGroupList(param), pageRsp);

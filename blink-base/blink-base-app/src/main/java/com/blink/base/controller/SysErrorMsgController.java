@@ -2,8 +2,8 @@ package com.blink.base.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constans.BaseErrCodeConstant;
-import com.blink.base.dto.req.QueryErrMsgReqDTO;
-import com.blink.base.dto.rsp.QueryErrMsgRspDTO;
+import com.blink.base.dto.req.QueryErrMsgReq;
+import com.blink.base.dto.rsp.QueryErrMsgRsp;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
@@ -43,10 +43,10 @@ public class SysErrorMsgController {
      * @throws BlinkException
      */
     @PostMapping("/getMsg")
-    public ResponseDTO<QueryErrMsgRspDTO> getMsg(@RequestBody @Validated RequestDTO<QueryErrMsgReqDTO> requestDTO) throws BlinkException {
+    public ResponseDTO<QueryErrMsgRsp> getMsg(@RequestBody @Validated RequestDTO<QueryErrMsgReq> requestDTO) throws BlinkException {
 
-        var rsp = new ResponseDTO<QueryErrMsgRspDTO>();
-        QueryErrMsgRspDTO rspDTO = new QueryErrMsgRspDTO();
+        var rsp = new ResponseDTO<QueryErrMsgRsp>();
+        QueryErrMsgRsp rspDTO = new QueryErrMsgRsp();
 
         SysMsgInfoDO result = sysMsgInfoMapper.selectOne(new LambdaQueryWrapper<SysMsgInfoDO>()
                 .eq(SysMsgInfoDO::getMsgCode, requestDTO.getBody().getCode())

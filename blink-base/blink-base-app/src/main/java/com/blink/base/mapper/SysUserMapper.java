@@ -1,7 +1,7 @@
 package com.blink.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blink.base.dto.req.QuerySysUserReqDTO;
+import com.blink.base.dto.req.QuerySysUserReq;
 import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.entity.SysUserDO;
 import org.apache.ibatis.annotations.Mapper;
@@ -19,8 +19,8 @@ import java.util.List;
 @Mapper
 public interface SysUserMapper extends BaseMapper<SysUserDO> {
 
-    List<SysUserVO> findSysUserList(QuerySysUserReqDTO reqDTO);
+    List<SysUserVO> findSysUserList(QuerySysUserReq reqDTO);
 
-    SysUserVO findUserDetail(QuerySysUserReqDTO reqDTO);
+    SysUserVO findUserDetail(QuerySysUserReq reqDTO);
 
 }

@@ -8,9 +8,10 @@ import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.constans.RedisKeyConstans;
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QueryPermissionIdentityRspDTO;
-import com.blink.base.dto.rsp.QuerySysPermissionRspDTO;
-import com.blink.base.dto.rsp.QueryUserPermissionRspDTO;
+import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
+import com.blink.base.dto.rsp.QueryPermissionIdentityRsp;
+import com.blink.base.dto.rsp.QuerySysPermissionRsp;
+import com.blink.base.dto.rsp.QueryUserPermissionRsp;
 import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.entity.SysRolePermRelaDO;
@@ -20,6 +21,7 @@ import com.blink.base.mapper.SysRolePermRelaMapper;
 import com.blink.base.mapper.SysUserRoleRelaMapper;
 import com.blink.base.service.SysPermissionService;
 import com.blink.datasource.PageUtils;
+import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.CacheComponent;
 import jakarta.annotation.Resource;
@@ -61,7 +63,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
      * @throws BlinkException
      */
     @Override
-    public SysPermissionVO saveSysPermission(AddSysPermissionReqDTO saveParam) throws BlinkException {
+    public SysPermissionVO saveSysPermission(AddSysPermissionReq saveParam) throws BlinkException {
 
 
         SysPermissionDO sysPermissionDO = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
@@ -90,7 +92,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
      * @throws BlinkException
      */
     @Override
-    public void deleteSysPermission(DeleteSysPermissionReqDTO deleteParam) throws BlinkException {
+    public void deleteSysPermission(DeleteSysPermissionReq deleteParam) throws BlinkException {
 
 
         //批量删除
@@ -128,7 +130,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
      * @throws BlinkException
      */
     @Override
-    public void modifySysPermission(UpdateSysPermissionReqDTO updateParam) throws BlinkException {
+    public void modifySysPermission(UpdateSysPermissionReq updateParam) throws BlinkException {
 
         SysPermissionDO sysPermissionDO = sysPermissionMapper.selectById(updateParam.getAcId());
         //不存在
@@ -148,9 +150,9 @@ public class SysPermissionServiceImpl implements SysPermissionService {
      * @throws BlinkException
      */
     @Override
-    public QuerySysPermissionRspDTO<SysPermissionDO> getSysPermissionList(QuerySysPermissionReqDTO queryParam) throws BlinkException {
+    public QuerySysPermissionRsp<SysPermissionDO> getSysPermissionList(QuerySysPermissionReq queryParam) throws BlinkException {
 
-        var pageRsp = new QuerySysPermissionRspDTO<SysPermissionDO>();
+        var pageRsp = new QuerySysPermissionRsp<SysPermissionDO>();
         PageUtils.queryPage(queryParam, () -> sysPermissionMapper.findSysPermissionList(queryParam), pageRsp);
         return pageRsp;
     }
@@ -189,13 +191,13 @@ public class SysPermissionServiceImpl implements SysPermissionService {
      * @throws BlinkException
      */
     @Override
-    public QueryUserPermissionRspDTO getPermissionsByUserId(QueryUserPermissionReqDTO reqDTO) throws BlinkException {
+    public QueryUserPermissionRsp getPermissionsByUserId(QueryUserPermissionReq reqDTO) throws BlinkException {
         Integer userId = reqDTO.getUserId();
         List<SysUserRoleRelaDO> roleRela = userRoleRelaMapper.selectList(new LambdaQueryWrapper<SysUserRoleRelaDO>()
                 .eq(SysUserRoleRelaDO::getUserId, userId));
 
         Set<String> permissions = new HashSet<>();
-        QueryUserPermissionRspDTO rspDTO = new QueryUserPermissionRspDTO();
+        QueryUserPermissionRsp rspDTO = new QueryUserPermissionRsp();
 
         if (roleRela.isEmpty()) {
             log.warn("用户未分配角色！ userId:{}", userId);
@@ -212,26 +214,43 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     }
 
     /**
+     * 获取所有接口权限
+     *
+     * @param body 空实体参数
+     * @return {@link SysPermissionVO <SysPermissionVO>}
+     * @throws BlinkException
+     */
+    @Override
+    public GetAllApiPermissionsRsp getAllApiPermission(GetAllApiPermissionsReq body) throws BlinkException {
+
+        List<SysPermissionDO> permissionList = sysPermissionMapper.selectList(new LambdaQueryWrapper<SysPermissionDO>()
+                .eq(SysPermissionDO::getAcType,CommonConstans.PERMISSION_API_TYPE));
+        var rsp = new GetAllApiPermissionsRsp();
+        rsp.setPermissionList(permissionList);
+        return rsp;
+    }
+
+    /**
      * 根据url 查询 权限标识
      * 从缓存中获取 如果取不到去数据获取
      *
      * @param queryParam
-     * @return {@link QueryPermissionIdentityRspDTO}
+     * @return {@link QueryPermissionIdentityRsp}
      * @throws Throwable
      */
     @Override
-    public QueryPermissionIdentityRspDTO getPermissionByUrl(QuerySysPermissionReqDTO queryParam) throws BlinkException {
+    public QueryPermissionIdentityRsp getPermissionByUrl(QueryPermissionIdentityReq queryParam) throws BlinkException {
 
         String url = queryParam.getUrl();
 
-        String acIden = (String) cacheComponent.getFromCacheOrDB(RedisKeyConstans.URL_PERMISSION + url, () -> {
+        String acIdentity = (String) cacheComponent.getFromCacheOrDB(RedisKeyConstans.URL_PERMISSION + url, () -> {
                     SysPermissionDO permissionDO = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>().eq(SysPermissionDO::getUrl, url));
                     return Objects.isNull(permissionDO) ? "" : permissionDO.getAcIdentity();
                 }
         );
 
-        var rspDTO = new QueryPermissionIdentityRspDTO();
-        rspDTO.setAcIdentity(acIden);
+        var rspDTO = new QueryPermissionIdentityRsp();
+        rspDTO.setAcIdentity(acIdentity);
         return rspDTO;
     }
 

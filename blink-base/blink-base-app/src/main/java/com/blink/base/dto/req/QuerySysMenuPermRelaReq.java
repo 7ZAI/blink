@@ -3,6 +3,8 @@ package com.blink.base.dto.req;
 
 import com.blink.framework.common.data.PageDTO;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -15,7 +17,8 @@ import java.io.Serializable;
  * @author binblink
  * @since 2026-02-11
  */
-@Data
+@Getter
+@Setter
 public class QuerySysMenuPermRelaReq extends PageDTO implements Serializable {
 
     @Serial

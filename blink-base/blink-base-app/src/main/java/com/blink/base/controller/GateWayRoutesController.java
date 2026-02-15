@@ -1,15 +1,13 @@
 package com.blink.base.controller;
 
-import com.blink.base.dto.req.AddRoutesReqDTO;
-import com.blink.base.dto.rsp.QueryGateWayRoutesRspDTO;
-import com.blink.base.entity.RouteDefinitionDO;
+import com.blink.base.dto.req.AddRoutesReq;
+import com.blink.base.dto.rsp.QueryGateWayRoutesRsp;
 import com.blink.base.service.GateWayRoutesService;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,7 +39,7 @@ public class GateWayRoutesController {
      * @throws BlinkException
      */
     @PostMapping("/saveRoute")
-    public ResponseDTO<EmptyBody> saveRoute(@RequestBody @Validated RequestDTO<AddRoutesReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> saveRoute(@RequestBody @Validated RequestDTO<AddRoutesReq> reqDto) throws BlinkException {
         gateWayRoutesService.saveRoute(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -67,7 +65,7 @@ public class GateWayRoutesController {
      * @throws BlinkException
      */
     @PostMapping("/getChannelList")
-    public ResponseDTO<QueryGateWayRoutesRspDTO> getRouteslList(@RequestBody @Validated RequestDTO<EmptyBody> reqDto) throws BlinkException {
+    public ResponseDTO<QueryGateWayRoutesRsp> getRouteslList(@RequestBody @Validated RequestDTO<EmptyBody> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(gateWayRoutesService.getRouteslList(reqDto.getBody()));
     }
 }

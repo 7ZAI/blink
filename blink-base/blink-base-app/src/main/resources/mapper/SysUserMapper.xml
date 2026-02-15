@@ -74,7 +74,7 @@
     </sql>
 
 
-<!--    <select id="findSysUserList" parameterType="com.blink.base.dto.req.QuerySysUserReqDTO" resultMap="BaseResultMap">-->
+<!--    <select id="findSysUserList" parameterType="com.blink.base.dto.req.QuerySysUserReq" resultMap="BaseResultMap">-->
 <!--        select * from (WITH RECURSIVE child_group (group_id,group_name) AS-->
 <!--                                          (-->
 <!--                                              SELECT group_id,group_name-->
@@ -90,7 +90,7 @@
 <!--    </select>-->
 
 
-    <select id="findSysUserList" parameterType="com.blink.base.dto.req.QuerySysUserReqDTO" resultMap="VoResultMap">
+    <select id="findSysUserList" parameterType="com.blink.base.dto.req.QuerySysUserReq" resultMap="VoResultMap">
         select user_id,login_name,username,sex,phone,email,last_login_time,sg.group_name,sg.group_id
         from sys_user su
         left join sys_group sg  on  sg.user_id = su.user_id
@@ -108,7 +108,7 @@
         </trim>
     </select>
 
-    <select id="findUserDetail" parameterType="com.blink.base.dto.req.QuerySysUserReqDTO" resultMap="VoResultMap">
+    <select id="findUserDetail" parameterType="com.blink.base.dto.req.QuerySysUserReq" resultMap="VoResultMap">
         select su.user_id,su.login_name,su.username,su.sex,su.phone,su.email,su.last_login_time,
                sg.group_name,sg.group_id,
                sr.role_name,sr.role_id

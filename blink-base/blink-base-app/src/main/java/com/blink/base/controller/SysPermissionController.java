@@ -1,9 +1,10 @@
 package com.blink.base.controller;
 
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QueryPermissionIdentityRspDTO;
-import com.blink.base.dto.rsp.QuerySysPermissionRspDTO;
-import com.blink.base.dto.rsp.QueryUserPermissionRspDTO;
+import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
+import com.blink.base.dto.rsp.QueryPermissionIdentityRsp;
+import com.blink.base.dto.rsp.QuerySysPermissionRsp;
+import com.blink.base.dto.rsp.QueryUserPermissionRsp;
 import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.service.SysPermissionService;
@@ -41,7 +42,7 @@ public class SysPermissionController {
      * @throws Throwable
      */
     @PostMapping("/saveSysPermission")
-    public ResponseDTO<SysPermissionVO> saveSysPermission(@RequestBody @Validated RequestDTO<AddSysPermissionReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysPermissionVO> saveSysPermission(@RequestBody @Validated RequestDTO<AddSysPermissionReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysPermissionService.saveSysPermission(reqDto.getBody()));
     }
 
@@ -53,7 +54,7 @@ public class SysPermissionController {
      * @throws Throwable
      */
     @PostMapping("/deleteSysPermission")
-    public ResponseDTO<EmptyBody> deleteSysPermission(@RequestBody @Validated RequestDTO<DeleteSysPermissionReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> deleteSysPermission(@RequestBody @Validated RequestDTO<DeleteSysPermissionReq> reqDto) throws BlinkException {
         sysPermissionService.deleteSysPermission(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -66,7 +67,7 @@ public class SysPermissionController {
      * @throws Throwable
      */
     @PostMapping("/modifySysPermission")
-    public ResponseDTO<EmptyBody> modifySysPermission(@RequestBody @Validated RequestDTO<UpdateSysPermissionReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> modifySysPermission(@RequestBody @Validated RequestDTO<UpdateSysPermissionReq> reqDto) throws BlinkException {
         sysPermissionService.modifySysPermission(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -79,7 +80,7 @@ public class SysPermissionController {
      * @throws Throwable
      */
     @PostMapping("/getSysPermissionList")
-    public ResponseDTO<QuerySysPermissionRspDTO<SysPermissionDO>> getSysPermissionList(@RequestBody @Validated RequestDTO<QuerySysPermissionReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QuerySysPermissionRsp<SysPermissionDO>> getSysPermissionList(@RequestBody @Validated RequestDTO<QuerySysPermissionReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysPermissionService.getSysPermissionList(reqDto.getBody()));
     }
 
@@ -87,12 +88,25 @@ public class SysPermissionController {
      * 根据url 查询 权限标识
      *
      * @param reqDto
-     * @return {@link ResponseDTO<QueryPermissionIdentityRspDTO>}
+     * @return {@link ResponseDTO< QueryPermissionIdentityRsp >}
      * @throws BlinkException
      */
     @PostMapping("/getPermissionByUrl")
-    public ResponseDTO<QueryPermissionIdentityRspDTO> getPermissionByUrl(@RequestBody @Validated RequestDTO<QuerySysPermissionReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QueryPermissionIdentityRsp> getPermissionByUrl(@RequestBody @Validated RequestDTO<QueryPermissionIdentityReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysPermissionService.getPermissionByUrl(reqDto.getBody()));
+    }
+
+
+    /**
+     * 获取所有接口权限
+     *
+     * @param reqDto 空实体参数
+     * @return {@link ResponseDTO<SysPermissionVO>}
+     * @throws BlinkException
+     */
+    @PostMapping("/getAllApiPermission")
+    public ResponseDTO<GetAllApiPermissionsRsp> getAllApiPermission(@RequestBody @Validated RequestDTO<GetAllApiPermissionsReq> reqDto) throws BlinkException {
+        return ResponseDTO.newSuccessInstance(sysPermissionService.getAllApiPermission(reqDto.getBody()));
     }
 
 
@@ -100,11 +114,11 @@ public class SysPermissionController {
      * 根据用户id 查询权限标识
      *
      * @param reqDto 入参
-     * @return {@link ResponseDTO<QueryUserPermissionRspDTO>}
+     * @return {@link ResponseDTO< QueryUserPermissionRsp >}
      * @throws BlinkException
      */
     @PostMapping("/getPermissionsByUserId")
-    public ResponseDTO<QueryUserPermissionRspDTO> getPermissionsByUserId(@RequestBody @Validated RequestDTO<QueryUserPermissionReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QueryUserPermissionRsp> getPermissionsByUserId(@RequestBody @Validated RequestDTO<QueryUserPermissionReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysPermissionService.getPermissionsByUserId(reqDto.getBody()));
     }
 

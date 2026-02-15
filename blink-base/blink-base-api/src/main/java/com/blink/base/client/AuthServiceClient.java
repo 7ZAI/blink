@@ -1,7 +1,7 @@
 package com.blink.base.client;
 
-import com.blink.base.dto.req.SysLoginReqDTO;
-import com.blink.base.dto.rsp.SysLoginRspDTO;
+import com.blink.base.dto.req.SysLoginReq;
+import com.blink.base.dto.rsp.SysLoginRsp;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
@@ -17,6 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface AuthServiceClient {
 
     @PostMapping("/system/login")
-    ResponseDTO<SysLoginRspDTO> login(@Validated @RequestBody RequestDTO<SysLoginReqDTO> requestDTO) throws BlinkException;
+    ResponseDTO<SysLoginRsp> login(@Validated @RequestBody RequestDTO<SysLoginReq> requestDTO) throws BlinkException;
 
 }

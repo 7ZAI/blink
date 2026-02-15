@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * @Author binblink
  */
-public class CacheMsgDTO implements Serializable {
+public class CacheMsg implements Serializable {
 
     @Serial
     private static final long serialVersionUID = -458878613754743325L;

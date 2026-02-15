@@ -7,8 +7,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QuerySysRoleRspDTO;
-import com.blink.base.dto.rsp.QueryUserRolesRspDTO;
+import com.blink.base.dto.rsp.QuerySysRoleRsp;
+import com.blink.base.dto.rsp.QueryUserRolesRsp;
 import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.base.entity.SysRoleDO;
 import com.blink.base.entity.SysRoleMenuRelaDO;
@@ -65,7 +65,7 @@ public class SysRoleServiceImpl implements SysRoleService {
      * @return SysRoleVO 显示信息
      */
     @Override
-    public SysRoleVO saveSysRole(AddSysRoleReqDTO saveParam) throws BlinkException {
+    public SysRoleVO saveSysRole(AddSysRoleReq saveParam) throws BlinkException {
 
         var sysRoleDO = new SysRoleDO();
 
@@ -114,7 +114,7 @@ public class SysRoleServiceImpl implements SysRoleService {
      * @param deleteParam 入参
      */
     @Override
-    public void deleteSysRole(DeleteSysRoleReqDTO deleteParam) throws BlinkException {
+    public void deleteSysRole(DeleteSysRoleReq deleteParam) throws BlinkException {
 
 
         if (deleteParam.isBatchDelete()) {
@@ -150,7 +150,7 @@ public class SysRoleServiceImpl implements SysRoleService {
      * @return SysRoleVO
      */
     @Override
-    public SysRoleVO modifySysRole(UpdateSysRoleReqDTO updateParam) throws BlinkException {
+    public SysRoleVO modifySysRole(UpdateSysRoleReq updateParam) throws BlinkException {
 
 
         SysRoleDO sysRoleDOld = sysRoleMapper.selectById(updateParam.getRoleId());
@@ -233,9 +233,9 @@ public class SysRoleServiceImpl implements SysRoleService {
      * @return QuerySysRoleRspDTO
      */
     @Override
-    public QuerySysRoleRspDTO getSysRoleList(QuerySysRoleReqDTO queryParam) throws BlinkException {
+    public QuerySysRoleRsp getSysRoleList(QuerySysRoleReq queryParam) throws BlinkException {
 
-        var pageRsp = new QuerySysRoleRspDTO();
+        var pageRsp = new QuerySysRoleRsp();
         var role = new SysRoleDO();
         BeanUtil.copyProperties(queryParam, role);
         PageUtils.queryPage(queryParam, () -> sysRoleMapper.findSysRoleList(role), pageRsp);
@@ -247,12 +247,12 @@ public class SysRoleServiceImpl implements SysRoleService {
      * 根据用户信息查询 用户角色
      *
      * @param queryParam 查询参数
-     * @return {@link QueryUserRolesRspDTO}
+     * @return {@link QueryUserRolesRsp}
      */
     @Override
-    public QueryUserRolesRspDTO getSysRolesByUser(QueryUserRolesReqDTO queryParam) throws BlinkException {
+    public QueryUserRolesRsp getSysRolesByUser(QueryUserRolesReq queryParam) throws BlinkException {
 
-        var queryUserRolesRspDTO = new QueryUserRolesRspDTO();
+        var queryUserRolesRspDTO = new QueryUserRolesRsp();
 
         List<SysRoleDO> roles = sysRoleMapper.findSysRolesByUser(queryParam);
         List<SysRoleVO> vos = new ArrayList<>();

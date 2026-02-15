@@ -1,10 +1,10 @@
 package com.blink.base.service;
 
-import com.blink.base.dto.req.AddSysConfigGroupReqDTO;
-import com.blink.base.dto.req.DeleteSysConfigGroupReqDTO;
-import com.blink.base.dto.req.UpdateSysConfigGroupReqDTO;
-import com.blink.base.dto.req.QuerySysConfigGroupReqDTO;
-import com.blink.base.dto.rsp.QuerySysConfigGroupRspDTO;
+import com.blink.base.dto.req.AddSysConfigGroupReq;
+import com.blink.base.dto.req.DeleteSysConfigGroupReq;
+import com.blink.base.dto.req.UpdateSysConfigGroupReq;
+import com.blink.base.dto.req.QuerySysConfigGroupReq;
+import com.blink.base.dto.rsp.QuerySysConfigGroupRsp;
 import com.blink.framework.common.exception.BlinkException;
 
 /**
@@ -24,7 +24,7 @@ public interface SysConfigGroupService {
      * @return
      * @throws BlinkException
      */
-    void saveSysConfigGroup(AddSysConfigGroupReqDTO saveParam) throws BlinkException;
+    void saveSysConfigGroup(AddSysConfigGroupReq saveParam) throws BlinkException;
 
     /**
      * 删除 参数分组表
@@ -33,7 +33,7 @@ public interface SysConfigGroupService {
      * @return
      * @throws BlinkException
      */
-    void deleteSysConfigGroup(DeleteSysConfigGroupReqDTO deleteParam) throws BlinkException;
+    void deleteSysConfigGroup(DeleteSysConfigGroupReq deleteParam) throws BlinkException;
 
     /**
      * 更新 参数分组表
@@ -42,7 +42,7 @@ public interface SysConfigGroupService {
      * @return
      * @throws BlinkException
      */
-    void modifySysConfigGroup(UpdateSysConfigGroupReqDTO updateParam) throws BlinkException;
+    void modifySysConfigGroup(UpdateSysConfigGroupReq updateParam) throws BlinkException;
 
     /**
      * 查询 参数分组表 列表
@@ -51,7 +51,7 @@ public interface SysConfigGroupService {
      * @return
      * @throws BlinkException
      */
-    QuerySysConfigGroupRspDTO getSysConfigGroupList(QuerySysConfigGroupReqDTO queryParam) throws BlinkException;
+    QuerySysConfigGroupRsp getSysConfigGroupList(QuerySysConfigGroupReq queryParam) throws BlinkException;
 
 
 }

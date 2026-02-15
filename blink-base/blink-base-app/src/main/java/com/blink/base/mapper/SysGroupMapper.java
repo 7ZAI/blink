@@ -2,7 +2,6 @@ package com.blink.base.mapper;
 
 import com.blink.base.entity.SysGroupDO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blink.base.dto.req.QuerySysGroupReqDTO;
 
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;

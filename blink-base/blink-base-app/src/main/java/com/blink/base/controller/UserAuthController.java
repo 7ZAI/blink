@@ -1,8 +1,8 @@
 package com.blink.base.controller;
 
-import com.blink.base.dto.req.SysLoginReqDTO;
-import com.blink.base.dto.req.SysLogoutReqDTO;
-import com.blink.base.dto.rsp.SysLoginRspDTO;
+import com.blink.base.dto.req.SysLoginReq;
+import com.blink.base.dto.req.SysLogoutReq;
+import com.blink.base.dto.rsp.SysLoginRsp;
 import com.blink.base.service.UserAuthService;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
@@ -37,7 +37,7 @@ public class UserAuthController {
      * @throws BlinkException
      */
     @RequestMapping("/login")
-    public ResponseDTO<SysLoginRspDTO> login(@Validated @RequestBody RequestDTO<SysLoginReqDTO> requestDTO) throws BlinkException {
+    public ResponseDTO<SysLoginRsp> login(@Validated @RequestBody RequestDTO<SysLoginReq> requestDTO) throws BlinkException {
         return ResponseDTO.newSuccessInstance(userAuthService.login(requestDTO.getBody()));
     }
 
@@ -48,7 +48,7 @@ public class UserAuthController {
      * @throws BlinkException
      */
     @RequestMapping("/logout")
-    public ResponseDTO<EmptyBody> logout(@Validated @RequestBody RequestDTO<SysLogoutReqDTO> requestDTO) throws BlinkException {
+    public ResponseDTO<EmptyBody> logout(@Validated @RequestBody RequestDTO<SysLogoutReq> requestDTO) throws BlinkException {
         userAuthService.logout(requestDTO.getBody());
         return ResponseDTO.newSuccessInstance() ;
     }

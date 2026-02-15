@@ -1,10 +1,10 @@
 package com.blink.base.controller;
 
 
-import com.blink.base.dto.req.AddSysConfigReqDTO;
-import com.blink.base.dto.req.DeleteSysConfigReqDTO;
-import com.blink.base.dto.req.UpdateSysConfigReqDTO;
-import com.blink.base.dto.req.QuerySysConfigReqDTO;
+import com.blink.base.dto.req.AddSysConfigReq;
+import com.blink.base.dto.req.DeleteSysConfigReq;
+import com.blink.base.dto.req.UpdateSysConfigReq;
+import com.blink.base.dto.req.QuerySysConfigReq;
 import com.blink.framework.common.constrant.SysConstant;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -44,7 +44,7 @@ class SysConfigControllerTest {
      */
     @Test
     void testSaveSysConfig() throws Exception {
-        AddSysConfigReqDTO reqParam = new AddSysConfigReqDTO();
+        AddSysConfigReq reqParam = new AddSysConfigReq();
 
         MvcResult result = perform("/sysConfig/saveSysConfig", reqParam);
         ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
@@ -58,7 +58,7 @@ class SysConfigControllerTest {
     @Test
     void testDeleteSysConfig() throws Exception {
 
-        DeleteSysConfigReqDTO reqParam = new DeleteSysConfigReqDTO();
+        DeleteSysConfigReq reqParam = new DeleteSysConfigReq();
 
         MvcResult result = perform("/sysConfig/deleteSysConfig", reqParam);
         ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
@@ -73,7 +73,7 @@ class SysConfigControllerTest {
     @Test
     void testModifySysConfig() throws Exception {
 
-        UpdateSysConfigReqDTO reqParam = new UpdateSysConfigReqDTO();
+        UpdateSysConfigReq reqParam = new UpdateSysConfigReq();
 
         MvcResult result = perform("/sysConfig/modifySysConfig", reqParam);
         ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
@@ -88,7 +88,7 @@ class SysConfigControllerTest {
     @Test
     void testGetSysConfigList() throws Exception {
 
-        QuerySysConfigReqDTO reqParam = new QuerySysConfigReqDTO();
+        QuerySysConfigReq reqParam = new QuerySysConfigReq();
 
         MvcResult result = perform("/sysConfig/getSysConfigList", reqParam);
         ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);

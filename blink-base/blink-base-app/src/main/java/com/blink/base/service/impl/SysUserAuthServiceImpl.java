@@ -5,17 +5,16 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.anji.captcha.model.vo.CaptchaVO;
-import com.anji.captcha.service.CaptchaService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.constans.RedisKeyConstans;
-import com.blink.base.dto.req.QueryShowMenuReqDTO;
-import com.blink.base.dto.req.QueryUserRolesReqDTO;
-import com.blink.base.dto.req.SysLoginReqDTO;
-import com.blink.base.dto.req.SysLogoutReqDTO;
-import com.blink.base.dto.rsp.QueryShowMenuRspDTO;
-import com.blink.base.dto.rsp.SysLoginRspDTO;
+import com.blink.base.dto.req.QueryShowMenuReq;
+import com.blink.base.dto.req.QueryUserRolesReq;
+import com.blink.base.dto.req.SysLoginReq;
+import com.blink.base.dto.req.SysLogoutReq;
+import com.blink.base.dto.rsp.QueryShowMenuRsp;
+import com.blink.base.dto.rsp.SysLoginRsp;
 import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.entity.SysRoleDO;
 import com.blink.base.entity.SysUserDO;
@@ -73,7 +72,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
 
 
     @Override
-    public SysLoginRspDTO login(SysLoginReqDTO loginParam) throws BlinkException {
+    public SysLoginRsp login(SysLoginReq loginParam) throws BlinkException {
 
         //TODO 是否开启验证码校验 后期设置成系统配置项
         if (false) {
@@ -134,7 +133,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         String token = IdUtil.simpleUUID();
 //        String token = BlinkJwtUtil.generateToken(loginUser.getUsername(),String.valueOf(loginUser.getUserId()));
         //查询用户相关权限 角色 菜单等信息
-        SysLoginRspDTO result = getLoginUserInfo(loginUser, token);
+        SysLoginRsp result = getLoginUserInfo(loginUser, token);
 
         //踢出久登入
         UserInfoRedisDO older = JacksonUtil.convert(redisClient.get(RedisKeyConstans.USER_INFO + loginUser.getUserId()), UserInfoRedisDO.class);
@@ -165,7 +164,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
      * @throws BlinkException
      */
     @Override
-    public void logout(SysLogoutReqDTO logoutParam) throws BlinkException {
+    public void logout(SysLogoutReq logoutParam) throws BlinkException {
 
         UserInfoRedisDO userInfo = JacksonUtil.convert(redisClient.get(RedisKeyConstans.USER_TOKEN + logoutParam.getToken()), UserInfoRedisDO.class);
 
@@ -190,7 +189,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
      *
      * @param rspInfo
      */
-    private void storeUserInfoToRedis(SysLoginRspDTO rspInfo) {
+    private void storeUserInfoToRedis(SysLoginRsp rspInfo) {
 
         SysUserVO userInfo = rspInfo.getUserInfo();
 
@@ -219,9 +218,9 @@ public class SysUserAuthServiceImpl implements UserAuthService {
      * @param token     登入凭证
      * @return 返回用户信息
      */
-    public SysLoginRspDTO getLoginUserInfo(SysUserDO loginUser, String token) {
+    public SysLoginRsp getLoginUserInfo(SysUserDO loginUser, String token) {
 
-        var queryUserRolesReqDTO = new QueryUserRolesReqDTO();
+        var queryUserRolesReqDTO = new QueryUserRolesReq();
         queryUserRolesReqDTO.setUserId(loginUser.getUserId());
 
         List<SysRoleDO> roles = roleMapper.findSysRolesByUser(queryUserRolesReqDTO);
@@ -232,35 +231,35 @@ public class SysUserAuthServiceImpl implements UserAuthService {
             BlinkException.throwBusinessException(BaseErrCodeConstant.DONT_HAVE_ANY_ROLE);
         }
 
-        QueryShowMenuReqDTO reqBody = new QueryShowMenuReqDTO();
+        QueryShowMenuReq reqBody = new QueryShowMenuReq();
         reqBody.setRoleIds(roleIds);
 
-        QueryShowMenuRspDTO menus = menuService.getSysMenusByRoles(reqBody);
+        QueryShowMenuRsp menus = menuService.getSysMenusByRoles(reqBody);
 
         Set<String> permissions = permissionService.getPermissionsByRoles(roleIds);
 
-        SysLoginRspDTO sysLoginRspDTO = new SysLoginRspDTO();
+        SysLoginRsp sysLoginRsp = new SysLoginRsp();
         //装配前端所需信息
-        sysLoginRspDTO.setToken(token);
+        sysLoginRsp.setToken(token);
 
         //菜单信息
         if (Objects.nonNull(menus)) {
-            sysLoginRspDTO.setMenus(menus.getMenus());
-            sysLoginRspDTO.setFunctionMenu(menus.getFunctionMenu());
+            sysLoginRsp.setMenus(menus.getMenus());
+            sysLoginRsp.setFunctionMenu(menus.getFunctionMenu());
         }
 
         //用户信息
         var sysUserVO = new SysUserVO();
         BeanUtil.copyProperties(loginUser, sysUserVO);
-        sysLoginRspDTO.setUserInfo(sysUserVO);
+        sysLoginRsp.setUserInfo(sysUserVO);
         //角色信息
         List<String> rolesVO = roles.stream().map(SysRoleDO::getRoleCode).collect(Collectors.toList());
 
-        sysLoginRspDTO.setRoles(rolesVO);
+        sysLoginRsp.setRoles(rolesVO);
 
         //权限标识
-        sysLoginRspDTO.setPermissions(permissions);
+        sysLoginRsp.setPermissions(permissions);
 
-        return sysLoginRspDTO;
+        return sysLoginRsp;
     }
 }

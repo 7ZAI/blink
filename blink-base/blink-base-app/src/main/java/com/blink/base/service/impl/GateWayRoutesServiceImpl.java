@@ -1,7 +1,7 @@
 package com.blink.base.service.impl;
 
-import com.blink.base.dto.req.AddRoutesReqDTO;
-import com.blink.base.dto.rsp.QueryGateWayRoutesRspDTO;
+import com.blink.base.dto.req.AddRoutesReq;
+import com.blink.base.dto.rsp.QueryGateWayRoutesRsp;
 import com.blink.base.entity.RouteDefinitionDO;
 import com.blink.base.producer.GateWayStreamMessageProducer;
 import com.blink.base.service.GateWayRoutesService;
@@ -36,13 +36,13 @@ public class GateWayRoutesServiceImpl implements GateWayRoutesService {
 
     /**
      * 添加 修改 都在同一个接口
-     * @param addRoutesReqDTO
+     * @param addRoutesReq
      */
     @Override
-    public void saveRoute(AddRoutesReqDTO addRoutesReqDTO) {
+    public void saveRoute(AddRoutesReq addRoutesReq) {
 
-        String group = addRoutesReqDTO.getRoutesGroup();
-        List<RouteDefinitionDO> routes = addRoutesReqDTO.getRoutes();
+        String group = addRoutesReq.getRoutesGroup();
+        List<RouteDefinitionDO> routes = addRoutesReq.getRoutes();
         String key = GATEWAY_DYNAMIC_ROUTES + ":" + group;
         Map<String, Object> map = redisClient.hGetStringMap(key);
         for (RouteDefinitionDO route : routes) {
@@ -62,9 +62,9 @@ public class GateWayRoutesServiceImpl implements GateWayRoutesService {
 
 
     @Override
-    public QueryGateWayRoutesRspDTO getRouteslList(EmptyBody body) {
+    public QueryGateWayRoutesRsp getRouteslList(EmptyBody body) {
 
-        var pageRsp = new QueryGateWayRoutesRspDTO();
+        var pageRsp = new QueryGateWayRoutesRsp();
 
         Map<String, Object> map = redisClient.hGetStringMap(GATEWAY_DYNAMIC_ROUTES);
         int total = map.size();

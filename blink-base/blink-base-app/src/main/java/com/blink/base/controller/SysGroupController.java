@@ -1,12 +1,12 @@
 package com.blink.base.controller;
 
-import com.blink.base.dto.rsp.SysGroupRspDTO;
+import com.blink.base.dto.rsp.SysGroupRsp;
 import com.blink.base.service.SysGroupService;
-import com.blink.base.dto.req.AddSysGroupReqDTO;
-import com.blink.base.dto.req.DeleteSysGroupReqDTO;
-import com.blink.base.dto.req.UpdateSysGroupReqDTO;
-import com.blink.base.dto.req.QuerySysGroupReqDTO;
-import com.blink.base.dto.rsp.QuerySysGroupRspDTO;
+import com.blink.base.dto.req.AddSysGroupReq;
+import com.blink.base.dto.req.DeleteSysGroupReq;
+import com.blink.base.dto.req.UpdateSysGroupReq;
+import com.blink.base.dto.req.QuerySysGroupReq;
+import com.blink.base.dto.rsp.QuerySysGroupRsp;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -44,7 +44,7 @@ public class SysGroupController {
      * @throws Throwable
      */
     @PostMapping("/saveSysGroup")
-    public ResponseRecord<SysGroupRspDTO> saveSysGroup(@RequestBody @Validated RequestRecord<AddSysGroupReqDTO> reqDto) throws BlinkException {
+    public ResponseRecord<SysGroupRsp> saveSysGroup(@RequestBody @Validated RequestRecord<AddSysGroupReq> reqDto) throws BlinkException {
         return ResponseRecord.newSuccessInstance(sysGroupService.saveSysGroup(reqDto.body()));
     }
 
@@ -56,7 +56,7 @@ public class SysGroupController {
      * @throws Throwable
      */
     @PostMapping("/deleteSysGroup")
-    public ResponseDTO<EmptyBody> deleteSysGroup(@RequestBody @Validated RequestDTO<DeleteSysGroupReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> deleteSysGroup(@RequestBody @Validated RequestDTO<DeleteSysGroupReq> reqDto) throws BlinkException {
         sysGroupService.deleteSysGroup(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -69,7 +69,7 @@ public class SysGroupController {
      * @throws Throwable
      */
     @PostMapping("/modifySysGroup")
-    public ResponseDTO<SysGroupRspDTO> modifySysGroup(@RequestBody @Validated RequestDTO<UpdateSysGroupReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysGroupRsp> modifySysGroup(@RequestBody @Validated RequestDTO<UpdateSysGroupReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysGroupService.modifySysGroup(reqDto.getBody()));
     }
 
@@ -81,7 +81,7 @@ public class SysGroupController {
      * @throws Throwable
      */
     @PostMapping("/getSysGroupList")
-    public ResponseDTO<QuerySysGroupRspDTO> getSysGroupList(@RequestBody @Validated RequestDTO<QuerySysGroupReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QuerySysGroupRsp> getSysGroupList(@RequestBody @Validated RequestDTO<QuerySysGroupReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysGroupService.getSysGroupList(reqDto.getBody()));
     }
 

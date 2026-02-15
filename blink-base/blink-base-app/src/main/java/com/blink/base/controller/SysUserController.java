@@ -1,10 +1,10 @@
 package com.blink.base.controller;
 
-import com.blink.base.dto.req.AddSysUserReqDTO;
-import com.blink.base.dto.req.DeleteSysUserReqDTO;
-import com.blink.base.dto.req.QuerySysUserReqDTO;
-import com.blink.base.dto.req.UpdateSysUserReqDTO;
-import com.blink.base.dto.rsp.SysUserRspDTO;
+import com.blink.base.dto.req.AddSysUserReq;
+import com.blink.base.dto.req.DeleteSysUserReq;
+import com.blink.base.dto.req.QuerySysUserReq;
+import com.blink.base.dto.req.UpdateSysUserReq;
+import com.blink.base.dto.rsp.SysUserRsp;
 import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.service.SysUserService;
 import com.blink.framework.common.data.EmptyBody;
@@ -38,7 +38,7 @@ public class SysUserController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/saveSysUser")
-    public ResponseDTO<EmptyBody> saveSysUser(@RequestBody @Validated RequestDTO<AddSysUserReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> saveSysUser(@RequestBody @Validated RequestDTO<AddSysUserReq> reqDto) throws BlinkException {
         sysUserService.saveSysUser(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -50,7 +50,7 @@ public class SysUserController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/deleteSysUser")
-    public ResponseDTO<EmptyBody> deleteSysUser(@RequestBody @Validated RequestDTO<DeleteSysUserReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> deleteSysUser(@RequestBody @Validated RequestDTO<DeleteSysUserReq> reqDto) throws BlinkException {
         sysUserService.deleteSysUser(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -62,7 +62,7 @@ public class SysUserController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/modifySysUser")
-    public ResponseDTO<EmptyBody> modifySysUser(@RequestBody @Validated RequestDTO<UpdateSysUserReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> modifySysUser(@RequestBody @Validated RequestDTO<UpdateSysUserReq> reqDto) throws BlinkException {
         sysUserService.modifySysUser(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -74,7 +74,7 @@ public class SysUserController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/getSysUserList")
-    public ResponseDTO<SysUserRspDTO> getSysUserList(@RequestBody @Validated RequestDTO<QuerySysUserReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysUserRsp> getSysUserList(@RequestBody @Validated RequestDTO<QuerySysUserReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysUserService.getSysUserList(reqDto.getBody()));
     }
 
@@ -85,7 +85,7 @@ public class SysUserController {
      * @return
      */
     @PostMapping("/getSysUserDetail")
-    public ResponseDTO<SysUserVO> getSysUserDetail(@RequestBody @Validated RequestDTO<QuerySysUserReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<SysUserVO> getSysUserDetail(@RequestBody @Validated RequestDTO<QuerySysUserReq> reqDto) throws BlinkException {
         return  ResponseDTO.newSuccessInstance(sysUserService.getSysUserDetail(reqDto.getBody()));
     }
 }

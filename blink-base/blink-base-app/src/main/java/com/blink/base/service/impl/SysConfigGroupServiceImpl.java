@@ -1,11 +1,11 @@
 package com.blink.base.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.blink.base.dto.req.AddSysConfigGroupReqDTO;
-import com.blink.base.dto.req.DeleteSysConfigGroupReqDTO;
-import com.blink.base.dto.req.QuerySysConfigGroupReqDTO;
-import com.blink.base.dto.req.UpdateSysConfigGroupReqDTO;
-import com.blink.base.dto.rsp.QuerySysConfigGroupRspDTO;
+import com.blink.base.dto.req.AddSysConfigGroupReq;
+import com.blink.base.dto.req.DeleteSysConfigGroupReq;
+import com.blink.base.dto.req.QuerySysConfigGroupReq;
+import com.blink.base.dto.req.UpdateSysConfigGroupReq;
+import com.blink.base.dto.rsp.QuerySysConfigGroupRsp;
 import com.blink.base.entity.SysConfigGroupDO;
 import com.blink.base.mapper.SysConfigGroupMapper;
 import com.blink.base.service.SysConfigGroupService;
@@ -39,7 +39,7 @@ public class SysConfigGroupServiceImpl implements SysConfigGroupService {
      * @throws BlinkException
      */
     @Override
-    public void saveSysConfigGroup(AddSysConfigGroupReqDTO saveParam) throws BlinkException {
+    public void saveSysConfigGroup(AddSysConfigGroupReq saveParam) throws BlinkException {
 
         var sysConfigGroupDO = new SysConfigGroupDO();
         BeanUtil.copyProperties(saveParam, sysConfigGroupDO);
@@ -54,7 +54,7 @@ public class SysConfigGroupServiceImpl implements SysConfigGroupService {
      * @throws BlinkException
      */
     @Override
-    public void deleteSysConfigGroup(DeleteSysConfigGroupReqDTO deleteParam) throws BlinkException {
+    public void deleteSysConfigGroup(DeleteSysConfigGroupReq deleteParam) throws BlinkException {
 
 
         if (deleteParam.isBatchDelete()) {
@@ -72,7 +72,7 @@ public class SysConfigGroupServiceImpl implements SysConfigGroupService {
      * @throws BlinkException
      */
     @Override
-    public void modifySysConfigGroup(UpdateSysConfigGroupReqDTO updateParam) throws BlinkException {
+    public void modifySysConfigGroup(UpdateSysConfigGroupReq updateParam) throws BlinkException {
         var sysConfigGroupDO = new SysConfigGroupDO();
         BeanUtil.copyProperties(updateParam, sysConfigGroupDO);
 
@@ -87,11 +87,11 @@ public class SysConfigGroupServiceImpl implements SysConfigGroupService {
      * @throws BlinkException
      */
     @Override
-    public QuerySysConfigGroupRspDTO getSysConfigGroupList(QuerySysConfigGroupReqDTO queryParam) throws BlinkException {
+    public QuerySysConfigGroupRsp getSysConfigGroupList(QuerySysConfigGroupReq queryParam) throws BlinkException {
 
-        var pageRsp = new QuerySysConfigGroupRspDTO();
+        var pageRsp = new QuerySysConfigGroupRsp();
 
-        QuerySysConfigGroupRspDTO result = PageUtils.queryPage(queryParam, () -> sysConfigGroupMapper.findSysConfigGroupList(queryParam), pageRsp);
+        QuerySysConfigGroupRsp result = PageUtils.queryPage(queryParam, () -> sysConfigGroupMapper.findSysConfigGroupList(queryParam), pageRsp);
 
         return result;
     }

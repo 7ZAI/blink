@@ -4,7 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QuerySysConfigRspDTO;
+import com.blink.base.dto.rsp.QuerySysConfigRsp;
 import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.base.entity.SysConfigDO;
 import com.blink.base.mapper.SysConfigGroupMapper;
@@ -63,7 +63,7 @@ public class SysConfigServiceImpl implements SysConfigService {
      * @throws BlinkException
      */
     @Override
-    public void saveSysConfig(AddSysConfigReqDTO saveParam) throws BlinkException {
+    public void saveSysConfig(AddSysConfigReq saveParam) throws BlinkException {
 
         var sysConfigDO = new SysConfigDO();
         BeanUtil.copyProperties(saveParam, sysConfigDO);
@@ -86,7 +86,7 @@ public class SysConfigServiceImpl implements SysConfigService {
      * @throws BlinkException
      */
     @Override
-    public void deleteSysConfig(DeleteSysConfigReqDTO deleteParam) throws BlinkException {
+    public void deleteSysConfig(DeleteSysConfigReq deleteParam) throws BlinkException {
 
         if (deleteParam.isBatchDelete()) {
             sysConfigMapper.deleteBatchIds(deleteParam.getIdList());
@@ -103,7 +103,7 @@ public class SysConfigServiceImpl implements SysConfigService {
      * @throws BlinkException
      */
     @Override
-    public void modifySysConfig(UpdateSysConfigReqDTO updateParam) throws BlinkException {
+    public void modifySysConfig(UpdateSysConfigReq updateParam) throws BlinkException {
 
         String key = updateParam.getConfigKey();
 
@@ -150,7 +150,7 @@ public class SysConfigServiceImpl implements SysConfigService {
      * @throws BlinkException
      */
     @Override
-    public QuerySysConfigRspDTO getSysConfigList(QuerySysConfigReqDTO queryParam) throws BlinkException {
+    public QuerySysConfigRsp getSysConfigList(QuerySysConfigReq queryParam) throws BlinkException {
 
         List<Integer> groupIds = queryParam.getGroupIds();
         //查询所有 子组id
@@ -159,8 +159,8 @@ public class SysConfigServiceImpl implements SysConfigService {
             queryParam.setGroupIds(groupIds);
         }
 
-        var pageRsp = new QuerySysConfigRspDTO();
-        QuerySysConfigRspDTO result = PageUtils.queryPage(queryParam, () -> sysConfigMapper.findSysConfigList(queryParam), pageRsp);
+        var pageRsp = new QuerySysConfigRsp();
+        QuerySysConfigRsp result = PageUtils.queryPage(queryParam, () -> sysConfigMapper.findSysConfigList(queryParam), pageRsp);
         return result;
     }
 
@@ -186,7 +186,7 @@ public class SysConfigServiceImpl implements SysConfigService {
      * @throws BlinkException
      */
     @Override
-    public SysConfigVO getOneConfigFromDataBase(QueryOneSysConfigReqDTO param) throws BlinkException {
+    public SysConfigVO getOneConfigFromDataBase(QueryOneSysConfigReq param) throws BlinkException {
 
 //        if(StrUtil.isNotBlank(param.getConfigKey())){
 //            redisClient.get()
@@ -211,7 +211,7 @@ public class SysConfigServiceImpl implements SysConfigService {
      * @throws BlinkException
      */
     @Override
-    public SysConfigVO getOneConfigFromCacheOrDataBase(QueryOneSysConfigReqDTO queryParam) throws BlinkException {
+    public SysConfigVO getOneConfigFromCacheOrDataBase(QueryOneSysConfigReq queryParam) throws BlinkException {
 
         //TODO 判断是否属于gateway的config参数
 

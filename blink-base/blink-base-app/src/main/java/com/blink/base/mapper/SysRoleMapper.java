@@ -1,8 +1,7 @@
 package com.blink.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blink.base.dto.req.QuerySysRoleReqDTO;
-import com.blink.base.dto.req.QueryUserRolesReqDTO;
+import com.blink.base.dto.req.QueryUserRolesReq;
 import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.base.entity.SysRoleDO;
 import org.apache.ibatis.annotations.Mapper;
@@ -23,5 +22,5 @@ public interface SysRoleMapper extends BaseMapper<SysRoleDO> {
 
     List<SysRoleVO> findSysRoleList(SysRoleDO sysRoleDO);
 
-    List<SysRoleDO> findSysRolesByUser(QueryUserRolesReqDTO queryUserRolesReqDTO);
+    List<SysRoleDO> findSysRolesByUser(QueryUserRolesReq queryUserRolesReq);
 }

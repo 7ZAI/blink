@@ -1,6 +1,6 @@
 package com.blink.base;
 
-import com.blink.base.dto.req.SysLoginReqDTO;
+import com.blink.base.dto.req.SysLoginReq;
 import com.blink.base.dto.vo.CaptchaVO;
 import com.blink.framework.common.data.RequestDTO;
 import jakarta.annotation.Resource;
@@ -21,8 +21,8 @@ public class AppTest {
     @Test
     public void test1() throws Exception {
 
-        RequestDTO<SysLoginReqDTO> requestDTO = new RequestDTO<>();
-        SysLoginReqDTO loginParam = new SysLoginReqDTO();
+        RequestDTO<SysLoginReq> requestDTO = new RequestDTO<>();
+        SysLoginReq loginParam = new SysLoginReq();
         CaptchaVO captchaVO = new CaptchaVO();
 
         loginParam.setUsername("test1");

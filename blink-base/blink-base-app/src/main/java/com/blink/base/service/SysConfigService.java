@@ -1,12 +1,9 @@
 package com.blink.base.service;
 
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QuerySysConfigRspDTO;
+import com.blink.base.dto.rsp.QuerySysConfigRsp;
 import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.base.entity.SysConfigDO;
-import com.blink.framework.common.data.EmptyBody;
-import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 
 import java.util.List;
@@ -28,7 +25,7 @@ public interface SysConfigService {
      * @return
      * @throws BlinkException
      */
-    void saveSysConfig(AddSysConfigReqDTO saveParam) throws BlinkException;
+    void saveSysConfig(AddSysConfigReq saveParam) throws BlinkException;
 
     /**
      * 删除 参数配置表
@@ -37,7 +34,7 @@ public interface SysConfigService {
      * @return
      * @throws BlinkException
      */
-    void deleteSysConfig(DeleteSysConfigReqDTO deleteParam) throws BlinkException;
+    void deleteSysConfig(DeleteSysConfigReq deleteParam) throws BlinkException;
 
     /**
      * 更新 参数配置表
@@ -46,7 +43,7 @@ public interface SysConfigService {
      * @return
      * @throws BlinkException
      */
-    void modifySysConfig(UpdateSysConfigReqDTO updateParam) throws BlinkException;
+    void modifySysConfig(UpdateSysConfigReq updateParam) throws BlinkException;
 
     /**
      * 查询 参数配置表 列表
@@ -55,7 +52,7 @@ public interface SysConfigService {
      * @return
      * @throws BlinkException
      */
-    QuerySysConfigRspDTO getSysConfigList(QuerySysConfigReqDTO queryParam) throws BlinkException;
+    QuerySysConfigRsp getSysConfigList(QuerySysConfigReq queryParam) throws BlinkException;
 
     /**
      * 根据分组Id 查询该分组下所有子配置
@@ -69,7 +66,7 @@ public interface SysConfigService {
      * @return
      * @throws BlinkException
      */
-    SysConfigVO getOneConfigFromDataBase(QueryOneSysConfigReqDTO param) throws BlinkException;
+    SysConfigVO getOneConfigFromDataBase(QueryOneSysConfigReq param) throws BlinkException;
 
     /**
      * 根据查询条件查询
@@ -79,5 +76,5 @@ public interface SysConfigService {
      * @return SysConfigVO
      * @throws BlinkException
      */
-    SysConfigVO getOneConfigFromCacheOrDataBase(QueryOneSysConfigReqDTO body) throws BlinkException;
+    SysConfigVO getOneConfigFromCacheOrDataBase(QueryOneSysConfigReq body) throws BlinkException;
 }

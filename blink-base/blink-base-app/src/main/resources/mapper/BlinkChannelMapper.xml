@@ -82,7 +82,7 @@
     </sql>
 
 
-    <select id="findBlinkChannelList" parameterType="com.blink.base.dto.req.QueryBlinkChannelReqDTO"
+    <select id="findBlinkChannelList" parameterType="com.blink.base.dto.req.QueryBlinkChannelReq"
             resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>

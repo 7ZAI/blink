@@ -1,7 +1,7 @@
 package com.blink.base.controller;
 
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QueryBlinkChannelRspDTO;
+import com.blink.base.dto.rsp.QueryBlinkChannelRsp;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.base.service.BlinkChannelService;
@@ -37,7 +37,7 @@ public class BlinkChannelController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/saveChannel")
-    public ResponseDTO<EmptyBody> saveBlinkChannel(@RequestBody @Validated RequestDTO<AddBlinkChannelReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> saveBlinkChannel(@RequestBody @Validated RequestDTO<AddBlinkChannelReq> reqDto) throws BlinkException {
         blinkChannelService.saveBlinkChannel(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -49,7 +49,7 @@ public class BlinkChannelController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/deleteChannel")
-    public ResponseDTO<EmptyBody> deleteBlinkChannel(@RequestBody @Validated RequestDTO<DeleteBlinkChannelReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> deleteBlinkChannel(@RequestBody @Validated RequestDTO<DeleteBlinkChannelReq> reqDto) throws BlinkException {
         blinkChannelService.deleteBlinkChannel(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -61,7 +61,7 @@ public class BlinkChannelController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/modifyChannel")
-    public ResponseDTO<EmptyBody> modifyBlinkChannel(@RequestBody @Validated RequestDTO<UpdateBlinkChannelReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> modifyBlinkChannel(@RequestBody @Validated RequestDTO<UpdateBlinkChannelReq> reqDto) throws BlinkException {
         blinkChannelService.modifyBlinkChannel(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -73,7 +73,7 @@ public class BlinkChannelController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/getChannelList")
-    public ResponseDTO<QueryBlinkChannelRspDTO> getBlinkChannelList(@RequestBody @Validated RequestDTO<QueryBlinkChannelReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QueryBlinkChannelRsp> getBlinkChannelList(@RequestBody @Validated RequestDTO<QueryBlinkChannelReq> reqDto) throws BlinkException {
 
         return ResponseDTO.newSuccessInstance(blinkChannelService.getBlinkChannelList(reqDto.getBody()));
     }
@@ -86,7 +86,7 @@ public class BlinkChannelController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/getChannel")
-    public ResponseDTO<ChannelVO> getChannel(@RequestBody @Validated RequestDTO<QueryOneChannelReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<ChannelVO> getChannel(@RequestBody @Validated RequestDTO<QueryOneChannelReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(blinkChannelService.getChannel(reqDto.getBody()));
     }
 
@@ -97,7 +97,7 @@ public class BlinkChannelController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/refreshChannelKey")
-    public ResponseDTO<BlinkChannelDO> refreshChannelKey(@RequestBody @Validated RequestDTO<QueryOneChannelReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<BlinkChannelDO> refreshChannelKey(@RequestBody @Validated RequestDTO<QueryOneChannelReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(blinkChannelService.refreshChannelKey(reqDto.getBody()));
     }
 
@@ -109,7 +109,7 @@ public class BlinkChannelController {
      * @return {@link ResponseDTO<EmptyBody>}
      */
     @PostMapping("/refreshSystemKey")
-    public ResponseDTO<BlinkChannelDO> refreshSystemKey(@RequestBody @Validated RequestDTO<QueryOneChannelReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<BlinkChannelDO> refreshSystemKey(@RequestBody @Validated RequestDTO<QueryOneChannelReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(blinkChannelService.refreshSystemKey(reqDto.getBody()));
     }
 

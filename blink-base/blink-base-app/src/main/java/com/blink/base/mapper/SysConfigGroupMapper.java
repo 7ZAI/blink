@@ -1,7 +1,7 @@
 package com.blink.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.blink.base.dto.req.QuerySysConfigGroupReqDTO;
+import com.blink.base.dto.req.QuerySysConfigGroupReq;
 import com.blink.base.entity.SysConfigGroupDO;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -19,7 +19,7 @@ import java.util.List;
 public interface SysConfigGroupMapper extends BaseMapper<SysConfigGroupDO> {
 
 
-    List<SysConfigGroupDO> findSysConfigGroupList(QuerySysConfigGroupReqDTO reqDTO);
+    List<SysConfigGroupDO> findSysConfigGroupList(QuerySysConfigGroupReq reqDTO);
 
     List<Integer> findAllSonIdByParentId(Integer parentId);
 }

@@ -1,8 +1,7 @@
 package com.blink.base.service;
 
-import com.blink.base.dto.req.AddRoutesReqDTO;
-import com.blink.base.dto.rsp.QueryGateWayRoutesRspDTO;
-import com.blink.base.entity.RouteDefinitionDO;
+import com.blink.base.dto.req.AddRoutesReq;
+import com.blink.base.dto.rsp.QueryGateWayRoutesRsp;
 import com.blink.framework.common.data.EmptyBody;
 
 import java.util.List;
@@ -17,10 +16,10 @@ import java.util.List;
  */
 public interface GateWayRoutesService {
 
-    void saveRoute(AddRoutesReqDTO addRoutesReqDTO);
+    void saveRoute(AddRoutesReq addRoutesReq);
 
     void deleteRoute(List<String> body);
 
 
-    QueryGateWayRoutesRspDTO getRouteslList(EmptyBody body);
+    QueryGateWayRoutesRsp getRouteslList(EmptyBody body);
 }

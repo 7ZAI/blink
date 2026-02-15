@@ -1,12 +1,9 @@
 package com.blink.base.service;
 
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QueryShowMenuRspDTO;
-import com.blink.base.dto.rsp.QuerySysMenuRspDTO;
+import com.blink.base.dto.rsp.QueryShowMenuRsp;
+import com.blink.base.dto.rsp.QuerySysMenuRsp;
 import com.blink.base.dto.vo.SysMenuVO;
-import com.blink.framework.common.data.EmptyBody;
-import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 
 /**
@@ -27,7 +24,7 @@ public interface SysMenuService {
      * @return
      * @throws BlinkException
      */
-    SysMenuVO saveSysMenu(AddSysMenuReqDTO saveParam) throws BlinkException;
+    SysMenuVO saveSysMenu(AddSysMenuReq saveParam) throws BlinkException;
 
     /**
      * 删除 系统菜单
@@ -36,7 +33,7 @@ public interface SysMenuService {
      * @return
      * @throws BlinkException
      */
-    void deleteSysMenu(DeleteSysMenuReqDTO deleteParam) throws BlinkException;
+    void deleteSysMenu(DeleteSysMenuReq deleteParam) throws BlinkException;
 
     /**
      * 更新 系统菜单
@@ -45,7 +42,7 @@ public interface SysMenuService {
      * @return
      * @throws BlinkException
      */
-    SysMenuVO modifySysMenu(UpdateSysMenuReqDTO updateParam) throws BlinkException;
+    SysMenuVO modifySysMenu(UpdateSysMenuReq updateParam) throws BlinkException;
 
     /**
      * 查询 系统菜单 列表
@@ -54,14 +51,14 @@ public interface SysMenuService {
      * @return
      * @throws BlinkException
      */
-    QuerySysMenuRspDTO getSysMenuList(QuerySysMenuReqDTO queryParam) throws BlinkException;
+    QuerySysMenuRsp getSysMenuList(QuerySysMenuReq queryParam) throws BlinkException;
 
     /**
      * 根据用户查询其菜单 登入成功
      *
      * @param queryParam
-     * @return {@link QueryShowMenuRspDTO}
+     * @return {@link QueryShowMenuRsp}
      * @throws BlinkException
      */
-    QueryShowMenuRspDTO getSysMenusByRoles(QueryShowMenuReqDTO queryParam) throws BlinkException;
+    QueryShowMenuRsp getSysMenusByRoles(QueryShowMenuReq queryParam) throws BlinkException;
 }

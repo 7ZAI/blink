@@ -1,11 +1,11 @@
 package com.blink.base.controller;
 
 import com.blink.base.service.SysConfigGroupService;
-import com.blink.base.dto.req.AddSysConfigGroupReqDTO;
-import com.blink.base.dto.req.DeleteSysConfigGroupReqDTO;
-import com.blink.base.dto.req.UpdateSysConfigGroupReqDTO;
-import com.blink.base.dto.req.QuerySysConfigGroupReqDTO;
-import com.blink.base.dto.rsp.QuerySysConfigGroupRspDTO;
+import com.blink.base.dto.req.AddSysConfigGroupReq;
+import com.blink.base.dto.req.DeleteSysConfigGroupReq;
+import com.blink.base.dto.req.UpdateSysConfigGroupReq;
+import com.blink.base.dto.req.QuerySysConfigGroupReq;
+import com.blink.base.dto.rsp.QuerySysConfigGroupRsp;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -42,7 +42,7 @@ public class SysConfigGroupController {
      * @throws Throwable
      */
     @PostMapping("/saveSysConfigGroup")
-    public ResponseDTO<EmptyBody> saveSysConfigGroup(@RequestBody @Validated RequestDTO<AddSysConfigGroupReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> saveSysConfigGroup(@RequestBody @Validated RequestDTO<AddSysConfigGroupReq> reqDto) throws BlinkException {
         sysConfigGroupService.saveSysConfigGroup(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -55,7 +55,7 @@ public class SysConfigGroupController {
      * @throws Throwable
      */
     @PostMapping("/deleteSysConfigGroup")
-    public ResponseDTO<EmptyBody> deleteSysConfigGroup(@RequestBody @Validated RequestDTO<DeleteSysConfigGroupReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> deleteSysConfigGroup(@RequestBody @Validated RequestDTO<DeleteSysConfigGroupReq> reqDto) throws BlinkException {
         sysConfigGroupService.deleteSysConfigGroup(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -68,7 +68,7 @@ public class SysConfigGroupController {
      * @throws Throwable
      */
     @PostMapping("/modifySysConfigGroup")
-    public ResponseDTO<EmptyBody> modifySysConfigGroup(@RequestBody @Validated RequestDTO<UpdateSysConfigGroupReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<EmptyBody> modifySysConfigGroup(@RequestBody @Validated RequestDTO<UpdateSysConfigGroupReq> reqDto) throws BlinkException {
         sysConfigGroupService.modifySysConfigGroup(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
@@ -81,7 +81,7 @@ public class SysConfigGroupController {
      * @throws Throwable
      */
     @PostMapping("/getSysConfigGroupList")
-    public ResponseDTO<QuerySysConfigGroupRspDTO> getSysConfigGroupList(@RequestBody @Validated RequestDTO<QuerySysConfigGroupReqDTO> reqDto) throws BlinkException {
+    public ResponseDTO<QuerySysConfigGroupRsp> getSysConfigGroupList(@RequestBody @Validated RequestDTO<QuerySysConfigGroupReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysConfigGroupService.getSysConfigGroupList(reqDto.getBody()));
     }
 

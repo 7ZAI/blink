@@ -11,7 +11,7 @@ import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.constans.RedisKeyConstans;
 import com.blink.base.dto.req.*;
-import com.blink.base.dto.rsp.QueryBlinkChannelRspDTO;
+import com.blink.base.dto.rsp.QueryBlinkChannelRsp;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.base.mapper.BlinkChannelMapper;
@@ -30,8 +30,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -69,7 +67,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * @param saveParam 入参
      */
     @Override
-    public void saveBlinkChannel(AddBlinkChannelReqDTO saveParam) throws BlinkException {
+    public void saveBlinkChannel(AddBlinkChannelReq saveParam) throws BlinkException {
 
         BlinkChannelDO blinkChannelDO = createNewChanelDO(saveParam);
 
@@ -112,7 +110,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * @param deleteParam
      */
     @Override
-    public void deleteBlinkChannel(DeleteBlinkChannelReqDTO deleteParam) throws BlinkException {
+    public void deleteBlinkChannel(DeleteBlinkChannelReq deleteParam) throws BlinkException {
 
         Optional<BlinkChannelDO> optional = Optional.ofNullable(channelMapper.selectById(deleteParam.getDeleteId()));
         if (optional.isEmpty()) {
@@ -148,7 +146,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      */
     @Override
 //    @CacheDoubleDelete(keyPrefix = RedisKeyConstans.CHANNEL_INFO, fieldName = "channelId")
-    public void modifyBlinkChannel(UpdateBlinkChannelReqDTO updateParam) throws BlinkException {
+    public void modifyBlinkChannel(UpdateBlinkChannelReq updateParam) throws BlinkException {
 
 
         BlinkChannelDO channel = channelMapper.selectById(updateParam.getChannelId());
@@ -183,9 +181,9 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      */
     @LogExecution()
     @Override
-    public QueryBlinkChannelRspDTO getBlinkChannelList(QueryBlinkChannelReqDTO queryParam) throws BlinkException {
+    public QueryBlinkChannelRsp getBlinkChannelList(QueryBlinkChannelReq queryParam) throws BlinkException {
 
-        var pageRsp = new QueryBlinkChannelRspDTO();
+        var pageRsp = new QueryBlinkChannelRsp();
 
         return PageUtils.queryPage(queryParam, () -> channelMapper.findBlinkChannelList(queryParam), pageRsp);
     }
@@ -199,7 +197,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * @throws Throwable
      */
     @Override
-    public ChannelVO getChannel(QueryOneChannelReqDTO queryParam) throws BlinkException {
+    public ChannelVO getChannel(QueryOneChannelReq queryParam) throws BlinkException {
         BlinkChannelDO channelDO = channelMapper.selectOne(new LambdaQueryWrapper<BlinkChannelDO>()
                 .eq(StrUtil.isNotBlank(queryParam.getChannelId()), BlinkChannelDO::getChannelId, queryParam.getChannelId())
                 .eq(StrUtil.isNotBlank(queryParam.getChannelName()), BlinkChannelDO::getChannelName, queryParam.getChannelName())
@@ -221,7 +219,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * @throws Throwable
      */
     @Override
-    public BlinkChannelDO refreshChannelKey(QueryOneChannelReqDTO queryParam) throws BlinkException {
+    public BlinkChannelDO refreshChannelKey(QueryOneChannelReq queryParam) throws BlinkException {
 
 
         LambdaQueryWrapper<BlinkChannelDO> queryWrapper = new LambdaQueryWrapper<BlinkChannelDO>()
@@ -258,7 +256,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
      * @throws Throwable
      */
     @Override
-    public BlinkChannelDO refreshSystemKey(QueryOneChannelReqDTO queryParam) throws BlinkException {
+    public BlinkChannelDO refreshSystemKey(QueryOneChannelReq queryParam) throws BlinkException {
 
 
         LambdaQueryWrapper<BlinkChannelDO> queryWrapper = new LambdaQueryWrapper<BlinkChannelDO>()
@@ -291,7 +289,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     /**
      * 获取新的渠道对象
      */
-    private BlinkChannelDO createNewChanelDO(AddBlinkChannelReqDTO reqBody) {
+    private BlinkChannelDO createNewChanelDO(AddBlinkChannelReq reqBody) {
 
         var channel = new BlinkChannelDO();
         BeanUtils.copyProperties(reqBody, channel);

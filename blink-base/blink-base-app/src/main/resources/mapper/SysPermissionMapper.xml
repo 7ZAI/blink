@@ -54,7 +54,7 @@
     </sql>
 
 
-    <select id="findSysPermissionList" parameterType="com.blink.base.dto.req.QuerySysPermissionReqDTO"
+    <select id="findSysPermissionList" parameterType="com.blink.base.dto.req.QuerySysPermissionReq"
             resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
@@ -75,7 +75,7 @@
         </foreach>
     </select>
 
-    <select id="findRolesPermissionsWithType" parameterType="com.blink.base.dto.req.QueryRolePermissionReqDTO" resultMap="BaseResultMap">
+    <select id="findRolesPermissionsWithType" parameterType="com.blink.base.dto.req.QueryRolePermissionReq" resultMap="BaseResultMap">
         SELECT
         DISTINCT sp.ac_id, ac_name, ac_en_name, ac_identity, ac_type, icon, url,data_filter_id,
         create_by, create_time, update_by, update_time

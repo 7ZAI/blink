@@ -30,7 +30,7 @@ class BlinkChannelControllerTest {
 
     @Test
     void testSaveBlinkChannel() throws Exception {
-        AddBlinkChannelReqDTO reqParam = new AddBlinkChannelReqDTO();
+        AddBlinkChannelReq reqParam = new AddBlinkChannelReq();
         reqParam.setChannelName("ThirdParty");
 
         reqParam.setEnable(CommonConstans.SWITCH_OPEN);
@@ -46,7 +46,7 @@ class BlinkChannelControllerTest {
     @Test
     void testDeleteBlinkChannel() throws Exception {
 
-        DeleteBlinkChannelReqDTO reqParam = new DeleteBlinkChannelReqDTO();
+        DeleteBlinkChannelReq reqParam = new DeleteBlinkChannelReq();
 
         reqParam.setDeleteId("fea35977-803d-46de-945c-e42916d95c05");
 
@@ -59,7 +59,7 @@ class BlinkChannelControllerTest {
     @Test
     void testModifyBlinkChannel() throws Exception {
 
-        UpdateBlinkChannelReqDTO reqParam = new UpdateBlinkChannelReqDTO();
+        UpdateBlinkChannelReq reqParam = new UpdateBlinkChannelReq();
 
         reqParam.setChannelId("e4090c3738214a6d9a4fc80d59622e5f");
         reqParam.setChannelName("test");
@@ -76,7 +76,7 @@ class BlinkChannelControllerTest {
     @Test
     void testGetBlinkChannelList() throws Exception {
 
-        QueryBlinkChannelReqDTO reqParam = new QueryBlinkChannelReqDTO();
+        QueryBlinkChannelReq reqParam = new QueryBlinkChannelReq();
 
         MvcResult result = perform("/channel/getChannelList", reqParam);
         ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
@@ -86,7 +86,7 @@ class BlinkChannelControllerTest {
 
     @Test
     void testGetChannel() throws Exception {
-        QueryOneChannelReqDTO reqParam = new QueryOneChannelReqDTO();
+        QueryOneChannelReq reqParam = new QueryOneChannelReq();
 //        reqParam.setChannelId("e4090c3738214a6d9a4fc80d59622e5f");
         reqParam.setChannelName("Apple");
 

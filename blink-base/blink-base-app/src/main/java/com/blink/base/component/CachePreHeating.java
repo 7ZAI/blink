@@ -3,7 +3,9 @@ package com.blink.base.component;
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constans.RedisKeyConstans;
-import com.blink.base.dto.rsp.SysLoginRspDTO;
+import com.blink.base.dto.req.GetAllApiPermissionsReq;
+import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
+import com.blink.base.dto.rsp.SysLoginRsp;
 import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.base.entity.SysConfigDO;
@@ -12,10 +14,9 @@ import com.blink.base.entity.SysUserDO;
 import com.blink.base.mapper.BlinkChannelMapper;
 import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.service.SysConfigService;
+import com.blink.base.service.SysPermissionService;
 import com.blink.base.service.UserAuthService;
-import com.blink.framework.common.data.ChannelInfoRedisDO;
-import com.blink.framework.common.data.SysConfigCacheDO;
-import com.blink.framework.common.data.UserInfoRedisDO;
+import com.blink.framework.common.data.*;
 import com.blink.framework.core.annotation.PreHeatData;
 import com.blink.framework.redis.component.RedisClient;
 import jakarta.annotation.Resource;
@@ -44,7 +45,7 @@ public class CachePreHeating {
     private BlinkChannelMapper channelMapper;
 
     @Resource
-    private SysPermissionMapper permissionMapper;
+    private SysPermissionService permissionService;
 
     @Resource
     private SysConfigService configService;
@@ -98,7 +99,7 @@ public class CachePreHeating {
 
         var sysUserDO = new SysUserDO();
         sysUserDO.setUserId(Integer.parseInt(userId));
-        SysLoginRspDTO loginUserInfo = userAuthService.getLoginUserInfo(sysUserDO, token);
+        SysLoginRsp loginUserInfo = userAuthService.getLoginUserInfo(sysUserDO, token);
 
         SysUserVO userInfo = loginUserInfo.getUserInfo();
         var userInfoRedis = new UserInfoRedisDO();
@@ -127,8 +128,8 @@ public class CachePreHeating {
 
     private Map<String, Object> cachePermissions() {
 
-        List<SysPermissionDO> permissionList = permissionMapper.selectList(new LambdaQueryWrapper<SysPermissionDO>().eq(SysPermissionDO::getAcType,1));
-
+        GetAllApiPermissionsRsp rsp = permissionService.getAllApiPermission(new GetAllApiPermissionsReq());
+        List<SysPermissionDO> permissionList = rsp.getPermissionList();
         return permissionList.stream()
                 .collect(Collectors.toMap(p -> RedisKeyConstans.URL_PERMISSION + p.getUrl(), SysPermissionDO::getAcIdentity));
     }
