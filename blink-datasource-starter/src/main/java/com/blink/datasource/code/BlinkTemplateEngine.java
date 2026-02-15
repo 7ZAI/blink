@@ -41,8 +41,8 @@ public class BlinkTemplateEngine extends VelocityTemplateEngine {
         String tempPath = file.getTemplatePath().replaceAll("\\.java.vm", "");
         if("dto.req".equals(file.getPackageName())){
             String tempName =  tempPath.substring(tempPath.lastIndexOf("/")+1);
-            String prefix = tempName.substring(0,tempName.indexOf("ReqDTO"));
-            String endfix = tempName.substring(tempName.indexOf("ReqDTO"));
+            String prefix = tempName.substring(0,tempName.indexOf("Req"));
+            String endfix = tempName.substring(tempName.indexOf("Req"));
             fileName = prefix + entityName + endfix + fileName;
             return fileName;
 
@@ -50,8 +50,8 @@ public class BlinkTemplateEngine extends VelocityTemplateEngine {
 
         if("dto.rsp".equals(file.getPackageName())){
             String tempName =  tempPath.substring(tempPath.lastIndexOf("/")+1);
-            String prefix = tempName.substring(0,tempName.indexOf("RspDTO"));
-            String endfix = tempName.substring(tempName.indexOf("RspDTO"));
+            String prefix = tempName.substring(0,tempName.indexOf("Rsp"));
+            String endfix = tempName.substring(tempName.indexOf("Rsp"));
             fileName = prefix + entityName + endfix + fileName;
             return fileName;
         }

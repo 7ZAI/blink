@@ -6,12 +6,13 @@ import com.baomidou.mybatisplus.generator.AutoGenerator;
 import com.baomidou.mybatisplus.generator.FastAutoGenerator;
 import com.baomidou.mybatisplus.generator.config.*;
 import com.baomidou.mybatisplus.generator.config.builder.CustomFile;
-import com.baomidou.mybatisplus.generator.engine.VelocityTemplateEngine;
+import com.baomidou.mybatisplus.generator.config.po.TableInfo;
 import com.baomidou.mybatisplus.generator.fill.Column;
 import org.apache.ibatis.annotations.Mapper;
 import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.core.io.ClassPathResource;
 
+import java.io.File;
 import java.util.*;
 
 /**
@@ -113,18 +114,35 @@ public class CodeGenerator {
         StrategyConfig strategyConfig = new StrategyConfig.Builder()
                 //表名
                 .addInclude(getTables(tableName))
-
                 //过滤表前缀
                 .addTablePrefix(getTablePrefix(tablePrefix))
+
                 // controller 策略
-                .controllerBuilder().enableRestStyle()
+                .controllerBuilder()
+                .template("/codeTemplate/controller.java.vm")
                 .enableHyphenStyle()
-                .enableFileOverride()
+                .enableRestStyle()
+                .build()
                 //service 策略
-                .serviceBuilder().convertServiceFileName(entityName -> entityName + ConstVal.SERVICE)
+                .serviceBuilder()
+                // 禁用 Service 接口生成
+                .disableService()
+                .convertServiceFileName(entityName -> entityName + ConstVal.SERVICE)
+                .serviceTemplate("/codeTemplate/service.java.vm")
+                .serviceImplTemplate("/codeTemplate/serviceImpl.java.vm")
+                .build()
+                .mapperBuilder()
                 .enableFileOverride()
+                .enableBaseColumnList()
+                .enableBaseResultMap()
+                .enableFileOverride()
+                .mapperAnnotation(Mapper.class)
+                .mapperTemplate("/codeTemplate/mapper.java.vm")
+                .mapperXmlTemplate("/codeTemplate/mapper.xml.vm")
+                .build()
                 //实体类策略
-                .entityBuilder().enableTableFieldAnnotation()
+                .entityBuilder()
+                .enableTableFieldAnnotation()
                 .enableLombok()
                 .addTableFills(
                         new Column("create_time", FieldFill.INSERT),
@@ -134,32 +152,7 @@ public class CodeGenerator {
                 )
                 .convertFileName(entityName -> entityName + "DO")
                 .enableFileOverride()
-//                        .logicDeleteColumnName()
-                .mapperBuilder().mapperAnnotation(Mapper.class)
-                .enableFileOverride()
-                .enableBaseColumnList()
-                .enableBaseResultMap()
-                .enableFileOverride()
                 .build();
-
-        TemplateConfig.Builder tcb = new TemplateConfig.Builder();
-        // 配置dto模板
-        tcb.controller("/codeTemplate/controller.java.vm");
-        //DTO
-//        if ("1".equals(templateType.trim())) {
-//            // 配置dto模板
-//            tcb.controller("/codeTemplate/controller.java.vm");
-//        } else {
-//            // 配置record模板
-//            tcb.controller("/codeTemplate/record/controller.java.vm");
-//        }
-
-        tcb.service("/codeTemplate/service.java.vm")
-                .serviceImpl("/codeTemplate/serviceImpl.java.vm")
-                .mapper("/codeTemplate/mapper.java.vm")
-                .xml("/codeTemplate/mapper.xml.vm");
-
-        TemplateConfig templateConfig = tcb.build();
 
         // 代码生成器
         new AutoGenerator(dataSourceConfig)
@@ -170,9 +163,7 @@ public class CodeGenerator {
                 // 策略配置
                 .strategy(strategyConfig)
                 //自定义模板配置
-                .injection(getInjectionConfig("1"))
-                // 默认模板配置
-                .template(templateConfig)
+                .injection(getInjectionConfig(projectPath, packageConfig.getParent()))
                 // 执行
                 .execute(new BlinkTemplateEngine());
     }
@@ -231,9 +222,9 @@ public class CodeGenerator {
      *
      * @return
      */
-    private static InjectionConfig getInjectionConfig(String type) {
+    private static InjectionConfig getInjectionConfig(String projectPath,String basePackage) {
 
-        List<CustomFile> customFiles = "1".equals(type) ? getDtoCustomFile() : getRecordCustomFile();
+        List<CustomFile> customFiles = getDtoCustomFile(projectPath,basePackage);
 
         //自定义模板文件上下文属性配置 用于生成正确类名
         return new InjectionConfig.Builder().beforeOutputFile((tableInfo, stringMap) -> {
@@ -244,58 +235,80 @@ public class CodeGenerator {
                     stringMap.put("reqPackage", packageName + ".dto.req");
                     stringMap.put("rspPackage", packageName + ".dto.rsp");
 
-                    stringMap.put("addReqDTOName", "Add" + entityName + "ReqDTO");
-                    stringMap.put("deleteReqDTOName", "Delete" + entityName + "ReqDTO");
-                    stringMap.put("queryReqDTOName", "Query" + entityName + "ReqDTO");
-                    stringMap.put("updateReqDTOName", "Update" + entityName + "ReqDTO");
+                    stringMap.put("addReqDTOName", "Add" + entityName + "Req");
+                    stringMap.put("deleteReqDTOName", "Delete" + entityName + "Req");
+                    stringMap.put("queryReqDTOName", "Query" + entityName + "Req");
+                    stringMap.put("updateReqDTOName", "Update" + entityName + "Req");
 
-                    stringMap.put("queryRspDTOName", "Query" + entityName + "RspDTO");
+                    stringMap.put("queryRspDTOName", "Query" + entityName + "Rsp");
 
                 })
                 .customFile(customFiles)
                 .build();
     }
 
-    private static List<CustomFile> getDtoCustomFile() {
+    private static List<CustomFile> getDtoCustomFile(String projectPath,String basePackage) {
 
 
         List<CustomFile> customFiles = new ArrayList<>();
-
-
+        String basePath = basePackage.replaceAll("\\.","\\\\");
+        String  fullPath = projectPath+ File.separator+ basePath;
+        System.out.println(fullPath);
         CustomFile addFile = new CustomFile.Builder()
-                .enableFileOverride()
                 .packageName("dto.req")
-                .templatePath("/codeTemplate/dto/AddReqDTO.java.vm")
+                .templatePath("/codeTemplate/dto/AddReq.java.vm")
+                .filePath(fullPath)
+                .fileName("AddReq.java")
+//                .formatNameFunction((tableInfo -> getFileName(tableInfo, "Add", "Req.java")))
+//                .fileName("AddReq")
+                .enableFileOverride()
                 .build();
 
         CustomFile delFile = new CustomFile.Builder()
-                .enableFileOverride()
                 .packageName("dto.req")
-                .templatePath("/codeTemplate/dto/DeleteReqDTO.java.vm")
+                .templatePath("/codeTemplate/dto/DeleteReq.java.vm")
+                .filePath(fullPath)
+//                .formatNameFunction((tableInfo -> getFileName(tableInfo, "Delete", "Req.java")))
+                .fileName("DeleteReq.java")
+                .enableFileOverride()
                 .build();
 
         CustomFile updateFile = new CustomFile.Builder()
-                .enableFileOverride()
                 .packageName("dto.req")
-                .templatePath("/codeTemplate/dto/UpdateReqDTO.java.vm")
+                .templatePath("/codeTemplate/dto/UpdateReq.java.vm")
+                .filePath(fullPath)
+//                .formatNameFunction((tableInfo -> getFileName(tableInfo, "Update", "Req.java")))
+                .fileName("UpdateReq.java")
+                .enableFileOverride()
                 .build();
 
         CustomFile queryFile = new CustomFile.Builder()
-                .enableFileOverride()
                 .packageName("dto.req")
-                .templatePath("/codeTemplate/dto/QueryReqDTO.java.vm")
+                .templatePath("/codeTemplate/dto/QueryReq.java.vm")
+                .filePath(fullPath)
+//                .formatNameFunction((tableInfo -> getFileName(tableInfo, "Query", "Req.java")))
+                .fileName("QueryReq.java")
+                .enableFileOverride()
                 .build();
 
         CustomFile queryRspFile = new CustomFile.Builder()
-                .enableFileOverride()
                 .packageName("dto.rsp")
-                .templatePath("/codeTemplate/dto/QueryRspDTO.java.vm")
+                .templatePath("/codeTemplate/dto/QueryRsp.java.vm")
+                .filePath(fullPath.replaceAll("req","rsp"))
+//                .formatNameFunction((tableInfo -> getFileName(tableInfo, "Query", "Rsp.java")))
+                .fileName("QueryRsp.java")
+                .enableFileOverride()
                 .build();
 
         CustomFile testFile = new CustomFile.Builder()
-                .enableFileOverride()
                 .packageName("test")
                 .templatePath("/codeTemplate/test.java.vm")
+                .filePath(projectPath+ File.separator + basePath)
+                .fileName("test.java")
+//                .formatNameFunction((tableInfo -> {
+//                    return tableInfo.getEntityName().replaceAll("DO", "") + "ControllerTest.java";
+//                }))
+                .enableFileOverride()
                 .build();
 
         customFiles.add(addFile);
@@ -308,144 +321,64 @@ public class CodeGenerator {
         return customFiles;
     }
 
-    private static List<CustomFile> getRecordCustomFile() {
-
-
-        List<CustomFile> customFiles = new ArrayList<>();
-
-
-        CustomFile addFile = new CustomFile.Builder()
-                .enableFileOverride()
-                .packageName("dto.req")
-                .templatePath("/codeTemplate/record/AddReqDTO.java.vm")
-                .build();
-
-        CustomFile delFile = new CustomFile.Builder()
-                .enableFileOverride()
-                .packageName("dto.req")
-                .templatePath("/codeTemplate/record/DeleteReqDTO.java.vm")
-                .build();
-
-        CustomFile updateFile = new CustomFile.Builder()
-                .enableFileOverride()
-                .packageName("dto.req")
-                .templatePath("/codeTemplate/record/UpdateReqDTO.java.vm")
-                .build();
-
-        CustomFile queryFile = new CustomFile.Builder()
-                .enableFileOverride()
-                .packageName("dto.req")
-                .templatePath("/codeTemplate/record/QueryReqDTO.java.vm")
-                .build();
-
-        CustomFile queryRspFile = new CustomFile.Builder()
-                .enableFileOverride()
-                .packageName("dto.rsp")
-                .templatePath("/codeTemplate/record/QueryRspDTO.java.vm")
-                .build();
-
-        CustomFile testFile = new CustomFile.Builder()
-                .enableFileOverride()
-                .packageName("test")
-                .templatePath("/codeTemplate/test.java.vm")
-                .build();
-
-        customFiles.add(addFile);
-        customFiles.add(delFile);
-        customFiles.add(updateFile);
-        customFiles.add(queryFile);
-        customFiles.add(queryRspFile);
-        customFiles.add(testFile);
-
-        return customFiles;
+    private static String getFileName(TableInfo tableInfo, String prefix, String suffix) {
+        String entityName = tableInfo.getEntityName();
+        entityName = entityName.replaceAll("DO", "");
+        return prefix + entityName + suffix;
     }
 
-    private void test() {
+//    private static List<CustomFile> getRecordCustomFile() {
+//
+//
+//        List<CustomFile> customFiles = new ArrayList<>();
+//
+//
+//        CustomFile addFile = new CustomFile.Builder()
+//                .enableFileOverride()
+//                .packageName("dto.req")
+//                .templatePath("/codeTemplate/record/AddReq.java.vm")
+//                .build();
+//
+//        CustomFile delFile = new CustomFile.Builder()
+//                .enableFileOverride()
+//                .packageName("dto.req")
+//                .templatePath("/codeTemplate/record/DeleteReq.java.vm")
+//                .build();
+//
+//        CustomFile updateFile = new CustomFile.Builder()
+//                .enableFileOverride()
+//                .packageName("dto.req")
+//                .templatePath("/codeTemplate/record/UpdateReq.java.vm")
+//                .build();
+//
+//        CustomFile queryFile = new CustomFile.Builder()
+//                .enableFileOverride()
+//                .packageName("dto.req")
+//                .templatePath("/codeTemplate/record/QueryReq.java.vm")
+//                .build();
+//
+//        CustomFile queryRspFile = new CustomFile.Builder()
+//                .enableFileOverride()
+//                .packageName("dto.rsp")
+//                .templatePath("/codeTemplate/record/QueryRsp.java.vm")
+//                .build();
+//
+//        CustomFile testFile = new CustomFile.Builder()
+//                .enableFileOverride()
+//                .packageName("test")
+//                .templatePath("/codeTemplate/test.java.vm")
+//                .build();
+//
+//        customFiles.add(addFile);
+//        customFiles.add(delFile);
+//        customFiles.add(updateFile);
+//        customFiles.add(queryFile);
+//        customFiles.add(queryRspFile);
+//        customFiles.add(testFile);
+//
+//        return customFiles;
+//    }
 
-        String url = "jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8";
-        String username = "root";
-        String password = "123456";
-        String appName = "base";
-        // 全局配置
-        String projectPath = System.getProperty("user.dir");
-        GlobalConfig globalConfig = new GlobalConfig.Builder().outputDir(projectPath)
-                .author("binblink")
-                .disableOpenDir().fileOverride()
-                .build();
-
-//        generate(url,username,password,projectPath);
-
-        // 数据源配置
-        DataSourceConfig dataSourceConfig = new DataSourceConfig.Builder(url, username, password)
-                .build();
-
-
-//        com.baomidou.mybatisplus.generator.engine.AbstractTemplateEngine
-        // 包配置
-        PackageConfig packageConfig = new PackageConfig.Builder()
-                .parent("com.blink." + appName)
-                .build();
-        // 策略配置
-        StrategyConfig strategyConfig = new StrategyConfig.Builder()
-                //表名
-                .addInclude("sys_user")
-
-                //过滤表前缀
-                .addTablePrefix("")
-                // controller 策略
-                .controllerBuilder().enableRestStyle().enableHyphenStyle()
-                //service 策略
-                .serviceBuilder().convertServiceFileName(entityName -> entityName + ConstVal.SERVICE)
-                //实体类策略
-                .entityBuilder().enableTableFieldAnnotation().enableLombok().addTableFills(new Column("create_time", FieldFill.INSERT),
-                        new Column("update_time", FieldFill.INSERT_UPDATE),
-                        new Column("update_by", FieldFill.INSERT_UPDATE),
-                        new Column("create_by", FieldFill.INSERT)
-                ).convertFileName(entityName -> entityName + "DO")
-//                        .logicDeleteColumnName()
-                .mapperBuilder().mapperAnnotation(Mapper.class)
-                .build();
-
-        // 自定义配置文件
-        Map<String, String> customFile = new HashMap<>();
-//        customFile.put("","/codeTemplate/controller.java.vm");
-//        customFile.put("","/codeTemplate/service.java.vm");
-//        customFile.put("","/codeTemplate/serviceImpl.java.vm");
-
-        //自定义值
-        Map<String, Object> customMap = new HashMap<>();
-        customMap.put("entityName", "SysUser");
-        InjectionConfig injectionConfig = new InjectionConfig.Builder()
-//                .customFile(customFile)
-                .customMap(customMap)
-                .build();
-
-
-        // 配置模板
-        TemplateConfig templateConfig = new TemplateConfig.Builder()
-                .controller("/codeTemplate/controller.java.vm")
-                .service("/codeTemplate/service.java.vm")
-                .serviceImpl("/codeTemplate/serviceImpl.java.vm")
-                .build();
-
-
-//        // 代码生成器
-        new AutoGenerator(dataSourceConfig)
-                // 全局配置
-                .global(globalConfig)
-                // 包配置
-                .packageInfo(packageConfig)
-                // 策略配置
-                .strategy(strategyConfig)
-                // 注入配置
-                .injection(injectionConfig)
-                // 模板配置
-                .template(templateConfig)
-                // 执行
-                .execute(new VelocityTemplateEngine());
-
-
-    }
 
     public static void main(String[] args) {
 

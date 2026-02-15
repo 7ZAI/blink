@@ -1,11 +1,9 @@
 package com.blink.datasource.config;
 
 
-import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
-import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
-import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+
 import com.blink.datasource.interceptor.NormalFieldInterceptor;
 import com.github.pagehelper.PageInterceptor;
 import org.apache.ibatis.plugin.Interceptor;
@@ -13,11 +11,8 @@ import org.apache.ibatis.session.LocalCacheScope;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import java.util.Properties;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 
 @AutoConfiguration
@@ -105,23 +100,6 @@ public class MybatisPlusConfiguration {
     }
 
 
-
-    /**
-     * 配置默认分页插件
-     *
-     */
-    //TODO 未来作可配置项
-//    @Bean
-//    @ConditionalOnProperty(value = "blink.datasource.page",havingValue = "mybatis-plus")
-//    public MybatisPlusInterceptor mybatisPlusInterceptor() {
-//        MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
-//        //mybatis-plus 默认分页配置
-//        //如果有多数据源可以不配具体类型 否则都建议配上具体的DbType
-//        interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.MYSQL));
-//        //如果配置多个插件,切记分页最后添加
-//        interceptor.addInnerInterceptor(new PaginationInnerInterceptor());
-//        return interceptor;
-//    }
 
 
 }
