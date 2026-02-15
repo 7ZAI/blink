@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.validation.annotation.Validated;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
+import static com.blink.gateway.constant.RedisConstans.*;
 
 /**
  * gateway配置属性类

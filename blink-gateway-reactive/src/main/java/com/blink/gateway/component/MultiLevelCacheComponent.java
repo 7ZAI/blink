@@ -3,8 +3,9 @@ package com.blink.gateway.component;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.ReactiveRedisClient;
-import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.service.RemoteService;
+import com.blink.gateway.util.ReactiveCacheUtil;
+import com.github.benmanes.caffeine.cache.AsyncCache;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
@@ -14,8 +15,8 @@ import reactor.core.publisher.Mono;
 
 /**
  * 多级缓存基础组件封装
- * 依次从本地 redis 远程服务数据源获取数据
- * 适用于不频繁改动的数据
+ * 依次从本地-> redis -> 远程服务数据源 获取数据
+ * 获取成功自动写入缓存 写入为同步写入 写入结果影响缓存读取结果 这样为了保证缓存一致性
  *
  * @author binblink
  */
@@ -24,76 +25,57 @@ import reactor.core.publisher.Mono;
 public class MultiLevelCacheComponent {
 
 
-    @Resource(name = "gatewayLocalCache")
+    @Resource
     private CacheManager localCacheManager;
 
     @Resource
     private ReactiveRedisClient redisClient;
 
-    @Resource
-    private BlinkGatewayProperties properties;
-
-    // 本地缓存名称
-    private static final String LOCAL_CACHE_NAME = "localCache";
 
     /**
      * 多级缓存获取数据
+     *
+     * @param localCacheName 缓存名称
+     * @param key            缓存键
+     * @param clazz          返回数据类型
+     * @param service        远程服务URI（当需要远程获取时使用）
+     * @return 数据结果
+     */
+    public <T> Mono<T> get(String localCacheName, String key, Class<T> clazz, RemoteService<T> service) {
+
+        Cache localCache = localCacheManager.getCache(localCacheName);
+        AsyncCache<String, T> asyncCache = ReactiveCacheUtil.toAsyncCache(localCache);
+
+        //本地缓存未开启 或配置错误
+        if (asyncCache == null) {
+            return getFromRemoteService(key, clazz, service);
+        }
+        return ReactiveCacheUtil.getMono(asyncCache, key, () -> getFromRemoteService(key, clazz, service));
+    }
+
+    /**
+     * 从远程数据源中获取
      *
      * @param key     缓存键
      * @param clazz   返回数据类型
      * @param service 远程服务URI（当需要远程获取时使用）
      * @return 数据结果
      */
-    public <T> Mono<T> get(String key, Class<T> clazz, RemoteService<T> service) {
-        return getFromLocalCache(key, clazz)
-                //本地缓存为空
-                .switchIfEmpty(Mono.defer(() ->
-                        getFromRedis(key, clazz)
-                                //成功则设置本地值
-                                .flatMap(value -> setLocalCache(key, value))
-                                //redis 也为空 远程服务调用获取
-                                .switchIfEmpty(Mono.defer(() -> service.call(key, clazz))
-                                        //获取成功写回缓存
-                                        .flatMap(cache -> setLocalAndRedisCache(key, cache))
-                                        .doOnNext(val -> log.info("远程调用base-app服务成功 返回value:{}", val))
-                                        .switchIfEmpty(Mono.empty())
-                                        .onErrorResume(e -> {
-                                            log.error("远程调用异常！{}", e.getMessage(), e);
-                                            return Mono.empty();
-                                        }))
-                ));
+    private <T> Mono<T> getFromRemoteService(String key, Class<T> clazz, RemoteService<T> service) {
+
+        return getFromRedis(key, clazz)
+                //redis 也为空 远程服务调用获取
+                .switchIfEmpty(Mono.defer(() -> service.call(key, clazz))
+                        //获取成功写回redis缓存 本地缓存写回由Caffeine保证
+                        .flatMap(cache -> setRedisCache(key, cache))
+                        .doOnNext(val -> log.info("远程调用base-app服务成功 返回value:{}", val))
+                        .switchIfEmpty(Mono.empty())
+                        .onErrorResume(e -> {
+                            log.error("远程调用异常！{}", e.getMessage(), e);
+                            return Mono.empty();
+                        }));
     }
 
-    /**
-     * 从本地缓存获取数据
-     */
-    private <T> Mono<T> getFromLocalCache(String key, Class<T> clazz) {
-        log.info("尝试从本地缓存获取 缓存参数 key:{}", key);
-
-        return Mono.fromCallable(() -> {
-            Boolean configEnable = properties.getLocalCacheEnable();
-            boolean enableLocalCache = configEnable != null ? configEnable : false;
-            // 未开启
-            if (!enableLocalCache) {
-                throw new BlinkException("本地缓存未开启关闭！");
-            }
-            Cache localCache = localCacheManager.getCache(LOCAL_CACHE_NAME);
-            if (localCache != null) {
-                Cache.ValueWrapper valueWrapper = localCache.get(key);
-                if (valueWrapper != null) {
-                    T value = clazz.cast(valueWrapper.get());
-                    assert value != null;
-                    String valueStr = value.toString();
-                    if (valueStr.length() > 1000) {
-                        valueStr = value.toString().substring(0, 1000) + "......";
-                    }
-                    log.info("从本地缓存获取缓存参数 成功! key:{},value:{}", key, valueStr);
-                    return value;
-                }
-            }
-            throw new BlinkException("本地缓存配置错误！");
-        }).onErrorResume(e -> Mono.empty());
-    }
 
     /**
      * 从Redis获取数据
@@ -120,33 +102,6 @@ public class MultiLevelCacheComponent {
     }
 
     /**
-     * 设置本地缓存
-     */
-    public <T> Mono<T> setLocalCache(String key, T value) {
-
-        Boolean configEnable = properties.getLocalCacheEnable();
-        boolean enableLocalCache = configEnable != null ? configEnable : false;
-        // 未开启
-        if (!enableLocalCache) {
-            return Mono.just(value);
-        }
-        return Mono.fromCallable(() -> {
-            try {
-                Cache localCache = localCacheManager.getCache(LOCAL_CACHE_NAME);
-                if (localCache != null) {
-                    localCache.put(key, value);
-                    return value;
-                }
-                return null;
-            } catch (Exception e) {
-                log.error("设置本地缓存异常 请检查配置 {}", e.getMessage(), e);
-                return null;
-            }
-        });
-
-    }
-
-    /**
      * 设置Redis缓存
      */
     public <T> Mono<T> setRedisCache(String key, T value) {
@@ -164,14 +119,6 @@ public class MultiLevelCacheComponent {
     }
 
 
-    private <T> Mono<T> setLocalAndRedisCache(String key, T value) {
-        log.info("从远程服务获取参数 成功！key:{},value:{}", key, value);
-        return setRedisCache(key, value)
-                .then(setLocalCache(key, value));
-
-    }
-
-
     /**
      * 删除本地缓存
      * 注意 key未命中也会返回true
@@ -179,10 +126,10 @@ public class MultiLevelCacheComponent {
      *
      * @param key
      */
-    public Mono<Boolean> evictLocalCache(String key) {
+    public Mono<Boolean> evictLocalCache(String cacheName, String key) {
         return Mono.fromCallable(() -> {
             try {
-                Cache localCache = localCacheManager.getCache(LOCAL_CACHE_NAME);
+                Cache localCache = localCacheManager.getCache(cacheName);
                 if (localCache != null) {
                     localCache.evictIfPresent(key);
                 }
@@ -210,10 +157,10 @@ public class MultiLevelCacheComponent {
                 .map(r -> true)
                 .doOnSuccess(r -> {
                     // 此时 r 永远是 true
-                    log.info("Redis缓存清理任务完成（无论原键是否存在）, key: {}", key);
+                    log.info("Redis cache cleanup task completed (regardless of whether the original key existed), key: {}", key);
                 })
                 .onErrorResume(throwable -> {
-                    log.error("Redis缓存删除失败，可能需要手动清理, key: {}", key, throwable);
+                    log.error("Redis cache deletion failed, manual cleanup may be required., key: {}", key, throwable);
                     // 这里可以添加补偿逻辑，比如重试或记录到死信队列
                     return Mono.just(false);
                 });
@@ -223,12 +170,12 @@ public class MultiLevelCacheComponent {
     /**
      * 删除缓存（多级）
      */
-    public Mono<Boolean> evictTransactional(String key) {
+    public Mono<Boolean> evictTransactional(String cacheName, String key) {
         return Mono.defer(() -> {
             // 先删除本地缓存
-            return evictLocalCache(key).then(evictRedisCache(key));
+            return evictLocalCache(cacheName, key).then(evictRedisCache(key));
         }).onErrorResume(thr -> {
-            log.error("删除多级缓存失败，整体操作中止, key: {}", key, thr);
+            log.error("Deletion of multi-level cache failed, the entire operation aborted. key: {}", key, thr);
             return Mono.just(false);
         });
     }
