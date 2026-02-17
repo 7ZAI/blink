@@ -1,23 +1,16 @@
 package com.blink.gateway.listener;
 
-import com.blink.base.dto.CacheMsgDTO;
-import com.blink.base.dto.RouteSyncMsgDTO;
-import com.blink.framework.redis.component.ReactiveRedisClient;
-import com.blink.framework.redis.mq.StreamMessage;
-import com.blink.gateway.component.MultiLevelCacheComponent;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.event.EnableStreamEvent;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.gateway.event.RefreshRoutesEvent;
-import org.springframework.context.ApplicationEventPublisher;
+
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 

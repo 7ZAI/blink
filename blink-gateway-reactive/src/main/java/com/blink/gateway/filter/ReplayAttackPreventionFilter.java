@@ -18,6 +18,7 @@ import java.time.Duration;
 import static com.blink.framework.common.constrant.SysConstant.X_BLINK_NONCE;
 import static com.blink.framework.common.constrant.SysConstant.X_BLINK_TIMESTAMP;
 import static com.blink.gateway.constant.GatewayConstant.*;
+import static com.blink.gateway.constant.RedisConstans.REQ_NONCE_PREFIX;
 
 /**
  * 防止请求重放攻击

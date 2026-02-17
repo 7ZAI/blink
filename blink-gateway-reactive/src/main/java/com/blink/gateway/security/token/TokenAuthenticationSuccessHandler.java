@@ -14,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Objects;
 
+import static com.blink.gateway.constant.RedisConstans.USER_TOKEN;
+
 /**
  * 认证成功后续处理 自动续期token
  *
@@ -38,7 +40,7 @@ public class TokenAuthenticationSuccessHandler implements ServerAuthenticationSu
             return webFilterExchange.getChain().filter(exchange);
         }
 
-        String redisKey = GatewayConstant.USER_TOKEN + authentication.getCredentials();
+        String redisKey = USER_TOKEN + authentication.getCredentials();
 
         //传递 登录用户信息 用来后续元数据组装使用
         UserInfoRedisDO userInfo = (UserInfoRedisDO) authentication.getPrincipal();

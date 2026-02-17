@@ -1,12 +1,10 @@
 package com.blink.gateway.service;
 
 
-import com.blink.base.dto.req.QueryErrMsgReqDTO;
-import com.blink.base.dto.req.QueryOneChannelReqDTO;
-import com.blink.base.dto.req.QueryOneSysConfigReqDTO;
-import com.blink.base.dto.req.QueryUserPermissionReqDTO;
-import com.blink.base.dto.rsp.QueryErrMsgRspDTO;
-import com.blink.base.dto.rsp.QueryUserPermissionRspDTO;
+import com.blink.base.dto.req.*;
+import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
+import com.blink.base.dto.rsp.QueryErrMsgRsp;
+import com.blink.base.dto.rsp.QueryUserPermissionRsp;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
@@ -22,7 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import static com.blink.gateway.constant.GatewayConstant.*;
+import static com.blink.gateway.constant.RedisConstans.*;
+
 
 /**
  *  WebClient 调用内部服务
@@ -56,8 +55,8 @@ public class BaseAppService {
         if(configKey.contains(GATEWAY_CONFIG_KEY_PREFIX)){
             configKey = configKey.replace(GATEWAY_CONFIG_KEY_PREFIX, "");
         }
-        RequestDTO<QueryOneSysConfigReqDTO> requestDTO = new RequestDTO<>();
-        QueryOneSysConfigReqDTO param = new QueryOneSysConfigReqDTO();
+        RequestDTO<QueryOneSysConfigReq> requestDTO = new RequestDTO<>();
+        var param = new QueryOneSysConfigReq();
         param.setConfigKey(configKey);
         requestDTO.setBody(param);
 
@@ -76,8 +75,8 @@ public class BaseAppService {
             appkey = appkey.replace(BLINK_CHANNEL_PREFIX, "");
         }
 
-        RequestDTO<QueryOneChannelReqDTO>  requestDTO = new RequestDTO<>();
-        QueryOneChannelReqDTO param = new QueryOneChannelReqDTO();
+        RequestDTO<QueryOneChannelReq>  requestDTO = new RequestDTO<>();
+        QueryOneChannelReq param = new QueryOneChannelReq();
         param.setAppKey(appkey);
         requestDTO.setBody(param);
 
@@ -92,17 +91,17 @@ public class BaseAppService {
      * @param local 语言
      * @return Mono<QueryErrMsgRspDTO>
      */
-    public Mono<QueryErrMsgRspDTO> getErrorMsgInfo(String code, String local) {
+    public Mono<QueryErrMsgRsp> getErrorMsgInfo(String code, String local) {
 
         log.info("调用远程服务获取 错误提示信息 code:{},language:{}", code,local);
 
-        var  requestDTO = new RequestDTO<QueryErrMsgReqDTO>();
-        var param = new QueryErrMsgReqDTO();
+        var  requestDTO = new RequestDTO<QueryErrMsgReq>();
+        var param = new QueryErrMsgReq();
         param.setCode(code);
         param.setLocal(local);
         requestDTO.setBody(param);
 
-        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_ERR_MSG_URL,requestDTO,new QueryErrMsgRspDTO(),new ParameterizedTypeReference<ResponseDTO<QueryErrMsgRspDTO>>(){});
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_ERR_MSG_URL,requestDTO,new QueryErrMsgRsp(),new ParameterizedTypeReference<ResponseDTO<QueryErrMsgRsp>>(){});
 
     }
 
@@ -113,16 +112,32 @@ public class BaseAppService {
      * @param userId 用户id
      * @return Mono<QueryErrMsgRspDTO>
      */
-    public Mono<QueryUserPermissionRspDTO> getUserPermissions(Integer userId) {
+    public Mono<QueryUserPermissionRsp> getUserPermissions(Integer userId) {
 
         log.info("调用远程服务获取用户权限标识 userId:{}", userId);
 
-        var  requestDTO = new RequestDTO<QueryUserPermissionReqDTO>();
-        var param = new QueryUserPermissionReqDTO();
+        var  requestDTO = new RequestDTO<QueryUserPermissionReq>();
+        var param = new QueryUserPermissionReq();
         param.setUserId(userId);
         requestDTO.setBody(param);
 
-        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_USER_PERMISSION_URL,requestDTO,new QueryUserPermissionRspDTO(),new ParameterizedTypeReference<ResponseDTO<QueryUserPermissionRspDTO>>(){});
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_USER_PERMISSION_URL,requestDTO,new QueryUserPermissionRsp(),new ParameterizedTypeReference<ResponseDTO<QueryUserPermissionRsp>>(){});
+
+    }
+
+    /**
+     * 获取所有接口权限
+     *
+     * @return Mono<QueryErrMsgRspDTO>
+     */
+    public Mono<GetAllApiPermissionsRsp> getAllApiPermissions() {
+
+        log.info("调用远程服务获取所有接口权限");
+        var  requestDTO = new RequestDTO<GetAllApiPermissionsReq>();
+        var param = new GetAllApiPermissionsReq();
+        requestDTO.setBody(param);
+
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_USER_PERMISSION_URL,requestDTO,new GetAllApiPermissionsRsp(),new ParameterizedTypeReference<ResponseDTO<GetAllApiPermissionsRsp>>(){});
 
     }
 

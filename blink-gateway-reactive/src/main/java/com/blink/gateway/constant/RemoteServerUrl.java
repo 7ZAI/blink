@@ -27,4 +27,10 @@ public interface RemoteServerUrl {
      * 用户权限信息 请求url
      */
     String GET_USER_PERMISSION_URL = "/sysPermission/getPermissionsByUserId";
+
+    /**
+     * 获取所有接口权限标识
+     */
+    String GET_ALL_API_PERMISSION ="/internal/sysPermission/getAllApiPermission";
+
 }

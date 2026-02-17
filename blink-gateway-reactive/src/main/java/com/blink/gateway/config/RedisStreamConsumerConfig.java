@@ -1,7 +1,7 @@
 package com.blink.gateway.config;
 
-import com.blink.base.dto.CacheMsgDTO;
-import com.blink.base.dto.RouteSyncMsgDTO;
+import com.blink.base.dto.CacheMsg;
+import com.blink.base.dto.RouteSyncMsg;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.mq.StreamMessage;
@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 
-import static com.blink.gateway.constant.GatewayConstant.GATEWAY_STREAM_EVENT;
+import static com.blink.gateway.constant.RedisConstans.GATEWAY_STREAM_EVENT;
 
 /**
  * redis stream 消息消费相关配置
@@ -123,9 +123,9 @@ public class RedisStreamConsumerConfig {
         StreamMessage message = smr.getStreamMessage();
 
         //本地缓存同步
-        if (message.getPayload() instanceof CacheMsgDTO cacheMsgDTO) {
+        if (message.getPayload() instanceof CacheMsg cacheMsg) {
             //删除本地缓存 手动ack
-            return cacheComponent.evictTransactional(cacheMsgDTO.getKey())
+            return cacheComponent.evictTransactional("",cacheMsg.getKey())
                     .flatMap(r -> {
                         smr.setHandledResult(r);
                         return Mono.just(smr);
@@ -135,7 +135,7 @@ public class RedisStreamConsumerConfig {
                     }));
         }
         //路由更新同步
-        if (message.getPayload() instanceof RouteSyncMsgDTO routeEvent) {
+        if (message.getPayload() instanceof RouteSyncMsg routeEvent) {
             try {
                 //发布事件 更新路由
                 publisher.publishEvent(new RefreshRoutesEvent(this));

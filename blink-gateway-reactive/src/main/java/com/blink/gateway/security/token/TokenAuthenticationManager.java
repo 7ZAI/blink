@@ -14,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.stream.Collectors;
 
+import static com.blink.gateway.constant.RedisConstans.USER_TOKEN;
+
 /**
  * 自定义认证器
  * 可以定制多个认证器实现不同的认证方式
@@ -41,7 +43,7 @@ public class TokenAuthenticationManager implements ReactiveAuthenticationManager
             return Mono.just(authentication);
         }
 
-        String tokenKey = GatewayConstant.USER_TOKEN + token;
+        String tokenKey = USER_TOKEN + token;
 
         // 根据token 拿到用户信息
         return redisClient.get(tokenKey)

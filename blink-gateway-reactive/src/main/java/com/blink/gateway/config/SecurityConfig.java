@@ -122,7 +122,7 @@ public class SecurityConfig {
      */
     @Bean
     public BlinkAuthorizationManager customReactiveAuthorizationManager(){
-        return new BlinkAuthorizationManager(redisClient);
+        return new BlinkAuthorizationManager(redisClient,cacheComponent);
     }
 
 

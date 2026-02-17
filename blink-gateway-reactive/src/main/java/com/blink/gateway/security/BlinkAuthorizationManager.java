@@ -2,6 +2,7 @@ package com.blink.gateway.security;
 
 import com.blink.framework.common.data.UserInfoRedisDO;
 import com.blink.framework.redis.component.ReactiveRedisClient;
+import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.constant.GatewayConstant;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,6 +14,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.Set;
 
+import static com.blink.gateway.constant.RedisConstans.URL_PERMISSION;
+
 
 /**
  * 授权管理
@@ -23,8 +26,11 @@ public class BlinkAuthorizationManager implements ReactiveAuthorizationManager<A
 
     private final ReactiveRedisClient redisClient;
 
-    public BlinkAuthorizationManager(ReactiveRedisClient redisClient) {
+    private final GateWayCacheComponent cacheComponent;
+
+    public BlinkAuthorizationManager(ReactiveRedisClient redisClient,GateWayCacheComponent cacheComponent) {
         this.redisClient = redisClient;
+        this.cacheComponent = cacheComponent;
     }
 
     @Override
@@ -39,8 +45,10 @@ public class BlinkAuthorizationManager implements ReactiveAuthorizationManager<A
                     String requestPath = context.getExchange().getRequest().getPath().value();
 
                     UserInfoRedisDO userInfo = (UserInfoRedisDO) auth.getPrincipal();
+
+//                    cacheComponent.getPermissionsByUserId(userInfo.getUserId()).flatMap()
                     // 从Redis中获取当前url对应的权限标识
-                    return redisClient.get(GatewayConstant.URL_PERMISSION + requestPath)
+                    return redisClient.get(URL_PERMISSION + requestPath)
                             .map(permittedIdentity -> {
                                 // 检查当前请求URL是否在用户权限列表中
                                 String perIndetity = (String) permittedIdentity;

@@ -28,7 +28,6 @@ public class GatewayLocalCacheConfig {
     private volatile ThreadPoolTaskExecutor executor;
     /**
      * 在响应式环境中 使用Caffeine .buildAsync() 异步加载作为本地缓存 它异步的地方在 缓存过期或者为null 是异步取缓存 而不是get put 异步
-     *   Caffeine 底层是 concurrentHashmap 是同步缓存
      *  AsyncCache 的真正价值体现在多个请求同时访问未缓存的 key 时：只有一个会发起异步加载请求 其他线程等待
      * @return CacheManager
      */

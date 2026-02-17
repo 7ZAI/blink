@@ -37,8 +37,7 @@ public class RedisRouteDefinitionRepository implements RouteDefinitionRepository
         return redisClient.hEntries(routesKey).switchIfEmpty(Mono.error(new BlinkException("路由为空 key:" + routesKey)))
                 .mapNotNull(routeDefinition -> {
                     log.info("从redis 获取的路由：{}",routeDefinition.getValue());
-                    String jsonstr = (String) routeDefinition.getValue();
-                    return JacksonUtil.fromJson(jsonstr,RouteDefinition.class);
+                    return JacksonUtil.convert(routeDefinition.getValue(),RouteDefinition.class);
                 }).onErrorContinue((e, r) -> log.error("路由解析失败，跳过该条记录: {}", e.getMessage(),e));
 
 
