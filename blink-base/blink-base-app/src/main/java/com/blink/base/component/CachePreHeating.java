@@ -6,6 +6,7 @@ import com.blink.base.constans.RedisKeyConstans;
 import com.blink.base.dto.req.GetAllApiPermissionsReq;
 import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
 import com.blink.base.dto.rsp.SysLoginRsp;
+import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.base.entity.SysConfigDO;
@@ -129,9 +130,9 @@ public class CachePreHeating {
     private Map<String, Object> cachePermissions() {
 
         GetAllApiPermissionsRsp rsp = permissionService.getAllApiPermission(new GetAllApiPermissionsReq());
-        List<SysPermissionDO> permissionList = rsp.getPermissionList();
+        List<SysPermissionVO> permissionList = rsp.getPermissionList();
         return permissionList.stream()
-                .collect(Collectors.toMap(p -> RedisKeyConstans.URL_PERMISSION + p.getUrl(), SysPermissionDO::getAcIdentity));
+                .collect(Collectors.toMap(p -> RedisKeyConstans.URL_PERMISSION + p.getUrl(), SysPermissionVO::getAcIdentity));
     }
 
 //    private

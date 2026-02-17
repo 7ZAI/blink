@@ -58,25 +58,27 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     /**
      * 保存 权限菜单
      *
-     * @param saveParam
-     * @return
+     * @param saveParam 入参
+     * @return SysPermissionVO
      * @throws BlinkException
      */
     @Override
     public SysPermissionVO saveSysPermission(AddSysPermissionReq saveParam) throws BlinkException {
 
+        var sysPermissionDO = new SysPermissionDO();
+        //接口权限
+        if(CommonConstans.PERMISSION_API_TYPE.equals(saveParam.getAcType())){
 
-        SysPermissionDO sysPermissionDO = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
-                .eq(SysPermissionDO::getAcIdentity, saveParam.getAcIdentity()));
-        //权限标识重复
-        if (ObjectUtil.isNotNull(sysPermissionDO)) {
-            BlinkException.throwBusinessException(BaseErrCodeConstant.PERMISSION_REPEAT);
+             sysPermissionDO = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
+                    .eq(SysPermissionDO::getUrl, saveParam.getUrl()));
+
+            //url 不允许重复
+            if (ObjectUtil.isNotNull(sysPermissionDO)) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.PERMISSION_REPEAT);
+            }
         }
 
-        sysPermissionDO = new SysPermissionDO();
         BeanUtil.copyProperties(saveParam, sysPermissionDO);
-
-
         sysPermissionMapper.insert(sysPermissionDO);
 
         var permissionVO = new SysPermissionVO();
@@ -226,7 +228,8 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         List<SysPermissionDO> permissionList = sysPermissionMapper.selectList(new LambdaQueryWrapper<SysPermissionDO>()
                 .eq(SysPermissionDO::getAcType,CommonConstans.PERMISSION_API_TYPE));
         var rsp = new GetAllApiPermissionsRsp();
-        rsp.setPermissionList(permissionList);
+        List<SysPermissionVO> list = BeanUtil.copyToList(permissionList, SysPermissionVO.class);
+        rsp.setPermissionList(list);
         return rsp;
     }
 

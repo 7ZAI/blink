@@ -3,8 +3,10 @@ package com.blink.base.dto.vo;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
+/**
+ * @author binblink
+ */
 @Data
 public class SysPermissionVO implements Serializable {
 
@@ -48,33 +50,8 @@ public class SysPermissionVO implements Serializable {
      */
     private Byte status;
 
-    /**
-     * 父权限id
-     */
-    private Integer parentId;
 
-    /**
-     * 数据过滤器id
-     */
-    private Integer dataFilterId;
 
-    /**
-     * 创建者
-     */
-    private String createBy;
 
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
 
-    /**
-     * 更新者
-     */
-    private String updateBy;
-
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
 }

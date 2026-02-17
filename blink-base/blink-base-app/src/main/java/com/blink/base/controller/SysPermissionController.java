@@ -88,7 +88,7 @@ public class SysPermissionController {
      * 根据url 查询 权限标识
      *
      * @param reqDto
-     * @return {@link ResponseDTO< QueryPermissionIdentityRsp >}
+     * @return {@link ResponseDTO<QueryPermissionIdentityRsp>}
      * @throws BlinkException
      */
     @PostMapping("/getPermissionByUrl")
@@ -104,7 +104,7 @@ public class SysPermissionController {
      * @return {@link ResponseDTO<SysPermissionVO>}
      * @throws BlinkException
      */
-    @PostMapping("/getAllApiPermission")
+    @PostMapping("/internal/getAllApiPermission")
     public ResponseDTO<GetAllApiPermissionsRsp> getAllApiPermission(@RequestBody @Validated RequestDTO<GetAllApiPermissionsReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysPermissionService.getAllApiPermission(reqDto.getBody()));
     }
@@ -114,7 +114,7 @@ public class SysPermissionController {
      * 根据用户id 查询权限标识
      *
      * @param reqDto 入参
-     * @return {@link ResponseDTO< QueryUserPermissionRsp >}
+     * @return {@link ResponseDTO<QueryUserPermissionRsp>}
      * @throws BlinkException
      */
     @PostMapping("/getPermissionsByUserId")

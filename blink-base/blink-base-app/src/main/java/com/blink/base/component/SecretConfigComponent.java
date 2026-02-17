@@ -66,7 +66,7 @@ public class SecretConfigComponent implements CommandLineRunner {
         String json = JacksonUtil.toJson(channelSecretKeys);
         configStr = AESUtils.encrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), json);
 
-        log.info("channelSecretConfig配置文件加密后：" + configStr);
+//        log.debug("channelSecretConfig配置文件加密后：" + configStr);
         nacosConfigComponent.configPublisher(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP, configStr);
     }
 

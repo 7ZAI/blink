@@ -1,7 +1,6 @@
 package com.blink.base.dto.rsp;
 
 import com.blink.base.dto.vo.SysPermissionVO;
-import com.blink.base.entity.SysPermissionDO;
 import lombok.Data;
 
 import java.util.List;

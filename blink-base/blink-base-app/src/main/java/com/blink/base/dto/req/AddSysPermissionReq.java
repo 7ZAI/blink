@@ -1,10 +1,17 @@
 package com.blink.base.dto.req;
 
+import cn.hutool.core.util.StrUtil;
 import com.blink.base.constans.BaseErrCodeConstant;
+import com.blink.base.constans.CommonConstans;
 import com.blink.framework.validate.annotation.DataDict;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -18,6 +25,7 @@ import java.io.Serializable;
 @Data
 public class AddSysPermissionReq implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
 
@@ -45,10 +53,10 @@ public class AddSysPermissionReq implements Serializable {
 
 
     /**
-     * 权限类型 0 菜单权限 1数据权限 2功能权限 3接口权限
+     * 权限类型 2数据权限  1接口权限
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @Range(min=1, max=2, message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Byte acType;
 
 
@@ -85,6 +93,16 @@ public class AddSysPermissionReq implements Serializable {
      */
     @DataDict(name = "systemId", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer dataFilterId;
+
+    @AssertTrue(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    public boolean isApiTypeRequired() {
+
+        if(CommonConstans.PERMISSION_API_TYPE.equals(acType)){
+            return !StrUtil.isBlank(url);
+        }
+        return true;
+
+    }
 
 
 }

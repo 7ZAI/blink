@@ -23,12 +23,12 @@ public interface CommonConstans {
     /**
      * 接口权限
      */
-    Integer PERMISSION_API_TYPE = 1;
+    Byte PERMISSION_API_TYPE = 1;
 
     /**
      * 数据权限
      */
-    Integer PERMISSION_DATA_TYPE = 2;
+    Byte PERMISSION_DATA_TYPE = 2;
 
     Long LONG_ZERO = Long.valueOf(0);
 
