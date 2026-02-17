@@ -17,16 +17,15 @@ spring:
 #    allow-bean-definition-overriding: true
   application:
     name: gateway-app
+
+  config:
+    import: nacos:blink-gateway.yaml?group=DEFAULT_GROUP&refreshEnabled=true
   cloud:
     nacos:
       ## 配置文件中心
       config:
         namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
         server-addr: 127.0.0.1:8848
-        extension-configs:
-          - data-id: blink-gateway.yaml
-            group: DEFAULT_GROUP
-            refresh: true
       ## 服务发现注册
       discovery:
         namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb

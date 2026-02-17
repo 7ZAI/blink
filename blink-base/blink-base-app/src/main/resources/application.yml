@@ -17,17 +17,17 @@ spring:
     multipart:
       max-file-size: 20MB
       max-request-size: 200MB
-
   cloud:
     nacos:
-      config:
-        namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
-        server-addr: 127.0.0.1:8848
-
+      server-addr: 127.0.0.1:8848
       discovery:
         namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
         enabled: true
-        server-addr: 127.0.0.1:8848
+      config:
+        namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
+  config:
+    import:
+      - nacos:base-app.yaml?refreshEnabled=true
 
   ##彩色输出
   output:
@@ -35,11 +35,11 @@ spring:
       enabled: always
   main:
     allow-bean-definition-overriding: false
-#  ## 本地缓存
-#  cache:
-#    cache-names: "cache1,cache2"
-#    caffeine:
-#      spec: "maximumSize=500,expireAfterAccess=600s"
+  #  ## 本地缓存
+  #  cache:
+  #    cache-names: "cache1,cache2"
+  #    caffeine:
+  #      spec: "maximumSize=500,expireAfterAccess=600s"
   jackson:
     # 全局日期格式
     date-format: yyyy-MM-dd HH:mm:ss

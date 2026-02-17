@@ -6,12 +6,10 @@ plugins {
 dependencies {
 
     implementation 'org.springframework.boot:spring-boot-starter'
-
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.cloud:spring-cloud-starter-bootstrap'
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
 

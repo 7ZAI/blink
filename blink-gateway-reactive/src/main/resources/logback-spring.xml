@@ -5,7 +5,7 @@
     <contextName>blink-gateway-reactive</contextName>
     <!-- 统一字符集 -->
     <property name="CHARSET" value="UTF-8"/>
-    <!-- 日志根目录，可通过 bootstrap.yml 中 logging.file.path 覆盖 -->
+    <!-- 日志根目录，可通过 application.yml 中 logging.file.path 覆盖 -->
     <springProperty scope="context" name="LOG_HOME" source="logging.file.path" defaultValue="./blink-gateway-reactive/logs"/>
 
     <!-- 进程 PID -->
