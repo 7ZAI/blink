@@ -1,10 +1,8 @@
 package com.blink.gateway.security;
 
 import com.blink.framework.common.data.UserInfoRedisDO;
-import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.constant.GatewayConstant;
-import org.apache.logging.log4j.util.Strings;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.ReactiveAuthorizationManager;
@@ -13,8 +11,7 @@ import org.springframework.security.web.server.authorization.AuthorizationContex
 import reactor.core.publisher.Mono;
 
 import java.util.Set;
-
-import static com.blink.gateway.constant.RedisConstans.URL_PERMISSION;
+import java.util.stream.Collectors;
 
 
 /**
@@ -24,12 +21,10 @@ import static com.blink.gateway.constant.RedisConstans.URL_PERMISSION;
  */
 public class BlinkAuthorizationManager implements ReactiveAuthorizationManager<AuthorizationContext> {
 
-    private final ReactiveRedisClient redisClient;
 
     private final GateWayCacheComponent cacheComponent;
 
-    public BlinkAuthorizationManager(ReactiveRedisClient redisClient,GateWayCacheComponent cacheComponent) {
-        this.redisClient = redisClient;
+    public BlinkAuthorizationManager(GateWayCacheComponent cacheComponent) {
         this.cacheComponent = cacheComponent;
     }
 
@@ -38,39 +33,30 @@ public class BlinkAuthorizationManager implements ReactiveAuthorizationManager<A
         return authentication
                 .flatMap(auth -> {
                     //未认证
-                    if(!auth.isAuthenticated()){
-                       return Mono.error(new AccessDeniedException("未认证"));
+                    if (!auth.isAuthenticated()) {
+                        return Mono.error(new AccessDeniedException("未认证"));
                     }
                     // 获取当前请求的URL
                     String requestPath = context.getExchange().getRequest().getPath().value();
 
                     UserInfoRedisDO userInfo = (UserInfoRedisDO) auth.getPrincipal();
 
-//                    cacheComponent.getPermissionsByUserId(userInfo.getUserId()).flatMap()
-                    // 从Redis中获取当前url对应的权限标识
-                    return redisClient.get(URL_PERMISSION + requestPath)
+                    return cacheComponent.getPermissionsByRequestPath(requestPath)
                             .map(permittedIdentity -> {
-                                // 检查当前请求URL是否在用户权限列表中
-                                String perIndetity = (String) permittedIdentity;
-                                // 为空说明当前url 未被纳入权限控制范围 可以通过
-                                if(Strings.isBlank(perIndetity)){
-                                    return new AuthorizationDecision(true);
-                                }
-                                //用户权限 获取用户有权访问的URL列表
+                                //用户接口权限集合
                                 Set<String> permittedList = userInfo.getPermissions();
+
                                 //超级管理员 有任何权限
-                                if(permittedList.contains(GatewayConstant.SUPER_ADMIN_PERMISSION)){
+                                if (permittedList.contains(GatewayConstant.SUPER_ADMIN_PERMISSION)) {
                                     return new AuthorizationDecision(true);
                                 }
 
-                                boolean hasPermission = permittedList.contains(perIndetity);
+                                boolean hasPermission = permittedList.contains(permittedIdentity);
+                                //用户无权限 拒绝
                                 return new AuthorizationDecision(hasPermission);
-                            })   // 为空说明当前url 未被纳入权限控制范围 可以执行
-                            .defaultIfEmpty(new AuthorizationDecision(true));
-
-                }).switchIfEmpty(Mono.just(new AuthorizationDecision(false)));
+                                // 为空说明当前url 未被纳入权限控制范围 可以执行
+                            }).defaultIfEmpty(new AuthorizationDecision(true));
+                });
 
     }
-
-
 }

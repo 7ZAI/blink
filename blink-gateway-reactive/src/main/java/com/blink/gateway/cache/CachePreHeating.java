@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -27,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author binblink
  */
-@Component
+//@Component
 @Slf4j
 public class CachePreHeating {
 
@@ -50,8 +51,9 @@ public class CachePreHeating {
         if (localCacheEnable) {
             //获取所有权限管理的url 缓存url和权限标识的映射关系
             Cache cache = localCacheManager.getCache(GatewayConstant.CONSISTENT_CACHE);
-            AsyncCache<String, Object> asyncCache = ReactiveCacheUtil.toAsyncCache(cache);
 
+
+            AsyncCache<String, Object> asyncCache = ReactiveCacheUtil.toAsyncCache(cache);
             if (Objects.isNull(asyncCache)) {
                 log.error("获取本地缓存失败！ 缓存名称：{}", GatewayConstant.CONSISTENT_CACHE);
                 return;

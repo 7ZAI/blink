@@ -184,6 +184,22 @@ public interface GatewayConstant {
      */
     String FREQUENTLY_CHANGED_CACHE = "frequentlyChangedCache";
 
+    /**
+     * 渠道认证 jwt
+     */
+    Byte CHANNEL_AUTH_TYPE_JWT = 1;
+
+    /**
+     * 渠道认证 固定token
+     */
+    Byte CHANNEL_AUTH_TYPE_FIX_TOKEN = 0;
+
+
+    /**
+     * 渠道认证关闭（内部系统）
+     */
+    Byte CHANNEL_AUTH_TYPE_CLOSE = -1;
+
 
 
 }

@@ -68,7 +68,7 @@ public class MultiLevelCacheComponent {
                 .switchIfEmpty(Mono.defer(() -> service.call(key, clazz))
                         //获取成功写回redis缓存 本地缓存写回由Caffeine保证
                         .flatMap(cache -> setRedisCache(key, cache))
-                        .doOnNext(val -> log.info("远程调用base-app服务成功 返回value:{}", val))
+                        .doOnNext(val -> log.info("调用远程服务成功 返回value:{}", val))
                         .switchIfEmpty(Mono.empty())
                         .onErrorResume(e -> {
                             log.error("远程调用异常！{}", e.getMessage(), e);

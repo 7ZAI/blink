@@ -38,7 +38,12 @@ public class RedisRouteDefinitionRepository implements RouteDefinitionRepository
                 .mapNotNull(routeDefinition -> {
                     log.info("从redis 获取的路由：{}",routeDefinition.getValue());
                     return JacksonUtil.convert(routeDefinition.getValue(),RouteDefinition.class);
-                }).onErrorContinue((e, r) -> log.error("路由解析失败，跳过该条记录: {}", e.getMessage(),e));
+                })
+                .doOnError(e-> log.error("从redis 获取路由异常",e))
+                .onErrorResume(e-> {
+                    log.error("路由异常");
+                    return Flux.error(new BlinkException(e,e.getMessage()));
+                });
 
 
     }

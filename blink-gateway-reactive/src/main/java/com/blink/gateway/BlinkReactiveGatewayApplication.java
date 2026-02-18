@@ -23,7 +23,7 @@ public class BlinkReactiveGatewayApplication {
     public static void main(String[] args) {
 
         // 启用 Reactor 调试代理
-//        Hooks.onOperatorDebug();
+        Hooks.onOperatorDebug();
         ConfigurableApplicationContext context = SpringApplication.run(BlinkReactiveGatewayApplication.class, args);
         // 检查CustomWebMvcConfig是否存在
 //        if (context.containsBean("blinkRedisRateLimiter")) {

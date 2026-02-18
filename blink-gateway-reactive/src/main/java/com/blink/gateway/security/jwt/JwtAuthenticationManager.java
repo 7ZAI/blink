@@ -1,29 +1,35 @@
 package com.blink.gateway.security.jwt;
 
+import com.blink.framework.common.data.UserInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.jwt.JwtProvider;
 import com.blink.gateway.component.ChannelSecretCache;
+import com.blink.gateway.component.GateWayCacheComponent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import reactor.core.publisher.Mono;
 
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * jwt 认证器
  *
  * @Author binblink
- * @Date 2026/2/2
  */
 @Slf4j
 public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
 
     private final ChannelSecretCache channelSecretCache;
 
-    public JwtAuthenticationManager(ChannelSecretCache channelSecretCache) {
+    private final GateWayCacheComponent cacheComponent;
+
+    public JwtAuthenticationManager(ChannelSecretCache channelSecretCache,GateWayCacheComponent cacheComponent) {
         this.channelSecretCache = channelSecretCache;
+        this.cacheComponent = cacheComponent;
     }
 
 
@@ -49,9 +55,21 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
                 }).flatMap(jwtInfo -> {
                     String userId = (String) jwtInfo.getCustomData().get("userId");
                     Integer userIdInt = Integer.parseInt(userId);
-                    Authentication authenticated = UsernamePasswordAuthenticationToken
-                            .authenticated(userIdInt, jwtToken, null);
-                    return Mono.just(authenticated);
+
+                    return cacheComponent.getPermissionsByUserId(userIdInt).flatMap(perms->{
+                        //用户接口权限集合
+                        Set<String> permittedList = Optional.ofNullable(perms.getPermissions()).orElseGet(HashSet::new);
+
+                        UserInfoRedisDO userInfoRedisDO = new UserInfoRedisDO();
+                        userInfoRedisDO.setUserId(userIdInt);
+                        userInfoRedisDO.setPermissions(permittedList);
+
+                        Authentication authenticated = UsernamePasswordAuthenticationToken
+                                .authenticated(userInfoRedisDO, jwtToken, permittedList.stream().map(SimpleGrantedAuthority::new)
+                                        .collect(Collectors.toList()));
+                        return Mono.just(authenticated);
+                    });
+
                 }).switchIfEmpty(Mono.just(authentication));
     }
 

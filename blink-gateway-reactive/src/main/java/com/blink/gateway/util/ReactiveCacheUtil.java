@@ -4,6 +4,7 @@ import com.blink.framework.common.exception.BlinkException;
 import com.github.benmanes.caffeine.cache.AsyncCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
+import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.cloud.gateway.support.TimeoutException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -77,10 +78,10 @@ public class ReactiveCacheUtil {
      */
     @SuppressWarnings("unchecked")
     public static <K, V> AsyncCache<K, V> toAsyncCache(Cache cache) {
-        if (!(cache instanceof AsyncCache)) {
+        if (!(cache instanceof CaffeineCache caffeineCache)) {
             return null;
         }
-        return (AsyncCache<K, V>) cache;
+        return (AsyncCache<K, V>) caffeineCache.getAsyncCache();
     }
 
 

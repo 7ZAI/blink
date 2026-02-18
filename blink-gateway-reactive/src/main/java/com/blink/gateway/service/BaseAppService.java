@@ -112,13 +112,32 @@ public class BaseAppService {
      * @param userId 用户id
      * @return Mono<QueryErrMsgRspDTO>
      */
-    public Mono<QueryUserPermissionRsp> getUserPermissions(Integer userId) {
+    public Mono<QueryUserPermissionRsp> getUserPermissionsByUerId(Integer userId) {
 
         log.info("调用远程服务获取用户权限标识 userId:{}", userId);
 
         var  requestDTO = new RequestDTO<QueryUserPermissionReq>();
         var param = new QueryUserPermissionReq();
         param.setUserId(userId);
+        requestDTO.setBody(param);
+
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_USER_PERMISSION_URL,requestDTO,new QueryUserPermissionRsp(),new ParameterizedTypeReference<ResponseDTO<QueryUserPermissionRsp>>(){});
+
+    }
+
+    /**
+     * 获取请求路径对应的权限标识
+     *
+     * @param requestPath 请求路径
+     * @return Mono<QueryErrMsgRspDTO>
+     */
+    public Mono<QueryUserPermissionRsp> getUserPermissionsByPath(String requestPath) {
+
+        log.info("调用远程服务获取请求路径权限标识 requestPath:{}", requestPath);
+
+        var  requestDTO = new RequestDTO<QueryUserPermissionReq>();
+        var param = new QueryUserPermissionReq();
+        param.setUrl(requestPath);
         requestDTO.setBody(param);
 
         return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_USER_PERMISSION_URL,requestDTO,new QueryUserPermissionRsp(),new ParameterizedTypeReference<ResponseDTO<QueryUserPermissionRsp>>(){});
@@ -137,9 +156,21 @@ public class BaseAppService {
         var param = new GetAllApiPermissionsReq();
         requestDTO.setBody(param);
 
-        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_USER_PERMISSION_URL,requestDTO,new GetAllApiPermissionsRsp(),new ParameterizedTypeReference<ResponseDTO<GetAllApiPermissionsRsp>>(){});
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_ALL_API_PERMISSION,requestDTO,new GetAllApiPermissionsRsp(),new ParameterizedTypeReference<ResponseDTO<GetAllApiPermissionsRsp>>(){});
 
     }
+
+
+//    public Mono<String> getAllApiPermissions() {
+//
+//        log.info("调用远程服务获取所有接口权限");
+//        var  requestDTO = new RequestDTO<GetAllApiPermissionsReq>();
+//        var param = new GetAllApiPermissionsReq();
+//        requestDTO.setBody(param);
+//
+//        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_ALL_API_PERMISSION,requestDTO,new GetAllApiPermissionsRsp(),new ParameterizedTypeReference<ResponseDTO<GetAllApiPermissionsRsp>>(){});
+//
+//    }
 
 
 

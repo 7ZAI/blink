@@ -1,8 +1,9 @@
 package com.blink.gateway.util;
+
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
+import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.ParameterizedTypeReference;
@@ -37,12 +38,12 @@ public class WebClientUtil {
                 .bodyValue(requestDTO)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response -> {
-                    log.error("客户端错误: {}", response.statusCode());
-                    return Mono.error(new RuntimeException("客户端请求错误"));
+                    log.warn("客户端错误: {},requestPath:{}", response.statusCode(), url);
+                    return Mono.error(new BlinkException("客户端请求错误"));
                 })
                 .onStatus(HttpStatusCode::is5xxServerError, response -> {
-                    log.error("服务端错误: {}", response.statusCode());
-                    return Mono.error(new RuntimeException("base-app 服务异常"));
+                    log.warn("服务端错误: {}", response.statusCode());
+                    return Mono.error(new BlinkException("base-app 服务异常"));
                 })
                 //带泛型的返回值 写法
                 .bodyToMono(v)
@@ -50,8 +51,9 @@ public class WebClientUtil {
                     BeanUtils.copyProperties(respDTO.getBody(), r);
                     return r;
                 })
-                .doOnSuccess(response -> log.info("获取参数成功: {}", response))
-                .doOnError(error -> log.error("获取参数失败: {}", error.getMessage()));
+                .doOnSuccess(response -> log.info("调用外部服务成功: {},requestPath:{}", response, url))
+                .doOnError(error -> log.error("调用外部服务失败: {},url:{}", error.getMessage(), url, error))
+                .onErrorMap(throwable -> new BlinkException(throwable, "调用外部服务失败"));
     }
 
     /**
@@ -73,16 +75,17 @@ public class WebClientUtil {
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response -> {
                     log.error("客户端错误: {}", response.statusCode());
-                    return Mono.error(new RuntimeException("客户端请求错误"));
+                    return Mono.error(new BlinkException("客户端请求错误"));
                 })
                 .onStatus(HttpStatusCode::is5xxServerError, response -> {
                     log.error("服务端错误: {}", response.statusCode());
-                    return Mono.error(new RuntimeException("base-app 服务异常"));
+                    return Mono.error(new BlinkException("base-app 服务异常"));
                 })
                 //带泛型的返回值 写法
                 .bodyToMono(v)
-                .doOnSuccess(response -> log.info("获取参数成功: {}", response))
-                .doOnError(error -> log.error("获取参数失败: {}", error.getMessage()));
+                .doOnSuccess(response -> log.info("调用外部服务成功: {},requestPath:{}", response, url))
+                .doOnError(error -> log.error("调用外部服务失败: {},url:{}", error.getMessage(), url, error))
+                .onErrorMap(throwable -> new BlinkException(throwable, "调用外部服务失败"));
     }
 
     /**
@@ -107,8 +110,9 @@ public class WebClientUtil {
                     return clientResponse.bodyToMono(String.class)
                             .map(body -> new ApiResponse(httpStatus, headers, body));
                 })
-                .doOnSuccess(response -> log.info("获取参数成功: {}", response))
-                .doOnError(error -> log.error("获取参数失败: {}", error.getMessage()));
+                .doOnSuccess(response -> log.info("调用外部服务成功: {},requestPath:{}", response, url))
+                .doOnError(error -> log.error("调用外部服务失败: {},url:{}", error.getMessage(), url, error))
+                .onErrorMap(throwable -> new BlinkException(throwable, "调用外部服务失败"));
     }
 
     /**

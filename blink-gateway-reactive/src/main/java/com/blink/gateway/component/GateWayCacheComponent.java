@@ -1,16 +1,27 @@
 package com.blink.gateway.component;
 
 
+import cn.hutool.core.collection.CollUtil;
+import com.blink.base.dto.req.GetAllApiPermissionsReq;
+import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
 import com.blink.base.dto.rsp.QueryErrMsgRsp;
 import com.blink.base.dto.rsp.QueryUserPermissionRsp;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
+import com.blink.framework.common.data.RequestDTO;
+import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.gateway.constant.GatewayConstant;
+import com.blink.gateway.constant.RemoteServerUrl;
 import com.blink.gateway.service.BaseAppService;
+import com.blink.gateway.util.WebClientUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+
+import java.util.Collections;
+import java.util.Optional;
 
 import static com.blink.gateway.constant.RedisConstans.*;
 
@@ -92,13 +103,34 @@ public class GateWayCacheComponent {
      */
     public Mono<QueryUserPermissionRsp> getPermissionsByUserId(Integer userId) {
         String cacheKey = ERR_MSG_PREFIX + userId + ":";
-        return multiLevelCacheComponent.get(GatewayConstant.STATICDATA_CACHE,
+        return multiLevelCacheComponent.get(GatewayConstant.CONSISTENT_CACHE,
                         cacheKey,
                         QueryUserPermissionRsp.class,
-                        (key, clazz) -> baseAppService.getUserPermissions(userId))
+                        (key, clazz) -> baseAppService.getUserPermissionsByUerId(userId))
                 .onErrorResume(e -> Mono.empty());
 
     }
+
+    /**
+     * 获取所有接口权限
+     * @param requestPath 请求路径
+     * @return Mono<QueryErrMsgRspDTO>
+     */
+    public Mono<String> getPermissionsByRequestPath(String requestPath) {
+
+        String cacheKey = URL_PERMISSION + requestPath;
+        return multiLevelCacheComponent.get(GatewayConstant.CONSISTENT_CACHE,
+                        cacheKey,
+                        String.class,
+                        (key, clazz) -> baseAppService.getUserPermissionsByPath(requestPath).mapNotNull(r->{
+                            Optional<String> optional = r.getPermissions().stream().findFirst();
+                            return optional.orElse(null);
+                        }))
+                .onErrorResume(e -> Mono.empty());
+
+    }
+
+
 
 
 }

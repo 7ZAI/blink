@@ -5,7 +5,6 @@ import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.gateway.component.GateWayCacheComponent;
-import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.util.GateWayUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
@@ -312,7 +311,7 @@ public class RequestValidateFilter implements WebFilter {
                     try {
                         jsonString = JacksonUtil.normalizeJson(jsonString);
                     } catch (RuntimeException e) {
-                        throw new RuntimeException(e);
+                        throw new BlinkException(e,"");
                     }
 
                 }
