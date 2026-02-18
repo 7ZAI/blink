@@ -1,7 +1,7 @@
 package com.blink.gateway;
 
 import cn.hutool.core.lang.UUID;
-import com.blink.base.dto.CacheMsgDTO;
+import com.blink.base.dto.CacheMsg;
 import com.blink.framework.common.utils.RSAUtils;
 import com.blink.framework.redis.mq.StreamMessage;
 import com.blink.gateway.signature.HmacSignatureService;
@@ -151,13 +151,13 @@ public class TestReactive {
 
     @Test
     public void jsontest(){
-        CacheMsgDTO cacheMsgDTO = new CacheMsgDTO();
-        cacheMsgDTO.setKey("asdasd:gdsgf:4tt:rrr");
-        StreamMessage<CacheMsgDTO> m = StreamMessage.of("dasd", "rs", cacheMsgDTO);
+        CacheMsg cacheMsg = new CacheMsg();
+        cacheMsg.setKey("asdasd:gdsgf:4tt:rrr");
+        StreamMessage<CacheMsg> m = StreamMessage.of("dasd", "rs", cacheMsg);
 
         Map<String,Object> map = StreamMessage.convertMessageToMap(m);
 
-        StreamMessage<CacheMsgDTO> k = (StreamMessage<CacheMsgDTO>) StreamMessage.convertMapToMessage(map,CacheMsgDTO.class);
+        StreamMessage<CacheMsg> k = (StreamMessage<CacheMsg>) StreamMessage.convertMapToMessage(map,CacheMsg.class);
 
         System.out.println(k);
     }

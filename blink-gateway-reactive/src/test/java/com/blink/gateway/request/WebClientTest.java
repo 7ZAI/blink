@@ -1,10 +1,10 @@
 package com.blink.gateway.request;
 
 import cn.hutool.core.lang.UUID;
-import com.blink.base.dto.req.QueryBlinkChannelReqDTO;
-import com.blink.base.dto.req.SysLoginReqDTO;
-import com.blink.base.dto.rsp.QueryBlinkChannelRspDTO;
-import com.blink.base.dto.rsp.SysLoginRspDTO;
+import com.blink.base.dto.req.QueryBlinkChannelReq;
+import com.blink.base.dto.req.SysLoginReq;
+import com.blink.base.dto.rsp.QueryBlinkChannelRsp;
+import com.blink.base.dto.rsp.SysLoginRsp;
 import com.blink.framework.common.constrant.SysConstant;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -54,7 +54,7 @@ public class WebClientTest {
 
     private final String loginName = "test2";
     private final String password = "123456";
-    private final String token = "f19154f28a47437794ed24976041f7d9";
+    private final String token = "81065ba4758c424d9a28bf7f9e733c91";
     //系统公钥
     private final String systemPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlRqb7VG+lkiTH/8LY4ISQLjD2t+8kZMvthvixlIx57v3d5o994PY0/QFqOPqDdJeXIvxiCA0z/qdMGve3t2lJuUiExNmH+pY46LuNMIyzmiHKliocDCFb1bdVoTWHzJmjDT2TnRxmglVVm4mhlpDS18accZVPXdzESCn32HfmhKkQj+0NTdsPzjlpWsfsXpySToPVa8/U1HupTnRibdsCu80PHCjRwf/3+fj9fBRnNCubJoSlOi4o+koojqQ3vCMc+b+6dW6zYS83g67olT9J77ekOru/+OgWYe3FmBSjhiYAIMSwK1PalyvI9S3V57SdkHkwG72UrnsIP7iE5BSKwIDAQAB";
     //系统私钥
@@ -72,20 +72,20 @@ public class WebClientTest {
         String base = "http://localhost:8002/base/auth/login";
 
 
-        var loginReqDTO = new SysLoginReqDTO();
+        var loginReqDTO = new SysLoginReq();
         loginReqDTO.setUsername(loginName);
         loginReqDTO.setPassword(password);
 
-        var requestDTO = new RequestDTO<SysLoginReqDTO>();
+        var requestDTO = new RequestDTO<SysLoginReq>();
         requestDTO.setBody(loginReqDTO);
 
         this.setHeadersAndSign(webClientBuilder, requestDTO, "");
         WebClient webClient = WebClientUtil.getWebClient(webClientBuilder, base);
 
-        Mono<ResponseDTO<SysLoginRspDTO>> mono = WebClientUtil
+        Mono<ResponseDTO<SysLoginRsp>> mono = WebClientUtil
                 .webClientPost(webClient, base, requestDTO, new ParameterizedTypeReference<>() {
                 });
-        ResponseDTO<SysLoginRspDTO> rs = mono.block();
+        ResponseDTO<SysLoginRsp> rs = mono.block();
 
         System.out.println(rs.toString());
         System.out.println("------------------token:" + rs.getBody().getToken());
@@ -99,21 +99,21 @@ public class WebClientTest {
 
         String base = "http://localhost:8002/base/channel/getChannelList";
 
-        var queryBlinkChannelReqDTO = new QueryBlinkChannelReqDTO();
+        var queryBlinkChannelReqDTO = new QueryBlinkChannelReq();
         queryBlinkChannelReqDTO.setChannelName("Browser");
 
-        var requestDTO = new RequestDTO<QueryBlinkChannelReqDTO>();
+        var requestDTO = new RequestDTO<QueryBlinkChannelReq>();
         requestDTO.setBody(queryBlinkChannelReqDTO);
 
         this.setHeadersAndSign(webClientBuilder, requestDTO, token);
 
         WebClient webClient = WebClientUtil.getWebClient(webClientBuilder, base);
 
-        Mono<ResponseDTO<QueryBlinkChannelRspDTO>> mono = WebClientUtil
-                .webClientPost(webClient, base, requestDTO, new ParameterizedTypeReference<ResponseDTO<QueryBlinkChannelRspDTO>>() {
+        Mono<ResponseDTO<QueryBlinkChannelRsp>> mono = WebClientUtil
+                .webClientPost(webClient, base, requestDTO, new ParameterizedTypeReference<ResponseDTO<QueryBlinkChannelRsp>>() {
                 });
 
-        ResponseDTO<QueryBlinkChannelRspDTO> responseDTO = mono.block();
+        ResponseDTO<QueryBlinkChannelRsp> responseDTO = mono.block();
 
         System.out.println("<=== " + JacksonUtil.toJson(responseDTO));
     }
@@ -127,11 +127,11 @@ public class WebClientTest {
 
         String base = "http://localhost:8002/base/auth/login";
 
-        var loginReqDTO = new SysLoginReqDTO();
+        var loginReqDTO = new SysLoginReq();
         loginReqDTO.setUsername(loginName);
         loginReqDTO.setPassword(password);
 
-        var requestDTO = new RequestDTO<SysLoginReqDTO>();
+        var requestDTO = new RequestDTO<SysLoginReq>();
         requestDTO.setBody(loginReqDTO);
 
         SecretKey key = AESUtils.generateRandomAESKey();
@@ -169,10 +169,10 @@ public class WebClientTest {
     void encryptGatewayTest() throws Exception {
         String base = "http://localhost:8002/base/channel/getChannelList";
 
-        var queryBlinkChannelReqDTO = new QueryBlinkChannelReqDTO();
+        var queryBlinkChannelReqDTO = new QueryBlinkChannelReq();
         queryBlinkChannelReqDTO.setChannelName("Browser");
 
-        var requestDTO = new RequestDTO<QueryBlinkChannelReqDTO>();
+        var requestDTO = new RequestDTO<QueryBlinkChannelReq>();
         requestDTO.setBody(queryBlinkChannelReqDTO);
 
         SecretKey key = AESUtils.generateRandomAESKey();
@@ -221,10 +221,10 @@ public class WebClientTest {
      */
     @Test
     void test2() {
-        var queryBlinkChannelReqDTO = new QueryBlinkChannelReqDTO();
+        var queryBlinkChannelReqDTO = new QueryBlinkChannelReq();
         queryBlinkChannelReqDTO.setChannelName("Browser");
 
-        var requestDTO = new RequestDTO<QueryBlinkChannelReqDTO>();
+        var requestDTO = new RequestDTO<QueryBlinkChannelReq>();
         requestDTO.setBody(queryBlinkChannelReqDTO);
         String bodyStr = JacksonUtil.toJson(requestDTO);
         System.out.println(bodyStr);
