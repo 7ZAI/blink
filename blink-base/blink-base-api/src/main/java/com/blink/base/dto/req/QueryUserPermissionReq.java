@@ -2,7 +2,7 @@ package com.blink.base.dto.req;
 
 import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.framework.validate.annotation.DataDict;
-import jakarta.validation.constraints.NotNull;
+import com.blink.framework.validate.annotation.MutuallyExclusive;
 import lombok.Data;
 
 /**
@@ -12,9 +12,11 @@ import lombok.Data;
  * @Date 2026/2/14
  */
 @Data
+@MutuallyExclusive(field1 = "userId",field2 = "url")
 public class QueryUserPermissionReq {
 
-    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer userId;
+
+    private String url;
 }

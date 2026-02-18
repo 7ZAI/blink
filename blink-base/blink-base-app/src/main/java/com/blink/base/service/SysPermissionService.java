@@ -79,13 +79,13 @@ public interface SysPermissionService {
     Set<String> getPermissionsByRoles(List<Integer> roleIds) throws BlinkException;
 
     /**
-     * 根据角色获取权限集合 取角色权限交集
+     * 根据用户id或url 查询权限标识
      *
-     * @param reqDTO 用户id DTO
+     * @param reqDTO 用户id或ur DTO
      * @return 权限集合
      * @throws BlinkException
      */
-    QueryUserPermissionRsp getPermissionsByUserId(QueryUserPermissionReq reqDTO) throws BlinkException;
+    QueryUserPermissionRsp getPermissions(QueryUserPermissionReq reqDTO) throws BlinkException;
 
     /**
      * 获取所有接口权限

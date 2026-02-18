@@ -3,6 +3,7 @@ package com.blink.base.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
@@ -21,7 +22,6 @@ import com.blink.base.mapper.SysRolePermRelaMapper;
 import com.blink.base.mapper.SysUserRoleRelaMapper;
 import com.blink.base.service.SysPermissionService;
 import com.blink.datasource.PageUtils;
-import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.CacheComponent;
 import jakarta.annotation.Resource;
@@ -67,9 +67,9 @@ public class SysPermissionServiceImpl implements SysPermissionService {
 
         var sysPermissionDO = new SysPermissionDO();
         //接口权限
-        if(CommonConstans.PERMISSION_API_TYPE.equals(saveParam.getAcType())){
+        if (CommonConstans.PERMISSION_API_TYPE.equals(saveParam.getAcType())) {
 
-             sysPermissionDO = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
+            sysPermissionDO = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
                     .eq(SysPermissionDO::getUrl, saveParam.getUrl()));
 
             //url 不允许重复
@@ -188,30 +188,49 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     /**
      * 根据角色获取权限集合 取角色权限交集
      *
-     * @param reqDTO 用户id DTO
+     * @param reqDTO 用户id 或url DTO
      * @return 权限集合
      * @throws BlinkException
      */
     @Override
-    public QueryUserPermissionRsp getPermissionsByUserId(QueryUserPermissionReq reqDTO) throws BlinkException {
-        Integer userId = reqDTO.getUserId();
-        List<SysUserRoleRelaDO> roleRela = userRoleRelaMapper.selectList(new LambdaQueryWrapper<SysUserRoleRelaDO>()
-                .eq(SysUserRoleRelaDO::getUserId, userId));
+    public QueryUserPermissionRsp getPermissions(QueryUserPermissionReq reqDTO) throws BlinkException {
 
         Set<String> permissions = new HashSet<>();
         QueryUserPermissionRsp rspDTO = new QueryUserPermissionRsp();
 
-        if (roleRela.isEmpty()) {
-            log.warn("用户未分配角色！ userId:{}", userId);
+        Integer userId = reqDTO.getUserId();
+        String url = reqDTO.getUrl();
+
+        //根据useId查询
+        if (Objects.nonNull(userId) && StrUtil.isBlank(url)) {
+            List<SysUserRoleRelaDO> roleRela = userRoleRelaMapper.selectList(new LambdaQueryWrapper<SysUserRoleRelaDO>()
+                    .eq(SysUserRoleRelaDO::getUserId, userId));
+            if (roleRela.isEmpty()) {
+                log.warn("用户未分配角色！ userId:{}", userId);
+                rspDTO.setPermissions(permissions);
+                return rspDTO;
+            }
+
+            List<Integer> roleIds = roleRela.stream().map(SysUserRoleRelaDO::getRoleId).toList();
+            List<SysPermissionDO> permissionDOList = sysPermissionMapper.findRolesPermissions(roleIds);
+
+            permissionDOList.stream().map(SysPermissionDO::getAcIdentity).forEach(permissions::add);
+
             rspDTO.setPermissions(permissions);
             return rspDTO;
         }
-        List<Integer> roleIds = roleRela.stream().map(SysUserRoleRelaDO::getRoleId).toList();
-        List<SysPermissionDO> permissionDOList = sysPermissionMapper.findRolesPermissions(roleIds);
 
-        permissionDOList.stream().map(SysPermissionDO::getAcIdentity).forEach(permissions::add);
+        //根据url查询
+        if (Objects.isNull(userId) && StrUtil.isNotBlank(url)) {
+            SysPermissionDO permission = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>().eq(SysPermissionDO::getUrl, url)
+                    .eq(SysPermissionDO::getAcType, CommonConstans.PERMISSION_API_TYPE));
 
-        rspDTO.setPermissions(permissions);
+            if (Objects.nonNull(permission)) {
+                permissions.add(permission.getAcIdentity());
+            }
+            rspDTO.setPermissions(permissions);
+        }
+
         return rspDTO;
     }
 
@@ -226,7 +245,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     public GetAllApiPermissionsRsp getAllApiPermission(GetAllApiPermissionsReq body) throws BlinkException {
 
         List<SysPermissionDO> permissionList = sysPermissionMapper.selectList(new LambdaQueryWrapper<SysPermissionDO>()
-                .eq(SysPermissionDO::getAcType,CommonConstans.PERMISSION_API_TYPE));
+                .eq(SysPermissionDO::getAcType, CommonConstans.PERMISSION_API_TYPE));
         var rsp = new GetAllApiPermissionsRsp();
         List<SysPermissionVO> list = BeanUtil.copyToList(permissionList, SysPermissionVO.class);
         rsp.setPermissionList(list);

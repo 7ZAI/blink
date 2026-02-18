@@ -111,15 +111,15 @@ public class SysPermissionController {
 
 
     /**
-     * 根据用户id 查询权限标识
+     * 根据用户id或url 查询权限标识
      *
-     * @param reqDto 入参
+     * @param reqDto reqDTO 用户id 或url DTO
      * @return {@link ResponseDTO<QueryUserPermissionRsp>}
      * @throws BlinkException
      */
-    @PostMapping("/getPermissionsByUserId")
-    public ResponseDTO<QueryUserPermissionRsp> getPermissionsByUserId(@RequestBody @Validated RequestDTO<QueryUserPermissionReq> reqDto) throws BlinkException {
-        return ResponseDTO.newSuccessInstance(sysPermissionService.getPermissionsByUserId(reqDto.getBody()));
+    @PostMapping("/internal/getPermissions")
+    public ResponseDTO<QueryUserPermissionRsp> getPermissions(@RequestBody @Validated RequestDTO<QueryUserPermissionReq> reqDto) throws BlinkException {
+        return ResponseDTO.newSuccessInstance(sysPermissionService.getPermissions(reqDto.getBody()));
     }
 
 

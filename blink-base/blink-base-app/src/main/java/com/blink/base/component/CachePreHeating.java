@@ -1,7 +1,6 @@
 package com.blink.base.component;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constans.RedisKeyConstans;
 import com.blink.base.dto.req.GetAllApiPermissionsReq;
 import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
@@ -10,10 +9,8 @@ import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.base.entity.SysConfigDO;
-import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.entity.SysUserDO;
 import com.blink.base.mapper.BlinkChannelMapper;
-import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.service.SysConfigService;
 import com.blink.base.service.SysPermissionService;
 import com.blink.base.service.UserAuthService;
