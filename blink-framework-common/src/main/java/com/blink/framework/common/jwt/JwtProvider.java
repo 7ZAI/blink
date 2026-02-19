@@ -74,15 +74,27 @@ public class JwtProvider {
         return generateAccessToken(username, roles, null);
     }
 
+
     /**
      * 生成Access Token (支持自定义Claims)
      *
-     * @param username         用户名
+     * @param subject         主要值
+     * @param additionalClaims 额外的自定义Claims
+     * @return JWT Token字符串
+     */
+    public String generateAccessToken(String subject,Map<String, Object> additionalClaims) {
+        return generateAccessToken(subject,null,additionalClaims);
+    }
+
+    /**
+     * 生成Access Token (支持自定义Claims)
+     *
+     * @param subject         主要值
      * @param roles            用户角色列表
      * @param additionalClaims 额外的自定义Claims
      * @return JWT Token字符串
      */
-    public String generateAccessToken(String username, List<String> roles,
+    public String generateAccessToken(String subject, List<String> roles,
                                       Map<String, Object> additionalClaims) {
         try {
             Date now = new Date();
@@ -90,12 +102,14 @@ public class JwtProvider {
 
             JwtBuilder builder = Jwts.builder()
                     // 标准Claims
-                    .subject(username)
+                    .subject(subject)
                     .issuedAt(now)
                     .expiration(expiryDate)
-                    // 自定义Claims
-                    .claim("roles", roles)
                     .claim("type", "access");
+
+            if(Objects.nonNull(roles) && !roles.isEmpty()) {
+                builder.claim("roles", roles);
+            }
 
             // 添加额外的Claims
             if (additionalClaims != null) {
@@ -105,10 +119,10 @@ public class JwtProvider {
             // 签名和紧凑化
             String token = builder.signWith(getSecretKey()).compact();
 
-            log.debug("Generated access token for user: {}", username);
+            log.debug("Generated access token for subject: {}", subject);
             return token;
         } catch (Exception e) {
-            log.error("Error generating access token for user: {}", username, e);
+            log.error("Error generating access token for subject: {}", subject, e);
             throw new JwtGenerationException("Failed to generate access token", e);
         }
     }
