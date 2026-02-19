@@ -78,18 +78,7 @@ public class JwtProvider {
     /**
      * 生成Access Token (支持自定义Claims)
      *
-     * @param subject         主要值
-     * @param additionalClaims 额外的自定义Claims
-     * @return JWT Token字符串
-     */
-    public String generateAccessToken(String subject,Map<String, Object> additionalClaims) {
-        return generateAccessToken(subject,null,additionalClaims);
-    }
-
-    /**
-     * 生成Access Token (支持自定义Claims)
-     *
-     * @param subject         主要值
+     * @param subject          主要值
      * @param roles            用户角色列表
      * @param additionalClaims 额外的自定义Claims
      * @return JWT Token字符串
@@ -104,10 +93,13 @@ public class JwtProvider {
                     // 标准Claims
                     .subject(subject)
                     .issuedAt(now)
+                    .issuer(jwtConfig.getIssuer())
+                    .audience().add(jwtConfig.getAudience())
+                    .and()
                     .expiration(expiryDate)
                     .claim("type", "access");
 
-            if(Objects.nonNull(roles) && !roles.isEmpty()) {
+            if (Objects.nonNull(roles) && !roles.isEmpty()) {
                 builder.claim("roles", roles);
             }
 
@@ -488,6 +480,7 @@ public class JwtProvider {
 
     /**
      * 转换Claims为自己封装的JwtInfo
+     *
      * @param claims 验签得到的结果
      * @return JwtInfo
      */
@@ -528,7 +521,6 @@ public class JwtProvider {
 
         return jwtDto;
     }
-
 
 
     /**
