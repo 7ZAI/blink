@@ -48,13 +48,14 @@ public class WebClientTest {
 
     private HmacSignatureService signatureService = (HmacSignatureService) new SignatureServiceFactory().getDefaultService();
 
-    private String appSecret = "FL5ibnYjuh9hkDa_BLJ9FzNdCe0e8TOZ1cfeCchz-x8";
+    private String appSecret = "byJChK22A0mhXHCLOyzG1WRSdp8EUPlmLC1WqFpzybo";
 
-    private String appKey = "073c25c6a554ee93675f2c4f3919ed49d921ad35";
+    private String appKey = "0ad42e0e8d7760da3d3d2f25862fb8f5d8a4867b";
 
     private final String loginName = "test2";
     private final String password = "123456";
-    private final String token = "81065ba4758c424d9a28bf7f9e733c91";
+    private final String token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxNCIsImlhdCI6MTc3MTQ2ODYyMSwiaXNzIjoiYmFzZS1hcHAiLCJhdWQiOlsiQnJvd3NlciJdLCJleHAiOjE3NzE0Njk1MjEsInR5cGUiOiJhY2Nlc3MifQ.46JtkNsRg7Fe0DwgJQTm88NBEWXFv_yXcRiZBDQDdZA";
+
     //系统公钥
     private final String systemPublicKey = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlRqb7VG+lkiTH/8LY4ISQLjD2t+8kZMvthvixlIx57v3d5o994PY0/QFqOPqDdJeXIvxiCA0z/qdMGve3t2lJuUiExNmH+pY46LuNMIyzmiHKliocDCFb1bdVoTWHzJmjDT2TnRxmglVVm4mhlpDS18accZVPXdzESCn32HfmhKkQj+0NTdsPzjlpWsfsXpySToPVa8/U1HupTnRibdsCu80PHCjRwf/3+fj9fBRnNCubJoSlOi4o+koojqQ3vCMc+b+6dW6zYS83g67olT9J77ekOru/+OgWYe3FmBSjhiYAIMSwK1PalyvI9S3V57SdkHkwG72UrnsIP7iE5BSKwIDAQAB";
     //系统私钥

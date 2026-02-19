@@ -69,6 +69,8 @@ public interface GatewayConstant {
 
     Integer LENGTH_LIMIT_1024 = 1024 ;
 
+    Integer LENGTH_LIMIT_4096 = 4096 ;
+
     /**
      * 长度限制 32
      */

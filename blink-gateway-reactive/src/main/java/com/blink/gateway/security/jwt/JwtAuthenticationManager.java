@@ -36,10 +36,10 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
 
-        String jwtToken = (String) authentication.getPrincipal();
+        String jwtToken = (String) authentication.getCredentials();
 
         //2.获取权限信息
-        return Mono.justOrEmpty(authentication.getCredentials())
+        return Mono.justOrEmpty(authentication.getPrincipal())
                 .flatMap(appKey -> {
                     String appKeyStr = appKey.toString();
                     JwtProvider jwtProvider = channelSecretCache.getJwtProviders().get(appKeyStr);
@@ -53,7 +53,7 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
                 }).doOnError(e -> {
                     log.error("jwt验证失败{}", e.getMessage(), e);
                 }).flatMap(jwtInfo -> {
-                    String userId = (String) jwtInfo.getCustomData().get("userId");
+                    String userId = (String) jwtInfo.getSubject();
                     Integer userIdInt = Integer.parseInt(userId);
 
                     return cacheComponent.getPermissionsByUserId(userIdInt).flatMap(perms->{

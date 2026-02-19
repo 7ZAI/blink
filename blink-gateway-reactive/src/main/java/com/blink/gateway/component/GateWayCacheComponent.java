@@ -1,26 +1,17 @@
 package com.blink.gateway.component;
 
 
-import cn.hutool.core.collection.CollUtil;
-import com.blink.base.dto.req.GetAllApiPermissionsReq;
-import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
 import com.blink.base.dto.rsp.QueryErrMsgRsp;
 import com.blink.base.dto.rsp.QueryUserPermissionRsp;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
-import com.blink.framework.common.data.RequestDTO;
-import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.gateway.constant.GatewayConstant;
-import com.blink.gateway.constant.RemoteServerUrl;
 import com.blink.gateway.service.BaseAppService;
-import com.blink.gateway.util.WebClientUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import java.util.Collections;
 import java.util.Optional;
 
 import static com.blink.gateway.constant.RedisConstans.*;

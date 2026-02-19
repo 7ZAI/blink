@@ -2,8 +2,6 @@ package com.blink.gateway.component;
 
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.cloud.nacos.NacosConfigManager;
-import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.client.config.NacosConfigService;
 import com.blink.framework.common.constrant.SysConstant;
 import com.blink.framework.common.data.ChannelSecretKey;
 import com.blink.framework.common.exception.BlinkException;
@@ -12,14 +10,11 @@ import com.blink.framework.common.jwt.JwtProvider;
 import com.blink.framework.common.utils.AESUtils;
 import com.blink.framework.common.utils.EnvReaderUtil;
 import com.blink.framework.common.utils.JacksonUtil;
-import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

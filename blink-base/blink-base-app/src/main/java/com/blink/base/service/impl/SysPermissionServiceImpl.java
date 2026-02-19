@@ -16,9 +16,11 @@ import com.blink.base.dto.rsp.QueryUserPermissionRsp;
 import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.entity.SysRolePermRelaDO;
+import com.blink.base.entity.SysUserDO;
 import com.blink.base.entity.SysUserRoleRelaDO;
 import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.mapper.SysRolePermRelaMapper;
+import com.blink.base.mapper.SysUserMapper;
 import com.blink.base.mapper.SysUserRoleRelaMapper;
 import com.blink.base.service.SysPermissionService;
 import com.blink.datasource.PageUtils;
@@ -51,6 +53,9 @@ public class SysPermissionServiceImpl implements SysPermissionService {
 
     @Resource
     private SysUserRoleRelaMapper userRoleRelaMapper;
+
+    @Resource
+    private SysUserMapper userMapper;
 
     @Resource
     private CacheComponent cacheComponent;
@@ -203,6 +208,17 @@ public class SysPermissionServiceImpl implements SysPermissionService {
 
         //根据useId查询
         if (Objects.nonNull(userId) && StrUtil.isBlank(url)) {
+
+            SysUserDO userDO = userMapper.selectById(userId);
+
+            if (Objects.isNull(userDO)) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIST);
+            }
+            //添加超级管理员权限
+            if (CommonConstans.SUPER_ADMIN_ID.equals(userDO.getSuperFlag())) {
+                permissions.add(CommonConstans.SUPER_ADMIN_PERMISSION);
+            }
+
             List<SysUserRoleRelaDO> roleRela = userRoleRelaMapper.selectList(new LambdaQueryWrapper<SysUserRoleRelaDO>()
                     .eq(SysUserRoleRelaDO::getUserId, userId));
             if (roleRela.isEmpty()) {

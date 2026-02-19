@@ -323,7 +323,7 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
             JwtProvider jwtProvider = getJwtProvider(channelSecretKey);
             LocalDateTime now = LocalDateTime.now();
             //生成jwt token
-            String token = jwtProvider.generateAccessToken(channel.getRelaUserId(), new HashMap<>());
+            String token = jwtProvider.generateAccessToken(channel.getRelaUserId(), null,null);
             rsp.setToken(token);
             rsp.setExpiresIn(CommonConstans.LONG_MINUTES_15_OF_MILL);
             rsp.setExpireTime(now.plusMinutes(CommonConstans.LONG_MINUTES_15));
@@ -338,15 +338,15 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
 
     private static JwtProvider getJwtProvider(ChannelSecretKey channelSecretKey) {
 
-        channelSecretKey.getAppSecret();
-
         JwtProvider jwtProvider = new JwtProvider();
+
         JwtConfig jwtConfig = new JwtConfig(channelSecretKey.getTokenSecret());
         jwtConfig.setAudience(channelSecretKey.getChannelName());
         jwtConfig.setIssuer("base-app");
         //15分钟过期 短期token 后续参数化配置
-        jwtConfig.setAccessTokenExpiration(900 * 1000L);
-        jwtProvider.setJwtConfig(new JwtConfig());
+        jwtConfig.setAccessTokenExpiration(CommonConstans.LONG_MINUTES_15_OF_MILL);
+
+        jwtProvider.setJwtConfig(jwtConfig);
         return jwtProvider;
     }
 

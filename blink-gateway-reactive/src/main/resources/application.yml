@@ -12,9 +12,9 @@ server:
 spring:
   profiles:
     active: dev
-#  # 核心：允许Bean定义覆盖
-#  main:
-#    allow-bean-definition-overriding: true
+  #  # 核心：允许Bean定义覆盖
+  #  main:
+  #    allow-bean-definition-overriding: true
   application:
     name: gateway-app
 
@@ -143,18 +143,18 @@ resilience4j:
 
 
   # ==================== 舱壁隔离配置(为不同的下游服务或接口分配独立的资源池) 信号量模式 ====================
-#  bulkhead:
-#    configs:
-#      default:
-#        maxConcurrentCalls: 10
-#        maxWaitDuration: 0ms
-#
-#    instances:
-#      myBulkhead:
-#        baseConfig: default
-#
-#      strictBulkhead:
-#        maxConcurrentCalls: 5
+  #  bulkhead:
+  #    configs:
+  #      default:
+  #        maxConcurrentCalls: 10
+  #        maxWaitDuration: 0ms
+  #
+  #    instances:
+  #      myBulkhead:
+  #        baseConfig: default
+  #
+  #      strictBulkhead:
+  #        maxConcurrentCalls: 5
 
   # ==================== 时间限制器配置(单次调用的时间上限) ====================
 #  timelimiter:

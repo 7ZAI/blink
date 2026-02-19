@@ -124,7 +124,8 @@ public class MultiLevelCacheComponent {
      * 注意 key未命中也会返回true
      * 删除操作成功仅代表当前key不存在，所以特别注意传递的key值
      *
-     * @param key
+     * @param cacheName 缓存对象名称
+     * @param key       缓存key值
      */
     public Mono<Boolean> evictLocalCache(String cacheName, String key) {
         return Mono.fromCallable(() -> {
@@ -147,7 +148,7 @@ public class MultiLevelCacheComponent {
      * 注意 key未命中也会返回true
      * 删除操作成功仅代表当前key不存在，所以特别注意传递的key值
      *
-     * @param key
+     * @param key 缓存key值
      */
     public Mono<Boolean> evictRedisCache(String key) {
         // 再删除Redis缓存，如果失败会回滚（通过异常传播）

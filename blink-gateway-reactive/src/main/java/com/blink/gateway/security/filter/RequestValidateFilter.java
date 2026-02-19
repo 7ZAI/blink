@@ -276,7 +276,7 @@ public class RequestValidateFilter implements WebFilter {
             return false;
         }
 
-        if (token.length() > LENGTH_LIMIT_128) {
+        if (token.length() > LENGTH_LIMIT_4096) {
             return false;
         }
 
