@@ -5,6 +5,7 @@ import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.base.mapper.BlinkChannelMapper;
 import com.blink.framework.common.constrant.SysConstant;
@@ -20,10 +21,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.security.KeyPair;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-
 
 import static com.blink.base.constans.CommonConstans.SECRET_CONFIG_DATA_ID;
 import static com.blink.base.constans.CommonConstans.SECRET_CONFIG_GROUP;
@@ -46,6 +46,9 @@ public class SecretConfigComponent implements CommandLineRunner {
 
     private static final String BLINK_SECRET_KEY = EnvReaderUtil.getEnv(SysConstant.BLINK_SECRET_KEY);
 
+    //缓存
+    private final Map<String, ChannelSecretKey> CACHE = new ConcurrentHashMap<String, ChannelSecretKey>();
+
     @Override
     public void run(String... args) throws Exception {
 
@@ -55,6 +58,9 @@ public class SecretConfigComponent implements CommandLineRunner {
 //        refreshAllChannelConfigs();
         //存在则什么都不做
         if (StrUtil.isNotBlank(configStr)) {
+            String json = AESUtils.decrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), configStr);
+            List<ChannelSecretKey> channelSecretKeys = Optional.ofNullable(JacksonUtil.fromJsonToList(json, ChannelSecretKey.class)).orElseGet(Collections::emptyList);
+            refreshCache(channelSecretKeys);
             return;
         }
         //不存在 则创建
@@ -70,6 +76,41 @@ public class SecretConfigComponent implements CommandLineRunner {
         nacosConfigComponent.configPublisher(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP, configStr);
     }
 
+    //加载进缓存
+    private void refreshCache(List<ChannelSecretKey> channelSecretKeys) {
+        channelSecretKeys.forEach(cs -> CACHE.put(cs.getAppKey(), cs));
+    }
+
+    public ChannelSecretKey getChannelSecretKey(String appKey) throws Exception {
+
+        ChannelSecretKey channelSecretKey = CACHE.get(appKey);
+        if (Objects.isNull(channelSecretKey)) {
+
+            List<ChannelSecretKey> channelSecretKeyList = Optional.ofNullable(getConfigFromRedis()).orElseGet(ArrayList::new);
+            Optional<ChannelSecretKey> optional = channelSecretKeyList.stream().filter(sk -> appKey.equals(sk.getAppKey()))
+                    .findFirst();
+            return optional.orElse(null);
+        }
+        return channelSecretKey;
+    }
+
+
+    /**
+     * 获取配置
+     *
+     * @throws Exception
+     */
+    public List<ChannelSecretKey> getConfigFromRedis() throws Exception {
+
+        String configStr = nacosConfigComponent.getConfig(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP);
+        //为空抛异常
+        if (StrUtil.isBlank(configStr)) {
+            BlinkException.throwException("获取配置文件失败!");
+        }
+        String json = AESUtils.decrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), configStr);
+        return JacksonUtil.fromJsonToList(json, ChannelSecretKey.class);
+    }
+
     /**
      * 删除单个渠道密钥配置
      *
@@ -77,27 +118,22 @@ public class SecretConfigComponent implements CommandLineRunner {
      * @throws Exception
      */
     public void deleteChannelSecretConfig(String appKey) throws Exception {
-        String configStr = nacosConfigComponent.getConfig(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP);
-        //为空抛异常
-        if (StrUtil.isBlank(configStr)) {
-            BlinkException.throwException("获取配置文件失败!");
-        }
 
-        String json = AESUtils.decrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), configStr);
-        List<ChannelSecretKey> channelSecretKeys = JacksonUtil.fromJsonToList(json, ChannelSecretKey.class);
-
+        List<ChannelSecretKey> channelSecretKeys = getConfigFromRedis();
         boolean removed = channelSecretKeys.removeIf(sk -> sk.getAppKey().equals(appKey));
 
         if (!removed) {
             BlinkException.throwException("该渠道不存在：appkey" + appKey);
         }
 
-        json = JacksonUtil.toJson(channelSecretKeys);
+        String json = JacksonUtil.toJson(channelSecretKeys);
         //再次加密写回配置中心
-        configStr = AESUtils.encrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), json);
+        String configStr = AESUtils.encrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), json);
         nacosConfigComponent.configPublisher(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP, configStr);
 
         log.info("从配置文件中删除appkey为{}的渠道配置 成功！", appKey);
+
+        refreshCache(channelSecretKeys);
     }
 
     /**
@@ -110,24 +146,18 @@ public class SecretConfigComponent implements CommandLineRunner {
         BeanUtil.copyProperties(channelInfo, channelSecretKey);
         refreshAllKey(channelSecretKey);
 
-
-        String configStr = nacosConfigComponent.getConfig(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP);
-        //为空抛异常
-        if (StrUtil.isBlank(configStr)) {
-            BlinkException.throwException("获取配置文件失败!");
-        }
-
-        String json = AESUtils.decrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), configStr);
-        List<ChannelSecretKey> channelSecretKeys = JacksonUtil.fromJsonToList(json, ChannelSecretKey.class);
+        List<ChannelSecretKey> channelSecretKeys = getConfigFromRedis();
 
         channelSecretKeys.add(channelSecretKey);
 
-        json = JacksonUtil.toJson(channelSecretKeys);
+        String json = JacksonUtil.toJson(channelSecretKeys);
         //再次加密写回配置中心
-        configStr = AESUtils.encrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), json);
+        String configStr = AESUtils.encrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), json);
         nacosConfigComponent.configPublisher(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP, configStr);
 
         log.info("添加新的渠道密钥配置成功！appkey:{}", channelSecretKey.getAppKey());
+
+        refreshCache(channelSecretKeys);
 
     }
 
@@ -139,7 +169,7 @@ public class SecretConfigComponent implements CommandLineRunner {
      */
     public void refreshChannelConfig(String appKey) throws Exception {
 
-        refreshChannelSecretKeyConfig(appKey,this::refreshAllKey);
+        refreshChannelSecretKeyConfig(appKey, this::refreshAllKey);
         log.info("刷新单个渠道所有密钥成功！appkey为{}", appKey);
 
     }
@@ -151,15 +181,7 @@ public class SecretConfigComponent implements CommandLineRunner {
      */
     public void refreshAllChannelConfigs() throws Exception {
 
-        String configStr = nacosConfigComponent.getConfig(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP);
-        //为空抛异常
-        if (StrUtil.isBlank(configStr)) {
-            BlinkException.throwException("获取配置文件失败!");
-        }
-
-        String json = AESUtils.decrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), configStr);
-        List<ChannelSecretKey> channelSecretKeys = JacksonUtil.fromJsonToList(json, ChannelSecretKey.class);
-
+        List<ChannelSecretKey> channelSecretKeys = getConfigFromRedis();
 
         if (channelSecretKeys.isEmpty()) {
             BlinkException.throwException("该配置文件为空不存在");
@@ -167,9 +189,9 @@ public class SecretConfigComponent implements CommandLineRunner {
 
         channelSecretKeys.stream().parallel().forEach(this::refreshAllKey);
 
-        json = JacksonUtil.toJson(channelSecretKeys);
+        String json = JacksonUtil.toJson(channelSecretKeys);
         //再次加密写回配置中心
-        configStr = AESUtils.encrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), json);
+        String configStr = AESUtils.encrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), json);
         nacosConfigComponent.configPublisher(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP, configStr);
         log.info("刷新渠道密钥配置文件中成功！");
 
@@ -177,20 +199,14 @@ public class SecretConfigComponent implements CommandLineRunner {
 
     /**
      * 单项密钥刷新统一方法
-     * @param appKey
+     *
+     * @param appKey           appkey
      * @param channelProcessor 传递刷新单项行为
      * @throws Exception
      */
     public void refreshChannelSecretKeyConfig(String appKey, Consumer<ChannelSecretKey> channelProcessor) throws Exception {
-        String configStr = nacosConfigComponent.getConfig(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP);
-        //为空抛异常
-        if (StrUtil.isBlank(configStr)) {
-            BlinkException.throwException("获取配置文件失败!");
-        }
 
-        String json = AESUtils.decrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), configStr);
-        List<ChannelSecretKey> channelSecretKeys = JacksonUtil.fromJsonToList(json, ChannelSecretKey.class);
-
+        List<ChannelSecretKey> channelSecretKeys = getConfigFromRedis();
         ChannelSecretKey secretKey = channelSecretKeys.stream()
                 .filter(sk -> appKey.equals(sk.getAppKey()))
                 .findFirst()
@@ -202,14 +218,17 @@ public class SecretConfigComponent implements CommandLineRunner {
 
         channelProcessor.accept(secretKey);
 
-        json = JacksonUtil.toJson(channelSecretKeys);
+        String json = JacksonUtil.toJson(channelSecretKeys);
         //再次加密写回配置中心
-        configStr = AESUtils.encrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), json);
+        String configStr = AESUtils.encrypt(AESUtils.keyFromBase64(BLINK_SECRET_KEY), json);
         nacosConfigComponent.configPublisher(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP, configStr);
+
+        refreshCache(channelSecretKeys);
     }
 
     /**
      * 刷新渠道密钥对
+     *
      * @param appKey
      */
     public void refreshChannelKeyConfig(String appKey) throws Exception {
@@ -218,6 +237,7 @@ public class SecretConfigComponent implements CommandLineRunner {
 
     /**
      * 刷新系统密钥对
+     *
      * @param appKey
      */
     public void refreshSystemKeyConfig(String appKey) throws Exception {
@@ -226,6 +246,7 @@ public class SecretConfigComponent implements CommandLineRunner {
 
     /**
      * 刷新AppSecret
+     *
      * @param appKey
      */
     public void refreshAppSecretKey(String appKey) throws Exception {
@@ -234,6 +255,7 @@ public class SecretConfigComponent implements CommandLineRunner {
 
     /**
      * 刷新TokenSecret
+     *
      * @param appKey
      */
     public void refreshTokenSecret(String appKey) throws Exception {
@@ -246,7 +268,7 @@ public class SecretConfigComponent implements CommandLineRunner {
      *
      * @param secretKey
      */
-     private void refreshAllKey(ChannelSecretKey secretKey) {
+    private void refreshAllKey(ChannelSecretKey secretKey) {
 
         refreshChannelRSAKey(secretKey);
         refreshSystemRSAKey(secretKey);

@@ -11,15 +11,18 @@ import com.blink.base.constans.BaseErrCodeConstant;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.constans.RedisKeyConstans;
 import com.blink.base.dto.req.*;
+import com.blink.base.dto.rsp.ChannelTokenRsp;
 import com.blink.base.dto.rsp.QueryBlinkChannelRsp;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.entity.BlinkChannelDO;
 import com.blink.base.mapper.BlinkChannelMapper;
-import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.producer.GateWayStreamMessageProducer;
 import com.blink.base.service.BlinkChannelService;
 import com.blink.datasource.PageUtils;
+import com.blink.framework.common.data.ChannelSecretKey;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.jwt.JwtConfig;
+import com.blink.framework.common.jwt.JwtProvider;
 import com.blink.framework.core.annotation.LogExecution;
 import com.blink.framework.core.data.CoreConstant;
 import com.blink.framework.redis.component.RedisClient;
@@ -30,6 +33,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -57,8 +62,8 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
     @Resource
     private SecretConfigComponent secretConfigComponent;
 
-    @Resource
-    private SysPermissionMapper permissionMapper;
+//    @Resource
+//    private SysPermissionMapper permissionMapper;
 
 
     /**
@@ -284,6 +289,66 @@ public class BlinkChannelServiceImpl implements BlinkChannelService {
 
     }
 
+    /**
+     * 为指定渠道签发短期访问令牌
+     *
+     * @param reqParam 请求体，包含渠道ID等信息
+     * @return 包含生成的Token及过期时间的响应
+     */
+    @Override
+    public ChannelTokenRsp issueChannelToken(IssueChannelTokenReq reqParam) throws BlinkException {
+        var rsp = new ChannelTokenRsp();
+        String appkey = reqParam.getAppKey();
+
+        BlinkChannelDO channel = channelMapper.selectOne(new LambdaQueryWrapper<BlinkChannelDO>().eq(BlinkChannelDO::getAppKey, appkey));
+
+        if (Objects.isNull(channel)) {
+            BlinkException.throwBusinessException(BaseErrCodeConstant.CHANNEL_NOT_EXIST);
+        }
+
+        //获取密钥
+        try {
+            ChannelSecretKey channelSecretKey = secretConfigComponent.getChannelSecretKey(appkey);
+            if (Objects.isNull(channelSecretKey)) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.CHANNEL_NOT_EXIST);
+            }
+
+            //验证私钥
+            String appSecret = reqParam.getAppSecret();
+
+            if (!channelSecretKey.getAppSecret().equals(appSecret)) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.ERR_APP_SECRET);
+            }
+
+            JwtProvider jwtProvider = getJwtProvider(channelSecretKey);
+            LocalDateTime now = LocalDateTime.now();
+            //生成jwt token
+            String token = jwtProvider.generateAccessToken(channel.getRelaUserId(), new HashMap<>());
+            rsp.setToken(token);
+            rsp.setExpiresIn(CommonConstans.LONG_MINUTES_15_OF_MILL);
+            rsp.setExpireTime(now.plusMinutes(CommonConstans.LONG_MINUTES_15));
+
+        } catch (Exception e) {
+            throw new BlinkException(e, e.getMessage());
+        }
+
+        return rsp;
+    }
+
+
+    private static JwtProvider getJwtProvider(ChannelSecretKey channelSecretKey) {
+
+        channelSecretKey.getAppSecret();
+
+        JwtProvider jwtProvider = new JwtProvider();
+        JwtConfig jwtConfig = new JwtConfig(channelSecretKey.getTokenSecret());
+        jwtConfig.setAudience(channelSecretKey.getChannelName());
+        jwtConfig.setIssuer("base-app");
+        //15分钟过期 短期token 后续参数化配置
+        jwtConfig.setAccessTokenExpiration(900 * 1000L);
+        jwtProvider.setJwtConfig(new JwtConfig());
+        return jwtProvider;
+    }
 
 
     /**

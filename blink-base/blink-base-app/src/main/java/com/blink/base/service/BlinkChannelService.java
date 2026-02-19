@@ -1,6 +1,7 @@
 package com.blink.base.service;
 
 import com.blink.base.dto.req.*;
+import com.blink.base.dto.rsp.ChannelTokenRsp;
 import com.blink.base.dto.rsp.QueryBlinkChannelRsp;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.entity.BlinkChannelDO;
@@ -77,5 +78,11 @@ public interface BlinkChannelService {
      */
     BlinkChannelDO refreshSystemKey(QueryOneChannelReq queryParam) throws BlinkException;
 
-
+    /**
+     * 为指定渠道签发短期访问令牌
+     *
+     * @param reqParam 请求体，包含渠道ID等信息
+     * @return 包含生成的Token及过期时间的响应
+     */
+    ChannelTokenRsp issueChannelToken(IssueChannelTokenReq reqParam) throws BlinkException;
 }

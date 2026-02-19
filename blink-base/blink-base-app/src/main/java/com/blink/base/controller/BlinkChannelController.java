@@ -1,6 +1,7 @@
 package com.blink.base.controller;
 
 import com.blink.base.dto.req.*;
+import com.blink.base.dto.rsp.ChannelTokenRsp;
 import com.blink.base.dto.rsp.QueryBlinkChannelRsp;
 import com.blink.base.dto.vo.ChannelVO;
 import com.blink.base.entity.BlinkChannelDO;
@@ -113,6 +114,16 @@ public class BlinkChannelController {
         return ResponseDTO.newSuccessInstance(blinkChannelService.refreshSystemKey(reqDto.getBody()));
     }
 
+    /**
+     * 为指定渠道签发短期访问令牌
+     *
+     * @param reqDto 请求体，包含渠道ID等信息
+     * @return 包含生成的Token及过期时间的响应
+     */
+    @PostMapping("/issueChannelToken")
+    public ResponseDTO<ChannelTokenRsp> issueChannelToken(@RequestBody @Validated RequestDTO<IssueChannelTokenReq> reqDto) throws BlinkException {
+        return ResponseDTO.newSuccessInstance(blinkChannelService.issueChannelToken(reqDto.getBody()));
+    }
 
 
 }

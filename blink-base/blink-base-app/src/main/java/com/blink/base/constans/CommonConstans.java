@@ -79,4 +79,14 @@ public interface CommonConstans {
      * 密钥文件nacos上的 group
      */
     String SECRET_CONFIG_GROUP= "DEFAULT_GROUP";
+
+    /**
+     * 15分钟
+     */
+    Long LONG_MINUTES_15_OF_MILL = 900 * 1000L;
+
+    /**
+     * 15分钟
+     */
+    Long LONG_MINUTES_15 = 15L;
 }

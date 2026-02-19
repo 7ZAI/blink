@@ -174,6 +174,11 @@ public interface BaseErrCodeConstant {
      */
     String NOT_ALLOW_DELETE = "BUSS0027";
 
+    /**
+     * 密钥不匹配
+     */
+    String ERR_APP_SECRET = "BUSS0028";
+
 
     /***************************错误码---end ********************************/
 

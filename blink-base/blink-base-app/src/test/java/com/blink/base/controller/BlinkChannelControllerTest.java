@@ -1,8 +1,10 @@
 package com.blink.base.controller;
 
+import com.blink.base.component.SecretConfigComponent;
 import com.blink.base.constans.CommonConstans;
 import com.blink.base.dto.req.*;
 import com.blink.framework.common.constrant.SysConstant;
+import com.blink.framework.common.data.ChannelSecretKey;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.utils.JacksonUtil;
@@ -27,6 +29,9 @@ class BlinkChannelControllerTest {
     @Resource
     private MockMvc mockMvc;
 
+    @Resource
+    private SecretConfigComponent secretConfigComponent;
+
 
     @Test
     void testSaveBlinkChannel() throws Exception {
@@ -40,6 +45,21 @@ class BlinkChannelControllerTest {
 
         MvcResult result = perform("/channel/saveChannel", reqParam);
         ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
+        Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
+    }
+
+    @Test
+    void testIssueToken() throws Exception {
+
+        ChannelSecretKey channelSecretKey = secretConfigComponent.getChannelSecretKey("40db8e072b11449c9049d2b815d0b90d");
+        var reqParam = new IssueChannelTokenReq();
+        reqParam.setAppKey("40db8e072b11449c9049d2b815d0b90d");
+        reqParam.setAppSecret(channelSecretKey.getAppSecret());
+
+        MvcResult result = perform("/channel/issueChannelToken", reqParam);
+        ResponseDTO response = JacksonUtil.fromJson(result.getResponse().getContentAsString(), ResponseDTO.class);
+
+        System.out.println(response);
         Assertions.assertEquals(SysConstant.SUCCESS_CODE, response.getMsgCode());
     }
 
