@@ -34,8 +34,9 @@ public class RedisRouteDefinitionRepository implements RouteDefinitionRepository
     @Override
     public Flux<RouteDefinition> getRouteDefinitions() {
         String routesKey = redisProperties.getRouteKey();
-        return redisClient.hEntries(routesKey).switchIfEmpty(Mono.error(new BlinkException("路由为空 key:" + routesKey)))
-                .mapNotNull(routeDefinition -> {
+        return redisClient.hEntries(routesKey)
+                .switchIfEmpty(Mono.error(new BlinkException("路由为空 key:" + routesKey)))
+                .map(routeDefinition -> {
                     log.info("从redis 获取的路由：{}",routeDefinition.getValue());
                     return JacksonUtil.convert(routeDefinition.getValue(),RouteDefinition.class);
                 })

@@ -4,6 +4,9 @@ import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.ParameterizedTypeReference;
@@ -11,10 +14,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
+
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @Author binblink
@@ -37,16 +45,22 @@ public class WebClientUtil {
                 .uri(url)
                 .bodyValue(requestDTO)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response -> {
-                    log.warn("客户端错误: {},requestPath:{}", response.statusCode(), url);
-                    return Mono.error(new BlinkException("客户端请求错误"));
-                })
-                .onStatus(HttpStatusCode::is5xxServerError, response -> {
-                    log.warn("服务端错误: {}", response.statusCode());
-                    return Mono.error(new BlinkException("base-app 服务异常"));
-                })
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
+                        // 消费响应体（作为字符串）
+                        response.bodyToMono(String.class)
+                                .flatMap(errorBody -> {
+                                    log.warn("客户端错误: {}, body: {}", response.statusCode(), errorBody);
+                                    return Mono.error(new BlinkException("客户端请求错误: " + errorBody));
+                                })
+                )
+                .onStatus(HttpStatusCode::is5xxServerError, response -> response.bodyToMono(String.class)
+                        .flatMap(errorBody -> {
+                            log.error("服务端错误: {}, body: {}", response.statusCode(), errorBody);
+                            return Mono.error(new BlinkException("服务端异常: " + errorBody));
+                        }))
                 //带泛型的返回值 写法
                 .bodyToMono(v)
+                .timeout(Duration.ofSeconds(5))
                 .map(respDTO -> {
                     BeanUtils.copyProperties(respDTO.getBody(), r);
                     return r;
@@ -73,16 +87,22 @@ public class WebClientUtil {
                 .uri(url)
                 .bodyValue(requestDTO)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response -> {
-                    log.error("客户端错误: {}", response.statusCode());
-                    return Mono.error(new BlinkException("客户端请求错误"));
-                })
-                .onStatus(HttpStatusCode::is5xxServerError, response -> {
-                    log.error("服务端错误: {}", response.statusCode());
-                    return Mono.error(new BlinkException("base-app 服务异常"));
-                })
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
+                        // 消费响应体（作为字符串）
+                        response.bodyToMono(String.class)
+                                .flatMap(errorBody -> {
+                                    log.warn("客户端错误: {}, body: {}", response.statusCode(), errorBody);
+                                    return Mono.error(new BlinkException("客户端请求错误: " + errorBody));
+                                })
+                )
+                .onStatus(HttpStatusCode::is5xxServerError, response -> response.bodyToMono(String.class)
+                        .flatMap(errorBody -> {
+                            log.error("服务端错误: {}, body: {}", response.statusCode(), errorBody);
+                            return Mono.error(new BlinkException("服务端异常: " + errorBody));
+                        }))
                 //带泛型的返回值 写法
                 .bodyToMono(v)
+                .timeout(Duration.ofSeconds(5))
                 .doOnSuccess(response -> log.info("调用外部服务成功: {},requestPath:{}", response, url))
                 .doOnError(error -> log.error("调用外部服务失败: {},url:{}", error.getMessage(), url, error))
                 .onErrorMap(throwable -> new BlinkException(throwable, "调用外部服务失败"));
@@ -128,9 +148,21 @@ public class WebClientUtil {
         Jackson2JsonDecoder jackson2JsonDecoder = new Jackson2JsonDecoder(JacksonUtil.getDefaultMapper());
         Jackson2JsonEncoder jackson2JsonEncoder = new Jackson2JsonEncoder(JacksonUtil.getDefaultMapper());
 
+        HttpClient httpClient = HttpClient.create()
+                // 连接超时（TCP 连接建立时间）
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+                // 响应超时（整个请求直到接收到完整响应的时间）
+                .responseTimeout(Duration.ofSeconds(5))
+                // 读写超时（通过添加 Handler 实现）
+                .doOnConnected(conn ->
+                        conn.addHandlerLast(new ReadTimeoutHandler(5, TimeUnit.SECONDS))
+                                .addHandlerLast(new WriteTimeoutHandler(5, TimeUnit.SECONDS))
+                );
+
         return webClientBuilder
                 // 服务名或直接URL
                 .baseUrl(baseUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .codecs(configurer -> {
                     configurer.defaultCodecs().jackson2JsonDecoder(jackson2JsonDecoder);

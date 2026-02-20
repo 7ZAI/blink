@@ -140,7 +140,8 @@ public class BaseAppService {
         param.setUrl(requestPath);
         requestDTO.setBody(param);
 
-        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_USER_PERMISSION_URL,requestDTO,new QueryUserPermissionRsp(),new ParameterizedTypeReference<ResponseDTO<QueryUserPermissionRsp>>(){});
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_USER_PERMISSION_URL,requestDTO,new QueryUserPermissionRsp()
+                ,new ParameterizedTypeReference<ResponseDTO<QueryUserPermissionRsp>>(){});
 
     }
 
@@ -156,7 +157,8 @@ public class BaseAppService {
         var param = new GetAllApiPermissionsReq();
         requestDTO.setBody(param);
 
-        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_ALL_API_PERMISSION,requestDTO,new GetAllApiPermissionsRsp(),new ParameterizedTypeReference<ResponseDTO<GetAllApiPermissionsRsp>>(){});
+        return WebClientUtil.webClientPost(webClient,RemoteServerUrl.GET_ALL_API_PERMISSION,requestDTO,new GetAllApiPermissionsRsp()
+                ,new ParameterizedTypeReference<ResponseDTO<GetAllApiPermissionsRsp>>(){});
 
     }
 

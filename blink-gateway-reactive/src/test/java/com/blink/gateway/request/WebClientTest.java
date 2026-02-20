@@ -48,9 +48,9 @@ public class WebClientTest {
 
     private HmacSignatureService signatureService = (HmacSignatureService) new SignatureServiceFactory().getDefaultService();
 
-    private String appSecret = "byJChK22A0mhXHCLOyzG1WRSdp8EUPlmLC1WqFpzybo";
+    private String appSecret = "KLrmMSMBAb3f1bd7euUs8ks6W_mZVmAponfE1WKbjxI";
 
-    private String appKey = "0ad42e0e8d7760da3d3d2f25862fb8f5d8a4867b";
+    private String appKey = "b8366e81a1d21ceb035d09a6c5251587e77c4309";
 
     private final String loginName = "test2";
     private final String password = "123456";

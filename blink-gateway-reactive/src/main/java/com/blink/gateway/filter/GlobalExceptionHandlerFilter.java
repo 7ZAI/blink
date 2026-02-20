@@ -6,6 +6,7 @@ import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.common.jwt.JwtProvider;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.trafficControl.RateLimitExceededException;

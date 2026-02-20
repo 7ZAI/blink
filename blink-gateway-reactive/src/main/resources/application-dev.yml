@@ -73,10 +73,12 @@ spring:
 
 # actuator 监控
 management:
+  server:
+    port: 8003
   endpoints:
     web:
       exposure:
-        include: "*"  # 暴露所有端点，生产环境建议按需暴露
+        include: "*" # 暴露所有端点，生产环境建议按需暴露
   endpoint:
     gateway:
       enabled: true

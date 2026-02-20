@@ -1,6 +1,7 @@
 package com.blink.gateway.security.jwt;
 
 import com.blink.framework.common.data.UserInfoRedisDO;
+import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.jwt.JwtProvider;
 import com.blink.gateway.component.ChannelSecretCache;
@@ -12,7 +13,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -27,7 +31,7 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
 
     private final GateWayCacheComponent cacheComponent;
 
-    public JwtAuthenticationManager(ChannelSecretCache channelSecretCache,GateWayCacheComponent cacheComponent) {
+    public JwtAuthenticationManager(ChannelSecretCache channelSecretCache, GateWayCacheComponent cacheComponent) {
         this.channelSecretCache = channelSecretCache;
         this.cacheComponent = cacheComponent;
     }
@@ -50,13 +54,11 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
                     }
                     //能拿到JwtInfo 无异常则验证通过
                     return Mono.just(jwtProvider.getJwtInfo(jwtToken));
-                }).doOnError(e -> {
-                    log.error("jwt验证失败{}", e.getMessage(), e);
                 }).flatMap(jwtInfo -> {
                     String userId = (String) jwtInfo.getSubject();
                     Integer userIdInt = Integer.parseInt(userId);
 
-                    return cacheComponent.getPermissionsByUserId(userIdInt).flatMap(perms->{
+                    return cacheComponent.getPermissionsByUserId(userIdInt).flatMap(perms -> {
                         //用户接口权限集合
                         Set<String> permittedList = Optional.ofNullable(perms.getPermissions()).orElseGet(HashSet::new);
 
@@ -70,7 +72,15 @@ public class JwtAuthenticationManager implements ReactiveAuthenticationManager {
                         return Mono.just(authenticated);
                     });
 
-                }).switchIfEmpty(Mono.just(authentication));
+                })
+                .switchIfEmpty(Mono.just(authentication))
+                .onErrorResume(e -> {
+                    if (e instanceof JwtProvider.InvalidTokenException) {
+                        log.error("jwt验证失败{}", e.getMessage(), e);
+                        return Mono.error(new BlinkException(BlinkErrorCodeEnum.BLINK_TOKEN_INVALID.getCode()));
+                    }
+                    return Mono.error(e);
+                });
     }
 
 

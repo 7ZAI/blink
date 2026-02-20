@@ -216,46 +216,58 @@ blink:
 
  ### 认证与鉴权
 
-blink gateway整合了spring security 来实现登录认证和鉴权。
+blink gateway整合了spring security 来实现集中式登录认证和鉴权。
 
 
-目前实现了base-app服务的用户名密码登录认证和鉴权。
+blink gateway实现了针对后台管理base-app服务的认证鉴权和对接入渠道的认证和鉴权
+
+base-app服务认证鉴权： 采用登入名密码进行认证，通过认证签发带状态token 基于RBAC实现鉴权
 
 token认证: 登入后通过UUID生成一个唯一Id作为用户token凭证，将token存在redis中，并设置30分钟的过期时间。用户每个请求都会拦截获取token，与redis的做比对，token一致则请求通过，否则拒绝。
-
 自动续期：如果用户过期时间仍然剩5分钟时，仍然活跃 则将token过期时间延长30分钟.
-
 这种方案是适用于管理后台管理系统的用户状态，方便实现 踢人 强制下线等功能。
-
-TODO 未来支持
-如果不追求管理用户登录状态，可以采用jwt 双token的方案 后续添加
 
 相关类：[TokenAuthenticationConverter](src/main/java/com/blink/gateway/security/token/TokenAuthenticationConverter.java)、
 [TokenAuthenticationManager](src/main/java/com/blink/gateway/security/token/TokenAuthenticationManager.java)、[BlinkAuthenticationSuccessHandler](src/main/java/com/blink/gateway/security/token/TokenAuthenticationSuccessHandler.java)
 
+
+渠道（channel）的认证和鉴权: 采用类似oauth2 client_credentials的模式，渠道使用appkey、appSecret获取短期jwt，基于jwt进行认证
+                          通过给渠道绑定用户、实现RBAC鉴权          
+
+相关类：[JwtAuthenticationConverter](src/main/java/com/blink/gateway/security/jwt/JwtAuthenticationConverter.java)、
+[JwtAuthenticationManager](src/main/java/com/blink/gateway/security/jwt/JwtAuthenticationManager.java)、[JwtAuthenticationSuccessHandler](src/main/java/com/blink/gateway/security/jwt/JwtAuthenticationSuccessHandler.java)
+
+
+
 权限校验：是对RBAC权限管理模型的实现。通过redis缓存获取url对应的权限标识，校验用户登入成功时获取的权限集合，是否具有该标识，有则通过 无则拒绝。
+        内部用户和渠道统一鉴权逻辑
 
  相关类：[BlinkAuthorizationManager](src/main/java/com/blink/gateway/security/BlinkAuthorizationManager.java)
 
 
 
 
-
  ### 多渠道对接管理
 
-引入渠道管理机制，在base-app服务提供渠道curd接口，用于管理接入blink系统中的第三方。为接入方创建一个渠道，包含appKey,appSecret、渠道密钥对 系统密钥对功能开关等信息。
+引入渠道管理机制，在base-app服务提供渠道curd接口，用于管理调用blink系统中api的第三方。为接入方创建一个渠道，包含appKey,appSecret、渠道RSA密钥对 系统RSA密钥对、功能开关等信息。
+其中涉及相关密钥做了不入库处理，而是使用存于环境变量的密钥，对生成的所有密钥进行加密，并保存在nacos配置中，生产上不对密钥进行日志记录 
+在gateway端一样从nacos获取配置，解密后缓存使用。
+
 在网关通过appKey拿到redis中缓存的渠道（channel）信息，然后校验渠道开关，动态控制第三方能否接入、是否加解密、是否进行认证等等。
 
-第三方接入时相关的渠道信息由私下沟通告知，不在系统上动态签发渠道信息
+因为这是服务方于服务方之间的调用 所有第三方接入时相关的渠道信息由私下沟通告知，不在系统上动态发送渠道信息，包括是否加密传输需要沟通确定，而不是动态设置
+
 
 #### 混合加解密 加签验签
 
-   通过AES+RSA混合加密及SHA-256数字签名技术，确保第三方接口数据传输的机密性、完整性和不可否认性，提升系统安全防护等级。
+   通过AES+RSA混合加密对请求体json字符串进行解密 ，响应体加密； 及SHA-256数字签名技术，确保第三方接口数据传输的机密性、完整性和不可否认性，提升系统安全防护等级。
+
+    
+//TODO 后期对加密解密行为进行抽象，方便更换加密解密的实现
 
  ### 报文组装
 
-
-  因为blink系统设计了统一的请求DTO的格式，所以要在网关端进行填充；包括请求id,追踪id,日期 token 登入用户名等等 json格式如下：
+  因为blink系统设计了统一的请求DTO的格式，所以要在网关端集中填充；包括请求id,追踪id,日期 token 登入用户名等等 json格式如下：
   
 ```json
 {
@@ -276,7 +288,7 @@ TODO 未来支持
     "token": "amet",
     "loginName": "藤宇轩",
     "extensions": "扩展字段",
-    "body": "实际业务数据"
+    "body": { "DTO": "实际业务数据" }
        
 }
 
@@ -315,7 +327,6 @@ TODO 未来支持
  当前Reids stream已经走通 未完善、关于gateway的配置参数文件也未设置
 
 
- 未来方案 参考开源项目 [shenyu](https://github.com/apache/shenyu) 的网关实现，在网关采用内存微型数据库搭建后台管理和监控系统一起，直接垂直管理。
 
   #### 参数列表
 | 配置名                                     | 描述   | 默认值   |
@@ -332,6 +343,14 @@ TODO 未来支持
 
 
 ### 缓存
+
+为了减少gateway与redis、其他内部服务的调用，减少网络开销；设计实现了依次从本地缓存、redis、远程服务数据源获取数据的多级缓存组件。
+
+使用Caffeine本地缓存、缓存网关固定需要获取的数据、如上面的参数配置。
+
+设计了多级缓存组件 使用Caffeine cache 异步缓存 并用工具类将其转换为响应式方式调用
+
+同步机制：目前使用 redis stream 实现类似消息队列的功能 通过发送同步消息事件本地缓存的同步
 
  ### 流量控制
 

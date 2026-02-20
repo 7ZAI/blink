@@ -12,7 +12,6 @@ import reactor.core.publisher.Mono;
 import java.util.Objects;
 
 import static com.blink.gateway.constant.GatewayConstant.CHANNEL_INFO;
-import static com.blink.gateway.constant.RedisConstans.USER_TOKEN;
 
 /**
  * @Author binblink
@@ -28,8 +27,9 @@ public class JwtAuthenticationSuccessHandler implements ServerAuthenticationSucc
         ChannelInfoRedisDO channelInfoRedisDO = (ChannelInfoRedisDO) exchange.getAttributes().get(CHANNEL_INFO);
         //传递 登录用户信息 用来后续元数据组装使用
         UserInfoRedisDO userInfo = (UserInfoRedisDO) authentication.getPrincipal();
-        if(Objects.nonNull(userInfo)) {
-            userInfo.setUsername("channel-"+channelInfoRedisDO.getChannelName());
+        if (Objects.nonNull(userInfo)) {
+            //这里并非关联的user的名称 而是channel名 用来标记是来自渠道的调用
+            userInfo.setUsername("channel-" + channelInfoRedisDO.getChannelName());
             exchange.getAttributes().put(GatewayConstant.LOGIN_USER_KEY, userInfo);
         }
         return webFilterExchange.getChain().filter(exchange);

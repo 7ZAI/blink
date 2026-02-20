@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.UserInfoRedisDO;
+import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.ApplicationContextUtil;
 import com.blink.framework.common.utils.JacksonUtil;
@@ -59,18 +60,18 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
         if (StrUtil.isNotBlank(bodyStr)) {
             return idGenerator.generateRequestId()
                     .zipWith(idGenerator.generateTraceId())
-                    .switchIfEmpty(Mono.error(new BlinkException("999999", false)))
+                    .switchIfEmpty(Mono.error(new BlinkException(BlinkErrorCodeEnum.SYS_ERROR.getCode())))
                     .flatMap(tuple -> {
                         String requestId = tuple.getT1();
                         String traceId = tuple.getT2();
-                        log.info("generate requestId {} tarceId {}", requestId, traceId);
+                        log.info("generate requestId {} traceId {}", requestId, traceId);
 
                         ChannelInfoRedisDO channelInfo = exchange.getAttribute(CHANNEL_INFO);
                         if (Objects.isNull(channelInfo)) {
-                            return Mono.error(new BlinkException("系统错误!"));
+                            return Mono.error(new BlinkException(BlinkErrorCodeEnum.SYS_ERROR.getCode()));
                         }
 
-                        RequestDTO requestDTO = JacksonUtil.parseMessyJson(bodyStr, RequestDTO.class);
+                        RequestDTO<?> requestDTO = JacksonUtil.parseMessyJson(bodyStr, RequestDTO.class);
                         //组装元数据
                         this.assembleReqDTO(requestDTO, channelInfo, requestId, traceId, exchange);
 
@@ -114,14 +115,14 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
 
     /**
      * 组装元数据
-     * @param requestDTO json字符串转换后的请求DTO
+     *
+     * @param requestDTO  json字符串转换后的请求DTO
      * @param channelInfo 渠道信息
-     * @param requestId 请求id
-     * @param traceId 追踪id
-     * @param exchange 请求
-     * @return RequestDTO
+     * @param requestId   请求id
+     * @param traceId     追踪id
+     * @param exchange    请求
      */
-    private RequestDTO assembleReqDTO(RequestDTO requestDTO,ChannelInfoRedisDO channelInfo, String requestId, String traceId, ServerWebExchange exchange) {
+    private void assembleReqDTO(RequestDTO<?> requestDTO, ChannelInfoRedisDO channelInfo, String requestId, String traceId, ServerWebExchange exchange) {
 
         UserInfoRedisDO userInfo = exchange.getAttribute(GatewayConstant.LOGIN_USER_KEY);
 
@@ -141,7 +142,6 @@ public class RewriteRequestBodyFilter implements GlobalFilter, Ordered {
         requestDTO.setSpanId(GatewayConstant.SPAN_ID_ORIGINAL);
         requestDTO.setToken(exchange.getRequest().getHeaders().getFirst(X_BLINK_TOKEN));
 
-        return requestDTO;
     }
 
     @Override

@@ -11,9 +11,10 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.caffeine.CaffeineCache;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -28,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author binblink
  */
-//@Component
+@Component
 @Slf4j
 public class CachePreHeating {
 
@@ -44,7 +45,12 @@ public class CachePreHeating {
     @Value("${blink.gateway.localCacheEnable:false}")
     private Boolean localCacheEnable;
 
-    @PostConstruct
+    //之前使用@PostConstruct
+    // 预热过程中访问了 Redis 和远程服务，这些操作可能触发了负载均衡器、服务发现客户端的初始化，
+    // 而这些初始化过程在 WeightCalculatorWebFilter 中可能被同步等待，导致死锁或长时间阻塞。
+    // 会导致等待 WeightCalculatorWebFilter的里的路由刷新block操作 造成卡死，
+    // 改成所有bean初始化后 系统启动后执行
+    @EventListener(ApplicationReadyEvent.class)
     public void init() {
 
         //开启本地缓存
@@ -88,6 +94,8 @@ public class CachePreHeating {
         return baseAppService.getAllApiPermissions()
                 .flux()
                 .map(GetAllApiPermissionsRsp::getPermissionList)
+                // 忽略 null 列表
+                .filter(Objects::nonNull)
                 .flatMap(list ->
                         Flux.fromIterable(list)
                                 .map(perm -> new AbstractMap.SimpleEntry<>(RedisConstans.URL_PERMISSION + perm.getUrl(), perm.getAcIdentity()))
@@ -108,11 +116,11 @@ public class CachePreHeating {
         Flux<String> keyFlux = redisClient.getTemplate().scan(scanOptions);
 
         // 对每个 key 异步获取 value，组合成 Entry
-        return keyFlux.flatMap(key ->
-                redisClient.getTemplate().opsForValue().get(key).map(value -> new AbstractMap.SimpleEntry<>(key, value.toString()))
-        ).onErrorResume(e -> {
-            log.error("请求redis 执行scan 失败");
-            return Mono.empty();
-        });
+        return keyFlux.flatMap(key -> redisClient.getTemplate().opsForValue().get(key).map(value -> new AbstractMap.SimpleEntry<>(key, value.toString()))
+                        , 16).switchIfEmpty(Mono.empty())
+                .onErrorResume(e -> {
+                    log.error("请求redis 执行scan 失败");
+                    return Mono.empty();
+                });
     }
 }
