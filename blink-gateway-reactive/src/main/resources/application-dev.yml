@@ -18,6 +18,11 @@ spring:
       nacos:
         enabled: true
     gateway:
+      metrics:
+        enabled: true # 默认即为 true，确保开启
+        tags:
+          path:
+            enabled: true # 强烈建议开启，为指标添加请求路径标签
       # 全局默认过滤器，对所有路由生效
 #      default-filters:
 #        - name: RequestRateLimiter
@@ -79,6 +84,9 @@ management:
     web:
       exposure:
         include: "*" # 暴露所有端点，生产环境建议按需暴露
+  metrics:
+    tags:
+      application: ${spring.application.name}
   endpoint:
     gateway:
       enabled: true

@@ -8,6 +8,8 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.validation.annotation.Validated;
 
+import java.util.List;
+
 import static com.blink.gateway.constant.GatewayConstant.*;
 import static com.blink.gateway.constant.RedisConstans.*;
 

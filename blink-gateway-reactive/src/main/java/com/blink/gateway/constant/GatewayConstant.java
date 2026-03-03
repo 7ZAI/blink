@@ -203,5 +203,21 @@ public interface GatewayConstant {
     Byte CHANNEL_AUTH_TYPE_CLOSE = -1;
 
 
+    /**
+     * 缓存同步操作 A 添加缓存
+     */
+    String CACHE_OPERATOR_ADD = "A";
+
+    /**
+     * 缓存同步操作 D 删除缓存
+     */
+    String CACHE_OPERATOR_DELETE = "D";
+
+    /**
+     * 缓存同步操作 M 修改缓存
+     */
+    String CACHE_OPERATOR_MODIFY = "M";
+
+
 
 }

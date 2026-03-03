@@ -28,13 +28,13 @@ import com.blink.framework.core.data.CoreConstant;
 import com.blink.framework.redis.component.RedisClient;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -47,6 +47,7 @@ import java.util.Optional;
 @Transactional(rollbackFor = Exception.class)
 @Service
 @Slf4j
+@DubboService
 public class BlinkChannelServiceImpl implements BlinkChannelService {
 
 

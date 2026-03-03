@@ -1,5 +1,5 @@
 
-// . 根工程核心配置（仅聚合，无源码）
+// 根工程核心配置（仅聚合，无源码）
 plugins {
     id 'base' // 仅保留基础插件，移除java/java-library避免触发源码目录
     id 'idea'
@@ -8,10 +8,10 @@ plugins {
     id 'org.springframework.boot' apply false
 }
 
-// 2. 全局版本常量（替代 buildscript.ext，更符合 Gradle 7+ 规范）
+// 全局版本常量
 ext {
     // 框架版本
-    springBootVersion = '3.0.8'
+    springBootVersion = '3.2.7'
     springCloudVersion = '2023.0.3'
     springCloudAlibaba = '2023.0.3.2'
     // 第三方工具版本
@@ -169,7 +169,7 @@ subprojects {
                 pom {
                     name = project.name
                     description = project.description
-                    url = 'https://your-project-url.com'
+                    url = ''
                     licenses {
                         license {
                             name = 'Apache License, Version 2.0'

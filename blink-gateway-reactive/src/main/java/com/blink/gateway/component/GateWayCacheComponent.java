@@ -12,6 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.util.HashMap;
 import java.util.Optional;
 
 import static com.blink.gateway.constant.RedisConstans.*;
@@ -32,6 +33,18 @@ public class GateWayCacheComponent {
 
     @Resource
     private BaseAppService baseAppService;
+
+    //本地缓存名称和key值的映射关系
+    private final HashMap<String,String> localCacheKeyMapping;
+
+    public GateWayCacheComponent(){
+        localCacheKeyMapping = new HashMap<>();
+        localCacheKeyMapping.put(GATEWAY_CONFIG_KEY_PREFIX, GatewayConstant.CONSISTENT_CACHE);
+        localCacheKeyMapping.put(BLINK_CHANNEL_PREFIX, GatewayConstant.CONSISTENT_CACHE);
+        localCacheKeyMapping.put(URL_PERMISSION, GatewayConstant.STATICDATA_CACHE);
+        localCacheKeyMapping.put(ERR_MSG_PREFIX, GatewayConstant.STATICDATA_CACHE);
+
+    }
 
 
     /**
@@ -121,7 +134,7 @@ public class GateWayCacheComponent {
 
     }
 
-
-
-
+    public HashMap<String, String> getLocalCacheKeyMapping() {
+        return localCacheKeyMapping;
+    }
 }

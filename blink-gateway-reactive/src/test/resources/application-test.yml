@@ -2,44 +2,56 @@ server:
   port: 8002
   tomcat:
     uri-encoding: UTF-8
-    max-threads: 1000
     max-connections: 20000
-  servlet:
-    # 修正：归属于 server.servlet 下
-    multipart:
-      max-file-size: 20MB
-      max-request-size: 200MB
 
 spring:
+  profiles:
+    active: dev
+  #  # 核心：允许Bean定义覆盖
+  #  main:
+  #    allow-bean-definition-overriding: true
   application:
     name: gateway-app
+
+  config:
+    import: nacos:blink-gateway.yaml?group=DEFAULT_GROUP&refreshEnabled=true
   cloud:
+    nacos:
+      ## 配置文件中心
+      config:
+        namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
+        server-addr: 127.0.0.1:8848
+      ## 服务发现注册
+      discovery:
+        namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
+        enabled: true
+        server-addr: 127.0.0.1:8848
     loadbalancer:
       nacos:
         enabled: true
     ##路由配置
-    gateway:
-      # 全局默认过滤器，对所有路由生效
-      default-filters:
-        - name: RequestRateLimiter
-          args:
-            redis-rate-limiter.replenishRate: 100  # 令牌桶每秒填充速率
-            redis-rate-limiter.burstCapacity: 200  # 令牌桶总容量
-            key-resolver: "#{@ipKeyResolver}"      # 限流维度解析器
-      # 确保多个网关实例路由同步
-      #      discovery:
-      #        locator:
-      #          enabled: true
-
-      httpclient:
-        connect-timeout: 10000
-        response-timeout: 5s
-        #动态路由 由配置中心json配置
-      routes:
-        - id: base-app
-          uri: lb://base-app
-          predicates:
-            - Path=/base/**
+#    gateway:
+#      # 全局默认过滤器，对所有路由生效
+#      default-filters:
+#        - name: RequestRateLimiter
+#          args:
+#            redis-rate-limiter.replenishRate: 100  # 令牌桶每秒填充速率
+#            redis-rate-limiter.burstCapacity: 200  # 令牌桶总容量
+#            key-resolver: "#{@ipKeyResolver}"      # 限流维度解析器
+#      # 确保多个网关实例路由同步
+#      #      discovery:
+#      #        locator:
+#      #          enabled: true
+#
+#      httpclient:
+#        connect-timeout: 10000
+#        response-timeout: 5s
+#        #动态路由 由配置中心json配置
+#      routes:
+#        - id: base-app
+#          uri: lb://base-app
+#          predicates:
+#            - Path=/base/**
   data:
     redis:
       host: 127.0.0.1

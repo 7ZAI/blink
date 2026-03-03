@@ -4,7 +4,6 @@ import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.gateway.component.ChannelSecretCache;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.config.prop.BlinkGatewayConfigProperties;
-import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.security.BlinkAccessDeniedHandler;
 import com.blink.gateway.security.BlinkAuthenticationEntryPoint;
 import com.blink.gateway.security.BlinkAuthenticationFailureHandler;
@@ -32,6 +31,8 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
+
+import java.util.List;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -62,39 +63,39 @@ public class SecurityConfig {
     private ChannelSecretCache channelSecretCache;
 
 
-    @Bean("actuatorWebFilterChain")
-    @Order(1)
-    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-        return http
-                .authorizeExchange(exchanges -> exchanges
-                        // 可选：放行健康检查
-                        .pathMatchers("/actuator/health", "/actuator/info").permitAll()
-                        // 保护所有其他 Actuator 端点
-                        .pathMatchers("/actuator/**").authenticated()
-                        // 业务接口公开（根据需求调整）
-                        .anyExchange().permitAll()
-                )
-                // 启用 HTTP Basic 认证
-                .httpBasic(withDefaults())
-                .build();
-    }
+//    @Bean("actuatorWebFilterChain")
+//    @Order(1)
+//    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+//        return http
+//                .authorizeExchange(exchanges -> exchanges
+//                        // 可选：放行健康检查
+//                        .pathMatchers("/actuator/health", "/actuator/info").permitAll()
+//                        // 保护所有其他 Actuator 端点
+//                        .pathMatchers("/actuator/**").authenticated()
+//                        // 业务接口公开（根据需求调整）
+//                        .anyExchange().permitAll()
+//                )
+//                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+//                // 启用 HTTP Basic 认证
+//                .httpBasic(withDefaults())
+//                .build();
+//    }
 
     // 配置内存用户（也可以从配置文件读取）
-    @Bean
-    public MapReactiveUserDetailsService userDetailsService() {
-        UserDetails user = User.withDefaultPasswordEncoder()
-                .username("admin")
-                .password("secret")
-                .roles("ACTUATOR")
-                .build();
-        return new MapReactiveUserDetailsService(user);
-    }
+//    @Bean
+//    public MapReactiveUserDetailsService userDetailsService() {
+//        UserDetails user = User.withDefaultPasswordEncoder()
+//                .username("admin")
+//                .password("secret")
+//                .roles("ACTUATOR")
+//                .build();
+//        return new MapReactiveUserDetailsService(user);
+//    }
 
 
     @Bean
-    @Order(2)
+//    @Order(2)
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-
 
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
@@ -104,13 +105,16 @@ public class SecurityConfig {
                 //无状态 AuthenticationWebFilter默认就是无状态的
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .securityMatcher(ServerWebExchangeMatchers.pathMatchers("/**"))
-                //自定义登入机制
-                .authorizeExchange(exchange -> exchange
-                        // 登入请求urL 依然会经过认证管理器 到授权管理器才放行
-                        .pathMatchers(GatewayConstant.LOGIN_PATH).permitAll()
-                        .pathMatchers("/channel/auth/**").permitAll()
-                        //鉴权
-                        .anyExchange().access(new BlinkAuthorizationManager(cacheComponent))
+                //自定义认证机制
+                .authorizeExchange(exchange -> {
+                            List<String> urls = config.getIgnoreInterceptUrl();
+                            //根据配置文件配置 忽略url 如登入url 渠道认证url
+                            if (urls != null && !urls.isEmpty()) {
+                                exchange.pathMatchers(urls.toArray(new String[0])).permitAll();
+                            }
+                            //鉴权
+                            exchange.anyExchange().access(new BlinkAuthorizationManager(cacheComponent));
+                        }
                 )
                 //日志记录
                 .addFilterBefore(new LogFilter(), SecurityWebFiltersOrder.AUTHENTICATION)

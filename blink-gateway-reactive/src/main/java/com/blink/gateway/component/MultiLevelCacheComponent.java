@@ -129,18 +129,46 @@ public class MultiLevelCacheComponent {
      */
     public Mono<Boolean> evictLocalCache(String cacheName, String key) {
         return Mono.fromCallable(() -> {
-            try {
-                Cache localCache = localCacheManager.getCache(cacheName);
-                if (localCache != null) {
-                    localCache.evictIfPresent(key);
-                }
-                //不抛异常 即认为成功 即使key 不存在
-                return true;
-            } catch (Exception e) {
-                log.error("删除本地缓存 出现异常！" + e.getMessage(), e);
-                throw new BlinkException(e, e.getMessage());
-            }
-        }).doOnSuccess(r -> log.info("本地缓存删除成功, key: {}", key)).onErrorResume(e -> Mono.just(false));
+                    try {
+                        Cache localCache = localCacheManager.getCache(cacheName);
+                        if (localCache != null) {
+                            localCache.evictIfPresent(key);
+                        }
+                        //不抛异常 即认为成功 即使key 不存在
+                        return true;
+                    } catch (Exception e) {
+                        log.error("删除本地缓存 出现异常！{}", e.getMessage(), e);
+                        throw new BlinkException(e, e.getMessage());
+                    }
+                })
+                .doOnSuccess(r -> log.info("本地缓存删除成功, key: {}", key))
+                .onErrorResume(e -> Mono.just(false));
+    }
+
+    /**
+     * 设置本地缓存
+     *
+     * @param cacheName 缓存对象名称
+     * @param key       缓存key值
+     * @param value     缓存值
+     * @return 成功/失败
+     */
+    public Mono<Boolean> setLocalCache(String cacheName, String key, Object value) {
+        return Mono.fromCallable(() -> {
+                    try {
+                        Cache localCache = localCacheManager.getCache(cacheName);
+                        if (localCache != null) {
+                            localCache.put(key, value);
+                        }
+                        //不抛异常 即认为成功 即使key 不存在
+                        return true;
+                    } catch (Exception e) {
+                        log.error("设置本地缓存成功 出现异常！{}", e.getMessage(), e);
+                        throw new BlinkException(e, e.getMessage());
+                    }
+                })
+                .doOnSuccess(r -> log.info("设置本地缓存成功, key: {}", key))
+                .onErrorResume(e -> Mono.just(false));
     }
 
     /**

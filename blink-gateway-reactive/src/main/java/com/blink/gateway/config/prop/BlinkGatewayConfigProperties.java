@@ -55,6 +55,11 @@ public class BlinkGatewayConfigProperties {
 
     private IPFilter ipFilter = new IPFilter();
 
+    /**
+     * 无需认证鉴权的 url
+     */
+    private List<String> ignoreInterceptUrl;
+
 
     /**
      * IP过滤配置类

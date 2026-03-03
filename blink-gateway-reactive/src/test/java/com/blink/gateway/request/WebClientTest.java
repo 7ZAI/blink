@@ -92,6 +92,11 @@ public class WebClientTest {
         System.out.println("------------------token:" + rs.getBody().getToken());
     }
 
+    @Test
+    void channelGetToken(){
+        String base = "http://localhost:8002/channel/issueChannelToken";
+    }
+
     /**
      * 测试获取渠道接口
      */

@@ -113,7 +113,7 @@ public class ReactiveSeqGenerator {
                 }
                 //CAS 失败线程什么都不用做
             }
-            //边界： 当cache.localMax -1 时 正好incrementAndGet 完成 +1
+            //
             return Mono.just(nextSeq);
         }
 
@@ -132,7 +132,6 @@ public class ReactiveSeqGenerator {
      */
     private Mono<Long> dealWithSeqCacheRunOut(String key, String maxSeq, Integer steps) {
         SeqSegment seqSegment = SEQ_CACHE.get(key);
-
         AtomicStatus status = STATUS_MAP.get(key);
         //号段用尽了 缓存为空，准备发起刷新
         CompletableFuture<SeqSegment> newFuture = new CompletableFuture<>();

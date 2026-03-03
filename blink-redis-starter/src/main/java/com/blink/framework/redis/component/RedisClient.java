@@ -1,17 +1,14 @@
 package com.blink.framework.redis.component;
 
-import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.entity.RedisException;
 import io.lettuce.core.RedisBusyException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.RedisSystemException;
 import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.stream.*;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
-import org.springframework.data.redis.hash.Jackson2HashMapper;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 

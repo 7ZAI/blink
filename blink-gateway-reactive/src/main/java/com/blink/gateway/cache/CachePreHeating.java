@@ -7,7 +7,6 @@ import com.blink.gateway.constant.RedisConstans;
 import com.blink.gateway.service.BaseAppService;
 import com.blink.gateway.util.ReactiveCacheUtil;
 import com.github.benmanes.caffeine.cache.AsyncCache;
-import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -48,7 +47,7 @@ public class CachePreHeating {
     //之前使用@PostConstruct
     // 预热过程中访问了 Redis 和远程服务，这些操作可能触发了负载均衡器、服务发现客户端的初始化，
     // 而这些初始化过程在 WeightCalculatorWebFilter 中可能被同步等待，导致死锁或长时间阻塞。
-    // 会导致等待 WeightCalculatorWebFilter的里的路由刷新block操作 造成卡死，
+    // WeightCalculatorWebFilter的里的路由刷新是block操作 造成卡死，
     // 改成所有bean初始化后 系统启动后执行
     @EventListener(ApplicationReadyEvent.class)
     public void init() {

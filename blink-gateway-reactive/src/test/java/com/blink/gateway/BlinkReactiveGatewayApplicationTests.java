@@ -5,7 +5,9 @@ package com.blink.gateway;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.id.IdGenerator;
 import com.blink.framework.redis.id.ReactiveIdGenerator;
+import com.blink.gateway.component.MultiLevelCacheComponent;
 import com.blink.gateway.config.prop.BlinkGatewayConfigProperties;
+import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.service.BaseAppService;
 import com.blink.gateway.util.WebClientUtil;
 import io.micrometer.core.instrument.util.NamedThreadFactory;
@@ -32,7 +34,7 @@ import java.util.concurrent.*;
 @TestPropertySource(locations = {"classpath:application-test.yml"})
 class BlinkReactiveGatewayApplicationTests {
 
-    @Autowired
+//    @Autowired
     private ReactiveRedisClient redisClient;
 
 //    @Autowired
@@ -41,9 +43,34 @@ class BlinkReactiveGatewayApplicationTests {
 //    @Autowired
     private ReactiveIdGenerator reactiveIdGenerator;
 
+    @Autowired
+    private MultiLevelCacheComponent multiLevelCacheComponent;
 
-    @Resource
+//    @Resource
     private BlinkGatewayConfigProperties configProperties;
+
+    @Test
+    public void testMultiCache(){
+        String keyCache = "test:key";
+
+       Thread t1 = new Thread(()->{
+           String value = multiLevelCacheComponent.get(GatewayConstant.CONSISTENT_CACHE,keyCache,String.class,(key,cl)->{
+               return Mono.just("asd");
+           }).block();
+           System.out.println(Thread.currentThread().getName() +":"+ value);
+       },"t2");
+
+        Thread t2 = new Thread(()->{
+            String value = multiLevelCacheComponent.get(GatewayConstant.CONSISTENT_CACHE,keyCache,String.class,(key,cl)->{
+                return Mono.just("asd");
+            }).block();
+            System.out.println(Thread.currentThread().getName() +":"+ value);
+        },"t2");
+
+        t1.start();
+        t2.start();
+    }
+
 
     @Test
     public void testRedis(){

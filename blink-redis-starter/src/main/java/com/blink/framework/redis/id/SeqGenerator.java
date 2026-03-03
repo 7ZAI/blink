@@ -1,6 +1,7 @@
 package com.blink.framework.redis.id;
 
 import cn.hutool.core.util.StrUtil;
+import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.factory.BlinkNamedThreadFactory;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.framework.redis.serializer.LongRedisSerializer;
@@ -98,7 +99,10 @@ public class SeqGenerator {
         //未配置默认为1000
         final Integer steps = this.properties.getIdGenerator().getkeySteps(key);
 
-
+        // 最大重试次数
+        final int MAX_RETRY = 3;
+        // 当前重试次数
+        int retryCount = 0;
 
         while (true) {
             SeqSegment seqSegment = SEQ_CACHE.get(key);
@@ -117,6 +121,12 @@ public class SeqGenerator {
                 //返回值
                 return nextSeq;
             }
+            //循环次数限制 防止在极端情况下 无限循环
+            retryCount++;
+            if (retryCount > MAX_RETRY) {
+                throw new BlinkException("刷新号段连续失败 " + MAX_RETRY + " 次，终止请求");
+            }
+
             //号段用尽了 缓存为空，准备发起刷新
             CompletableFuture<SeqSegment> newFuture = new CompletableFuture<>();
             //  CAS 竞争：尝试成为 Leader 只有一个线程能成功
@@ -125,13 +135,16 @@ public class SeqGenerator {
                 try {
                     //防止允许刷新瞬间 立马有线程抢到执行权（概率非常低）
                     // 双重检查 竞争线程获得执行权 但是第一个线程已经刷新计数器了 防止重复进行远程调用 覆盖未使用的缓存seq
-                    long doubleCheckVal = seqSegment.getNextSeq();
-                    if (doubleCheckVal != -1) {
-                        //首次成功的线程已经刷新缓存
-                        log.debug("非首次竞争成功的线程，从缓存对象中获取顺序号");
-                        // 告知所有等待者：任务完成！
-                        newFuture.complete(seqSegment);
-                        return doubleCheckVal;
+                    SeqSegment latest = SEQ_CACHE.get(key);
+                    if(latest != null ){
+                        long doubleCheckVal = latest.getNextSeq();
+                        if ( doubleCheckVal != -1) {
+                            //首次成功的线程已经刷新缓存
+                            log.debug("非首次竞争成功的线程，从缓存对象中获取顺序号");
+                            // 告知所有等待者：任务完成！
+                            newFuture.complete(seqSegment);
+                            return doubleCheckVal;
+                        }
                     }
                     //刷新
                     seqSegment = getSeqFromRedis(status, key, maxValue, steps);
@@ -152,7 +165,7 @@ public class SeqGenerator {
                 CompletableFuture<SeqSegment> currentFuture = status.loadingFuture.get();
                 if (currentFuture != null) {
                     try {
-                        // 阻塞等待结果（这里利用了 Future 的等待机制，比锁更轻量）
+                        // 阻塞等待结果
                         // 注意：这里我们不需要返回值，只需要等它结束 因为一得到值 会进入while 重新取值
                         currentFuture.join();
                     } catch (Exception e) {
