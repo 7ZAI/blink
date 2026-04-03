@@ -1,12 +1,12 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.constans.BaseErrCodeConstant;
+import com.blink.base.constants.BaseErrCodeConstant;
 
 import com.blink.framework.validate.annotation.DataDict;
-import com.blink.framework.validate.annotation.SameValue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,7 +19,6 @@ import java.util.List;
  *
  * @author binblink
  */
-@SameValue(fields = {"password","confirmPassword"},message = BaseErrCodeConstant.PASSWORD_CONFIRM_ERR)
 @Data
 public class AddSysUserReq implements Serializable {
 
@@ -34,20 +33,6 @@ public class AddSysUserReq implements Serializable {
     private String loginName;
 
     /**
-     * 密码
-     */
-    @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name="password",message = BaseErrCodeConstant.PASSWORD_FORMAT_ERR)
-    private String password;
-
-    /**
-     * 确认密码
-     */
-    @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name="password",message = BaseErrCodeConstant.PASSWORD_FORMAT_ERR)
-    private String confirmPassword;
-
-    /**
      * 昵称
      */
     private String username;
@@ -56,6 +41,11 @@ public class AddSysUserReq implements Serializable {
      * 头像
      */
     private String avatar;
+
+    /**
+     * 头像样式(DiceBear样式)
+     */
+    private String avatarStyle;
 
     /**
      * 性别 1男 2女 3不确定
@@ -67,6 +57,7 @@ public class AddSysUserReq implements Serializable {
      * 电话
      */
     @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String phone;
 
     /**
@@ -84,6 +75,4 @@ public class AddSysUserReq implements Serializable {
      * 组织id
      */
     private Integer groupId;
-
-
 }

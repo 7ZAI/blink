@@ -89,6 +89,12 @@ public class SysMenuDO implements Serializable {
     private String componentPath;
 
     /**
+     * 关联的权限ID
+     */
+    @TableField(value = "perm_id", updateStrategy = FieldStrategy.ALWAYS)
+    private Integer permId;
+
+    /**
      * 是否有子菜单（按钮不算）
      */
     @TableField("hasChildren")

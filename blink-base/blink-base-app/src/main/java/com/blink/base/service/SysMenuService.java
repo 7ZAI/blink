@@ -1,6 +1,7 @@
 package com.blink.base.service;
 
 import com.blink.base.dto.req.*;
+import com.blink.base.dto.rsp.CheckMenuRoleRsp;
 import com.blink.base.dto.rsp.QueryShowMenuRsp;
 import com.blink.base.dto.rsp.QuerySysMenuRsp;
 import com.blink.base.dto.vo.SysMenuVO;
@@ -61,4 +62,22 @@ public interface SysMenuService {
      * @throws BlinkException
      */
     QueryShowMenuRsp getSysMenusByRoles(QueryShowMenuReq queryParam) throws BlinkException;
+
+    /**
+     * 获取所有菜单（不限制角色）
+     * 用于超级管理员获取全部菜单
+     *
+     * @return {@link QueryShowMenuRsp}
+     * @throws BlinkException
+     */
+    QueryShowMenuRsp getAllMenus() throws BlinkException;
+
+    /**
+     * 检查菜单是否已分配给角色
+     *
+     * @param reqParam 检查请求参数
+     * @return 检查结果
+     * @throws BlinkException 异常
+     */
+    CheckMenuRoleRsp checkMenuRoleAssignment(CheckMenuRoleReq reqParam) throws BlinkException;
 }

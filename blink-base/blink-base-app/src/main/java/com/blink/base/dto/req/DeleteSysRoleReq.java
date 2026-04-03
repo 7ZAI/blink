@@ -1,6 +1,7 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.constans.BaseErrCodeConstant;
+import com.blink.base.constants.BaseErrCodeConstant;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -36,10 +37,22 @@ public class DeleteSysRoleReq implements Serializable {
      * 是否批量删除标志
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    private boolean isBatchDelete;
+    private Boolean batchDelete;
 
-
-
-
-
+    /**
+     * 联动校验：根据 batchDelete 校验对应的字段
+     * - batchDelete=true 时，idList 不能为空
+     * - batchDelete=false 时，deleteId 不能为空
+     *
+     * @return 校验是否通过
+     */
+    @AssertTrue(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    @SuppressWarnings("unused")
+    public boolean isBatchDeleteParamValid() {
+        if (Boolean.TRUE.equals(batchDelete)) {
+            return idList != null && !idList.isEmpty();
+        } else {
+            return deleteId != null;
+        }
+    }
 }

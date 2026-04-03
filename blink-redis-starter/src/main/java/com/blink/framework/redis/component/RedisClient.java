@@ -41,11 +41,20 @@ public class RedisClient {
      *
      * @param redisTemplate RedisTemplate 实例
      */
+    @SuppressWarnings("unchecked")
     public RedisClient(RedisTemplate<String, Object> redisTemplate, RedisTemplate<String, Object> streamRedisTemplate) {
         this.template = redisTemplate;
         this.streamRedisTemplate = streamRedisTemplate;
-        this.keySerializer = (RedisSerializer<String>) redisTemplate.getKeySerializer();
-        this.valueSerializer = (RedisSerializer<Object>) redisTemplate.getValueSerializer();
+        RedisSerializer<?> keySer = redisTemplate.getKeySerializer();
+        RedisSerializer<?> valSer = redisTemplate.getValueSerializer();
+        if (keySer == null) {
+            throw new IllegalStateException("Redis key serializer is not configured");
+        }
+        if (valSer == null) {
+            throw new IllegalStateException("Redis value serializer is not configured");
+        }
+        this.keySerializer = (RedisSerializer<String>) keySer;
+        this.valueSerializer = (RedisSerializer<Object>) valSer;
     }
 
     public RedisSerializer<Object> getValueSerializer() {
@@ -388,7 +397,19 @@ public class RedisClient {
      * @return Map<String, Object> 字段-值映射表
      */
     public Map<String, Object> hGetStringMap(String key) {
-        return (Map<String, Object>) hGet(key);
+        Map<?, Object> rawMap = hGet(key);
+        if (rawMap == null || rawMap.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, Object> result = new HashMap<>(rawMap.size());
+        for (Map.Entry<?, Object> entry : rawMap.entrySet()) {
+            Object keyObj = entry.getKey();
+            if (keyObj != null) {
+                result.put(keyObj.toString(), entry.getValue());
+            }
+        }
+        return result;
     }
 
 
@@ -905,6 +926,44 @@ public class RedisClient {
         return template.execute(scriptStr, new StringRedisSerializer(), resultSerializer, keys, args);
     }
 
+    /**
+     * 执行 Lua 脚本（使用 StringRedisSerializer 作为结果序列化器）
+     * 适用于 Lua 脚本返回非 JSON 格式的数据（如整数、字符串列表等）
+     *
+     * @param script RedisScript 对象
+     * @param keys   脚本中使用的键列表
+     * @param args   脚本参数列表
+     * @return Object 脚本执行结果
+     */
+    public Object executeWithStringSerializer(RedisScript<?> script, List<String> keys, Object... args) {
+        // 使用 RedisCallback 直接执行，避免 GenericJackson2JsonRedisSerializer 反序列化问题
+        return template.execute((RedisCallback<Object>) connection -> {
+            // 序列化 keys
+            byte[][] keysBytes = keys.stream()
+                .map(key -> keySerializer.serialize(key))
+                .toArray(byte[][]::new);
+
+            // 序列化 args（使用字符串序列化器）
+            byte[][] argsBytes = new byte[args.length][];
+            for (int i = 0; i < args.length; i++) {
+                argsBytes[i] = keySerializer.serialize(String.valueOf(args[i]));
+            }
+
+            // 合并 keys 和 args
+            byte[][] allBytes = new byte[keysBytes.length + argsBytes.length][];
+            System.arraycopy(keysBytes, 0, allBytes, 0, keysBytes.length);
+            System.arraycopy(argsBytes, 0, allBytes, keysBytes.length, argsBytes.length);
+
+            // 执行脚本
+            return connection.scriptingCommands().eval(
+                script.getScriptAsString().getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                org.springframework.data.redis.connection.ReturnType.fromJavaType(script.getResultType()),
+                keysBytes.length,
+                allBytes
+            );
+        });
+    }
+
 
 
 
@@ -1072,7 +1131,7 @@ public class RedisClient {
                                 byte[] valueBytes = valueSerializer.serialize(value);
 
                                 if (keyBytes != null && valueBytes != null) {
-                                    connection.setEx(keyBytes, timeUnit.toSeconds(expire), valueBytes);
+                                    connection.stringCommands().setEx(keyBytes, timeUnit.toSeconds(expire), valueBytes);
                                 }
                             });
                             return null;
@@ -1227,28 +1286,25 @@ public class RedisClient {
                                     .count(batchSize)
                                     .build();
 
-                            Cursor<byte[]> cursor = connection.scan(options);
                             List<byte[]> keysToDelete = new ArrayList<>();
+                            
+                            try (Cursor<byte[]> cursor = connection.keyCommands().scan(options)) {
+                                while (cursor.hasNext()) {
+                                    byte[] key = cursor.next();
+                                    keysToDelete.add(key);
 
-                            while (cursor.hasNext()) {
-                                byte[] key = cursor.next();
-                                keysToDelete.add(key);
+                                    if (keysToDelete.size() >= batchSize) {
+                                        connection.keyCommands().del(keysToDelete.toArray(new byte[0][]));
+                                        totalDeleted.addAndGet(keysToDelete.size());
+                                        keysToDelete.clear();
+                                    }
+                                }
 
-                                // 在管道中批量添加删除命令
-                                if (keysToDelete.size() >= batchSize) {
-                                    connection.del(keysToDelete.toArray(new byte[0][]));
+                                if (!keysToDelete.isEmpty()) {
+                                    connection.keyCommands().del(keysToDelete.toArray(new byte[0][]));
                                     totalDeleted.addAndGet(keysToDelete.size());
-                                    keysToDelete.clear();
                                 }
                             }
-
-                            // 删除剩余的键
-                            if (!keysToDelete.isEmpty()) {
-                                connection.del(keysToDelete.toArray(new byte[0][]));
-                                totalDeleted.addAndGet(keysToDelete.size());
-                            }
-
-                            cursor.close();
                             return null;
                         }
                     }
@@ -1491,6 +1547,7 @@ public class RedisClient {
      * @return 消息列表，如果不存在返回空列表
      * @throws RedisException 当 Redis 操作失败时抛出
      */
+    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> xRead(String streamKey, String startId, int count) {
         try {
 
@@ -1555,6 +1612,7 @@ public class RedisClient {
      * @return 消息列表，如果无消息返回空列表
      * @throws RedisException 当 Redis 操作失败时抛出
      */
+    @SuppressWarnings("unchecked")
     public List<Map<String, Object>> xReadGroup(Consumer consumer, String streamKey,
                                                 String groupName, int count, long blockMillis) {
         try {

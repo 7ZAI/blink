@@ -3,6 +3,7 @@ package com.blink.base.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.blink.base.dto.req.QueryRolePermissionReq;
 import com.blink.base.dto.req.QuerySysPermissionReq;
+import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.entity.SysPermissionDO;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -24,7 +25,7 @@ public interface SysPermissionMapper extends BaseMapper<SysPermissionDO> {
      * @param reqDTO 入参
      * @return 权限列表
      */
-    List<SysPermissionDO> findSysPermissionList(QuerySysPermissionReq reqDTO);
+    List<SysPermissionVO> findSysPermissionList(QuerySysPermissionReq reqDTO);
 
     /**
      * 根据角色查询权限
@@ -47,4 +48,11 @@ public interface SysPermissionMapper extends BaseMapper<SysPermissionDO> {
      * @return 渠道权限列表
      */
     List<SysPermissionDO>  getChannelPermissions(String channelId);
+
+    /**
+     * 根据数据过滤规则ID查询关联的权限数量
+     * @param dataFilterId 数据过滤规则ID
+     * @return 关联的权限数量
+     */
+    int countByDataFilterId(Integer dataFilterId);
 }

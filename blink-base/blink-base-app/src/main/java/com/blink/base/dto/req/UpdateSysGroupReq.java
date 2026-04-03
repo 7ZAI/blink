@@ -1,10 +1,11 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.constans.BaseErrCodeConstant;
+import com.blink.base.constants.BaseErrCodeConstant;
 import com.blink.framework.validate.annotation.DataDict;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 
@@ -19,6 +20,7 @@ import java.io.Serializable;
 @Data
 public class UpdateSysGroupReq implements Serializable {
 
+  @Serial
   private static final long serialVersionUID = 1L;
 
 
@@ -28,6 +30,12 @@ public class UpdateSysGroupReq implements Serializable {
     @NotNull
     @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer groupId;
+
+
+  /**
+   * 分组编号
+   */
+  private String groupNo;
 
 
 
@@ -49,7 +57,7 @@ public class UpdateSysGroupReq implements Serializable {
     /**
      * 父组id
      */
-    @NotNull
+    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer groupParentId;
 
@@ -57,7 +65,6 @@ public class UpdateSysGroupReq implements Serializable {
     /**
      * 层级
      */
-    @NotNull
     @DataDict(name="number",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer groupLevel;
 

@@ -1,10 +1,11 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.constans.BaseErrCodeConstant;
+import com.blink.base.constants.BaseErrCodeConstant;
 import com.blink.framework.validate.annotation.DataDict;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.io.Serial;
@@ -41,6 +42,11 @@ public class UpdateSysUserReq implements Serializable {
     private String avatar;
 
     /**
+     * 头像样式(DiceBear样式)
+     */
+    private String avatarStyle;
+
+    /**
      * 性别 1男 2女 3不确定
      */
     @NotNull
@@ -50,6 +56,7 @@ public class UpdateSysUserReq implements Serializable {
      * 电话
      */
     @NotBlank
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     @DataDict(name="phone",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String phone;
 

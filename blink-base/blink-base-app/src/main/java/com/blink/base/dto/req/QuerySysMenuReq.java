@@ -1,7 +1,6 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.constans.BaseErrCodeConstant;
-import com.blink.framework.common.data.PageDTO;
+import com.blink.base.constants.BaseErrCodeConstant;
 import com.blink.framework.validate.annotation.DataDict;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,6 +12,7 @@ import java.io.Serializable;
  * <p>
  * QuerySysMenuReqDTO 查询列表系统菜单请求参数对象
  * </p>
+ * 菜单为树形结构展示，不需要分页
  *
  * @author binblink
  * @since 2024-01-05
@@ -20,7 +20,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @ToString
-public class QuerySysMenuReq extends PageDTO implements Serializable {
+public class QuerySysMenuReq implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -44,8 +44,5 @@ public class QuerySysMenuReq extends PageDTO implements Serializable {
    */
   @DataDict(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
   private Integer type;
-
-
-
 
 }

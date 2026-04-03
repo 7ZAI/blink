@@ -2,6 +2,7 @@ package com.blink.base.controller;
 
 import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.QueryUserRolesRsp;
+import com.blink.base.dto.rsp.RoleDetailRsp;
 import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.base.service.SysRoleService;
 import com.blink.base.dto.rsp.QuerySysRoleRsp;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * @module blink
  * @author binblink
- * @since 2024-01-03
  */
 @RestController
 @RequestMapping("/sysRole")
@@ -84,7 +84,7 @@ public class SysRoleController {
      * 根据用户信息查询 用户角色
      *
      * @param reqDto
-     * @return {@link ResponseDTO< QueryUserRolesReq >}
+     * @return {@link ResponseDTO<   QueryUserRolesReq   >}
      * @throws BlinkException
      */
     @PostMapping("/getSysRolesByUser")
@@ -92,5 +92,55 @@ public class SysRoleController {
         return  ResponseDTO.newSuccessInstance(sysRoleService.getSysRolesByUser(reqDto.getBody()));
     }
 
+    /**
+     * 为角色分配权限
+     *
+     * @param reqDto 请求参数
+     * @return 响应
+     * @throws BlinkException
+     */
+    @PostMapping("/assignPermissions")
+    public ResponseDTO<EmptyBody> assignPermissions(@RequestBody @Validated RequestDTO<AssignPermissionReq> reqDto) throws BlinkException {
+        sysRoleService.assignPermissions(reqDto.getBody());
+        return ResponseDTO.newSuccessInstance();
+    }
+
+    /**
+     * 为角色分配菜单
+     *
+     * @param reqDto 请求参数
+     * @return 响应
+     * @throws BlinkException
+     */
+    @PostMapping("/assignMenus")
+    public ResponseDTO<EmptyBody> assignMenus(@RequestBody @Validated RequestDTO<AssignMenuReq> reqDto) throws BlinkException {
+        sysRoleService.assignMenus(reqDto.getBody());
+        return ResponseDTO.newSuccessInstance();
+    }
+
+    /**
+     * 查询角色详情
+     *
+     * @param reqDto 请求参数
+     * @return 角色详情
+     * @throws BlinkException
+     */
+    @PostMapping("/getRoleDetail")
+    public ResponseDTO<RoleDetailRsp> getRoleDetail(@RequestBody @Validated RequestDTO<QueryRoleDetailReq> reqDto) throws BlinkException {
+        return ResponseDTO.newSuccessInstance(sysRoleService.getRoleDetail(reqDto.getBody()));
+    }
+
+    /**
+     * 为用户分配角色
+     *
+     * @param reqDto 请求参数
+     * @return 响应
+     * @throws BlinkException
+     */
+    @PostMapping("/assignRoleToUsers")
+    public ResponseDTO<EmptyBody> assignRoleToUsers(@RequestBody @Validated RequestDTO<AssignRoleToUsersReq> reqDto) throws BlinkException {
+        sysRoleService.assignRoleToUsers(reqDto.getBody());
+        return ResponseDTO.newSuccessInstance();
+    }
 
 }

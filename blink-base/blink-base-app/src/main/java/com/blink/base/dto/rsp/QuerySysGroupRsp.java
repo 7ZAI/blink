@@ -1,18 +1,16 @@
 package com.blink.base.dto.rsp;
 
-import com.blink.base.entity.SysGroupDO;
-import com.blink.framework.common.data.PageDTO;
+import com.blink.base.dto.vo.SysGroupVO;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serial;
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * <p>
- * QuerySysGroupRspDTO 新增组请求参数对象
- * </p>
+ * 查询组列表响应对象（树形数据不分页）
  *
  * @author binblink
  * @since 2024-01-04
@@ -20,96 +18,14 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-public class QuerySysGroupRsp extends PageDTO<SysGroupDO> implements Serializable {
+public class QuerySysGroupRsp implements Serializable {
 
-  private static final long serialVersionUID = 1L;
-
-
-    /**
-     * 分组id
-     */
-    private Integer groupId;
-
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
-     * 组编号
+     * 组列表
      */
-    private String groupNo;
-
-
-    /**
-     * 组名称
-     */
-    private String groupName;
-
-
-    /**
-     * 组英文名称
-     */
-    private String groupEnName;
-
-
-    /**
-     * 父组id
-     */
-    private Integer groupParentId;
-
-
-    /**
-     * 层级
-     */
-    private Integer groupLevel;
-
-
-    /**
-     * 是否叶子节点 0否 1是
-     */
-    private Byte isLeaf;
-
-
-    /**
-     * 组领导
-     */
-    private String groupLeader;
-
-
-    /**
-     * 组地址
-     */
-    private String groupAddress;
-
-
-    /**
-     * 组电话
-     */
-    private String phone;
-
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
-
-
-    /**
-     * 创建者
-     */
-    private String createBy;
-
-
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
-
-
-    /**
-     * 更新人
-     */
-    private String updateBy;
-
-
-
-
+    private List<SysGroupVO> list;
 
 }

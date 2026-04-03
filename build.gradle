@@ -16,8 +16,8 @@ ext {
     springCloudAlibaba = '2023.0.3.2'
     // 第三方工具版本
     hutoolVersion = '5.8.29'
-    lombokVersion = '1.18.26'
-    mysqlConnectorVersion = '8.0.30'
+    lombokVersion = '1.18.34'
+    mysqlConnectorVersion = '8.0.33'
     mybatisPlusVersion = '3.5.16'
     druidStarterVersion = '1.2.18'
     pagehelperVersion = '5.3.1'
@@ -26,6 +26,7 @@ ext {
     jacksonVersion = '2.14.3'
     jjwtVersion = '0.13.0'
     dubboVersion = '3.3.0'
+    redissonVersion = '3.27.0'
 }
 
 group = 'com.blink'
@@ -94,6 +95,21 @@ subprojects {
                 '-parameters' // 保留方法参数名，方便反射/MyBatis等使用
         ]
     }
+    
+    // Javadoc 编码配置 - 全局跳过 javadoc 检查
+    tasks.withType(Javadoc) {
+        enabled = false  // 禁用所有 javadoc 任务
+    }
+    
+    // 禁用 javadocJar 任务
+    tasks.named('javadocJar').configure {
+        enabled = false
+    }
+    
+    // Test 编码配置
+    tasks.withType(Test) {
+        jvmArgs = ['-Dfile.encoding=UTF-8']
+    }
 
     // ========== 仓库配置（提取为方法，方便复用） ==========
     repositories {
@@ -122,7 +138,7 @@ subprojects {
         // 补充非BOM管理的版本（统一管控）
         dependencies {
             dependency "org.projectlombok:lombok:${lombokVersion}"
-            dependency "mysql:mysql-connector-java:${mysqlConnectorVersion}"
+            dependency "com.mysql:mysql-connector-j:${mysqlConnectorVersion}"
             dependency "com.baomidou:mybatis-plus-boot-starter:${mybatisPlusVersion}"
             dependency "com.alibaba:druid-spring-boot-starter:${druidStarterVersion}"
             dependency "com.github.pagehelper:pagehelper-spring-boot-starter:${pagehelperVersion}"
@@ -180,11 +196,12 @@ subprojects {
             }
         }
 
-        // ========== 全局私库配置（拉取依赖用） ==========
+        // ========== 发布仓库配置（发布依赖用） ==========
         repositories {
-            // 1. 全局私有仓库（优先拉取，自动切换快照/正式）
+            // 发布到私有仓库（根据版本自动切换快照/正式）
             maven {
                 allowInsecureProtocol true
+                name = 'nexus'
                 // 根据模块版本自动切换仓库（复用根工程/子模块version）
                 url = project.version.toString().endsWith('SNAPSHOT') ?
                         "http://localhost:8081/repository/maven-snapshots/" :
@@ -194,20 +211,6 @@ subprojects {
                     password project.findProperty('repositories.password')
                 }
             }
-            // 2. 私有公共仓库（兜底拉取）
-            maven {
-                allowInsecureProtocol true
-                url "http://localhost:8081/repository/maven-public/"
-                credentials {
-                    username project.findProperty('repositories.username')
-                    password project.findProperty('repositories.password')
-                }
-            }
-            // 3. 公共仓库（最后兜底）
-            mavenLocal()
-            mavenCentral()
-            maven { url 'https://repo.spring.io/milestone/' }
-            maven { url 'https://repo.spring.io/release/' }
         }
     }
 

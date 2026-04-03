@@ -46,8 +46,8 @@ public class DataDictConstraintValidator implements ConstraintValidator<DataDict
             DictCacheDO dictObject = JacksonUtil.convert(cacheUtil.getFromAllCache(DICT_KEY_PREFIX + dictName), DictCacheDO.class); ;
             //缓存获取失败
             if (Objects.isNull(dictObject)) {
-                log.error("{} don't exist record ", DICT_KEY_PREFIX + dictName);
-                throw new BlinkException("DataDict validate error!");
+                log.error("字典数据不存在, key: {}", DICT_KEY_PREFIX + dictName);
+                return false;
             }
             return DictValidHandler.check(dictObject, value);
 

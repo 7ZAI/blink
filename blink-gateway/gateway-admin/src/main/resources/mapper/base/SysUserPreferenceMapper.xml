@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysUserPreferenceMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysUserPreferenceDO">
+        <id column="preference_id" property="preferenceId"/>
+        <result column="user_id" property="userId"/>
+        <result column="theme" property="theme"/>
+        <result column="language" property="language"/>
+        <result column="sidebar_collapsed" property="sidebarCollapsed"/>
+        <result column="font_size" property="fontSize"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据用户ID查询偏好设置 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM sys_user_preference WHERE user_id = #{userId} LIMIT 1
+    </select>
+
+</mapper>

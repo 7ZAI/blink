@@ -1,0 +1,77 @@
+server:
+  port: 8008
+  tomcat:
+    uri-encoding: UTF-8
+    max-threads: 500
+    max-connections: 10000
+  servlet:
+    context-path: /gateway-admin
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: gateway-admin
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      discovery:
+        namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
+        enabled: true
+      config:
+        namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
+        enabled: true
+  config:
+    import:
+      - nacos:gateway-admin.yaml?refreshEnabled=true
+  output:
+    ansi:
+      enabled: always
+  main:
+    allow-bean-definition-overriding: false
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+      adjust-dates-to-context-time-zone: true
+
+logging:
+  level:
+    root: INFO
+    com.blink: DEBUG
+    com.alibaba.nacos: DEBUG
+  file:
+    path: ./gateway-admin/logs
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+
+# Redis 配置
+blink:
+  redis:
+    distributed-lock:
+      enabled: true
+      key-prefix: "blink:lock:"
+      watchdog-enabled: true
+  gateway:
+    monitor:
+      collect-interval-ms: 30000       # 采集间隔（毫秒）
+      actuator-username: admin         # actuator 认证用户名
+      actuator-password: ${ACTUATOR_PASSWORD:}  # actuator 认证密码，生产环境必须通过环境变量配置
+      metrics-expire-seconds: 60       # Redis 指标过期时间（秒）
+      history-retention-days: 7        # 历史数据保留天数

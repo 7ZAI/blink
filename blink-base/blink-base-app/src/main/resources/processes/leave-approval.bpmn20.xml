@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="http://flowable.org/demo">
+
+    <!-- 请假审批流程定义 -->
+    <process id="leaveApproval" name="请假审批流程" isExecutable="true">
+
+        <!-- 流程描述 -->
+        <documentation>员工请假审批流程，支持多级审批</documentation>
+
+        <!-- 开始节点 -->
+        <startEvent id="startEvent" name="开始"/>
+
+        <!-- 提交请假申请 -->
+        <userTask id="submitLeaveTask" name="提交请假申请"
+                  flowable:assignee="${applicant}">
+            <documentation>员工填写请假单并提交</documentation>
+        </userTask>
+
+        <!-- 部门经理审批 -->
+        <userTask id="deptManagerApproval" name="部门经理审批"
+                  flowable:candidateGroups="dept_manager">
+            <documentation>部门经理审批请假申请</documentation>
+        </userTask>
+
+        <!-- 请假天数判断网关 -->
+        <exclusiveGateway id="daysGateway" name="请假天数判断"/>
+
+        <!-- HR审批（请假超过3天需要HR审批） -->
+        <userTask id="hrApproval" name="HR审批"
+                  flowable:candidateGroups="hr">
+            <documentation>HR审批超过3天的请假申请</documentation>
+        </userTask>
+
+        <!-- 结束节点 -->
+        <endEvent id="endEvent" name="结束"/>
+
+        <!-- 流程连线 -->
+        
+        <!-- 开始 -> 提交申请 -->
+        <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="submitLeaveTask"/>
+        
+        <!-- 提交申请 -> 部门经理审批 -->
+        <sequenceFlow id="flow2" sourceRef="submitLeaveTask" targetRef="deptManagerApproval"/>
+        
+        <!-- 部门经理审批 -> 天数判断 -->
+        <sequenceFlow id="flow3" sourceRef="deptManagerApproval" targetRef="daysGateway"/>
+        
+        <!-- 天数判断 -> HR审批（超过3天） -->
+        <sequenceFlow id="flow4" name="超过3天" sourceRef="daysGateway" targetRef="hrApproval">
+            <conditionExpression xsi:type="tFormalExpression">
+                <![CDATA[${leaveDays > 3}]]>
+            </conditionExpression>
+        </sequenceFlow>
+        
+        <!-- 天数判断 -> 结束（3天以内） -->
+        <sequenceFlow id="flow5" name="3天以内" sourceRef="daysGateway" targetRef="endEvent">
+            <conditionExpression xsi:type="tFormalExpression">
+                <![CDATA[${leaveDays <= 3}]]>
+            </conditionExpression>
+        </sequenceFlow>
+        
+        <!-- HR审批 -> 结束 -->
+        <sequenceFlow id="flow6" sourceRef="hrApproval" targetRef="endEvent"/>
+
+    </process>
+
+</definitions>

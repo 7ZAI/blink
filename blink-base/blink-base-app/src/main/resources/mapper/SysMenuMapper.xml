@@ -15,6 +15,7 @@
         <result column="parent_id" property="parentId"/>
         <result column="menu_level" property="menuLevel"/>
         <result column="component_path" property="componentPath"/>
+        <result column="perm_id" property="permId"/>
         <result column="hasChildren" property="hasChildren"/>
         <result column="create_by" property="createBy"/>
         <result column="create_time" property="createTime"/>
@@ -25,7 +26,7 @@
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
         menu_id
-        , menu_name, menu_en_name, type, icon, url, order_number, status, parent_id, menu_level, component_path, hasChildren, create_by, create_time, update_by, update_time, delFlag
+        , menu_name, menu_en_name, type, icon, url, order_number, status, parent_id, menu_level, component_path, perm_id, hasChildren, create_by, create_time, update_by, update_time, delFlag
     </sql>
 
 
@@ -53,6 +54,8 @@
 
             <if test="componentPath != null and componentPath != ''">and component_path = #{componentPath}</if>
 
+            <if test="permId != null">and perm_id = #{permId}</if>
+
             <if test="hasChildren != null and hasChildren != ''">and hasChildren = #{hasChildren}</if>
 
             <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
@@ -69,25 +72,66 @@
     </sql>
 
 
-    <select id="findSysMenuList" parameterType="com.blink.base.entity.SysMenuDO" resultMap="BaseResultMap">
-        select
-        <include refid="Base_Column_List"/>
-        from sys_menu
+    <select id="findSysMenuList" parameterType="com.blink.base.entity.SysMenuDO" resultType="com.blink.base.dto.vo.SysMenuVO">
+        SELECT sm.menu_id,
+               sm.menu_name,
+               sm.menu_en_name,
+               sm.type,
+               sm.icon,
+               sm.url,
+               sm.order_number,
+               sm.status,
+               sm.parent_id,
+               sm.menu_level,
+               sm.component_path,
+               sm.perm_id,
+               sp.ac_identity as perm_identity,
+               sp.ac_name as perm_name,
+               sm.hasChildren,
+               sm.create_by,
+               sm.create_time,
+               sm.update_by,
+               sm.update_time
+        FROM sys_menu sm
+        LEFT JOIN sys_permission sp ON sm.perm_id = sp.ac_id
         <include refid="Condition_where"/>
+        ORDER BY sm.parent_id ASC, sm.order_number ASC
     </select>
 
     <!-- 根据角色查询能访问的所有菜单-->
     <select id="findSysMenuListByRole" resultType="com.blink.base.dto.vo.SysMenuVO">
---         已分配权限的菜单
-        select sm.* from
-            sys_menu sm
-        left join sys_role_menu_rela srmr on srmr.menu_id= sm.menu_id
-        where srmr.role_id in
+        SELECT DISTINCT sm.*,
+               sp.ac_identity as perm_identity,
+               sp.ac_name as perm_name
+        FROM sys_menu sm
+        INNER JOIN sys_role_menu_rela srmr ON srmr.menu_id = sm.menu_id
+        LEFT JOIN sys_permission sp ON sp.ac_id = sm.perm_id
+        WHERE srmr.role_id IN
         <foreach collection="roleIds" item="roleId" index="index" open="(" close=")" separator=",">
             #{roleId}
         </foreach>
-
+        AND sm.status = 0
+        AND sm.delFlag = 0
+        ORDER BY sm.parent_id ASC, sm.order_number ASC
     </select>
 
+    <!-- 清空指定权限关联的所有菜单的perm_id -->
+    <update id="updatePermIdToNullByPermId">
+        UPDATE sys_menu SET perm_id = NULL WHERE perm_id = #{permId}
+    </update>
+
+    <!-- 批量更新菜单的perm_id -->
+    <update id="updatePermIdByMenuIds">
+        UPDATE sys_menu SET perm_id = #{permId}
+        WHERE menu_id IN
+        <foreach collection="menuIds" item="menuId" open="(" close=")" separator=",">
+            #{menuId}
+        </foreach>
+    </update>
+
+    <!-- 根据权限ID查询关联的菜单ID列表 -->
+    <select id="findMenuIdsByPermId" resultType="java.lang.Integer">
+        SELECT menu_id FROM sys_menu WHERE perm_id = #{permId}
+    </select>
 
 </mapper>

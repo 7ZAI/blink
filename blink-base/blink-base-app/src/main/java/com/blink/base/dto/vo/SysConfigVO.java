@@ -3,6 +3,7 @@ package com.blink.base.dto.vo;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 @Setter
 public class SysConfigVO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

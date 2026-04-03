@@ -1,7 +1,12 @@
 
 package com.blink.base.dto.req;
 
+import com.blink.base.constants.BaseErrCodeConstant;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -16,24 +21,25 @@ import java.time.LocalDateTime;
 @Data
 public class UpdateSysConfigGroupReq implements Serializable {
 
-  private static final long serialVersionUID = 1L;
-
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * 主键ID
      */
+    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     private Integer id;
-
 
     /**
      * 分组键名
      */
+    @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     private String groupKey;
-
 
     /**
      * 分组名称
      */
+    @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     private String groupName;
 
 

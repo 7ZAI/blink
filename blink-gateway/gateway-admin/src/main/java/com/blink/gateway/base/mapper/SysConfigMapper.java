@@ -1,0 +1,23 @@
+package com.blink.gateway.base.mapper;
+
+import com.blink.gateway.base.entity.SysConfigDO;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.blink.gateway.base.dto.req.QuerySysConfigReq;
+
+import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * <p>
+ * 参数配置表 Mapper 接口
+ * </p>
+ *
+ * @author blink
+ * @since 2025-09-05
+ */
+@Mapper
+public interface SysConfigMapper extends BaseMapper<SysConfigDO> {
+
+
+       List<SysConfigDO> findSysConfigList(QuerySysConfigReq reqDTO);
+ }

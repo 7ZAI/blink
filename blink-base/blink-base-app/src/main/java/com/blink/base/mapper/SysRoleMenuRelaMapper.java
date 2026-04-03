@@ -1,6 +1,7 @@
 package com.blink.base.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.base.entity.SysRoleMenuRelaDO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,4 +22,12 @@ public interface SysRoleMenuRelaMapper extends BaseMapper<SysRoleMenuRelaDO> {
     int  batchInsert(@Param("list") List<SysRoleMenuRelaDO> list);
 
     int deleteBatchByMenuIds(List<Integer> deleteList);
+
+    /**
+     * 根据菜单ID查询关联的角色列表
+     *
+     * @param menuId 菜单ID
+     * @return 角色列表
+     */
+    List<SysRoleVO> selectRolesByMenuId(@Param("menuId") Integer menuId);
 }

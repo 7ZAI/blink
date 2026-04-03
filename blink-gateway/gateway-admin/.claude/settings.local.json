@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__mysql-gateway__execute_sql",
+      "Bash(./gradlew :blink-gateway:gateway-admin:compileJava --no-daemon)",
+      "mcp__mysql__execute_sql"
+    ]
+  }
+}

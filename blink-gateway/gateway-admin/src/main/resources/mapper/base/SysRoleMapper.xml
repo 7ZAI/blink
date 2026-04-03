@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysRoleMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysRoleDO">
+        <id column="role_id" property="roleId"/>
+        <result column="role_name" property="roleName"/>
+        <result column="role_en_name" property="roleEnName"/>
+        <result column="status" property="status"/>
+        <result column="role_code" property="roleCode"/>
+        <result column="role_type" property="roleType"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="delFlag" property="delFlag"/>
+    </resultMap>
+
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        role_id
+        , role_name, role_en_name, status, role_code, role_type, create_by, update_by, create_time, update_time, delFlag
+    </sql>
+
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="roleId != null and roleId != ''">and role_id = #{roleId}</if>
+            <if test="roleName != null and roleName != ''">and role_name like concat(#{roleName}, '%')</if>
+
+            <if test="roleEnName != null and roleEnName != ''">and role_en_name = #{roleEnName}</if>
+
+            <if test="status != null and status != ''">and status = #{status}</if>
+
+            <if test="roleCode != null and roleCode != ''">and role_code = #{roleCode}</if>
+
+            <if test="roleType != null and roleType != ''">and role_type = #{roleType}</if>
+
+            <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
+
+            <if test="updateBy != null and updateBy != ''">and update_by = #{updateBy}</if>
+
+            <if test="createTime != null ">and create_time = #{createTime}</if>
+
+            <if test="updateTime != null ">and update_time = #{updateTime}</if>
+
+            <if test="delFlag != null and delFlag != ''">and delFlag = #{delFlag}</if>
+
+        </trim>
+    </sql>
+
+
+    <select id="findSysRoleList" parameterType="com.blink.gateway.base.entity.SysRoleDO" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_role
+        <include refid="Condition_where"/>
+    </select>
+
+
+    <select id="findSysRolesByUser" parameterType="com.blink.gateway.base.dto.req.QueryUserRolesReq" resultMap="BaseResultMap">
+        select sr.role_id, role_name, role_en_name, status, role_code
+        from sys_role sr,
+             sys_user_role_rela sur
+        where sr.role_id = sur.role_id  and sur.user_id = #{userId}
+
+
+    </select>
+
+    <select id="selectRoleListByIds" parameterType="java.util.List" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_role
+        where role_id in
+        <foreach collection="list" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+    </select>
+
+</mapper>

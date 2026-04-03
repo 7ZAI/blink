@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysDictTypeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysDictTypeDO">
+        <id column="dict_id" property="dictId"/>
+        <result column="dict_type" property="dictType"/>
+        <result column="dict_name" property="dictName"/>
+        <result column="status" property="status"/>
+        <result column="order_num" property="orderNum"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+        <result column="locale" property="locale"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        dict_id, dict_type, dict_name, status, order_num, create_by, create_time, update_by, update_time, remark, locale
+    </sql>
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="dictId != null">
+                and dict_id = #{dictId}
+            </if>
+            <if test="dictType != null and dictType != ''">
+                and dict_type = #{dictType}
+            </if>
+            <if test="dictName != null and dictName != ''">
+                and dict_name like concat('%', #{dictName}, '%')
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                and update_by = #{updateBy}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+            <if test="locale != null and locale != ''">
+                and locale = #{locale}
+            </if>
+        </trim>
+        order by order_num asc, dict_id desc
+    </sql>
+
+    <select id="findSysDictTypeList" parameterType="com.blink.gateway.base.dto.req.QuerySysDictTypeReq"
+            resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_dict_type
+        <include refid="Condition_where"/>
+    </select>
+
+</mapper>

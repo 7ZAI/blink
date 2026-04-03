@@ -5,6 +5,7 @@ import com.blink.framework.common.data.PageDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 public class QuerySysConfigReq extends PageDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
 

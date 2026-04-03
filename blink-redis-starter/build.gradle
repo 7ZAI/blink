@@ -10,12 +10,11 @@ java {
 
 jar {
     enabled = true
-    // 消除 打的包带 plain
     archiveClassifier = ''
-    manifest {
-        attributes('Implementation-Title': 'Gradle',
-                'Implementation-Version': archiveVersion)
-    }
+}
+
+bootJar {
+    enabled = false
 }
 
 publishing {
@@ -32,7 +31,8 @@ publishing {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    api 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
 //    implementation 'org.redisson:redisson-spring-boot-starter:3.23.1'
 
     api "com.github.ben-manes.caffeine:caffeine:${caffeineVersion}"
@@ -42,6 +42,12 @@ dependencies {
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
     implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
     implementation 'com.fasterxml.jackson.module:jackson-module-parameter-names'
+    
+    // Redisson for distributed lock (optional)
+    compileOnly "org.redisson:redisson-spring-boot-starter:${redissonVersion}"
+    testImplementation "org.redisson:redisson-spring-boot-starter:${redissonVersion}"
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+    
     //注释切换环境
     testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
 //    testImplementation 'org.springframework.boot:spring-boot-starter-web'

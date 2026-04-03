@@ -1,0 +1,225 @@
+:root {
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-size-base: 14px;
+  --font-size-small: 12px;
+  --font-size-large: 16px;
+  --font-size-extra-large: 18px;
+  --font-size-title: 20px;
+
+  /* 基础主题色 */
+  --primary-color: #3b82f6;
+  --primary-color-light: #60a5fa;
+  --primary-color-dark: #2563eb;
+  --primary-color-light-5: rgba(59, 130, 246, 0.5);
+  --primary-color-light-8: rgba(59, 130, 246, 0.8);
+  --primary-color-light-9: rgba(59, 130, 246, 0.1);
+  --primary-color-light-7: rgba(59, 130, 246, 0.15);
+  --primary-color-rgb: 59, 130, 246;
+
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --info-color: #6366f1;
+
+  /* ========== 现代简约设计令牌 ========== */
+
+  /* 柔和阴影效果 */
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  /* 中性色阶 */
+  --neutral-50: #fafafa;
+  --neutral-100: #f5f5f5;
+  --neutral-200: #e5e5e5;
+  --neutral-300: #d4d4d4;
+  --neutral-400: #a3a3a3;
+  --neutral-500: #737373;
+  --neutral-600: #525252;
+  --neutral-700: #404040;
+  --neutral-800: #262626;
+  --neutral-900: #171717;
+
+  /* 柔和主题色 */
+  --primary-soft: #60a5fa;
+  --success-soft: #34d399;
+  --warning-soft: #fbbf24;
+  --danger-soft: #f87171;
+  --info-soft: #818cf8;
+
+  /* 简洁渐变 */
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  --gradient-info: linear-gradient(135deg, #6366f1 0%, #818cf8 100%);
+  --gradient-subtle: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  --gradient-cyber: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
+  /* 发光效果 */
+  --glow-primary: 0 0 20px rgba(59, 130, 246, 0.3);
+  --glow-success: 0 0 20px rgba(16, 185, 129, 0.3);
+  --glow-warning: 0 0 20px rgba(245, 158, 11, 0.3);
+  --glow-danger: 0 0 20px rgba(239, 68, 68, 0.3);
+
+  /* 动画时长 */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+
+  /* 缓动函数 */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* 组件级令牌 */
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --card-border: 1px solid var(--border-color-base);
+  --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+  --btn-hover-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+  --btn-active-scale: 0.97;
+
+  --input-focus-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+  --input-focus-border: 1px solid var(--primary-color-light);
+
+  --sidebar-item-indicator: 3px solid var(--primary-color);
+}
+
+/* 浅色模式变量 - 默认主题 */
+:root {
+  --text-color-primary: #1e293b;
+  --text-color-regular: #475569;
+  --text-color-secondary: #64748b;
+  --text-color-placeholder: #94a3b8;
+
+  --border-color-base: #e2e8f0;
+  --border-color-light: #f1f5f9;
+  --border-color-lighter: #f8fafc;
+
+  --bg-color: #f8fafc;
+  --bg-color-page: #f1f5f9;
+  --bg-color-card: #ffffff;
+
+  --sidebar-bg: #1e293b;
+  --sidebar-bg-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-text: #94a3b8;
+  --sidebar-text-active: #ffffff;
+  --sidebar-active-bg: rgba(59, 130, 246, 0.15);
+
+  --header-bg: #ffffff;
+  --header-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  --card-bg: #ffffff;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  --table-header-bg: #f8fafc;
+  --table-row-hover: #f1f5f9;
+  --table-stripe-bg: #fafbfc;
+  --table-border-color: #e2e8f0;
+
+  --input-bg: #ffffff;
+  --input-border: #e2e8f0;
+  --input-disabled-bg: #f5f7fa;
+
+  --select-dropdown-bg: #ffffff;
+  --select-option-hover: #f5f7fa;
+
+  --tabs-bg: #ffffff;
+  --tabs-border: #e2e8f0;
+
+  /* 导航相关 */
+  --nav-bg: #ffffff;
+  --nav-height: 60px;
+  --nav-item-color: #64748b;
+  --nav-item-active-color: #3b82f6;
+  --nav-item-hover-bg: #f1f5f9;
+
+  /* Tabs View */
+  --tabs-height: 40px;
+  --tabs-item-bg: #f1f5f9;
+  --tabs-item-active-bg: var(--primary-color);
+  --tabs-item-hover-bg: #e2e8f0;
+
+  /* 侧边栏 */
+  --sidebar-width: 220px;
+  --sidebar-collapse-width: 64px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* 边框圆角 */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* 过渡 */
+  --transition-duration: 0.3s;
+  --data-transition-duration: 0.3s;
+}
+
+/* 暗黑模式变量 - 简约风格 */
+:root.dark,
+html.dark,
+html[data-theme='dark'] {
+  --text-color-primary: #f1f5f9;
+  --text-color-regular: #cbd5e1;
+  --text-color-secondary: #94a3b8;
+  --text-color-placeholder: #64748b;
+
+  --border-color-base: #334155;
+  --border-color-light: #1e293b;
+  --border-color-lighter: #0f172a;
+
+  --bg-color: #1e293b;
+  --bg-color-page: #0f172a;
+  --bg-color-card: #1e293b;
+
+  /* 暗黑模式简约风格 */
+  --sidebar-bg: #0f172a;
+  --sidebar-bg-hover: rgba(100, 116, 139, 0.15);
+  --sidebar-border: #334155;
+  --sidebar-text: #94a3b8;
+  --sidebar-text-active: #ffffff;
+  --sidebar-active-bg: rgba(59, 130, 246, 0.15);
+
+  --header-bg: #0f172a;
+  --header-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+
+  --card-bg: #1e293b;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+
+  --table-header-bg: #0f172a;
+  --table-row-hover: rgba(100, 116, 139, 0.1);
+  --table-stripe-bg: rgba(15, 23, 42, 0.5);
+  --table-border-color: #334155;
+
+  --input-bg: #1e293b;
+  --input-border: #334155;
+  --input-disabled-bg: #0f172a;
+  --input-focus-border: 1px solid var(--primary-color-light);
+
+  --select-dropdown-bg: #1e293b;
+  --select-option-hover: rgba(100, 116, 139, 0.15);
+
+  --tabs-bg: #0f172a;
+  --tabs-border: #334155;
+
+  /* 导航相关 */
+  --nav-bg: #1e293b;
+  --nav-item-color: #94a3b8;
+  --nav-item-active-color: #3b82f6;
+  --nav-item-hover-bg: #334155;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.25);
+}

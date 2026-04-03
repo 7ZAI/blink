@@ -1,0 +1,43 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+java {
+    withSourcesJar()
+    modularity.inferModulePath = true
+}
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+bootJar {
+    enabled = false
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'com.blink'
+            artifactId = 'blink-log-spring-boot-starter'
+            version = '1.0.0-SNAPSHOT'
+        }
+    }
+}
+
+dependencies {
+    implementation 'cn.hutool:hutool-core'
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

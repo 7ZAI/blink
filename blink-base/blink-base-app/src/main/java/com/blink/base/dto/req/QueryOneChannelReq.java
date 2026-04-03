@@ -2,6 +2,7 @@ package com.blink.base.dto.req;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -15,6 +16,7 @@ import java.io.Serializable;
 @Data
 public class QueryOneChannelReq implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 3925418753803274699L;
 
     /**

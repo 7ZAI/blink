@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysConfigMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysConfigDO">
+        <id column="id" property="id"/>
+        <result column="config_key" property="configKey"/>
+        <result column="config_name" property="configName"/>
+        <result column="config_value" property="configValue"/>
+        <result column="config_type" property="configType"/>
+        <result column="group_id" property="groupId"/>
+        <result column="description" property="description"/>
+        <result column="readonly" property="readonly"/>
+        <result column="status" property="status"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id
+        , config_key, config_name, config_value, config_type, group_id, description, readonly, status, create_by, create_time, update_by, update_time, remark
+    </sql>
+
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="id != null and id != ''">and id =
+                #{id}
+            </if>
+            <if test="configKey != null and configKey != ''">and config_key =
+                #{configKey}
+            </if>
+
+            <if test="configName != null and configName != ''">and config_name =
+                #{configName}
+            </if>
+
+            <if test="configValue != null and configValue != ''">and config_value =
+                #{configValue}
+            </if>
+
+            <if test="configType != null and configType != ''">and config_type =
+                #{configType}
+            </if>
+
+            <!--            <if test="groupIds != null and !groupIds.isEmpty()">-->
+            <!--                group_id IN-->
+            <!--                <foreach collection="groupIds" item="gid" open="(" close=")" separator=",">-->
+            <!--                    #{gid}-->
+            <!--                </foreach>-->
+            <!--            </if>-->
+
+            <if test="readonly != null and readonly != ''">and readonly =
+                #{readonly}
+            </if>
+
+            <if test="status != null and status != ''">and status =
+                #{status}
+            </if>
+
+            <if test="createBy != null and createBy != ''">and create_by =
+                #{createBy}
+            </if>
+
+            <if test="createTime != null ">and create_time =
+                #{createTime}
+            </if>
+
+            <if test="updateBy != null and updateBy != ''">and update_by =
+                #{updateBy}
+            </if>
+
+            <if test="updateTime != null ">and update_time =
+                #{updateTime}
+            </if>
+
+
+        </trim>
+    </sql>
+
+
+    <select id="findSysConfigList" parameterType="com.blink.gateway.base.dto.req.QuerySysConfigReq"
+            resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_config
+        <include refid="Condition_where"/>
+    </select>
+
+</mapper>

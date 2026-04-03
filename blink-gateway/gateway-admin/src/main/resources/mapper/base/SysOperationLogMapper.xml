@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysOperationLogMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysOperationLogDO">
+        <id column="log_id" property="logId"/>
+        <result column="user_id" property="userId"/>
+        <result column="login_name" property="loginName"/>
+        <result column="operation_type" property="operationType"/>
+        <result column="business_module" property="businessModule"/>
+        <result column="description" property="description"/>
+        <result column="request_url" property="requestUrl"/>
+        <result column="request_method" property="requestMethod"/>
+        <result column="request_params" property="requestParams"/>
+        <result column="response_data" property="responseData"/>
+        <result column="execute_status" property="executeStatus"/>
+        <result column="error_msg" property="errorMsg"/>
+        <result column="execute_time_ms" property="executeTimeMs"/>
+        <result column="ip_address" property="ipAddress"/>
+        <result column="user_agent" property="userAgent"/>
+        <result column="operation_time" property="operationTime"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        log_id, user_id, login_name, operation_type, business_module, description,
+        request_url, request_method, request_params, response_data, execute_status,
+        error_msg, execute_time_ms, ip_address, user_agent, operation_time, create_time
+    </sql>
+
+    <!-- 查询需要归档的日志ID列表 -->
+    <select id="selectArchiveLogIds" resultType="java.lang.Long">
+        SELECT log_id
+        FROM sys_operation_log
+        WHERE operation_time &lt; #{beforeTime}
+        ORDER BY operation_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 批量归档日志到历史表 -->
+    <insert id="batchArchiveToHistory">
+        INSERT INTO sys_operation_log_history (
+            log_id, user_id, login_name, operation_type, business_module, description,
+            request_url, request_method, request_params, response_data, execute_status,
+            error_msg, execute_time_ms, ip_address, user_agent, operation_time, create_time,
+            archive_time
+        )
+        SELECT
+            log_id, user_id, login_name, operation_type, business_module, description,
+            request_url, request_method, request_params, response_data, execute_status,
+            error_msg, execute_time_ms, ip_address, user_agent, operation_time, create_time,
+            NOW() as archive_time
+        FROM sys_operation_log
+        WHERE log_id IN
+        <foreach collection="logIds" item="logId" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </insert>
+
+    <!-- 批量删除已归档的日志 -->
+    <delete id="batchDeleteByIds">
+        DELETE FROM sys_operation_log
+        WHERE log_id IN
+        <foreach collection="logIds" item="logId" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </delete>
+
+</mapper>

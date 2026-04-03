@@ -164,6 +164,26 @@ public interface BaseErrCodeConstant {
      */
     String CONFIG_NOT_EXIST = "BUSS0025";
 
+    /**
+     * 该错误消息不存在
+     */
+    String ERR_MSG_NOT_EXIST = "BUSS0026";
+
+    /**
+     * 用户权限不存在
+     */
+    String USER_PERMISSION_NOT_EXIST = "BUSS0038";
+
+    /**
+     * 路径权限不存在
+     */
+    String PATH_PERMISSION_NOT_EXIST = "BUSS0039";
+
+    /**
+     * 接口权限不存在
+     */
+    String API_PERMISSION_NOT_EXIST = "BUSS0045";
+
 
     /***************************错误码---end ********************************/
 

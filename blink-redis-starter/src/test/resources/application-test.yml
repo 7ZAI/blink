@@ -5,13 +5,13 @@ spring:
       host: 127.0.0.1
       port: 6379
       password: 123456
-      database: 0 # 数据库索引
+      database: 0
       lettuce:
         pool:
-          max-active: 8 # 连接池最大活跃连接数（使用负值表示没有限制）
-          max-idle: 8 # 连接池最大空闲连接数
-          max-wait: -1ms # 连接池最大阻塞等待时间 毫秒（使用负值表示没有限制）
-          min-idle: 0 # 最小空闲连接数
+          max-active: 8
+          max-idle: 8
+          max-wait: -1ms
+          min-idle: 0
 logging:
   level:
     com.blink.framework.redis: DEBUG
@@ -26,6 +26,13 @@ server:
 blink:
   redis:
     enableLocalCache: false
+    distributed-lock:
+      enabled: true
+      default-wait-time: 3s
+      default-lease-time: 30s
+      watchdog-enabled: true
+      key-prefix: "lock:"
+      retry-count: 3
     idGenerator:
       seq-param:
         mq_msg_id:

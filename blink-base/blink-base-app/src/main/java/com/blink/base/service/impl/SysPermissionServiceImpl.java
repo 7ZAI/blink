@@ -5,27 +5,31 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.blink.base.constans.BaseErrCodeConstant;
-import com.blink.base.constans.CommonConstans;
-import com.blink.base.constans.RedisKeyConstans;
+
 import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
-import com.blink.base.dto.rsp.QueryPermissionIdentityRsp;
-import com.blink.base.dto.rsp.QuerySysPermissionRsp;
 import com.blink.base.dto.rsp.QueryUserPermissionRsp;
 import com.blink.base.dto.vo.SysPermissionVO;
+import com.blink.datasource.utils.PageUtils;
+import com.blink.framework.common.exception.BlinkException;
+import com.blink.framework.redis.component.CacheComponent;
+import com.blink.base.constants.BaseErrCodeConstant;
+import com.blink.base.constants.CommonConstans;
+import com.blink.base.constants.RedisKeyConstans;
+import com.blink.base.dto.rsp.QueryPermissionIdentityRsp;
+import com.blink.base.dto.rsp.QuerySysPermissionRsp;
+import com.blink.base.entity.SysDataFilterDO;
 import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.entity.SysRolePermRelaDO;
 import com.blink.base.entity.SysUserDO;
 import com.blink.base.entity.SysUserRoleRelaDO;
+import com.blink.base.mapper.SysDataFilterMapper;
+import com.blink.base.mapper.SysMenuMapper;
 import com.blink.base.mapper.SysPermissionMapper;
 import com.blink.base.mapper.SysRolePermRelaMapper;
 import com.blink.base.mapper.SysUserMapper;
 import com.blink.base.mapper.SysUserRoleRelaMapper;
 import com.blink.base.service.SysPermissionService;
-import com.blink.datasource.PageUtils;
-import com.blink.framework.common.exception.BlinkException;
-import com.blink.framework.redis.component.CacheComponent;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -60,6 +64,12 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     @Resource
     private CacheComponent cacheComponent;
 
+    @Resource
+    private SysMenuMapper sysMenuMapper;
+
+    @Resource
+    private SysDataFilterMapper sysDataFilterMapper;
+
     /**
      * 保存 权限菜单
      *
@@ -70,21 +80,51 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     @Override
     public SysPermissionVO saveSysPermission(AddSysPermissionReq saveParam) throws BlinkException {
 
-        var sysPermissionDO = new SysPermissionDO();
-        //接口权限
-        if (CommonConstans.PERMISSION_API_TYPE.equals(saveParam.getAcType())) {
+        // 校验权限标识是否重复
+        SysPermissionDO existByIdentity = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
+                .eq(SysPermissionDO::getAcIdentity, saveParam.getAcIdentity()));
+        if (ObjectUtil.isNotNull(existByIdentity)) {
+            BlinkException.throwBusinessException(BaseErrCodeConstant.PERMISSION_IDENTITY_REPEAT);
+        }
 
-            sysPermissionDO = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
+        // 接口权限类型需要检查URL是否重复
+        if (CommonConstans.PERMISSION_API_TYPE.equals(saveParam.getAcType())) {
+            if (StrUtil.isBlank(saveParam.getUrl())) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
+            }
+            SysPermissionDO existPermission = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
                     .eq(SysPermissionDO::getUrl, saveParam.getUrl()));
 
-            //url 不允许重复
-            if (ObjectUtil.isNotNull(sysPermissionDO)) {
+            // url 不允许重复
+            if (ObjectUtil.isNotNull(existPermission)) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.PERMISSION_REPEAT);
             }
         }
 
+        // 数据权限类型需要检查dataFilterId是否存在
+        if (CommonConstans.PERMISSION_DATA_TYPE.equals(saveParam.getAcType())) {
+            if (ObjectUtil.isNull(saveParam.getDataFilterId())) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
+            }
+            SysDataFilterDO dataFilter = sysDataFilterMapper.selectById(saveParam.getDataFilterId());
+            if (ObjectUtil.isNull(dataFilter)) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.DATA_FILTER_NOT_EXIST);
+            }
+        }
+
+        // 创建新的权限对象
+        SysPermissionDO sysPermissionDO = new SysPermissionDO();
         BeanUtil.copyProperties(saveParam, sysPermissionDO);
         sysPermissionMapper.insert(sysPermissionDO);
+
+        log.info("[SysPermission] 新增权限成功 | acId: {}, acIdentity: {}, acType: {}",
+                sysPermissionDO.getAcId(), sysPermissionDO.getAcIdentity(), sysPermissionDO.getAcType());
+
+        // 处理关联菜单（仅接口权限）
+        if (CommonConstans.PERMISSION_API_TYPE.equals(saveParam.getAcType())
+                && CollUtil.isNotEmpty(saveParam.getMenuIds())) {
+            updateMenuPermissionRelation(sysPermissionDO.getAcId(), saveParam.getMenuIds());
+        }
 
         var permissionVO = new SysPermissionVO();
         BeanUtil.copyProperties(sysPermissionDO, permissionVO);
@@ -101,9 +141,14 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     @Override
     public void deleteSysPermission(DeleteSysPermissionReq deleteParam) throws BlinkException {
 
+        // 清空关联菜单的perm_id
+        List<Integer> permIds = Boolean.TRUE.equals(deleteParam.getBatchDelete())
+            ? deleteParam.getIdList()
+            : Collections.singletonList(deleteParam.getDeleteId());
+        clearMenuPermissionRelation(permIds);
 
         //批量删除
-        if (deleteParam.isBatchDelete()) {
+        if (Boolean.TRUE.equals(deleteParam.getBatchDelete())) {
 
             Long count = rolePermRelaMapper.selectCount(new LambdaQueryWrapper<SysRolePermRelaDO>()
                     .in(SysRolePermRelaDO::getAcId, deleteParam.getIdList()));
@@ -113,7 +158,8 @@ public class SysPermissionServiceImpl implements SysPermissionService {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_RELA_DATA);
             }
 
-            sysPermissionMapper.deleteBatchIds(deleteParam.getIdList());
+            sysPermissionMapper.deleteByIds(deleteParam.getIdList());
+            log.info("[SysPermission] 批量删除权限成功 | permIds: {}", deleteParam.getIdList());
         } else {
 
             Long count = rolePermRelaMapper.selectCount(new LambdaQueryWrapper<SysRolePermRelaDO>()
@@ -125,6 +171,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
             }
 
             sysPermissionMapper.deleteById(deleteParam.getDeleteId());
+            log.info("[SysPermission] 删除权限成功 | permId: {}", deleteParam.getDeleteId());
         }
 
     }
@@ -145,8 +192,51 @@ public class SysPermissionServiceImpl implements SysPermissionService {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PERMISSION_NOT_EXIST);
         }
 
+        // 校验权限标识是否重复（排除自身）
+        if (!sysPermissionDO.getAcIdentity().equals(updateParam.getAcIdentity())) {
+            SysPermissionDO existByIdentity = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
+                    .eq(SysPermissionDO::getAcIdentity, updateParam.getAcIdentity()));
+            if (ObjectUtil.isNotNull(existByIdentity)) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.PERMISSION_IDENTITY_REPEAT);
+            }
+        }
+
+        // 接口权限类型需要检查URL是否重复（排除自身）
+        if (CommonConstans.PERMISSION_API_TYPE.equals(updateParam.getAcType())) {
+            if (StrUtil.isBlank(updateParam.getUrl())) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
+            }
+            if (!updateParam.getUrl().equals(sysPermissionDO.getUrl())) {
+                SysPermissionDO existPermission = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>()
+                        .eq(SysPermissionDO::getUrl, updateParam.getUrl()));
+                if (ObjectUtil.isNotNull(existPermission)) {
+                    BlinkException.throwBusinessException(BaseErrCodeConstant.PERMISSION_REPEAT);
+                }
+            }
+        }
+
+        // 数据权限类型需要检查dataFilterId是否存在
+        if (CommonConstans.PERMISSION_DATA_TYPE.equals(updateParam.getAcType())) {
+            if (ObjectUtil.isNull(updateParam.getDataFilterId())) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
+            }
+            SysDataFilterDO dataFilter = sysDataFilterMapper.selectById(updateParam.getDataFilterId());
+            if (ObjectUtil.isNull(dataFilter)) {
+                BlinkException.throwBusinessException(BaseErrCodeConstant.DATA_FILTER_NOT_EXIST);
+            }
+        }
+
         BeanUtil.copyProperties(updateParam, sysPermissionDO);
         sysPermissionMapper.updateById(sysPermissionDO);
+
+        log.info("[SysPermission] 更新权限成功 | acId: {}, acIdentity: {}, acType: {}",
+                sysPermissionDO.getAcId(), sysPermissionDO.getAcIdentity(), sysPermissionDO.getAcType());
+
+        // 处理关联菜单（仅接口权限）
+        if (CommonConstans.PERMISSION_API_TYPE.equals(updateParam.getAcType())) {
+            updateMenuPermissionRelation(sysPermissionDO.getAcId(),
+                Optional.ofNullable(updateParam.getMenuIds()).orElse(Collections.emptyList()));
+        }
     }
 
     /**
@@ -157,10 +247,19 @@ public class SysPermissionServiceImpl implements SysPermissionService {
      * @throws BlinkException
      */
     @Override
-    public QuerySysPermissionRsp<SysPermissionDO> getSysPermissionList(QuerySysPermissionReq queryParam) throws BlinkException {
+    public QuerySysPermissionRsp<SysPermissionVO> getSysPermissionList(QuerySysPermissionReq queryParam) throws BlinkException {
 
-        var pageRsp = new QuerySysPermissionRsp<SysPermissionDO>();
+        var pageRsp = new QuerySysPermissionRsp<SysPermissionVO>();
         PageUtils.queryPage(queryParam, () -> sysPermissionMapper.findSysPermissionList(queryParam), pageRsp);
+
+        // 查询每个权限关联的菜单ID列表
+        if (CollUtil.isNotEmpty(pageRsp.getRows())) {
+            pageRsp.getRows().forEach(permissionVO -> {
+                List<Integer> menuIds = sysMenuMapper.findMenuIdsByPermId(permissionVO.getAcId());
+                permissionVO.setMenuIds(menuIds);
+            });
+        }
+
         return pageRsp;
     }
 
@@ -290,6 +389,36 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         var rspDTO = new QueryPermissionIdentityRsp();
         rspDTO.setAcIdentity(acIdentity);
         return rspDTO;
+    }
+
+    /**
+     * 更新菜单与权限的关联关系
+     *
+     * @param permId  权限ID
+     * @param menuIds 菜单ID列表
+     */
+    private void updateMenuPermissionRelation(Integer permId, List<Integer> menuIds) {
+        // 先清空所有关联此权限的菜单
+        sysMenuMapper.updatePermIdToNullByPermId(permId);
+
+        // 更新选中菜单的perm_id
+        if (CollUtil.isNotEmpty(menuIds)) {
+            sysMenuMapper.updatePermIdByMenuIds(permId, menuIds);
+            log.info("[SysPermission] 更新菜单权限关联 | permId: {}, menuIds: {}", permId, menuIds);
+        }
+    }
+
+    /**
+     * 清空菜单与权限的关联关系
+     *
+     * @param permIds 权限ID列表
+     */
+    private void clearMenuPermissionRelation(List<Integer> permIds) {
+        if (CollUtil.isEmpty(permIds)) {
+            return;
+        }
+        permIds.forEach(permId -> sysMenuMapper.updatePermIdToNullByPermId(permId));
+        log.info("[SysPermission] 清空菜单权限关联 | permIds: {}", permIds);
     }
 
 

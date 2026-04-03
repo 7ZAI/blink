@@ -1,6 +1,7 @@
 package com.blink.framework.redis.mq;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.lang.TypeReference;
 import com.blink.framework.common.mq.BlinkMessage;
 import com.blink.framework.common.utils.JacksonUtil;
 
@@ -249,8 +250,9 @@ public class StreamMessage<T> implements Serializable, BlinkMessage {
     /**
      * 将Map转换为消息对象
      */
+    @SuppressWarnings("unchecked")
     public static <T> StreamMessage<T> convertMapToMessage(Map<String, Object> map, Class<T> tClass) {
-        StreamMessage<T> message = BeanUtil.mapToBean(map, StreamMessage.class, false);
+        StreamMessage<T> message = BeanUtil.toBean(map, StreamMessage.class);
         Object object = map.get("payload");
         T data = JacksonUtil.convert(object, tClass);
         message.setPayload(data);
@@ -258,13 +260,6 @@ public class StreamMessage<T> implements Serializable, BlinkMessage {
         return message;
     }
 
-    public static void main(String[] args) {
-
-//        String json = "\\\"{\\\\\\\"msgId\\\\\\\":\\\\\\\"e05da46b-4daf-439c-a60a-c54df9fc8ce9\\\\\\\",\\\\\\\"topic\\\\\\\":\\\\\\\"blink:stream:gateway:event\\\\\\\",\\\\\\\"msgType\\\\\\\":\\\\\\\"EVENT\\\\\\\",\\\\\\\"msgStatus\\\\\\\":\\\\\\\"0\\\\\\\",\\\\\\\"payload\\\\\\\":{\\\\\\\"key\\\\\\\":\\\\\\\"blink:channel:cefc8ad2a66144d8ac4cff1090ef6c8e\\\\\\\"},\\\\\\\"payloadClass\\\\\\\":\\\\\\\"com.blink.base.dto.CacheMsgDTO\\\\\\\",\\\\\\\"createTime\\\\\\\":\\\\\\\"2026-01-31 00:24:45\\\\\\\",\\\\\\\"version\\\\\\\":\\\\\\\"1.0\\\\\\\",\\\\\\\"sender\\\\\\\":\\\\\\\"base-app\\\\\\\"}\\\"\"";
-//        StreamMessage streamMessage = JacksonUtil.parseMessyJson(json, StreamMessage.class);
-//        System.out.println(streamMessage);
-
-    }
 
 
 }

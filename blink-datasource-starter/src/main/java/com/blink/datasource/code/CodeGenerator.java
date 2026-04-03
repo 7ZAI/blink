@@ -220,7 +220,7 @@ public class CodeGenerator {
     /**
      * 自定义DTO 生成模板
      *
-     * @return
+     * @return InjectionConfig
      */
     private static InjectionConfig getInjectionConfig(String projectPath,String basePackage) {
 
@@ -229,9 +229,18 @@ public class CodeGenerator {
         //自定义模板文件上下文属性配置 用于生成正确类名
         return new InjectionConfig.Builder().beforeOutputFile((tableInfo, stringMap) -> {
                     String entityName = tableInfo.getEntityName().replaceAll("DO", "");
-                    Map<String, String> PackageInfo = (Map<String, String>) stringMap.get("package");
-                    String packageName = PackageInfo.get("Parent");
 
+                    Object object = stringMap.get("package");
+                    Map<String, String> packageInfo = new HashMap<>();
+                    if (object instanceof Map<?, ?> map) {
+                        // 类型安全的转换，确保 key 和 value 都是 String 类型
+                        map.forEach((key, value) -> {
+                            if (key instanceof String k && value instanceof String v) {
+                                packageInfo.put(k, v);
+                            }
+                        });
+                    }
+                    String packageName = packageInfo.get("Parent");
                     stringMap.put("reqPackage", packageName + ".dto.req");
                     stringMap.put("rspPackage", packageName + ".dto.rsp");
 

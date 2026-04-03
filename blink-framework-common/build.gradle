@@ -36,12 +36,20 @@ java {
 
 jar {
     enabled = true
-    // 消除 打的包带 plain
     archiveClassifier = ''
-    manifest {
-        attributes('Implementation-Title': 'Gradle',
-                'Implementation-Version': archiveVersion)
-    }
+}
+
+bootJar {
+    enabled = false
+}
+
+springBoot {
+    mainClass = null
+}
+
+// 禁用resolveMainClassName任务，因为这是一个库模块，不需要主类
+tasks.named('resolveMainClassName').configure {
+    enabled = false
 }
 
 tasks.named('jar') {

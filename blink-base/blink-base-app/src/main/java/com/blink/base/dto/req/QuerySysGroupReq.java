@@ -1,17 +1,13 @@
 package com.blink.base.dto.req;
 
-import com.blink.framework.common.data.PageDTO;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
- * <p>
- * QuerySysGroupReqDTO 查询列表组请求参数对象
- * </p>
+ * 查询组列表请求参数对象（树形数据不分页）
  *
  * @author binblink
  * @since 2024-01-04
@@ -19,60 +15,22 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-public class QuerySysGroupReq extends PageDTO implements Serializable {
+public class QuerySysGroupReq implements Serializable {
 
-  private static final long serialVersionUID = 1L;
-
-
-    /**
-     * 分组id
-     */
-    private Integer groupId;
-
+    private static final long serialVersionUID = 1L;
 
     /**
-     * 组编号
-     */
-    private String groupNo;
-
-
-    /**
-     * 组名称
+     * 组名称（模糊查询）
      */
     private String groupName;
-
 
     /**
      * 父组id
      */
     private Integer groupParentId;
 
-
-
     /**
      * 组领导
      */
     private String groupLeader;
-
-
-    /**
-     * 组地址
-     */
-    private String groupAddress;
-
-
-    /**
-     * 组电话
-     */
-    private String phone;
-
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
-
-
-
-
 }

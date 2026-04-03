@@ -28,5 +28,39 @@
         </foreach>
     </delete>
 
+    <!-- 根据角色ID查询数据权限过滤规则ID列表 -->
+    <select id="selectDataFilterIdsByRoleId" resultType="java.lang.Integer">
+        SELECT p.data_filter_id
+        FROM sys_role_perm_rela rp
+        INNER JOIN sys_permission p ON rp.ac_id = p.ac_id
+        WHERE rp.role_id = #{roleId}
+          AND p.ac_type = 2
+          AND p.data_filter_id IS NOT NULL
+    </select>
+
+    <!-- 删除角色的接口权限关联 -->
+    <delete id="deleteApiPermissionsByRoleId">
+        DELETE srpr FROM sys_role_perm_rela srpr
+        INNER JOIN sys_permission sp ON sp.ac_id = srpr.ac_id
+        WHERE srpr.role_id = #{roleId} AND sp.ac_type = 1
+    </delete>
+
+    <!-- 删除角色列表中指定权限的关联 -->
+    <delete id="deleteByRoleIdsAndPermId">
+        DELETE FROM sys_role_perm_rela
+        WHERE ac_id = #{permId}
+        AND role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" close=")" separator=",">
+            #{roleId}
+        </foreach>
+    </delete>
+
+    <!-- 批量插入角色权限关联（忽略重复） -->
+    <insert id="batchInsertIgnore">
+        INSERT IGNORE INTO sys_role_perm_rela (role_id, ac_id) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.roleId}, #{item.acId})
+        </foreach>
+    </insert>
 
 </mapper>

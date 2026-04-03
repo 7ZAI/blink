@@ -6,7 +6,6 @@ import com.blink.base.dto.rsp.QueryPermissionIdentityRsp;
 import com.blink.base.dto.rsp.QuerySysPermissionRsp;
 import com.blink.base.dto.rsp.QueryUserPermissionRsp;
 import com.blink.base.dto.vo.SysPermissionVO;
-import com.blink.base.entity.SysPermissionDO;
 import com.blink.base.service.SysPermissionService;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
@@ -80,7 +79,7 @@ public class SysPermissionController {
      * @throws Throwable
      */
     @PostMapping("/getSysPermissionList")
-    public ResponseDTO<QuerySysPermissionRsp<SysPermissionDO>> getSysPermissionList(@RequestBody @Validated RequestDTO<QuerySysPermissionReq> reqDto) throws BlinkException {
+    public ResponseDTO<QuerySysPermissionRsp<SysPermissionVO>> getSysPermissionList(@RequestBody @Validated RequestDTO<QuerySysPermissionReq> reqDto) throws BlinkException {
         return ResponseDTO.newSuccessInstance(sysPermissionService.getSysPermissionList(reqDto.getBody()));
     }
 

@@ -27,7 +27,7 @@ public class LogMdcInterceptor implements HandlerInterceptor {
         }
         MDC.put("traceId", traceId);
 
-        // 2. 设置 userId（从 Token 解析，示例用固定值）
+        // 2. 设置 userName（从请求头获取）
         String userName = request.getHeader(X_BLINK_LOGINNAME);
         MDC.put("userName", userName);
 

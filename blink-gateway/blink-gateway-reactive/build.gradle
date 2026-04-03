@@ -1,0 +1,88 @@
+plugins {
+
+    id 'org.springframework.boot'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+// 全局 UTF-8 编码配置
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Javadoc) {
+    options.encoding = 'UTF-8'
+}
+
+tasks.withType(Test) {
+    jvmArgs = ['-Dfile.encoding=UTF-8']
+}
+
+
+dependencies {
+    implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
+
+    //限流 熔断
+    implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-reactor-resilience4j'
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3'
+    implementation 'io.github.resilience4j:resilience4j-circuitbreaker'
+//    implementation 'io.github.resilience4j:resilience4j-ratelimiter'
+    implementation 'io.github.resilience4j:resilience4j-retry'
+    implementation 'io.github.resilience4j:resilience4j-bulkhead'
+
+
+    //监控
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    //ip地址处理库
+    implementation 'com.github.seancfoley:ipaddress:5.5.1'
+    //本地缓存
+    implementation "com.github.ben-manes.caffeine:caffeine:${caffeineVersion}"
+
+    //工具类
+    implementation 'cn.hutool:hutool-core'
+    implementation 'cn.hutool:hutool-jwt'
+
+
+    //内部模块依赖
+    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-framework-validation:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
+  
+    // Dubbo 依赖
+    implementation 'org.apache.dubbo:dubbo-spring-boot-starter'
+    implementation 'org.apache.dubbo:dubbo-registry-nacos'
+    // Dubbo 服务接口依赖
+    implementation 'com.blink:blink-base-api-dubbo:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-gateway-admin-api-dubbo:1.0.0-SNAPSHOT'
+
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    //测试依赖
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+//    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+}
+
+
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// 生成构建信息，供 /actuator/info 使用
+springBoot {
+    buildInfo()
+}

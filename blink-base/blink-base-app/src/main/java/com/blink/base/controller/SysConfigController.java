@@ -1,6 +1,12 @@
 package com.blink.base.controller;
 
 import com.blink.base.dto.req.*;
+import com.blink.base.dto.rsp.ConfigGroupRsp;
+import com.blink.base.dto.req.BatchUpdateSysConfigReq;
+import com.blink.base.dto.req.DeleteSysConfigReq;
+import com.blink.base.dto.req.QueryOneSysConfigReq;
+import com.blink.base.dto.req.QuerySysConfigReq;
+import com.blink.base.dto.req.UpdateSysConfigReq;
 import com.blink.base.dto.rsp.QuerySysConfigRsp;
 import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.base.service.SysConfigService;
@@ -16,10 +22,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 参数配置表 管理API
- * 一般直接由管理员在数据库添加 删除不提供管理接口，页面只提供设置值或修改值功能
+ * 参数配置设置
+ * 一般直接由管理员在数据库添加 删除
+ * 不提供管理接口，页面只提供设置值或修改值功能
+ * 只提供内部查询
  * @author blink
- * @module blink
  * @since 2025-09-05
  */
 @RestController
@@ -30,19 +37,19 @@ public class SysConfigController {
     private SysConfigService sysConfigService;
 
 
-    /**
-     *
-     * 新增参数配置表
-     *
-     * @param reqDto
-     * @return {@link ResponseDTO<EmptyBody>}
-     * @throws Throwable
-     */
-    @PostMapping("/saveSysConfig")
-    public ResponseDTO<EmptyBody> saveSysConfig(@RequestBody @Validated RequestDTO<AddSysConfigReq> reqDto) throws BlinkException {
-        sysConfigService.saveSysConfig(reqDto.getBody());
-        return ResponseDTO.newSuccessInstance();
-    }
+//    /**
+//     *
+//     * 新增参数配置表
+//     *
+//     * @param reqDto
+//     * @return {@link ResponseDTO<EmptyBody>}
+//     * @throws Throwable
+//     */
+//    @PostMapping("/saveSysConfig")
+//    public ResponseDTO<EmptyBody> saveSysConfig(@RequestBody @Validated RequestDTO<AddSysConfigReq> reqDto) throws BlinkException {
+//        sysConfigService.saveSysConfig(reqDto.getBody());
+//        return ResponseDTO.newSuccessInstance();
+//    }
 
     /**
      * 删除参数配置表
@@ -107,5 +114,29 @@ public class SysConfigController {
         return ResponseDTO.newSuccessInstance(sysConfigService.getOneConfigFromCacheOrDataBase(reqDto.getBody()));
     }
 
+    /**
+     * 根据分组键名查询配置
+     *
+     * @param reqDto
+     * @return {@link ResponseDTO<ConfigGroupRsp>}
+     * @throws BlinkException
+     */
+    @PostMapping("/getConfigsByGroupKey")
+    public ResponseDTO<ConfigGroupRsp> getConfigsByGroupKey(@RequestBody @Validated RequestDTO<QueryConfigByGroupKeyReq> reqDto) throws BlinkException {
+        return ResponseDTO.newSuccessInstance(sysConfigService.getConfigsByGroupKey(reqDto.getBody().getGroupKey()));
+    }
+
+    /**
+     * 批量更新配置值
+     *
+     * @param reqDto
+     * @return {@link ResponseDTO<EmptyBody>}
+     * @throws BlinkException
+     */
+    @PostMapping("/batchUpdateConfigs")
+    public ResponseDTO<EmptyBody> batchUpdateConfigs(@RequestBody @Validated RequestDTO<BatchUpdateSysConfigReq> reqDto) throws BlinkException {
+        sysConfigService.batchUpdateConfigs(reqDto.getBody().getConfigs());
+        return ResponseDTO.newSuccessInstance();
+    }
 
 }

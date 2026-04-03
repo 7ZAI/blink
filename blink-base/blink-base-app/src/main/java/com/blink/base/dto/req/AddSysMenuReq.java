@@ -1,6 +1,6 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.constans.BaseErrCodeConstant;
+import com.blink.base.constants.BaseErrCodeConstant;
 import com.blink.framework.validate.annotation.DataDict;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -52,9 +52,8 @@ public class AddSysMenuReq implements Serializable {
 
 
     /**
-     * 菜单地址
+     * 菜单地址（type=1目录或type=2页面时必填）
      */
-    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     @DataDict(name="url",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String url;
 
@@ -100,7 +99,9 @@ public class AddSysMenuReq implements Serializable {
     @DataDict(name="boolean",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Boolean hasChildren;
 
-
-
+    /**
+     * 关联的权限ID（仅type=2页面或type=3按钮时有效）
+     */
+    private Integer permId;
 
 }

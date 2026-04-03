@@ -6,6 +6,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.blink.framework.common.exception.BlinkException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Slf4j
+@ConditionalOnProperty(name = "spring.cloud.nacos.config.enabled", havingValue = "true", matchIfMissing = false)
 public class NacosConfigComponent {
 
     @Resource
@@ -46,8 +48,7 @@ public class NacosConfigComponent {
 
         try {
             String namespace = nacosConfigManager.getNacosConfigProperties().getNamespace();
-
-            System.out.println(namespace);
+            log.debug("Nacos namespace: {}", namespace);
             ConfigService configService = nacosConfigManager.getConfigService();
             // 发布配置
             boolean isPublishOk = configService.publishConfig(dataId, groupId, configContent);

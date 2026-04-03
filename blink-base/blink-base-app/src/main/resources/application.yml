@@ -25,6 +25,7 @@ spring:
         enabled: true
       config:
         namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
+        enabled: true
   config:
     import:
       - nacos:base-app.yaml?refreshEnabled=true
@@ -59,8 +60,24 @@ spring:
 logging:
   level:
     root: INFO
+    com.blink: DEBUG
   file:
     path: ./blink-base/blink-base-app/logs
+
+# ==================== Flowable工作流引擎配置 ====================
+flowable:
+  # 自动部署流程定义（开发环境开启，生产环境建议关闭）
+  check-process-definitions: false
+  # 异步执行器配置
+  async-executor-activate: true
+  # 数据库表结构自动更新（开发环境true，生产环境false）
+  database-schema-update: true
+  # IDM引擎配置
+  idm:
+    # 启用IDM引擎
+    enabled: true
+  # 流程定义缓存配置
+  process-definition-cache-limit: 512
 
 
 

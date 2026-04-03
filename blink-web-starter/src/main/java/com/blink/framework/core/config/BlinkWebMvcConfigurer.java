@@ -31,14 +31,8 @@ import java.util.List;
 @EnableWebMvc
 public class BlinkWebMvcConfigurer implements WebMvcConfigurer {
 
-
     @Resource
     private BlinkWebAppConfigProperties properties;
-
-    @Override
-    public void configureViewResolvers(ViewResolverRegistry registry) {
-
-    }
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {

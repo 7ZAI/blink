@@ -1,54 +1,95 @@
+# blink-base-api (已弃用)
 
-服务间调用模块封装考量：
+> ⚠️ **注意**：此模块已弃用，仅作为工程示例保留。请使用 `blink-base-api-dubbo` 进行服务间调用。
 
-在微服务架构中，服务间调用时，数据传输对象（DTO）的设计和管理有多种方案。常见的两种是：
+## 说明
 
-方案一.将DTO和feign封装成一个独立的JAR包，供各个服务引用。
-优点：
-保证一致性：所有服务使用相同的DTO定义，避免因为重复定义而导致的字段名、类型不一致。
-减少重复代码：避免在每个服务中重复定义相同的DTO类。
-易于维护：当DTO需要变更时，只需修改一个地方，然后所有依赖的服务更新JAR包版本即可。
+此模块原用于封装 Feign 客户端和 DTO，供其他服务通过 HTTP 方式调用 Base 服务。
 
-缺点：
-耦合性增加：所有服务都依赖这个JAR包，如果其中一个服务的DTO变更，可能会影响到其他服务，导致所有服务都需要升级版本，可能引发连锁更新。
-版本管理复杂：当DTO有多个版本时，需要管理JAR包的版本，并且要确保所有服务使用的版本兼容。
-开发效率：如果DTO JAR包更新频繁，那么其他服务需要频繁更新依赖，可能会增加开发和部署的复杂度。
-适用场景：
-服务数量不多，且服务之间关系紧密，变更频率较低。
-团队规模不大，能够协调好DTO的变更和发布流程。
-需要严格保证DTO的一致性
+当前 Blink 框架已改用 **Dubbo** 作为服务间调用方案：
+- ✅ 更好的性能
+- ✅ 支持响应式编程
+- ✅ 更完善的服务治理能力
+- ✅ 支持 Triple 协议（基于 HTTP/2）
 
-方案二.各个服务自己编写DTO和feign。
+## 替代方案
 
-优点：
-服务独立：每个服务只关心自己的DTO，不会受到其他服务DTO变更的影响。
-低耦合：服务之间没有共享的DTO依赖，每个服务可以独立演进。
-灵活性高：每个服务可以根据自己的需要定义DTO，不需要与其他服务协调。
+使用 Dubbo 进行服务间调用：
 
-缺点：
-重复代码：多个服务可能会定义相同或类似的DTO，导致代码重复。
-一致性难以保证：如果多个服务需要交互，需要确保DTO的字段定义一致，否则会出现序列化/反序列化问题。
-维护成本：当底层模型变更时，可能需要修改多个服务中的DTO。
-适用场景：
-服务数量较多，且服务由不同的团队维护。
-服务之间相对独立，交互不频繁。
-团队倾向于松耦合的架构。
+```java
+// 1. 引入依赖
+implementation 'com.blink:blink-base-api-dubbo:1.0.0-SNAPSHOT'
 
-# blink-base-api
+// 2. 注入 Dubbo 服务
+@DubboReference
+private BaseDubboService baseDubboService;
 
-目前blink框架 采用方案一，复制提供外部调用接口所涉及的DTO 到api模块中，包名也一致
+// 3. 调用服务
+ResponseDTO<SysConfigCacheDO> response =
+    baseDubboService.getOneConfig(requestDto);
+```
 
+## 服务间调用方案对比
 
-feign说到底是httpclient 请求调用 那么就需要知道url 、请求方式 请求内容。
+### 方案一：DTO 和 Feign 封装成独立 JAR 包
 
-负载均衡：openfeign 本身不负责负载均衡，通过服务发现获取base-app所有实例，再根据外部配置的LoadBalancer 选择一个实例调用
-示例
+**优点：**
+- 保证一致性：所有服务使用相同的 DTO 定义
+- 减少重复代码：避免重复定义相同的 DTO 类
+- 易于维护：DTO 变更只需修改一处
+
+**缺点：**
+- 耦合性增加：所有服务依赖同一个 JAR 包
+- 版本管理复杂：DTO 变更可能引发连锁更新
+- 开发效率：频繁更新依赖增加复杂度
+
+**适用场景：**
+- 服务数量不多，关系紧密
+- 变更频率较低
+- 团队规模不大
+
+### 方案二：各个服务自己编写 DTO 和 Feign
+
+**优点：**
+- 服务独立：每个服务只关心自己的 DTO
+- 低耦合：服务间没有共享 DTO 依赖
+- 灵活性高：按需定义 DTO
+
+**缺点：**
+- 重复代码：可能定义相同的 DTO
+- 一致性难保证：字段定义需保持一致
+- 维护成本：底层变更需修改多个服务
+
+**适用场景：**
+- 服务数量较多，不同团队维护
+- 服务间相对独立
+- 团队倾向松耦合架构
+
+## Blink 框架采用的方式
+
+采用方案一的变体：**复制提供外部调用接口所涉及的 DTO 到 api 模块中，包名保持一致**。
+
+这样既保证了 DTO 一致性，又通过 Dubbo 获得了更好的性能和响应式支持。
+
+## Feign 示例（仅作参考）
+
 ```java
 @FeignClient("base-app")
 public interface AuthServiceClient {
 
     @PostMapping("/system/login")
-    ResponseDTO<SysLoginRspDTO> login(@Validated @RequestBody RequestDTO<SysLoginReqDTO> requestDTO) throws BlinkException;
+    ResponseDTO<SysLoginRspDTO> login(
+        @Validated @RequestBody RequestDTO<SysLoginReqDTO> requestDTO
+    ) throws BlinkException;
 
 }
 ```
+
+**负载均衡说明：**
+
+OpenFeign 本身不负责负载均衡，通过服务发现获取 base-app 所有实例，再根据外部配置的 LoadBalancer 选择一个实例调用。
+
+## 相关模块
+
+- [blink-base-api-dubbo](../blink-base-api-dubbo/README.md)：Dubbo 接口定义（推荐使用）
+- [blink-framework-openfeign](../../blink-framework-openfeign/README.md)：Feign 封装模块

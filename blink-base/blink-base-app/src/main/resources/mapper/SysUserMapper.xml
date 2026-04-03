@@ -9,6 +9,7 @@
         <result column="password" property="password" />
         <result column="username" property="username" />
         <result column="avatar" property="avatar" />
+        <result column="avatar_style" property="avatarStyle" />
         <result column="sex" property="sex" />
         <result column="phone" property="phone" />
         <result column="email" property="email" />
@@ -30,13 +31,20 @@
         <result column="login_name" property="loginName" />
         <result column="username" property="username" />
         <result column="avatar" property="avatar" />
+        <result column="avatar_style" property="avatarStyle" />
         <result column="sex" property="sex" />
         <result column="phone" property="phone" />
         <result column="email" property="email" />
         <result column="last_login_time" property="lastLoginTime" />
         <result column="locked" property="locked" />
-        <result column="remark" property="remark" />
+        <result column="superFlag" property="superFlag" />
+        <result column="psw_retry" property="pswRetry" />
+        <result column="create_by" property="createBy" />
+        <result column="update_by" property="updateBy" />
         <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="lock_time" property="lockTime" />
+        <result column="remark" property="remark" />
         <!-- association 映射关联对象 -->
         <association property="group" javaType="com.blink.base.dto.vo.SysGroupVO">
             <id property="groupId" column="group_id"/>
@@ -51,7 +59,7 @@
 
     <!-- 通用查询结果列 -->
     <sql id="Base_Column_List">
-        user_id, login_name, password, username, avatar, sex, phone, email, last_login_time, locked, salt,psw_retry, superFlag, remark, create_by, update_by, create_time, update_time, lock_time
+        user_id, login_name, password, username, avatar, avatar_style, sex, phone, email, last_login_time, locked, salt,psw_retry, superFlag, remark, create_by, update_by, create_time, update_time, lock_time
     </sql>
 
     <!-- 通用查询条件 -->
@@ -73,43 +81,40 @@
         </trim>
     </sql>
 
-
-<!--    <select id="findSysUserList" parameterType="com.blink.base.dto.req.QuerySysUserReq" resultMap="BaseResultMap">-->
-<!--        select * from (WITH RECURSIVE child_group (group_id,group_name) AS-->
-<!--                                          (-->
-<!--                                              SELECT group_id,group_name-->
-<!--                                              FROM sys_group-->
-<!--                                              WHERE group_parent_id in(1,2)-->
-<!--                                              UNION ALL-->
-<!--                                              SELECT c.group_id,c.group_name-->
-<!--                                              FROM child_group AS cp JOIN sys_group AS c-->
-<!--                                                                          ON cp.group_id = c.group_parent_id-->
-<!--                                          )-->
-<!--                       SELECT DISTINCT u.user_id FROM child_group c,sys_user_group_rela u where c.group_id = u.group_id ) gu,sys_user su-->
-<!--        where username="as";-->
-<!--    </select>-->
-
-
     <select id="findSysUserList" parameterType="com.blink.base.dto.req.QuerySysUserReq" resultMap="VoResultMap">
-        select user_id,login_name,username,sex,phone,email,last_login_time,sg.group_name,sg.group_id
+        select su.user_id,su.login_name,su.username,su.avatar,su.avatar_style,su.sex,su.phone,su.email,su.last_login_time,su.create_time,su.locked,
+               sg.group_name,sg.group_id,
+               sr.role_id,sr.role_name
         from sys_user su
-        left join sys_group sg  on  sg.user_id = su.user_id
+        left join sys_user_group_rela sugl  on  sugl.user_id = su.user_id
+        left join sys_group sg on sg.group_id = sugl.group_id
+        left join sys_user_role_rela surr on su.user_id = surr.user_id
+        left join sys_role sr on sr.role_id = surr.role_id
         <trim prefix="where" prefixOverrides="and | or ">
+            <if test="loginName != null and loginName != ''">and su.login_name like concat('%', #{loginName}, '%')</if>
 
-            <if test="username != null and username != ''">and username = #{username}</if>
+            <if test="username != null and username != ''">and su.username like concat('%', #{username}, '%')</if>
 
-            <if test="sex != null ">and sex = #{sex}</if>
+            <if test="sex != null ">and su.sex = #{sex}</if>
 
-            <if test="groupId != null ">and group_id =#{groupId} #{endDate}</if>
+            <if test="groupIdList != null and groupIdList.size() > 0">
+                and sg.group_id in
+                <foreach collection="groupIdList" item="gid" open="(" separator="," close=")">
+                    #{gid}
+                </foreach>
+            </if>
 
-            <if test="startDate != null ">and create_time <![CDATA[ >= ]]> #{startDate}</if>
+            <if test="startDate != null ">and su.create_time <![CDATA[ >= ]]> #{startDate}</if>
 
-            <if test="endDate != null ">and create_time <![CDATA[ <= ]]> #{endDate}</if>
+            <if test="endDate != null ">and su.create_time <![CDATA[ <= ]]> #{endDate}</if>
+
+            <if test="excludeSuperAdmin != null and excludeSuperAdmin == true">and su.superFlag != 1</if>
         </trim>
     </select>
 
     <select id="findUserDetail" parameterType="com.blink.base.dto.req.QuerySysUserReq" resultMap="VoResultMap">
-        select su.user_id,su.login_name,su.username,su.sex,su.phone,su.email,su.last_login_time,
+        select su.user_id,su.login_name,su.username,su.avatar,su.avatar_style,su.sex,su.phone,su.email,su.last_login_time,
+               su.locked,su.superFlag,su.psw_retry,su.create_by,su.update_by,su.create_time,su.update_time,su.lock_time,su.remark,
                sg.group_name,sg.group_id,
                sr.role_name,sr.role_id
         from sys_user su
@@ -118,5 +123,35 @@
                  left join sys_user_group_rela sugr on su.user_id = sugr.user_id
                  left join sys_group sg  on  sg.group_id = sugr.group_id
         where su.login_name = #{loginName}
+    </select>
+
+    <select id="selectUserListByIds" parameterType="java.util.List" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_user
+        where user_id in
+        <foreach collection="list" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </select>
+
+    <!-- 简化用户列表查询结果映射 -->
+    <resultMap id="SimpleUserVOResultMap" type="com.blink.base.dto.vo.SimpleUserVO">
+        <id column="user_id" property="userId"/>
+        <result column="login_name" property="loginName"/>
+        <result column="username" property="username"/>
+    </resultMap>
+
+    <!-- 查询简化用户列表 -->
+    <select id="selectSimpleUserList" parameterType="com.blink.base.dto.req.QuerySimpleUserReq"
+            resultMap="SimpleUserVOResultMap">
+        SELECT user_id, login_name, username
+        FROM sys_user
+        WHERE delFlag = 0
+        <if test="keyword != null and keyword != ''">
+            AND (login_name LIKE CONCAT('%', #{keyword}, '%')
+                 OR username LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY create_time DESC
     </select>
 </mapper>

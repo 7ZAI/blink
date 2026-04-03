@@ -1,24 +1,28 @@
 package com.blink.base.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.blink.datasource.annotation.DataScopeEntity;
+import com.blink.log.annotation.SensitiveField;
+import com.blink.log.sensitive.SensitiveType;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
  * 系统用户
- * </p>
  *
  * @author binblink
  */
 @Getter
 @Setter
 @TableName("sys_user")
+@DataScopeEntity(name = "系统用户", enName = "SysUser")
 public class SysUserDO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
@@ -36,6 +40,7 @@ public class SysUserDO implements Serializable {
     /**
      * 密码
      */
+    @SensitiveField(type = SensitiveType.PASSWORD)
     @TableField("password")
     private String password;
 
@@ -52,6 +57,12 @@ public class SysUserDO implements Serializable {
     private String avatar;
 
     /**
+     * 头像样式(DiceBear样式)
+     */
+    @TableField("avatar_style")
+    private String avatarStyle;
+
+    /**
      * 性别 1男 2女 3不确定
      */
     @TableField("sex")
@@ -60,6 +71,7 @@ public class SysUserDO implements Serializable {
     /**
      * 电话
      */
+    @SensitiveField(type = SensitiveType.PHONE)
     @TableField("phone")
     private String phone;
 
@@ -135,5 +147,16 @@ public class SysUserDO implements Serializable {
     @TableField("lock_time")
     private LocalDateTime lockTime;
 
+    /**
+     * 密码重置标识 0-已重置 1-需要重置(首次登录)
+     */
+    @TableField("password_reset")
+    private Integer passwordReset;
+
+    /**
+     * 删除标志
+     */
+    @TableField("delFlag")
+    private Boolean delFlag;
 
 }

@@ -29,7 +29,7 @@
     <sql id="Condition_where">
         <trim prefix="where" prefixOverrides="and | or ">
             <if test="roleId != null and roleId != ''">and role_id = #{roleId}</if>
-            <if test="roleName != null and roleName != ''">and role_name = #{roleName}</if>
+            <if test="roleName != null and roleName != ''">and role_name like concat(#{roleName}, '%')</if>
 
             <if test="roleEnName != null and roleEnName != ''">and role_en_name = #{roleEnName}</if>
 
@@ -70,5 +70,14 @@
 
     </select>
 
+    <select id="selectRoleListByIds" parameterType="java.util.List" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_role
+        where role_id in
+        <foreach collection="list" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+    </select>
 
 </mapper>

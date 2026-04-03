@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds" debug="false">
+
+    <!-- ============== 0. 公共变量 ============== -->
+    <contextName>gateway-admin</contextName>
+    <!-- 统一字符集 -->
+    <property name="CHARSET" value="UTF-8"/>
+    <!-- 日志根目录，可通过 application.yml 中 logging.file.path 覆盖 -->
+    <springProperty scope="context" name="LOG_HOME" source="logging.file.path" defaultValue="./gateway-admin/logs"/>
+
+    <!-- 进程 PID -->
+    <springProperty scope="context"
+                    name="PID"
+                    source="PID"
+                    defaultValue="????"/>
+
+    <!-- ============== 1. 通用日志格式 ============== -->
+    <!-- 控制台彩色 -->
+    <conversionRule conversionWord="clr"
+                    converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+    <conversionRule conversionWord="wEx"
+                    converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
+
+    <!-- dev 环境彩色输出格式 -->
+    <springProfile name="dev">
+        <property name="CONSOLE_PATTERN"
+                  value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${PID}){magenta} %clr(---){faint} %highlight(%-5level) %clr([%15.15t]){faint} %clr(%-40.40logger{32}){cyan} %clr(:){faint} %msg%n%wEx"/>
+    </springProfile>
+
+    <!-- 非 dev 环境简洁格式 -->
+    <springProfile name="!dev">
+        <property name="CONSOLE_PATTERN"
+                  value="%d{yyyy-MM-dd HH:mm:ss.SSS} ${PID} --- [%thread] %-5level %logger{36} - %msg%n"/>
+    </springProfile>
+
+    <!-- 文件统一格式（含行号） -->
+    <property name="FILE_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} %line - %msg%n"/>
+
+    <!-- ============== 2. 控制台输出 ============== -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${CONSOLE_PATTERN}</pattern>
+            <charset>${CHARSET}</charset>
+        </encoder>
+    </appender>
+
+    <!-- ============== 3. 滚动文件输出（默认禁用，生产环境可启用） ============== -->
+    <!-- 3.1 INFO 级别文件 -->
+    <!--
+    <appender name="FILE_INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/info.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/info-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${FILE_PATTERN}</pattern>
+            <charset>${CHARSET}</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+    -->
+
+    <!-- 3.2 ERROR 级别文件 -->
+    <!--
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/error.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/error-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>${FILE_PATTERN}</pattern>
+            <charset>${CHARSET}</charset>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+    -->
+
+    <!-- ============== 4. 异步输出（生产环境启用） ============== -->
+    <!--
+    <appender name="ASYNC_INFO" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>20</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+        <appender-ref ref="FILE_INFO"/>
+    </appender>
+
+    <appender name="ASYNC_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>true</includeCallerData>
+        <appender-ref ref="FILE_ERROR"/>
+    </appender>
+    -->
+
+    <!-- ============== 5. 自定义 logger 级别 ============== -->
+    <!-- gateway-admin 业务包 DEBUG 级别 -->
+    <logger name="com.blink.gateway.admin" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- 降低第三方库日志级别 -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.apache" level="INFO"/>
+    <logger name="com.alibaba.nacos" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+
+    <!-- ============== 6. 根日志配置 ============== -->
+    <!-- dev 环境：仅控制台输出，DEBUG 级别 -->
+    <springProfile name="dev">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- 生产环境：控制台 + 文件输出 -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <!-- 生产环境启用文件日志 -->
+            <!-- <appender-ref ref="ASYNC_INFO"/>
+            <appender-ref ref="ASYNC_ERROR"/> -->
+        </root>
+    </springProfile>
+
+    <!-- 其他环境默认配置 -->
+    <springProfile name="!dev,!prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+</configuration>

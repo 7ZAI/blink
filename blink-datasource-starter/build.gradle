@@ -12,28 +12,13 @@ java {
 
 jar {
     enabled = true
-    // 消除 打的包带 plain
     archiveClassifier = ''
-    manifest {
-        attributes('Implementation-Title': 'Gradle',
-                'Implementation-Version': archiveVersion)
-    }
 }
 
-//tasks.named('jar') {
-//    // 设置JAR包的manifest属性
-//    manifest {
-//        attributes('Automatic-Module-Name': project.name)
-//        // 如果需要，你也可以在这里指定主类 (Main-Class)
-//        groupId = 'com.blink'
-//        artifactId = 'blink-dataSource-spring-boot-starter'
-//        version = '1.0.0-SNAPSHOT'
-//    }
-//
-//    // 确保包含所有必要的资源文件
-//    include 'META-INF/**'
-//    include '**/*.class' // 这行通常可以省略，因为jar任务默认包含编译输出的class文件
-//}
+bootJar {
+    enabled = false
+}
+
 
 publishing {
     publications {
@@ -50,7 +35,7 @@ dependencies {
 
     implementation "com.baomidou:mybatis-plus-generator:${mybatisPlusVersion}"
     api("com.baomidou:mybatis-plus-spring-boot3-starter:${mybatisPlusVersion}")
-    implementation "mysql:mysql-connector-java:${mysqlConnectorVersion}"
+    implementation "com.mysql:mysql-connector-j:${mysqlConnectorVersion}"
     implementation "com.alibaba:druid-spring-boot-starter:${druidStarterVersion}"
     implementation "com.github.pagehelper:pagehelper:${pagehelperVersion}"
     implementation 'org.apache.velocity:velocity:1.7'

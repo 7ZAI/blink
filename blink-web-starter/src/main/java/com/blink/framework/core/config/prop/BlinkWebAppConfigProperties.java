@@ -39,6 +39,11 @@ public class BlinkWebAppConfigProperties {
          * 日志入参超过长度自动省略 true 为省略 默认不省略
          */
         private Boolean autoSkip = false;
+
+        /**
+         * 是否开启敏感数据脱敏 默认关闭
+         */
+        private Boolean enableSensitive = false;
     }
 
 

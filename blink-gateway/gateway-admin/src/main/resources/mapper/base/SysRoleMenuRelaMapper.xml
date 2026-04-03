@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysRoleMenuRelaMapper">
+
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysRoleMenuRelaDO">
+        <id column="role_id" property="roleId"/>
+        <id column="menu_id" property="menuId"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        role_id
+        , menu_id
+    </sql>
+
+    <!-- 通用查询条件（自动适配字段类型） -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="roleId != null">and role_id = #{roleId}</if>
+            <if test="menuId != null">and menu_id = #{menuId}</if>
+        </trim>
+    </sql>
+
+
+    <insert id="batchInsert">
+        INSERT INTO sys_role_menu_rela (role_id, menu_id) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.roleId}, #{item.menuId})
+        </foreach>
+        ON DUPLICATE KEY UPDATE role_id = VALUES(role_id)
+    </insert>
+
+    <delete id="deleteBatchByMenuIds">
+        DELETE FROM sys_role_menu_rela
+        WHERE menu_id IN
+        <foreach collection="deleteList" item="menuId" index="index" open="(" close=")" separator=",">
+            #{menuId}
+        </foreach>
+
+    </delete>
+
+    <!-- 根据菜单ID查询关联的角色列表 -->
+    <select id="selectRolesByMenuId" resultType="com.blink.gateway.base.dto.vo.SysRoleVO">
+        SELECT sr.role_id, sr.role_name, sr.role_en_name, sr.role_code, sr.status, sr.role_type
+        FROM sys_role_menu_rela srm
+        INNER JOIN sys_role sr ON srm.role_id = sr.role_id
+        WHERE srm.menu_id = #{menuId}
+    </select>
+
+
+</mapper>

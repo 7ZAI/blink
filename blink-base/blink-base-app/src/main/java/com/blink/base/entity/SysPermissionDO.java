@@ -1,6 +1,7 @@
 package com.blink.base.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.blink.datasource.annotation.DataScopeEntity;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,16 +10,14 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
  * 权限菜单
- * </p>
  *
  * @author binblink
- * @since 2024-01-13
  */
 @Getter
 @Setter
 @TableName("sys_permission")
+@DataScopeEntity(name = "权限菜单", enName = "SysPermission")
 public class SysPermissionDO implements Serializable {
 
     @Serial
@@ -53,12 +52,6 @@ public class SysPermissionDO implements Serializable {
      */
     @TableField("ac_type")
     private Byte acType;
-
-    /**
-     * 权限图标
-     */
-    @TableField("icon")
-    private String icon;
 
     /**
      * 权限地址

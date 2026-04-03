@@ -12,8 +12,7 @@ import com.blink.framework.mq.mapper.MqMsgReceMapper;
 import com.blink.framework.mq.service.MqMsgReceService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -28,11 +27,9 @@ import java.util.Objects;
  * @author binblink
  * @since 2023-11-13
  */
+@Slf4j
 @Service
 public class MqMsgReceServiceImpl extends ServiceImpl<MqMsgReceMapper, MqMsgReceDO> implements MqMsgReceService {
-
-
-    private final Logger logger = LoggerFactory.getLogger(MqMsgReceServiceImpl.class);
 
     @Override
     public void insertMqMsgWhenReceive(MqGenericDTO mqDto) throws BlinkException {
@@ -53,7 +50,7 @@ public class MqMsgReceServiceImpl extends ServiceImpl<MqMsgReceMapper, MqMsgRece
             //业务幂等 抛出业务异常
             if(MqConstant.MQ_STS_SUCCESS.equals(mqMsgReceDO.getReceiveSts())){
 
-                logger.warn("此条消息为重复消息，消息: {}", mqMsgReceDO);
+                log.warn("此条消息为重复消息，消息: {}", mqMsgReceDO);
 
                 throw new BlinkException(BlinkErrorCodeEnum.RABBITMQ_RECEIVE_CODE_ERROR.getCode());
             }
@@ -97,7 +94,7 @@ public class MqMsgReceServiceImpl extends ServiceImpl<MqMsgReceMapper, MqMsgRece
 
         //健壮性代码 防止万一
         if(Objects.isNull(mqMsgReceDO)){
-            logger.warn("要更新的消息不存在！ msgId: {},receiveId: {}",mqDto.getMsgId(),mqDto.getReceiver());
+            log.warn("要更新的消息不存在！ msgId: {},receiveId: {}",mqDto.getMsgId(),mqDto.getReceiver());
             return;
         }
 

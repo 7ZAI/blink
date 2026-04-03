@@ -69,4 +69,19 @@
         <include refid="Condition_where"/>
     </select>
 
+    <!-- 获取部门及其所有子部门ID列表（使用递归CTE） -->
+    <select id="selectDeptAndChildrenById" resultType="java.lang.Integer">
+        WITH RECURSIVE dept_tree AS (
+            SELECT group_id, group_parent_id
+            FROM sys_group
+            WHERE delFlag = 0 AND group_id = #{deptId}
+            UNION ALL
+            SELECT g.group_id, g.group_parent_id
+            FROM sys_group g
+            INNER JOIN dept_tree dt ON g.group_parent_id = dt.group_id
+            WHERE g.delFlag = 0
+        )
+        SELECT group_id FROM dept_tree
+    </select>
+
 </mapper>

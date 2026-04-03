@@ -55,12 +55,6 @@ public class QuerySysPermissionReq extends PageDTO implements Serializable {
 
 
     /**
-     * 权限图标
-     */
-    private String icon;
-
-
-    /**
      * 权限地址
      */
     private String url;
@@ -94,6 +88,18 @@ public class QuerySysPermissionReq extends PageDTO implements Serializable {
      * 创建时间
      */
     private LocalDateTime createTime;
+
+
+    /**
+     * 创建时间开始
+     */
+    private String createTimeStart;
+
+
+    /**
+     * 创建时间结束
+     */
+    private String createTimeEnd;
 
 
     /**

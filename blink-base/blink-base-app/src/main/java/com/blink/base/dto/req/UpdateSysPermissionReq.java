@@ -1,11 +1,16 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.constans.BaseErrCodeConstant;
+import cn.hutool.core.util.StrUtil;
+import com.blink.base.constants.BaseErrCodeConstant;
+import com.blink.base.constants.CommonConstans;
 import com.blink.framework.validate.annotation.DataDict;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 import java.io.Serializable;
+import java.util.List;
 
 
 /**
@@ -52,18 +57,11 @@ public class UpdateSysPermissionReq implements Serializable {
 
 
     /**
-     * 权限类型 0 菜单权限 1数据权限 2功能权限 3接口权限
+     * 权限类型 1接口权限 2数据权限
      */
     @NotNull
-    @DataDict(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @Range(min = 1, max = 2, message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Byte acType;
-
-
-    /**
-     * 权限图标
-     */
-    @DataDict(name = "url", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
-    private String icon;
 
 
     /**
@@ -93,5 +91,20 @@ public class UpdateSysPermissionReq implements Serializable {
     @DataDict(name = "systemId", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer dataFilterId;
 
+    /**
+     * 关联菜单ID列表（仅接口权限ac_type=1时有效）
+     */
+    private List<Integer> menuIds;
+
+    /**
+     * 校验接口权限时URL必填
+     */
+    @AssertTrue(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    public boolean isApiTypeRequired() {
+        if (CommonConstans.PERMISSION_API_TYPE.equals(acType)) {
+            return !StrUtil.isBlank(url);
+        }
+        return true;
+    }
 
 }

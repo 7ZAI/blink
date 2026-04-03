@@ -46,20 +46,29 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-blink:
-  web:
-    log:
-      autoSkip: true
-      upperLimit: 1000
-    async:
-      thread-pool:
-        io:
-          enable: true
-          coreSize: 4
-          maxSize: 8
-          queueCapacity: 1000
-          keepAliveSeconds: 30
-          dynamicBasedOnCpu: false
+# Flowable 配置 - dev 环境禁用定时作业查询
+flowable:
+  async-executor-activate: false
+  job-executor-activate: false
+
+
+
+# Dubbo 配置
+dubbo:
+  application:
+    name: base-app
+    qos-enable: false
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    address: nacos://127.0.0.1:8848
+    namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
+  consumer:
+    check: false
+    timeout: 10000
+
+
 
     #    preCache:
 #      dictionary: false

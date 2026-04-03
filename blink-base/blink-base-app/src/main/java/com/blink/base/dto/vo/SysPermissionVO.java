@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @author binblink
@@ -32,14 +33,9 @@ public class SysPermissionVO implements Serializable {
     private String acIdentity;
 
     /**
-     * 权限类型 0 菜单权限 1数据权限 2功能权限 3接口权限
+     * 权限类型 1接口权限 2数据权限
      */
     private Byte acType;
-
-    /**
-     * 权限图标
-     */
-    private String icon;
 
     /**
      * 权限地址
@@ -47,12 +43,38 @@ public class SysPermissionVO implements Serializable {
     private String url;
 
     /**
-     * 状态 0启动 1禁用 2隐藏
+     * 数据过滤器id
      */
-    private Byte status;
+    private Integer dataFilterId;
 
+    /**
+     * 数据过滤器名称
+     */
+    private String dataFilterName;
 
+    /**
+     * 创建者
+     */
+    private String createBy;
 
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
 
+    /**
+     * 更新者
+     */
+    private String updateBy;
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
+
+    /**
+     * 关联的菜单ID列表
+     */
+    private List<Integer> menuIds;
 
 }

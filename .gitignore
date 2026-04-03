@@ -4,6 +4,14 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### Gradle Wrapper (保留提交) ###
+!gradle/**
+!gradlew
+!gradlew.bat
+
+### 编译输出 ###
+**/bin/
+
 
 ### IntelliJ IDEA ###
 .idea
@@ -14,15 +22,22 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 **/logs/
-**/gradlew
-**/gradlew.bat
-!**/gradle/**
 
 
 
 /learn.md
 /env.properties
-/gradlew.bat
-/gradlew
 /blink.pub
 /blink
+
+### 敏感配置文件 - 渠道密钥配置 ###
+**/config/channel.js
+/img/
+/.playwright-mcp/
+/.superpowers/
+
+### AI 工具配置 ###
+.claude/
+.trae/
+.claudeignore
+/.mcp.json

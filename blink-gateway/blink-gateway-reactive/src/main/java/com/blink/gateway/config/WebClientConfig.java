@@ -1,0 +1,26 @@
+package com.blink.gateway.config;
+
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
+
+/**
+ *
+ * @Author binblink 
+ */
+@Configuration
+public class WebClientConfig {
+
+
+    /**
+     * WebClient配置 这是webclient实现负载均衡的关键注解
+     * 调用第三方服务
+     *
+     */
+    @LoadBalanced
+    @Bean
+    public WebClient.Builder loadBalancedWebClientBuilder() {
+        return WebClient.builder();
+    }
+}

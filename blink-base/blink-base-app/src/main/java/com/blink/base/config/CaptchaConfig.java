@@ -1,99 +1,74 @@
 package com.blink.base.config;
 
-import com.anji.captcha.model.common.Const;
-import com.anji.captcha.service.CaptchaCacheService;
 import com.anji.captcha.service.CaptchaService;
 import com.anji.captcha.service.impl.CaptchaServiceFactory;
-import com.anji.captcha.util.Base64Utils;
-import com.anji.captcha.util.FileCopyUtils;
-import com.anji.captcha.util.ImageUtils;
-import com.anji.captcha.util.StringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.DependsOn;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.core.io.support.ResourcePatternResolver;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 
 /**
- * TODO
- * 验证码配置 来自验证码开源jar com.anji-plus:captcha
+ * 验证码配置类
+ * <p>
+ * 缓存类型说明：
+ * - local: 本地缓存，仅适用于单实例部署
+ * - redis: Redis缓存，适用于微服务多实例部署
+ * </p>
+ *
  * @author binblink
  */
-//@Configuration
+@Configuration
 public class CaptchaConfig {
 
-    @Bean(name = "AjCaptchaCacheService")
-    public CaptchaCacheService captchaCacheService() {
-        //缓存类型redis/local/....
-        return CaptchaServiceFactory.getCache("local");
-    }
-
+    /**
+     * 配置验证码服务
+     * 使用 Redis 缓存方式存储验证码，支持微服务多实例环境
+     */
     @Bean
-    @DependsOn("AjCaptchaCacheService")
     public CaptchaService captchaService() {
         Properties config = new Properties();
-//        try {
-//            try (InputStream input = CaptchaConfig.class.getClassLoader()
-//                    .getResourceAsStream("application.properties")) {
-//                config.load(input);
-//            }
-//        }catch (Exception ex){
-//            ex.printStackTrace();
-//        }
-        //各种参数设置....
-        //缓存类型redis/local/....
-        config.put(Const.CAPTCHA_CACHETYPE, "local");
-        config.put(Const.CAPTCHA_WATER_MARK, "我的水印");
-        config.put(Const.CAPTCHA_FONT_TYPE, "宋体");
-        config.put(Const.CAPTCHA_TYPE, "default");
-        config.put(Const.CAPTCHA_INTERFERENCE_OPTIONS, "0");
-        config.put(Const.ORIGINAL_PATH_JIGSAW, "");
-        config.put(Const.ORIGINAL_PATH_PIC_CLICK, "");
-        config.put(Const.CAPTCHA_SLIP_OFFSET, "5");
-        config.put(Const.CAPTCHA_AES_STATUS, "true");
-        config.put(Const.CAPTCHA_WATER_FONT, "宋体");
-        config.put(Const.CAPTCHA_CACAHE_MAX_NUMBER, "1000");
-        config.put(Const.CAPTCHA_TIMING_CLEAR_SECOND, "180");
-        //更多自定义参数，请参考service/springboot/../resources/application.properties
-        if ((StringUtils.isNotBlank(config.getProperty(Const.ORIGINAL_PATH_JIGSAW))
-                && config.getProperty(Const.ORIGINAL_PATH_JIGSAW).startsWith("classpath:"))
-                || (StringUtils.isNotBlank(config.getProperty(Const.ORIGINAL_PATH_PIC_CLICK))
-                && config.getProperty(Const.ORIGINAL_PATH_PIC_CLICK).startsWith("classpath:"))) {
-            //自定义resources目录下初始化底图
-            config.put(Const.CAPTCHA_INIT_ORIGINAL, "true");
-            initializeBaseMap(config.getProperty(Const.ORIGINAL_PATH_JIGSAW),
-                    config.getProperty(Const.ORIGINAL_PATH_PIC_CLICK));
-        }
-        CaptchaService s = CaptchaServiceFactory.getInstance(config);
-        return s;
-    }
+        
+        // ==================== 缓存配置 ====================
+        // 验证码缓存方式：local(本地缓存)/redis(Redis缓存)
+        // 微服务多实例环境必须使用 redis，否则会出现验证失败问题
+        config.setProperty("captcha.cache.type", "redis");
+        
+        // ==================== 验证码基本配置 ====================
+        // 验证码类型：default(默认)/blockPuzzle(滑块拼图)/clickWord(点选文字)
+        // 注意：clickWord需要系统字体支持，WSL环境建议使用blockPuzzle
+        config.setProperty("captcha.type", "blockPuzzle");
+        // 验证码有效期（秒）
+        config.setProperty("captcha.ttl", "120");
+        
+        // ==================== 图片配置 ====================
+        // 验证码图片宽度
+        config.setProperty("captcha.image.width", "310");
+        // 验证码图片高度
+        config.setProperty("captcha.image.height", "155");
+        
+        // ==================== 自定义图片路径配置 ====================
+        // 滑块拼图背景图片路径（支持classpath:或file:前缀）
+        // 目录结构：images/jigsaw/original/ 存放背景原图
+        config.setProperty("captcha.jigsaw", "classpath:images/jigsaw");
+        
+        // 点选文字背景图片路径
+        // 目录结构：images/pic-click/ 存放点选背景图
+        config.setProperty("captcha.pic-click", "classpath:images/pic-click");
+        
+        // ==================== 滑块验证码配置 ====================
+        // 滑块验证码干扰选项：0-无干扰，1-有干扰
+        config.setProperty("captcha.blockPuzzle.interference", "1");
+        // 滑块验证码偏移量容错（像素）
+        config.setProperty("captcha.slip.offset", "5");
+        
+        // ==================== 点选验证码配置 ====================
+        // 点选验证码文字数量
+        config.setProperty("captcha.clickWord.wordCount", "4");
+        
+        // ==================== 安全配置 ====================
+        // 关闭AES加密，前端直接传递明文坐标
+        config.setProperty("captcha.aes.status", "false");
 
-    private static void initializeBaseMap(String jigsaw, String picClick) {
-        ImageUtils.cacheBootImage(getResourcesImagesFile(jigsaw + "/original/*.png"),
-                getResourcesImagesFile(jigsaw + "/slidingBlock/*.png"),
-                getResourcesImagesFile(picClick + "/*.png"));
-    }
-
-    public static Map<String, String> getResourcesImagesFile(String path) {
-        Map<String, String> imgMap = new HashMap<>();
-        ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        try {
-            Resource[] resources = resolver.getResources(path);
-            for (Resource resource : resources) {
-                byte[] bytes = FileCopyUtils.copyToByteArray(resource.getInputStream());
-                String string = Base64Utils.encodeToString(bytes);
-                String filename = resource.getFilename();
-                imgMap.put(filename, string);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return imgMap;
-
+        return CaptchaServiceFactory.getInstance(config);
     }
 }

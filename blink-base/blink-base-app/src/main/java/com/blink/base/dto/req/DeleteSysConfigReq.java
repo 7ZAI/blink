@@ -1,9 +1,12 @@
 
 package com.blink.base.dto.req;
 
+import com.blink.base.constants.BaseErrCodeConstant;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -18,8 +21,8 @@ import java.util.List;
 @Data
 public class DeleteSysConfigReq implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
-
 
     /**
      * 主键ID
@@ -31,12 +34,31 @@ public class DeleteSysConfigReq implements Serializable {
      */
     private List<Integer> idList;
 
-
     /**
      * 是否批量删除标志
      */
-    @NotNull
-    private boolean isBatchDelete;
+    @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    private Boolean batchDelete;
 
+    /**
+     * 验证批量删除时idList不为空
+     */
+    @AssertTrue(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    public boolean isIdListValid() {
+        if (!Boolean.TRUE.equals(batchDelete)) {
+            return true;
+        }
+        return idList != null && !idList.isEmpty();
+    }
 
+    /**
+     * 验证非批量删除时deleteId不为空
+     */
+    @AssertTrue(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
+    public boolean isDeleteIdValid() {
+        if (Boolean.TRUE.equals(batchDelete)) {
+            return true;
+        }
+        return deleteId != null;
+    }
 }

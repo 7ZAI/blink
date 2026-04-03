@@ -23,7 +23,7 @@ public class ReactiveIdGenerator {
 
     public  Mono<Long> generateId(String key) {
 
-        return reactiveSeqGenerator.nextSeq(key, IdGeneratorConstant.DEFAULT_KEY_MAX_VALUE);
+        return reactiveSeqGenerator.nextSeq(key, IdGeneratorConstant.DEFAULT_KEY_MAX_VALUE,0);
 //        return Mono.defer(() ->
 //                reactiveSeqGenerator.nextSeq(key, IdGeneratorConstant.DEFAULT_KEY_MAX_VALUE)
 //        ).subscribeOn(Schedulers.boundedElastic());
@@ -31,7 +31,7 @@ public class ReactiveIdGenerator {
 
     public  Mono<Long> generateId(String key, Long maxValue) {
 
-        return reactiveSeqGenerator.nextSeq(key, String.valueOf(maxValue));
+        return reactiveSeqGenerator.nextSeq(key, String.valueOf(maxValue),0);
 //        return Mono.defer(() ->
 //                reactiveSeqGenerator.nextSeq(key, String.valueOf(maxValue))
 //        ).subscribeOn(Schedulers.boundedElastic());

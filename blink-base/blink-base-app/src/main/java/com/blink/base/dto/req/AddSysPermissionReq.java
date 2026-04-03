@@ -1,18 +1,17 @@
 package com.blink.base.dto.req;
 
 import cn.hutool.core.util.StrUtil;
-import com.blink.base.constans.BaseErrCodeConstant;
-import com.blink.base.constans.CommonConstans;
+import com.blink.base.constants.BaseErrCodeConstant;
+import com.blink.base.constants.CommonConstans;
 import com.blink.framework.validate.annotation.DataDict;
 import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.hibernate.validator.constraints.Range;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * <p>
@@ -61,13 +60,6 @@ public class AddSysPermissionReq implements Serializable {
 
 
     /**
-     * 权限图标
-     */
-    @DataDict(name = "url", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
-    private String icon;
-
-
-    /**
      * 权限地址
      */
     @DataDict(name = "url", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
@@ -104,5 +96,9 @@ public class AddSysPermissionReq implements Serializable {
 
     }
 
+    /**
+     * 关联菜单ID列表（仅接口权限ac_type=1时有效）
+     */
+    private List<Integer> menuIds;
 
 }

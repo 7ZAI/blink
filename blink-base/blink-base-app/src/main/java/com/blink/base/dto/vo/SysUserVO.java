@@ -1,5 +1,7 @@
 package com.blink.base.dto.vo;
 
+import com.blink.log.annotation.SensitiveField;
+import com.blink.log.sensitive.SensitiveType;
 import lombok.Data;
 
 import java.io.Serial;
@@ -37,6 +39,11 @@ public class SysUserVO implements Serializable {
     private String avatar;
 
     /**
+     * 头像样式(DiceBear样式)
+     */
+    private String avatarStyle;
+
+    /**
      * 性别 1男 2女 3不确定
      */
     private Integer sex;
@@ -44,6 +51,7 @@ public class SysUserVO implements Serializable {
     /**
      * 电话
      */
+    @SensitiveField(type = SensitiveType.PHONE)
     private String phone;
 
     /**
@@ -65,10 +73,41 @@ public class SysUserVO implements Serializable {
      * 锁定状态 0 未锁定 1 管理员锁定 2 输错密码锁定
      */
     private Integer locked;
+
+    /**
+     * 超级管理员标志 0否 1是
+     */
+    private Integer superFlag;
+
+    /**
+     * 密码重试次数
+     */
+    private Integer pswRetry;
+
+    /**
+     * 创建者
+     */
+    private String createBy;
+
+    /**
+     * 更新者
+     */
+    private String updateBy;
+
     /**
      * 创建时间
      */
     private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
+
+    /**
+     * 锁定时间
+     */
+    private LocalDateTime lockTime;
 
     /**
      * 备注

@@ -3,6 +3,7 @@ package com.blink.framework.core.config;
 import com.blink.framework.core.config.prop.ThreadPoolProperties;
 import com.blink.framework.core.data.CoreConstant;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -17,6 +18,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * 线程池配置 配合@Async使用
  * @author binblink
  */
+@Slf4j
 @EnableAsync
 @AutoConfiguration
 @EnableConfigurationProperties({ThreadPoolProperties.class})
@@ -195,14 +197,10 @@ public class DynamicThreadPoolAutoConfig {
      */
     private void printPoolConfig(String poolName, ThreadPoolTaskExecutor executor, 
                                 ThreadPoolProperties.PoolConfig config) {
-        System.out.println("\n" + "=".repeat(50));
-        System.out.println(poolName + "配置信息:");
-        System.out.println("CPU核心数: " + getCpuCores());
-        System.out.println("核心线程数: " + executor.getCorePoolSize());
-        System.out.println("最大线程数: " + executor.getMaxPoolSize());
-        System.out.println("队列容量: " + executor.getQueueCapacity());
-        System.out.println("线程名前缀: " + executor.getThreadNamePrefix());
-        System.out.println("是否动态计算: " + config.getDynamicBasedOnCpu());
-        System.out.println("=".repeat(50) + "\n");
+        log.info("\n{}\n{}配置信息:\nCPU核心数: {}\n核心线程数: {}\n最大线程数: {}\n队列容量: {}\n线程名前缀: {}\n是否动态计算: {}\n{}",
+                "=".repeat(50), poolName, getCpuCores(), executor.getCorePoolSize(),
+                executor.getMaxPoolSize(), executor.getQueueCapacity(),
+                executor.getThreadNamePrefix(), config.getDynamicBasedOnCpu(),
+                "=".repeat(50));
     }
 }

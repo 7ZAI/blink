@@ -89,7 +89,9 @@ public class SysGroupVO implements Serializable {
      */
     private String updateBy;
 
-
-
+    /**
+     * 子节点列表（用于树形结构）
+     */
+    private List<SysGroupVO> children;
 
 }

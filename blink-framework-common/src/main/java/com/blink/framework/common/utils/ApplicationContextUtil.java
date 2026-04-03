@@ -6,26 +6,28 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 
 /**
- *  静态方法中获取 spring 管理的bean的组件
+ * 静态方法中获取 Spring 管理的 Bean 的工具类
+ * 
+ * 通过实现 ApplicationContextAware 接口，在 Spring 容器启动时自动注入 ApplicationContext
  *
  * @author binblink
  */
-public class ApplicationContextUtil  {
+@Component
+public class ApplicationContextUtil implements ApplicationContextAware {
 
     private static ApplicationContext applicationContext;
     private static Environment environment;
 
-
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        ApplicationContextUtil.applicationContext = applicationContext;
-        ApplicationContextUtil.environment = applicationContext.getEnvironment();
+    @Override
+    public void setApplicationContext(ApplicationContext context) throws BeansException {
+        ApplicationContextUtil.applicationContext = context;
+        ApplicationContextUtil.environment = context.getEnvironment();
     }
 
     /**
-     *  获取applicationContext
+     * 获取 ApplicationContext
      */
     public static ApplicationContext getApplicationContext() {
         assertContextInjected();
@@ -33,7 +35,7 @@ public class ApplicationContextUtil  {
     }
 
     /**
-     * 通过name获取 Bean
+     * 通过 name 获取 Bean
      */
     public static Object getBean(String name) {
         assertContextInjected();
@@ -41,7 +43,7 @@ public class ApplicationContextUtil  {
     }
 
     /**
-     *  通过class获取Bean
+     * 通过 class 获取 Bean
      */
     public static <T> T getBean(Class<T> clazz) {
         assertContextInjected();
@@ -49,7 +51,7 @@ public class ApplicationContextUtil  {
     }
 
     /**
-     * 通过name,以及Clazz返回指定的Bean
+     * 通过 name 和 class 获取指定的 Bean
      */
     public static <T> T getBean(String name, Class<T> clazz) {
         assertContextInjected();
@@ -81,7 +83,7 @@ public class ApplicationContextUtil  {
     }
 
     /**
-     * 获取当前环境
+     * 获取当前激活的环境
      */
     public static String[] getActiveProfiles() {
         assertContextInjected();
@@ -94,7 +96,6 @@ public class ApplicationContextUtil  {
     public static boolean isDev() {
         assertContextInjected();
         return environment.acceptsProfiles(Profiles.of("dev"));
-
     }
 
     /**
@@ -109,8 +110,9 @@ public class ApplicationContextUtil  {
      * 检查 ApplicationContext 是否已注入
      */
     private static void assertContextInjected() {
-        Assert.state(applicationContext != null,
-                "applicationContext 未注入，请在 Spring 配置中注册");
+        if (applicationContext == null) {
+            throw new IllegalStateException(
+                    "ApplicationContext 未注入，请确保 ApplicationContextUtil 已被 Spring 扫描并注册为 Bean");
+        }
     }
-
 }

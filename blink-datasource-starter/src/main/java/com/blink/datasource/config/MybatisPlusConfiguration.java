@@ -3,28 +3,34 @@ package com.blink.datasource.config;
 
 import com.baomidou.mybatisplus.core.MybatisConfiguration;
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
-
-import com.blink.datasource.interceptor.NormalFieldInterceptor;
+import com.blink.datasource.component.DataScopeEntityScanner;
+import com.blink.datasource.handler.MyMetaObjectHandler;
+import com.blink.datasource.interceptor.DataScopeInterceptor;
 import com.github.pagehelper.PageInterceptor;
-import org.apache.ibatis.plugin.Interceptor;
 import org.apache.ibatis.session.LocalCacheScope;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+
 import java.util.Properties;
 
+import org.apache.ibatis.plugin.Interceptor;
 
+
+/**
+ * @author binblink
+ */
 @AutoConfiguration
 @MapperScan("com.blink.**.mapper")
 public class MybatisPlusConfiguration {
     /**
-     *
      * @return
      */
     @Bean
     @ConditionalOnMissingBean
-    public MybatisConfiguration mybatisConfiguration(){
+    public MybatisConfiguration mybatisConfiguration() {
         var mybatisConfiguration = new MybatisConfiguration();
 
         //添加插件 目前采用mybatis plus MetaHandler的方式处理
@@ -55,8 +61,18 @@ public class MybatisPlusConfiguration {
     }
 
     @Bean
+    public MyMetaObjectHandler metaObjectHandler() {
+        return new MyMetaObjectHandler();
+    }
+
+    @Bean
+    public DataScopeEntityScanner dataScopeEntityScanner(){
+        return new DataScopeEntityScanner();
+    }
+
+    @Bean
     @ConditionalOnMissingBean
-    public GlobalConfig globalConfig(){
+    public GlobalConfig globalConfig() {
         var globalConfig = new GlobalConfig();
         globalConfig.setDbConfig(dbConfig());
         return globalConfig;
@@ -64,7 +80,7 @@ public class MybatisPlusConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public GlobalConfig.DbConfig dbConfig(){
+    public GlobalConfig.DbConfig dbConfig() {
         var dbConfig = new GlobalConfig.DbConfig();
         //逻辑删除配置
         dbConfig.setLogicDeleteField("delFlag")
@@ -78,28 +94,25 @@ public class MybatisPlusConfiguration {
      * 配置自定义插件
      * @return
      */
-    @Bean
-    public Interceptor normalFieldInterceptor(){
-        return new NormalFieldInterceptor();
-    }
+    // @Bean
+    // public Interceptor normalFieldInterceptor(){
+    //     return new NormalFieldInterceptor();
+    // }
 
     /**
      * 配置pageHelper分页插件
-     *
      */
     @Bean
     @ConditionalOnMissingBean
-    public PageInterceptor pageInterceptor(){
+    public PageInterceptor pageInterceptor() {
         var pageHelper = new PageInterceptor();
         var prop = new Properties();
-        prop.setProperty("defaultCount","true");
-        prop.setProperty("reasonable","false");
+        prop.setProperty("defaultCount", "true");
+        prop.setProperty("reasonable", "false");
 //        prop.setProperty("dialect","mysql");
         pageHelper.setProperties(prop);
         return pageHelper;
     }
-
-
 
 
 }

@@ -30,37 +30,6 @@ dependencies {
 
 }
 
-// 打包sourcesJar任务
-task sourcesJar(type: Jar, dependsOn: classes) {
-    archiveClassifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-publishing {
-    publications {
-        library(MavenPublication) {
-            groupId = project.group
-            artifactId = project.name
-            version = project.version
-
-            from components.java
-            artifact sourcesJar
-        }
-    }
-
-    repositories {
-        maven {
-            allowInsecureProtocol true
-            url "http://localhost:8081/repository/maven-snapshots/"
-            credentials {
-                username 'admin'
-                password '123456'
-            }
-        }
-
-    }
-}
-
 //
 //tasks.named('test') {
 //    useJUnitPlatform()

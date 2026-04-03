@@ -1,6 +1,6 @@
 package com.blink.base.dto.req;
 
-import com.blink.base.constans.BaseErrCodeConstant;
+import com.blink.base.constants.BaseErrCodeConstant;
 import com.blink.framework.validate.annotation.DataDict;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
@@ -35,14 +35,14 @@ public class DeleteSysUserReq implements Serializable {
      * 是否批量删除标志
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    private boolean isBatchDelete;
+    private Boolean batchDelete;
 
     @AssertTrue(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    public boolean isBatchDelete() {
-        if(isBatchDelete){
-            return userIdList!=null && userIdList.isEmpty();
+    public boolean isValidParam() {
+        if(Boolean.TRUE.equals(batchDelete)){
+            return userIdList != null && !userIdList.isEmpty();
         }else{
-            return userId !=null;
+            return userId != null;
         }
     }
 }

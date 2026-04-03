@@ -177,7 +177,7 @@ public class JwtProvider {
         try {
             Jwts.parser()
                     .verifyWith(getSecretKey())
-                    .clockSkewSeconds(jwtConfig.getAccessTokenExpiration())
+                    .clockSkewSeconds(jwtConfig.getClockSkewSeconds())
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();
@@ -213,7 +213,7 @@ public class JwtProvider {
         try {
             Jwts.parser()
                     .verifyWith(getSecretKey())
-                    .clockSkewSeconds(jwtConfig.getAccessTokenExpiration())
+                    .clockSkewSeconds(jwtConfig.getClockSkewSeconds())
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();

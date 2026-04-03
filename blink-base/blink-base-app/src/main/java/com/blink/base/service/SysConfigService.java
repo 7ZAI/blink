@@ -1,6 +1,11 @@
 package com.blink.base.service;
 
-import com.blink.base.dto.req.*;
+import com.blink.base.dto.rsp.ConfigGroupRsp;
+import com.blink.base.dto.req.AddSysConfigReq;
+import com.blink.base.dto.req.DeleteSysConfigReq;
+import com.blink.base.dto.req.QueryOneSysConfigReq;
+import com.blink.base.dto.req.QuerySysConfigReq;
+import com.blink.base.dto.req.UpdateSysConfigReq;
 import com.blink.base.dto.rsp.QuerySysConfigRsp;
 import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.base.entity.SysConfigDO;
@@ -77,4 +82,41 @@ public interface SysConfigService {
      * @throws BlinkException
      */
     SysConfigVO getOneConfigFromCacheOrDataBase(QueryOneSysConfigReq body) throws BlinkException;
+
+    /**
+     * 根据配置key获取布尔类型的配置值
+     *
+     * @param configKey 配置key
+     * @param defaultValue 默认值
+     * @return 配置的布尔值
+     * @throws BlinkException
+     */
+    Boolean getBooleanConfig(String configKey, Boolean defaultValue) throws BlinkException;
+
+    /**
+     * 根据配置key获取整数类型的配置值
+     *
+     * @param configKey 配置key
+     * @param defaultValue 默认值
+     * @return 配置的整数值
+     * @throws BlinkException
+     */
+    Integer getIntegerConfig(String configKey, Integer defaultValue) throws BlinkException;
+
+    /**
+     * 根据分组键名查询配置
+     *
+     * @param groupKey 分组键名
+     * @return 分组配置响应
+     * @throws BlinkException
+     */
+    ConfigGroupRsp getConfigsByGroupKey(String groupKey) throws BlinkException;
+
+    /**
+     * 批量更新配置值
+     *
+     * @param configs 配置列表
+     * @throws BlinkException
+     */
+    void batchUpdateConfigs(List<UpdateSysConfigReq> configs) throws BlinkException;
 }

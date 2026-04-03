@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysPermissionMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysPermissionDO">
+        <id column="ac_id" property="acId"/>
+        <result column="ac_name" property="acName"/>
+        <result column="ac_en_name" property="acEnName"/>
+        <result column="ac_identity" property="acIdentity"/>
+        <result column="ac_type" property="acType"/>
+        <result column="url" property="url"/>
+        <result column="data_filter_id" property="dataFilterId"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        ac_id, ac_name, ac_en_name, ac_identity, ac_type, url, data_filter_id, create_by, create_time, update_by, update_time
+    </sql>
+
+    <!-- 带关联查询的结果映射 -->
+    <resultMap id="PermissionVOResultMap" type="com.blink.gateway.base.dto.vo.SysPermissionVO">
+        <id column="ac_id" property="acId"/>
+        <result column="ac_name" property="acName"/>
+        <result column="ac_en_name" property="acEnName"/>
+        <result column="ac_identity" property="acIdentity"/>
+        <result column="ac_type" property="acType"/>
+        <result column="url" property="url"/>
+        <result column="data_filter_id" property="dataFilterId"/>
+        <result column="data_filter_name" property="dataFilterName"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="acId != null">and ac_id = #{acId}</if>
+            <if test="acName != null and acName != ''">and ac_name like concat('%', #{acName}, '%')</if>
+
+            <if test="acEnName != null and acEnName != ''">and ac_en_name = #{acEnName}</if>
+
+            <if test="acIdentity != null and acIdentity != ''">and ac_identity like concat('%', #{acIdentity}, '%')</if>
+
+            <if test="acType != null">and ac_type = #{acType}</if>
+
+            <if test="url != null and url != ''">and url = #{url}</if>
+
+            <if test="dataFilterId != null">and data_filter_id = #{dataFilterId}</if>
+
+            <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
+
+            <if test="createTime != null ">and create_time = #{createTime}</if>
+
+            <if test="createTimeStart != null and createTimeStart != ''">and create_time &gt;= #{createTimeStart}</if>
+
+            <if test="createTimeEnd != null and createTimeEnd != ''">and create_time &lt;= concat(#{createTimeEnd}, ' 23:59:59')</if>
+
+            <if test="updateBy != null and updateBy != ''">and update_by = #{updateBy}</if>
+
+            <if test="updateTime != null ">and update_time = #{updateTime}</if>
+
+        </trim>
+    </sql>
+
+
+    <select id="findSysPermissionList" parameterType="com.blink.gateway.base.dto.req.QuerySysPermissionReq"
+            resultMap="PermissionVOResultMap">
+        SELECT sp.ac_id, sp.ac_name, sp.ac_en_name, sp.ac_identity, sp.ac_type, sp.url,
+               sp.data_filter_id, sdf.data_filter_name,
+               sp.create_by, sp.create_time, sp.update_by, sp.update_time
+        FROM sys_permission sp
+        LEFT JOIN sys_data_filter sdf ON sp.data_filter_id = sdf.data_filter_id
+        <include refid="Condition_where"/>
+    </select>
+
+
+    <select id="findRolesPermissions" parameterType="java.util.List" resultMap="BaseResultMap">
+        SELECT
+        DISTINCT sp.ac_id, ac_name, ac_en_name, ac_identity, ac_type, url, data_filter_id,
+        create_by, create_time, update_by, update_time
+
+        FROM sys_permission sp,sys_role_perm_rela sr
+        WHERE sp.ac_id = sr.ac_id
+        AND sr.role_id IN
+        <foreach collection="list" item="roleId" index="index" open="(" close=")" separator=",">
+            #{roleId}
+        </foreach>
+    </select>
+
+    <select id="findRolesPermissionsWithType" parameterType="com.blink.gateway.base.dto.req.QueryRolePermissionReq" resultMap="BaseResultMap">
+        SELECT
+        DISTINCT sp.ac_id, ac_name, ac_en_name, ac_identity, ac_type, url, data_filter_id,
+        create_by, create_time, update_by, update_time
+
+        FROM sys_permission sp,sys_role_perm_rela sr
+        WHERE sr.role_id IN
+        <foreach collection="roleIds" item="roleId" index="index" open="(" close=")" separator=",">
+            #{roleId}
+        </foreach>
+        and sp.ac_type IN
+        <foreach collection="acTypes" item="acType" index="index" open="(" close=")" separator=",">
+            #{acType}
+        </foreach>
+
+    </select>
+
+    <select id="getChannelPermissions" resultType="com.blink.gateway.base.entity.SysPermissionDO">
+        SELECT DISTINCT sp.ac_id,
+                        ac_name,
+                        ac_en_name,
+                        ac_identity,
+                        ac_type,
+                        url,
+                        data_filter_id
+        FROM sys_permission sp
+                 LEFT JOIN sys_channel_perm_rela scpr on sp.ac_id = scpr.ac_Id
+        WHERE scpr.channel_id = #{channelId}
+
+    </select>
+
+    <!-- 根据数据过滤规则ID查询关联的权限数量 -->
+    <select id="countByDataFilterId" resultType="int">
+        SELECT COUNT(1) FROM sys_permission WHERE data_filter_id = #{dataFilterId}
+    </select>
+
+
+</mapper>

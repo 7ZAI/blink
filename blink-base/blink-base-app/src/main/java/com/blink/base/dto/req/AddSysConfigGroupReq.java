@@ -1,6 +1,11 @@
 
 package com.blink.base.dto.req;
+
+import com.blink.base.constants.BaseErrCodeConstant;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -8,32 +13,31 @@ import java.time.LocalDateTime;
  * <p>
  * AddSysConfigGroupReqDTO 新增参数分组表请求参数对象
  * </p>
- * ${dtoName}
- * sys_config_group
+ *
  * @author blink
  * @since 2025-10-14
  */
 @Data
 public class AddSysConfigGroupReq implements Serializable {
 
-  private static final long serialVersionUID = 1L;
-
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * 主键ID
      */
     private Integer id;
 
-
     /**
      * 分组键名
      */
+    @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     private String groupKey;
-
 
     /**
      * 分组名称
      */
+    @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     private String groupName;
 
 

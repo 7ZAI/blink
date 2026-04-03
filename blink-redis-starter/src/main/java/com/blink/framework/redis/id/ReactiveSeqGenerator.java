@@ -2,8 +2,10 @@ package com.blink.framework.redis.id;
 
 
 import cn.hutool.core.util.StrUtil;
+import com.blink.framework.common.exception.BlinkErrorCodeEnum;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
+import com.blink.framework.redis.config.prop.BlinkRedisProperties;
 import com.blink.framework.redis.serializer.LongRedisSerializer;
 import io.lettuce.core.RedisCommandExecutionException;
 import io.lettuce.core.RedisCommandTimeoutException;
@@ -75,19 +77,25 @@ public class ReactiveSeqGenerator {
      *
      * @param key
      * @param maxSeq 最大值限制 字符串格式
+     * @param limited 递归次数限制 大于3停止 抛异常
      * @return
      */
-    public Mono<Long> nextSeq(String key, String maxSeq) {
+    public Mono<Long> nextSeq(String key, String maxSeq,int limited) {
 
         if (StrUtil.isBlank(key)) {
             log.error("generateSeq key is blank");
-            return Mono.error(new BlinkException("key 不能为空"));
+            return Mono.error(new BlinkException(BlinkErrorCodeEnum.ILLEGAL_PARAMETER.getCode()));
         }
 
         //未配置的key
         if(!SEQ_CACHE.containsKey(key)) {
             log.error("当前key：{} 未被配置！请先配置",key);
-            throw new RuntimeException("key为配置");
+            return Mono.error(new BlinkException("SEQ_KEY_NOT_CONFIG", "key未配置: " + key));
+        }
+
+        if(limited>3){
+            log.error("尝试了{}次获取序列化仍然失败 ！",limited);
+            return Mono.error(new BlinkException("nextSeq up to limited times " + limited));
         }
 
         //未配置默认为1000
@@ -117,7 +125,7 @@ public class ReactiveSeqGenerator {
             return Mono.just(nextSeq);
         }
 
-        return dealWithSeqCacheRunOut(key, maxSeq, steps);
+        return dealWithSeqCacheRunOut(key, maxSeq, steps,limited);
 
     }
 
@@ -130,7 +138,7 @@ public class ReactiveSeqGenerator {
      * @param steps
      * @return
      */
-    private Mono<Long> dealWithSeqCacheRunOut(String key, String maxSeq, Integer steps) {
+    private Mono<Long> dealWithSeqCacheRunOut(String key, String maxSeq, Integer steps,int limited) {
         SeqSegment seqSegment = SEQ_CACHE.get(key);
         AtomicStatus status = STATUS_MAP.get(key);
         //号段用尽了 缓存为空，准备发起刷新
@@ -187,7 +195,7 @@ public class ReactiveSeqGenerator {
                 }
             }
             //递归获取
-            return nextSeq(key, maxSeq);
+            return nextSeq(key, maxSeq,limited+1);
         }
     }
 

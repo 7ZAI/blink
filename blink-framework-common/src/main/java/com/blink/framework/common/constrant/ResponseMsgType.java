@@ -1,5 +1,10 @@
 package com.blink.framework.common.constrant;
 
+/**
+ * 响应类型
+ *
+ * @author binblink
+ */
 public enum ResponseMsgType {
 
     /**

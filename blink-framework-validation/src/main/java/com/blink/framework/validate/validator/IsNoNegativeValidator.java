@@ -61,8 +61,9 @@ public class IsNoNegativeValidator implements ConstraintValidator<NonNegative, O
             else if (value instanceof Byte byteValue) {
                 return includeZero ? byteValue >= 0 : byteValue > 0;
             }else {
-                // 不支持的类型，默认通过验证（或者可以抛出异常）
-                throw new BlinkException("not support the field type ti validate!");
+                // 不支持的类型，记录日志并返回校验失败
+                log.error("不支持的字段类型进行非负校验: {}", value.getClass().getName());
+                return false;
             }
 
         }catch (Exception e){

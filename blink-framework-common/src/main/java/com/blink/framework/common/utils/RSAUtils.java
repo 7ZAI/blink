@@ -56,7 +56,7 @@ public class RSAUtils {
                     MGF1ParameterSpec.SHA256,
                     PSource.PSpecified.DEFAULT
             );
-            cipher.init(Cipher.ENCRYPT_MODE, publicKey,oaepParams);
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey, oaepParams);
             byte[] ciphertext = cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(ciphertext);
         } catch (Exception e) {
@@ -77,7 +77,7 @@ public class RSAUtils {
                     PSource.PSpecified.DEFAULT
             );
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            cipher.init(Cipher.DECRYPT_MODE, privateKey,oaepParams);
+            cipher.init(Cipher.DECRYPT_MODE, privateKey, oaepParams);
             byte[] plaintext = cipher.doFinal(ciphertext);
             return new String(plaintext, StandardCharsets.UTF_8);
         } catch (Exception e) {
@@ -116,4 +116,3 @@ public class RSAUtils {
     }
 
 }
-

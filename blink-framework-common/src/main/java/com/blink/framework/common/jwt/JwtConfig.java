@@ -28,6 +28,10 @@ public class JwtConfig {
      */
     private static final long CLOCK_SKEW_SECONDS = 60L;
 
+    public long getClockSkewSeconds() {
+        return CLOCK_SKEW_SECONDS;
+    }
+
     /**
      * 默认签名算法（HS256）
      */

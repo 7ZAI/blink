@@ -1,25 +1,26 @@
 package com.blink.base.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.blink.datasource.annotation.DataScopeEntity;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
  * 系统角色
- * </p>
  *
  * @author binblink
- * @since 2024-01-03
  */
 @Getter
 @Setter
 @TableName("sys_role")
+@DataScopeEntity(name = "系统角色", enName = "SysRole")
 public class SysRoleDO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**

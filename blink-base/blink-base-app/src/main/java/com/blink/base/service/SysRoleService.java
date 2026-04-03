@@ -3,6 +3,7 @@ package com.blink.base.service;
 import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.QuerySysRoleRsp;
 import com.blink.base.dto.rsp.QueryUserRolesRsp;
+import com.blink.base.dto.rsp.RoleDetailRsp;
 import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.framework.common.exception.BlinkException;
 
@@ -60,4 +61,37 @@ public interface SysRoleService {
      * @throws BlinkException
      */
     QueryUserRolesRsp getSysRolesByUser(QueryUserRolesReq queryParam) throws BlinkException;
+
+    /**
+     * 为角色分配权限
+     *
+     * @param assignParam 分配参数
+     * @throws BlinkException
+     */
+    void assignPermissions(AssignPermissionReq assignParam) throws BlinkException;
+
+    /**
+     * 为角色分配菜单
+     *
+     * @param assignParam 分配参数
+     * @throws BlinkException
+     */
+    void assignMenus(AssignMenuReq assignParam) throws BlinkException;
+
+    /**
+     * 查询角色详情
+     *
+     * @param queryParam 查询参数
+     * @return 角色详情
+     * @throws BlinkException
+     */
+    RoleDetailRsp getRoleDetail(QueryRoleDetailReq queryParam) throws BlinkException;
+
+    /**
+     * 为用户分配角色
+     *
+     * @param assignParam 分配参数
+     * @throws BlinkException
+     */
+    void assignRoleToUsers(AssignRoleToUsersReq assignParam) throws BlinkException;
 }

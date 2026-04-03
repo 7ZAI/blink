@@ -85,6 +85,11 @@ public enum BlinkErrorCodeEnum implements ErrorCode{
     THREAD_POOL_FULL_ERROR("SYS00004"),
 
     /**
+     * 系统繁忙，请稍后重试
+     */
+    SYSTEM_BUSY("SYS00005"),
+
+    /**
      * 服务端404错误
      */
     SERVER_RESOURCE_NOT_FOUND("SYS00006"),
@@ -128,7 +133,22 @@ public enum BlinkErrorCodeEnum implements ErrorCode{
     /**
      * msgCd 不存在
      */
-    MSG_CD_NOT_EXISTS("SYS99999");
+    MSG_CD_NOT_EXISTS("SYS99999"),
+
+    /**
+     * 渠道不存在
+     */
+    CHANNEL_NOT_EXIST("SYS00008"),
+
+    /**
+     * 加解密失败
+     */
+    ENCRYPT_DECRYPT_ERROR("SYS00009"),
+
+    /**
+     * 序列号key未配置
+     */
+    SEQ_KEY_NOT_CONFIG("SYS00010");
 
 
     private final String code;

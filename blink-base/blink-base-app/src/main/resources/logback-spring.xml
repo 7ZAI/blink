@@ -1,41 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="30 seconds" debug="false">
 
-    <!-- ============== 0. 公共变量 ============== -->
     <contextName>blink-base-app</contextName>
-    <!-- 统一字符集 -->
     <property name="CHARSET" value="UTF-8"/>
+    <property name="LOG_HOME" value="./blink-base/blink-base-app/logs"/>
+    <property name="PID" value="????"/>
 
-    <!-- 日志根目录，可通过 application.yml 中 logging.file.path 覆盖 -->
-    <springProperty scope="context" name="LOG_HOME" source="logging.file.path" defaultValue="./logs"/>
-    <!-- 进程 PID -->
-    <springProperty scope="context"
-                    name="PID"
-                    source="PID"
-                    defaultValue="????"/>
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
+    <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
 
-    <!-- ============== 1. 通用日志格式 ============== -->
-    <!-- 控制台彩色 -->
-    <conversionRule conversionWord="clr"
-                    converterClass="org.springframework.boot.logging.logback.ColorConverter"/>
-    <conversionRule conversionWord="wEx"
-                    converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter"/>
-
-    <!-- dev / !dev 两种格式示例 -->
     <springProfile name="dev">
         <property name="CONSOLE_PATTERN"
                   value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${PID}){magenta} %clr(---){faint} %highlight(%-5level) %clr([%15.15t]){faint}  %X{traceId}  %clr(%-40.40logger{32}){cyan} %clr(:){faint} %msg%n%wEx"/>
     </springProfile>
-    <springProfile name="!dev">
-        <property name="CONSOLE_PATTERN"
-                  value="%d{yyyy-MM-dd HH:mm:ss.SSS} ${PID} --- [%thread] %-5level  %X{traceId} %logger{36} - %msg%n"/>
-    </springProfile>
 
-    <!-- 文件统一格式（含行号） -->
     <property name="FILE_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %X{traceId} %logger{36} %line - %msg%n"/>
 
-    <!-- ============== 2. 控制台输出 ============== -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${CONSOLE_PATTERN}</pattern>
@@ -43,27 +24,19 @@
         </encoder>
     </appender>
 
-    <!-- ============== 3. 滚动文件输出 ============== -->
-    <!-- 3.1 INFO 级别文件 -->
     <appender name="FILE_INFO" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/info.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- yyyy-MM-dd 当天，%i 计数器 -->
             <fileNamePattern>${LOG_HOME}/info-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
-            <!-- 单个文件最大 100 MB -->
             <maxFileSize>100MB</maxFileSize>
-            <!-- 最多保留 30 天 -->
             <maxHistory>30</maxHistory>
-            <!-- 所有归档文件总大小上限 10 GB -->
             <totalSizeCap>10GB</totalSizeCap>
-            <!-- 启动时清理历史 -->
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>${FILE_PATTERN}</pattern>
             <charset>${CHARSET}</charset>
         </encoder>
-        <!-- 只记录 INFO 及以上，过滤掉 DEBUG/TRACE -->
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>INFO</level>
             <onMatch>ACCEPT</onMatch>
@@ -71,7 +44,6 @@
         </filter>
     </appender>
 
-    <!-- 3.2 ERROR 级别文件 -->
     <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_HOME}/error.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -92,13 +64,9 @@
         </filter>
     </appender>
 
-    <!-- ============== 4. 异步输出（推荐高并发场景） ============== -->
     <appender name="ASYNC_INFO" class="ch.qos.logback.classic.AsyncAppender">
-        <!-- 队列最大深度，默认 256 -->
         <queueSize>512</queueSize>
-        <!-- 队列剩余容量低于该值时丢弃 TRACE/DEBUG，防止阻塞，默认 20% -->
         <discardingThreshold>20</discardingThreshold>
-        <!-- 是否包含调用方位置信息（行号等），关闭可提升性能 -->
         <includeCallerData>false</includeCallerData>
         <appender-ref ref="FILE_INFO"/>
     </appender>
@@ -110,32 +78,24 @@
         <appender-ref ref="FILE_ERROR"/>
     </appender>
 
-    <!-- ============== 5. 自定义 logger 级别示例 ============== -->
-    <!-- 业务包单独调高/调低 -->
-    <logger name="com.blink.gateway.**" level="DEBUG" additivity="false">
+    <logger name="com.blink.base.**" level="DEBUG" additivity="false">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="ASYNC_INFO"/>
     </logger>
 
-    <!-- 屏蔽 io.netty.handler...NettyClientHandler -->
-    <logger name="com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler" level="OFF"/>
+    <logger name="io.netty" level="WARN"/>
+    <logger name="io.grpc.netty.shaded.io.grpc.netty.NettyClientHandler" level="OFF"/>
 
-    <!-- ============== 6. 根日志 ============== -->
     <springProfile name="dev">
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-<!--            <appender-ref ref="ASYNC_INFO"/>-->
-<!--            <appender-ref ref="ASYNC_ERROR"/>-->
         </root>
     </springProfile>
 
-    <!--    <logger name="io.netty" level="OFF"/>-->
-
-    <springProfile name="!dev">
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-<!--            <appender-ref ref="ASYNC_INFO"/>-->
-<!--            <appender-ref ref="ASYNC_ERROR"/>-->
-        </root>
-    </springProfile>
+    <!--    <springProfile name="prod">-->
+    <!--        <root level="INFO">-->
+    <!--            <appender-ref ref="CONSOLE"/>-->
+    <!--            <appender-ref ref="ASYNC_INFO"/>-->
+    <!--            <appender-ref ref="ASYNC_ERROR"/>-->
+    <!--        </root>-->
+    <!--    </springProfile>-->
 </configuration>

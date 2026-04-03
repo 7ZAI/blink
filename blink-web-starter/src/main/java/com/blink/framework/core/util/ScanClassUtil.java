@@ -4,20 +4,24 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @author binblink
+ */
 public class ScanClassUtil {
 
 
-    public static List<String> getClassNameByScanAnnotation(String basePackage,Class clazz) {
+    public  static List<String> getClassNameByScanAnnotation(String basePackage,Class<? extends Annotation> clazz) {
 
         // 创建一个 ClassPathScanningCandidateComponentProvider 实例
         ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
-        // 添加一个 TypeFilter 来只包含带有 @Service 注解的类
+        // 添加一个 TypeFilter 来包含带有 @Service 注解的类
         scanner.addIncludeFilter(new AnnotationTypeFilter(clazz));
         // 执行扫描并获取结果
         Set<BeanDefinition> beanDefinitions = scanner.findCandidateComponents(basePackage);

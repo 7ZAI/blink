@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysDictDataMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysDictDataDO">
+        <id column="dict_code" property="dictCode"/>
+        <result column="dict_type" property="dictType"/>
+        <result column="dict_label" property="dictLabel"/>
+        <result column="dict_value" property="dictValue"/>
+        <result column="css_class" property="cssClass"/>
+        <result column="list_class" property="listClass"/>
+        <result column="is_default" property="isDefault"/>
+        <result column="status" property="status"/>
+        <result column="order_num" property="orderNum"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+        <result column="locale" property="locale"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        dict_code, dict_type, dict_label, dict_value, css_class, list_class, is_default, status, order_num, create_by, create_time, update_by, update_time, remark, locale
+    </sql>
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="dictCode != null and dictCode != ''">
+                and dict_code = #{dictCode}
+            </if>
+            <if test="dictType != null and dictType != ''">
+                and dict_type = #{dictType}
+            </if>
+            <if test="dictLabel != null and dictLabel != ''">
+                and dict_label like concat('%', #{dictLabel}, '%')
+            </if>
+            <if test="dictValue != null and dictValue != ''">
+                and dict_value = #{dictValue}
+            </if>
+            <if test="isDefault != null">
+                and is_default = #{isDefault}
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                and create_by = #{createBy}
+            </if>
+            <if test="createTime != null">
+                and create_time = #{createTime}
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                and update_by = #{updateBy}
+            </if>
+            <if test="updateTime != null">
+                and update_time = #{updateTime}
+            </if>
+            <if test="locale != null and locale != ''">
+                and locale = #{locale}
+            </if>
+        </trim>
+    </sql>
+
+    <!-- 查询字典数据列表 -->
+    <select id="findSysDictDataList" parameterType="com.blink.gateway.base.dto.req.QuerySysDictDataReq"
+            resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_dict_data
+        <include refid="Condition_where"/>
+        order by order_num asc
+    </select>
+
+    <!-- 根据字典类型编码查询字典数据列表 -->
+    <select id="selectDictDataByType" parameterType="java.lang.String"
+            resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_dict_data
+        where dict_type = #{dictType}
+        and status = 0
+        order by order_num asc
+    </select>
+
+    <!-- 根据字典类型编码和语言查询字典数据列表 -->
+    <select id="selectDictDataByTypeAndLocale" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_dict_data
+        where dict_type = #{param1}
+        and locale = #{param2}
+        and status = 0
+        order by order_num asc
+    </select>
+
+    <!-- 根据字典类型编码列表和语言批量查询字典数据 -->
+    <select id="selectDictDataByTypesAndLocale" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_dict_data
+        where dict_type in
+        <foreach collection="dictTypes" item="dictType" open="(" separator="," close=")">
+            #{dictType}
+        </foreach>
+        and locale = #{locale}
+        and status = 0
+        order by dict_type, order_num asc
+    </select>
+
+</mapper>

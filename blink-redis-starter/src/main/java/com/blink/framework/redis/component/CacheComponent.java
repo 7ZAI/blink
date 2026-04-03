@@ -1,123 +1,178 @@
 package com.blink.framework.redis.component;
 
+import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.ApplicationContextUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * 缓存组件 只在web sync 下生效 reactive 无法使用
- * 
+ * Multi-level cache component that supports both local (Caffeine) and distributed (Redis) caching.
+ * <p>
+ * This component is designed for synchronous web applications only.
+ * For reactive applications, use {@link ReactiveRedisClient} directly.
+ * </p>
+ *
+ * <p>Features:</p>
+ * <ul>
+ *   <li>Two-level cache: local Caffeine cache + distributed Redis cache</li>
+ *   <li>Cache-aside pattern with automatic database fallback</li>
+ *   <li>Bulk cache loading from database</li>
+ * </ul>
+ *
+ * <p>Note: All cache write operations are synchronous. If async refresh is needed,
+ * the caller should handle it using @Async or custom thread pools.</p>
+ *
  * @author binblink
+ * @see RedisClient
+ * @see ReactiveRedisClient
  */
 @Slf4j
 public class CacheComponent {
 
     @Resource
-    private  RedisClient redisClient;
+    private RedisClient redisClient;
 
-    private Boolean enableLocalCache = false;
+    private final Boolean enableLocalCache;
 
-    public CacheComponent(Boolean enableLocalCache){
+    /**
+     * Constructs a CacheComponent with the specified local cache configuration.
+     *
+     * @param enableLocalCache whether to enable local (Caffeine) caching
+     */
+    public CacheComponent(Boolean enableLocalCache) {
         this.enableLocalCache = enableLocalCache;
     }
 
     /**
-     * 从所有层级缓存中获取 缓存对象
+     * Retrieves an object from all cache levels (local cache first, then Redis).
      *
-     * @param key
-     * @return 缓存对象
+     * <p>Cache lookup order:</p>
+     * <ol>
+     *   <li>Local Caffeine cache (if enabled)</li>
+     *   <li>Distributed Redis cache</li>
+     * </ol>
+     *
+     * @param key the cache key to look up
+     * @return the cached object, or {@code null} if not found in any cache level
      */
+    @SuppressWarnings("unchecked")
     public Object getFromAllCache(String key) {
-
         Object value = null;
-        //先从本地缓存获取
+
         if (enableLocalCache) {
-            Cache localCache = ApplicationContextUtil.getBean(Cache.class);
+            Cache<String, Object> localCache = getLocalCache();
             value = localCache.getIfPresent(key);
         }
 
         if (Objects.nonNull(value)) {
             return value;
         }
-        //再从redis缓存获取
+
         value = redisClient.get(key);
+        if (enableLocalCache && Objects.nonNull(value)) {
+            // Redis 命中后回填本地缓存，避免二级缓存只写不热。
+            getLocalCache().put(key, value);
+        }
 
         return value;
     }
 
     /**
-     * 透过缓存 获取数据 缓存没有 会查询数据库
+     * Retrieves data using the cache-aside pattern.
+     * <p>
+     * If the data is not found in cache, it will be loaded from the database
+     * via the provided supplier and then cached for future requests.
+     * </p>
      *
-     * @param key      键
-     * @param supplier sql 执行函数
-     * @return 返回对象
+     * @param key      the cache key
+     * @param supplier the database query function to execute on cache miss
+     * @return the cached or freshly loaded object
+     * @throws BlinkException if cache operation fails
      */
-    public Object getFromCacheOrDB(String key, Supplier supplier) {
+    public Object getFromCacheOrDB(String key, Supplier<?> supplier) {
+        try {
+            Object value = getFromAllCache(key);
 
-        //先从缓存获取
-        Object value = getFromAllCache(key);
+            if (Objects.nonNull(value)) {
+                return value;
+            }
 
-        if (Objects.nonNull(value)) {
+            value = supplier.get();
+
+            log.info("Cache miss for key: {}, loading from database", key);
+
+            if (Objects.nonNull(value)) {
+                resetCache(key, value);
+            }
+
             return value;
+        } catch (Exception e) {
+            log.error("Failed to get from cache or database, key: {}", key, e);
+            throw new BlinkException(e, "Cache operation failed");
         }
-        //数据库获取
-        value = supplier.get();
-
-        log.info("key:{} Missed cache,get from database", key);
-
-        if (Objects.nonNull(value)) {
-            //刷新缓存
-            resetCache(key, value);
-        }
-
-        return value;
     }
 
     /**
-     * 异步刷新缓存
+     * Refreshes the cache with the given key-value pair.
+     * <p>
+     * This method updates both the local cache (if enabled) and Redis cache.
+     * The old cache entry is deleted before setting the new value.
+     * </p>
+     *
+     * @param key   the cache key to refresh
+     * @param value the new value to cache
      */
-    @Async
     public void resetCache(String key, Object value) {
-
         if (enableLocalCache) {
-            Cache localCache = ApplicationContextUtil.getBean(Cache.class);
+            Cache<String, Object> localCache = getLocalCache();
             localCache.put(key, value);
-            log.info("key:{} have put to the localCache", key);
+            log.info("Key: {} has been put into local cache", key);
         }
 
         redisClient.delete(key);
         redisClient.set(key, value);
-
     }
 
-
     /**
-     * 从数据库中加载缓存
+     * Bulk loads cache data from the database.
+     * <p>
+     * This method performs the following operations:
+     * </p>
+     * <ol>
+     *   <li>Deletes all existing cache entries with the given prefix</li>
+     *   <li>Bulk sets the new cache entries in Redis</li>
+     *   <li>Loads the entries into local cache (if enabled)</li>
+     * </ol>
      *
-     * @param keyPrefix   缓存key前缀
-     * @param getCacheMap 获取缓存map函数
+     * @param keyPrefix   the cache key prefix to use for batch operations
+     * @param getCacheMap the function that returns the cache data as a Map
      */
+    @SuppressWarnings("unchecked")
     public void loadCacheFromDB(String keyPrefix, Supplier<Map<String, Object>> getCacheMap) {
-
         Map<String, Object> map = getCacheMap.get();
-        //批量删除
-        redisClient.deleteByPrefixScan(keyPrefix);
-        //批量添加
-        redisClient.batchSet(map);
-        //开启本地缓存则存入
-        if (enableLocalCache) {
-            Cache localCache = ApplicationContextUtil.getBean(Cache.class);
-            localCache.putAll(map);
 
-            log.info("localCache loading cache cacheSize:{}", map.size());
+        redisClient.deleteByPrefixScan(keyPrefix);
+        redisClient.batchSet(map);
+
+        if (enableLocalCache) {
+            Cache<String, Object> localCache = getLocalCache();
+            localCache.putAll(map);
+            log.info("Local cache loaded with {} entries", map.size());
         }
     }
 
-
+    /**
+     * 获取本地缓存实例
+     *
+     * @return Caffeine 本地缓存
+     */
+    @SuppressWarnings("unchecked")
+    private Cache<String, Object> getLocalCache() {
+        return ApplicationContextUtil.getBean(Cache.class);
+    }
 }

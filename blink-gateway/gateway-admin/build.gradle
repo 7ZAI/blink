@@ -1,0 +1,60 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+
+dependencies {
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
+    implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
+    // Dubbo 依赖
+    implementation 'org.apache.dubbo:dubbo-spring-boot-starter'
+
+    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-framework-validation:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-dataSource-spring-boot-starter:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
+    // Redisson 分布式锁
+    implementation 'org.redisson:redisson-spring-boot-starter:3.27.0'
+    implementation 'com.blink:blink-web-spring-boot-starter:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-log-spring-boot-starter:1.0.0-SNAPSHOT'
+
+    implementation 'com.blink:blink-gateway-admin-api-dubbo:1.0.0-SNAPSHOT'
+    implementation 'com.blink:blink-base-api-dubbo:1.0.0-SNAPSHOT'
+
+    implementation 'com.alibaba.nacos:nacos-encryption-plugin:2.2.1'
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'cn.hutool:hutool-core'
+    implementation 'cn.hutool:hutool-crypto'
+
+    // 验证码
+    implementation 'com.anji-plus:captcha:1.3.0'
+
+    // SA-Token 权限认证
+    implementation 'cn.dev33:sa-token-spring-boot3-starter:1.37.0'
+    implementation 'cn.dev33:sa-token-redis-jackson:1.37.0'
+    // 密码加密
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+
+
+
+
+

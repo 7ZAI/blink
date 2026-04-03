@@ -1,6 +1,5 @@
 package com.blink.base.mapper;
 
-import com.blink.base.entity.SysRolePermRelaDO;
 import com.blink.base.entity.SysUserRoleRelaDO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
@@ -19,5 +18,21 @@ import java.util.List;
 @Mapper
 public interface SysUserRoleRelaMapper extends BaseMapper<SysUserRoleRelaDO> {
 
-    int  batchInsert(@Param("list") List<SysUserRoleRelaDO> list);
+    int batchInsert(@Param("list") List<SysUserRoleRelaDO> list);
+
+    /**
+     * 根据角色ID列表查询用户ID列表
+     *
+     * @param roleIds 角色ID列表
+     * @return 用户ID列表
+     */
+    List<Integer> selectUserIdsByRoleIds(@Param("roleIds") List<Integer> roleIds);
+
+    /**
+     * 根据角色ID列表查询用户登入名列表
+     *
+     * @param roleIds 角色ID列表
+     * @return 用户登入名列表
+     */
+    List<String> selectLoginNamesByRoleIds(@Param("roleIds") List<Integer> roleIds);
 }

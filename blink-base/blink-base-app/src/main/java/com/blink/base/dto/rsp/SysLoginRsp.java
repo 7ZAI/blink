@@ -7,6 +7,9 @@ import lombok.Data;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * @author binblink
+ */
 @Data
 public class SysLoginRsp {
 
@@ -19,6 +22,11 @@ public class SysLoginRsp {
      * 用户角色
      */
     private List<String> roles;
+
+    /**
+     * 角色ID列表
+     */
+    private List<Integer> roleIds;
 
     /**
      * 菜单展示
@@ -40,5 +48,9 @@ public class SysLoginRsp {
      */
     private String token;
 
+    /**
+     * 是否需要重置密码(首次登录)
+     */
+    private Boolean needResetPassword;
 
 }

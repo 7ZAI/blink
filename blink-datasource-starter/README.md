@@ -1,84 +1,396 @@
 # blink-datasource-starter
 
-目标： 封装数据库相关类 依赖 并能作为数据库相关的基础设施包 提供给外部应用使用
+数据库基础设施模块，封装 MyBatis-Plus、Druid、PageHelper，提供代码生成、分页查询、自动配置等能力。
 
-## 自动化配置
- 
-关闭了mybatis 一二级缓存 配置了mapper扫描、pagehelper插件
+## 功能特性
 
-[MybatisPlusConfiguration](src/main/java/com/blink/datasource/config/MybatisPlusConfiguration.java)
+| 功能模块 | 说明 |
+|---------|------|
+| MyBatis-Plus 集成 | 自动配置，支持 CRUD、逻辑删除、自动填充 |
+| Druid 连接池 | 数据库连接池管理 |
+| PageHelper 分页 | 物理分页支持 |
+| 代码生成器 | 基于自定义模板生成 Entity、Mapper、Service、Controller、DTO |
+| 自动字段填充 | create_time、update_time 自动填充 |
 
-## 自动生成模板代码
+## 快速开始
 
- 在 mybatis-plus 自动代码生成器基础上修改，通过自定义模板、自定义属性注入模板域、自定义文件名称生成规则，
- 实现了controller、service、Impl、mapper、mapper.xml、entity、DTO的代码生成
+### 引入依赖
 
-调用 CodeGenerator.generateByCustomTemplate()
-```java
-  public static void main(String[] args) {
-
-        String url = "jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8";
-        String username = "root";
-        String password = "123456";
-
-        var codeGenerator = new CodeGenerator();
-        codeGenerator.generateByCustomTemplate(url, username, password);
-
-    }
-```
-ps.关于模式2 record类的自动创建 功能未完成 目前请选择1
-
-关于record只是做尝试，使用下来发现record 如果字段较多则需要配建造者模式或者做拆分 在开发阶段需要变动字段的情况下，很麻烦 
-总结是record不好用
-
-[CodeGenerator](src/main/java/com/blink/datasource/code/CodeGenerator.java)
-
-## 分页插件
-
-使用了PageHelper来实现分页功能,并做了工具类封装
-
-[PageUtils](src/main/java/com/blink/datasource/PageUtils.java)
-
-QuerySysConfigRspDTO 是一个继承了[PageDTO](../blink-framework-common/src/main/java/com/blink/framework/common/data/PageDTO.java)的DTO 用来获取结果
-
-函数接口 [ExecuteFunction](../blink-framework-common/src/main/java/com/blink/framework/common/data/ExecuteFunction.java) 是一个无参数无返回值的接口 是对执行sql的行为进行封装
-里面一定要包含执行分页查询的程序
-
-(后来发现ExecuteFunction可以用java原生Runnable实现 不用自己创建一个空参空返回的函数接口 但是现在已经没有改的必要了)
-
-使用示例
-```java
-    var pageRsp = new QuerySysConfigRspDTO();
-    QuerySysConfigRspDTO result = PageUtils.queryPage(queryParam, () -> sysConfigMapper.findSysConfigList(queryParam), pageRsp);
-
+```gradle
+implementation 'com.blink:blink-datasource-starter:1.0.0-SNAPSHOT'
 ```
 
-未来版本可能方向
-1. 可选多类型数据库 扩展  
-2. 自定义代码生成模板
-3. 配置文件密码加密
-4. 添加record作为DTO模板
+### 配置
 
-模块化 搁置
+```yaml
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8
+    username: root
+    password: 123456
+    druid:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 60000
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: delFlag
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+```
+
+---
+
+## MyBatis-Plus 配置
+
+### 自动配置项
+
+模块自动配置以下内容：
+
+| 配置项 | 值 | 说明 |
+|--------|-----|------|
+| 一级缓存 | STATEMENT | 关闭（微服务场景） |
+| 二级缓存 | false | 关闭（使用 Redis 替代） |
+| 驼峰映射 | true | 自动下划线转驼峰 |
+| 空值映射 | true | 调用 setters on nulls |
+| Mapper 扫描 | `com.blink.**.mapper` | 自动扫描 |
+| 逻辑删除字段 | delFlag | 自动处理 |
+
+### 实体类示例
+
 ```java
-module com.blink.framework.datasource {
+@Data
+@TableName("sys_user")
+public class SysUserDO {
 
-    requires org.mybatis;
-    requires spring.core;
-    requires cn.hutool.core;
-    requires com.baomidou.mybatis.plus.annotation;
-    requires com.baomidou.mybatis.plus.generator;
-    requires org.mybatis.spring;
-    requires pagehelper;
-//    requires pagehelper_5.3.1;
-    requires com.baomidou.mybatis.plus.core;
-    requires druid;
-    requires com.baomidou.mybatis.plus.extension;
-    requires java.sql;
-    requires com.sun.istack.runtime;
-    requires com.blink.framework.common;
-    requires spring.context;
+    @TableId(type = IdType.AUTO)
+    private Long id;
 
+    private String username;
 
+    private String password;
+
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
+
+    @TableLogic
+    @TableField(fill = FieldFill.INSERT)
+    private Integer delFlag;
 }
 ```
+
+### Mapper 示例
+
+```java
+@Mapper
+public interface SysUserMapper extends BaseMapper<SysUserDO> {
+
+    // 自定义查询
+    List<SysUserDO> selectByCondition(@Param("username") String username);
+}
+```
+
+---
+
+## 分页查询
+
+### PageUtils 工具类
+
+```java
+@Service
+public class UserService {
+
+    @Resource
+    private SysUserMapper userMapper;
+
+    /**
+     * 分页查询
+     */
+    public QueryUserRspDTO queryPage(QueryUserReqDTO queryParam) {
+        QueryUserRspDTO pageRsp = new QueryUserRspDTO();
+        return PageUtils.queryPage(
+            queryParam,
+            () -> userMapper.selectByCondition(queryParam.getUsername()),
+            pageRsp
+        );
+    }
+}
+```
+
+### 分页 DTO
+
+```java
+// 请求 DTO
+@Data
+public class QueryUserReqDTO extends PageDTO {
+    private String username;
+    private Integer status;
+}
+
+// 响应 DTO
+@Data
+public class QueryUserRspDTO extends PageDTO<SysUserDO> {
+    // 继承分页字段：pageNum, pageSize, total, pages, rows
+}
+```
+
+### 排序支持
+
+```java
+QueryUserReqDTO queryParam = new QueryUserReqDTO();
+queryParam.setPageNum(1);
+queryParam.setPageSize(10);
+queryParam.setOrderBy("create_time desc, id asc");  // 支持多字段排序
+```
+
+---
+
+## 代码生成器
+
+### 使用配置文件生成
+
+创建 `src/main/resources/datasource-dev.yml`：
+
+```yaml
+generator:
+  url: jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8
+  username: root
+  password: 123456
+```
+
+```java
+// 使用默认配置生成
+CodeGenerator.generate();
+
+// 指定 profile 生成
+CodeGenerator.generate("dev", null);
+
+// 指定路径生成
+CodeGenerator.generate("dev", "/path/to/output");
+```
+
+### 使用自定义模板生成
+
+```java
+String url = "jdbc:mysql://localhost:3306/blink?useUnicode=true&characterEncoding=utf8&serverTimezone=GMT%2B8";
+String username = "root";
+String password = "123456";
+
+CodeGenerator.generateByCustomTemplate(url, username, password);
+```
+
+交互式输入：
+- 作者名称
+- 应用包名（已有前缀 com.blink）
+- 表名（多个用逗号分隔，all 表示全部）
+- 表前缀过滤（none 表示不过滤）
+
+### 生成文件结构
+
+```
+com.blink.{appName}
+├── controller
+│   └── {Entity}Controller.java
+├── dto
+│   ├── req
+│   │   ├── Add{Entity}Req.java
+│   │   ├── Delete{Entity}Req.java
+│   │   ├── Update{Entity}Req.java
+│   │   └── Query{Entity}Req.java
+│   └── rsp
+│       └── Query{Entity}Rsp.java
+├── entity
+│   └── {Entity}DO.java
+├── mapper
+│   └── {Entity}Mapper.java
+├── service
+│   └── impl
+│       └── {Entity}ServiceImpl.java
+└── test
+    └── {Entity}ControllerTest.java
+```
+
+### 生成文件示例
+
+**Entity（DO）**
+```java
+@Data
+@TableName("sys_user")
+public class SysUserDO {
+    @TableId(type = IdType.AUTO)
+    private Long id;
+    private String username;
+    private String password;
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
+    @TableField(fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
+}
+```
+
+**AddReq**
+```java
+@Data
+public class AddSysUserReq {
+    @NotBlank(message = "用户名不能为空")
+    private String username;
+    
+    @NotBlank(message = "密码不能为空")
+    private String password;
+}
+```
+
+**Controller**
+```java
+@RestController
+@RequestMapping("/sysUser")
+public class SysUserController {
+
+    @Resource
+    private SysUserServiceImpl sysUserService;
+
+    @PostMapping("/add")
+    public ResponseDTO<EmptyBody> add(@RequestBody RequestDTO<AddSysUserReq> request) {
+        // 实现...
+    }
+
+    @PostMapping("/query")
+    public ResponseDTO<QuerySysUserRsp> query(@RequestBody RequestDTO<QuerySysUserReq> request) {
+        // 实现...
+    }
+}
+```
+
+---
+
+## 自定义模板
+
+模板文件位于 `src/main/resources/codeTemplate/`：
+
+| 模板文件 | 说明 |
+|---------|------|
+| `controller.java.vm` | Controller 模板 |
+| `serviceImpl.java.vm` | Service 实现模板 |
+| `mapper.java.vm` | Mapper 接口模板 |
+| `mapper.xml.vm` | Mapper XML 模板 |
+| `entity.java.vm` | Entity 模板 |
+| `dto/AddReq.java.vm` | 新增请求 DTO 模板 |
+| `dto/DeleteReq.java.vm` | 删除请求 DTO 模板 |
+| `dto/UpdateReq.java.vm` | 更新请求 DTO 模板 |
+| `dto/QueryReq.java.vm` | 查询请求 DTO 模板 |
+| `dto/QueryRsp.java.vm` | 查询响应 DTO 模板 |
+| `test.java.vm` | 测试类模板 |
+
+---
+
+## 数据库连接池
+
+### Druid 配置
+
+```yaml
+spring:
+  datasource:
+    druid:
+      # 初始化大小
+      initial-size: 5
+      # 最小空闲连接数
+      min-idle: 5
+      # 最大连接数
+      max-active: 20
+      # 获取连接等待超时时间
+      max-wait: 60000
+      # 检测间隔
+      time-between-eviction-runs-millis: 60000
+      # 连接最小生存时间
+      min-evictable-idle-time-millis: 300000
+      # 验证 SQL
+      validation-query: SELECT 1 FROM DUAL
+      # 申请连接时检测
+      test-while-idle: true
+      # 申请连接时检测
+      test-on-borrow: false
+      # 归还连接时检测
+      test-on-return: false
+```
+
+---
+
+## 最佳实践
+
+### 1. 实体类命名
+
+- 数据库表：`sys_user`
+- 实体类：`SysUserDO`（后缀 DO 表示 Data Object）
+
+### 2. Mapper 接口
+
+```java
+@Mapper
+public interface SysUserMapper extends BaseMapper<SysUserDO> {
+    // 简单 CRUD 继承 BaseMapper 即可
+    // 复杂查询自定义方法
+}
+```
+
+### 3. Service 层
+
+```java
+@Service
+public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUserDO> {
+    
+    // 使用 IService 提供的方法
+    public boolean saveUser(SysUserDO user) {
+        return save(user);
+    }
+    
+    // 自定义业务方法
+    public SysUserDO getByUsername(String username) {
+        return lambdaQuery()
+            .eq(SysUserDO::getUsername, username)
+            .one();
+    }
+}
+```
+
+### 4. 分页查询
+
+```java
+// 推荐：使用 PageUtils 封装
+public PageDTO<UserVO> queryUserPage(QueryUserReqDTO req) {
+    return PageUtils.queryPage(
+        req,
+        () -> userMapper.selectUserList(req),
+        new QueryUserRspDTO()
+    );
+}
+```
+
+---
+
+## 注意事项
+
+1. **缓存策略**
+   - 微服务场景下关闭 MyBatis 一二级缓存
+   - 热点数据使用 Redis 缓存
+
+2. **分页插件**
+   - 确保分页查询在 PageHelper 之后执行
+   - 避免在分页查询中嵌套复杂子查询
+
+3. **代码生成**
+   - 首次生成后建议 review 生成的代码
+   - 自定义模板可根据项目需求调整
+
+4. **逻辑删除**
+   - 默认字段名：`delFlag`
+   - 已删除：1，未删除：0

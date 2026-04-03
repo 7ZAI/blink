@@ -4,26 +4,27 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.blink.base.constans.BaseErrCodeConstant;
-import com.blink.base.constans.CommonConstans;
+import com.blink.base.constants.BaseErrCodeConstant;
+import com.blink.base.constants.CommonConstans;
 import com.blink.base.dto.req.AddSysGroupReq;
 import com.blink.base.dto.req.DeleteSysGroupReq;
 import com.blink.base.dto.req.QuerySysGroupReq;
 import com.blink.base.dto.req.UpdateSysGroupReq;
 import com.blink.base.dto.rsp.QuerySysGroupRsp;
 import com.blink.base.dto.rsp.SysGroupRsp;
+import com.blink.base.dto.vo.SysGroupVO;
 import com.blink.base.entity.SysGroupDO;
 import com.blink.base.entity.SysUserGroupRelaDO;
 import com.blink.base.mapper.SysGroupMapper;
 import com.blink.base.mapper.SysUserGroupRelaMapper;
 import com.blink.base.service.SysGroupService;
-import com.blink.datasource.PageUtils;
 import com.blink.framework.common.exception.BlinkException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -83,6 +84,9 @@ public class SysGroupServiceImpl implements SysGroupService {
 
         sysGroupMapper.insert(sysGroupDO);
 
+        log.info("[SysGroup] 新增组织成功 | groupId: {}, groupName: {}, parentId: {}",
+                sysGroupDO.getGroupId(), sysGroupDO.getGroupName(), sysGroupDO.getGroupParentId());
+
         var rspDTO = new SysGroupRsp();
         BeanUtil.copyProperties(sysGroupDO, rspDTO);
 
@@ -99,7 +103,7 @@ public class SysGroupServiceImpl implements SysGroupService {
     public void deleteSysGroup(DeleteSysGroupReq deleteParam) throws BlinkException {
 
 
-        if (deleteParam.isBatchDelete()) {
+        if (Boolean.TRUE.equals(deleteParam.getBatchDelete())) {
 
             Long count = userGroupRelaMapper.selectCount(new LambdaQueryWrapper<SysUserGroupRelaDO>()
                     .in(SysUserGroupRelaDO::getGroupId, deleteParam.getIdList()));
@@ -117,7 +121,8 @@ public class SysGroupServiceImpl implements SysGroupService {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_SON_DATA);
             }
 
-            sysGroupMapper.deleteBatchIds(deleteParam.getIdList());
+            sysGroupMapper.deleteByIds(deleteParam.getIdList());
+            log.info("[SysGroup] 批量删除组织成功 | groupIds: {}", deleteParam.getIdList());
         } else {
 
             Long count = userGroupRelaMapper.selectCount(new LambdaQueryWrapper<SysUserGroupRelaDO>()
@@ -137,6 +142,7 @@ public class SysGroupServiceImpl implements SysGroupService {
             }
 
             sysGroupMapper.deleteById(deleteParam.getDeleteId());
+            log.info("[SysGroup] 删除组织成功 | groupId: {}", deleteParam.getDeleteId());
         }
 
     }
@@ -191,6 +197,9 @@ public class SysGroupServiceImpl implements SysGroupService {
 
         sysGroupMapper.updateById(sysGroupNew);
 
+        log.info("[SysGroup] 更新组织成功 | groupId: {}, groupName: {}, parentId: {}",
+                sysGroupNew.getGroupId(), sysGroupNew.getGroupName(), sysGroupNew.getGroupParentId());
+
         var rspDTO = new SysGroupRsp();
         BeanUtil.copyProperties(sysGroupNew, rspDTO);
 
@@ -198,21 +207,48 @@ public class SysGroupServiceImpl implements SysGroupService {
     }
 
     /**
-     * 查询 组 列表
+     * 查询 组 列表（树形数据不分页）
      *
-     * @param queryParam
-     * @return QuerySysGroupRspDTO
+     * @param queryParam 查询参数
+     * @return QuerySysGroupRsp
      * @throws BlinkException
      */
     @Override
     public QuerySysGroupRsp getSysGroupList(QuerySysGroupReq queryParam) throws BlinkException {
 
-        var pageRsp = new QuerySysGroupRsp();
-        var param = new SysGroupDO();
-        BeanUtil.copyProperties(queryParam, param);
-        PageUtils.queryPage(queryParam, () -> sysGroupMapper.findSysGroupList(param), pageRsp);
+        QuerySysGroupRsp rsp = new QuerySysGroupRsp();
 
-        return pageRsp;
+        LambdaQueryWrapper<SysGroupDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByAsc(SysGroupDO::getGroupLevel, SysGroupDO::getGroupId);
+
+        // 条件查询
+        if (queryParam != null) {
+            if (cn.hutool.core.util.StrUtil.isNotBlank(queryParam.getGroupName())) {
+                queryWrapper.like(SysGroupDO::getGroupName, queryParam.getGroupName());
+            }
+            if (queryParam.getGroupParentId() != null) {
+                queryWrapper.eq(SysGroupDO::getGroupParentId, queryParam.getGroupParentId());
+            }
+            if (cn.hutool.core.util.StrUtil.isNotBlank(queryParam.getGroupLeader())) {
+                queryWrapper.like(SysGroupDO::getGroupLeader, queryParam.getGroupLeader());
+            }
+        }
+
+        List<SysGroupDO> groupDOList = sysGroupMapper.selectList(queryWrapper);
+
+        // 转换为 VO 列表
+        List<SysGroupVO> voList = new ArrayList<>();
+        for (SysGroupDO groupDO : groupDOList) {
+            SysGroupVO vo = new SysGroupVO();
+            cn.hutool.core.bean.BeanUtil.copyProperties(groupDO, vo);
+            voList.add(vo);
+        }
+
+        rsp.setList(voList);
+
+        log.info("[SysGroup] 查询组织列表完成 | size: {}", voList.size());
+
+        return rsp;
     }
 
 

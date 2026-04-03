@@ -1,6 +1,7 @@
 package com.blink.base.controller;
 
 import com.blink.base.dto.req.*;
+import com.blink.base.dto.rsp.CheckMenuRoleRsp;
 import com.blink.base.dto.rsp.QueryShowMenuRsp;
 import com.blink.base.dto.vo.SysMenuVO;
 import com.blink.base.service.SysMenuService;
@@ -85,7 +86,7 @@ public class SysMenuController {
      * 根据用户查询其菜单 登入成功
      *
      * @param reqDto
-     * @return {@link ResponseDTO< QueryShowMenuReq >}
+     * @return {@link ResponseDTO<QueryShowMenuReq>}
      * @throws BlinkException
      */
     @PostMapping("/getSysMenusByRoles")
@@ -93,5 +94,16 @@ public class SysMenuController {
         return ResponseDTO.newSuccessInstance(sysMenuService.getSysMenusByRoles(reqDto.getBody()));
     }
 
+    /**
+     * 检查菜单是否已分配给角色
+     *
+     * @param reqDto 请求参数
+     * @return 检查结果
+     * @throws BlinkException 异常
+     */
+    @PostMapping("/checkMenuRoleAssignment")
+    public ResponseDTO<CheckMenuRoleRsp> checkMenuRoleAssignment(@RequestBody @Validated RequestDTO<CheckMenuRoleReq> reqDto) throws BlinkException {
+        return ResponseDTO.newSuccessInstance(sysMenuService.checkMenuRoleAssignment(reqDto.getBody()));
+    }
 
 }

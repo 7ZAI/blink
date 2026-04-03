@@ -23,4 +23,6 @@ public interface SysRoleMapper extends BaseMapper<SysRoleDO> {
     List<SysRoleVO> findSysRoleList(SysRoleDO sysRoleDO);
 
     List<SysRoleDO> findSysRolesByUser(QueryUserRolesReq queryUserRolesReq);
+
+    List<SysRoleDO> selectRoleListByIds(List<Integer> roleIdList);
 }

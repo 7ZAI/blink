@@ -19,7 +19,7 @@ public class LogInterceptor implements Interceptor {
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-
-        return null;
+        // 继续执行原始方法
+        return invocation.proceed(); 
     }
 }

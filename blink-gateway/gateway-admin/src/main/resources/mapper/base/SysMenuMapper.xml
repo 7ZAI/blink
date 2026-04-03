@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysMenuMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysMenuDO">
+        <id column="menu_id" property="menuId"/>
+        <result column="menu_name" property="menuName"/>
+        <result column="menu_en_name" property="menuEnName"/>
+        <result column="type" property="type"/>
+        <result column="icon" property="icon"/>
+        <result column="url" property="url"/>
+        <result column="order_number" property="orderNumber"/>
+        <result column="status" property="status"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="menu_level" property="menuLevel"/>
+        <result column="component_path" property="componentPath"/>
+        <result column="perm_id" property="permId"/>
+        <result column="hasChildren" property="hasChildren"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="delFlag" property="delFlag"/>
+    </resultMap>
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        menu_id
+        , menu_name, menu_en_name, type, icon, url, order_number, status, parent_id, menu_level, component_path, perm_id, hasChildren, create_by, create_time, update_by, update_time, delFlag
+    </sql>
+
+
+    <!-- 通用查询条件 -->
+    <sql id="Condition_where">
+        <trim prefix="where" prefixOverrides="and | or ">
+            <if test="menuId != null and menuId != ''">and menu_id = #{menuId}</if>
+            <if test="menuName != null and menuName != ''">and menu_name = #{menuName}</if>
+
+            <if test="menuEnName != null and menuEnName != ''">and menu_en_name = #{menuEnName}</if>
+
+            <if test="type != null and type != ''">and type = #{type}</if>
+
+            <if test="icon != null and icon != ''">and icon = #{icon}</if>
+
+            <if test="url != null and url != ''">and url = #{url}</if>
+
+            <if test="orderNumber != null and orderNumber != ''">and order_number = #{orderNumber}</if>
+
+            <if test="status != null and status != ''">and status = #{status}</if>
+
+            <if test="parentId != null and parentId != ''">and parent_id = #{parentId}</if>
+
+            <if test="menuLevel != null and menuLevel != ''">and menu_level = #{menuLevel}</if>
+
+            <if test="componentPath != null and componentPath != ''">and component_path = #{componentPath}</if>
+
+            <if test="permId != null">and perm_id = #{permId}</if>
+
+            <if test="hasChildren != null and hasChildren != ''">and hasChildren = #{hasChildren}</if>
+
+            <if test="createBy != null and createBy != ''">and create_by = #{createBy}</if>
+
+            <if test="createTime != null ">and create_time = #{createTime}</if>
+
+            <if test="updateBy != null and updateBy != ''">and update_by = #{updateBy}</if>
+
+            <if test="updateTime != null ">and update_time = #{updateTime}</if>
+
+            <if test="delFlag != null and delFlag != ''">and delFlag = #{delFlag}</if>
+
+        </trim>
+    </sql>
+
+
+    <select id="findSysMenuList" parameterType="com.blink.gateway.base.entity.SysMenuDO" resultType="com.blink.gateway.base.dto.vo.SysMenuVO">
+        SELECT sm.menu_id,
+               sm.menu_name,
+               sm.menu_en_name,
+               sm.type,
+               sm.icon,
+               sm.url,
+               sm.order_number,
+               sm.status,
+               sm.parent_id,
+               sm.menu_level,
+               sm.component_path,
+               sm.perm_id,
+               sp.ac_identity as perm_identity,
+               sp.ac_name as perm_name,
+               sm.hasChildren,
+               sm.create_by,
+               sm.create_time,
+               sm.update_by,
+               sm.update_time
+        FROM sys_menu sm
+        LEFT JOIN sys_permission sp ON sm.perm_id = sp.ac_id
+        <include refid="Condition_where"/>
+        ORDER BY sm.parent_id ASC, sm.order_number ASC
+    </select>
+
+    <!-- 根据角色查询能访问的所有菜单-->
+    <select id="findSysMenuListByRole" resultType="com.blink.gateway.base.dto.vo.SysMenuVO">
+        SELECT DISTINCT sm.*,
+               sp.ac_identity as perm_identity,
+               sp.ac_name as perm_name
+        FROM sys_menu sm
+        INNER JOIN sys_role_menu_rela srmr ON srmr.menu_id = sm.menu_id
+        LEFT JOIN sys_permission sp ON sp.ac_id = sm.perm_id
+        WHERE srmr.role_id IN
+        <foreach collection="roleIds" item="roleId" index="index" open="(" close=")" separator=",">
+            #{roleId}
+        </foreach>
+        AND sm.status = 0
+        AND sm.delFlag = 0
+        ORDER BY sm.parent_id ASC, sm.order_number ASC
+    </select>
+
+    <!-- 清空指定权限关联的所有菜单的perm_id -->
+    <update id="updatePermIdToNullByPermId">
+        UPDATE sys_menu SET perm_id = NULL WHERE perm_id = #{permId}
+    </update>
+
+    <!-- 批量更新菜单的perm_id -->
+    <update id="updatePermIdByMenuIds">
+        UPDATE sys_menu SET perm_id = #{permId}
+        WHERE menu_id IN
+        <foreach collection="menuIds" item="menuId" open="(" close=")" separator=",">
+            #{menuId}
+        </foreach>
+    </update>
+
+    <!-- 根据权限ID查询关联的菜单ID列表 -->
+    <select id="findMenuIdsByPermId" resultType="java.lang.Integer">
+        SELECT menu_id FROM sys_menu WHERE perm_id = #{permId}
+    </select>
+
+</mapper>

@@ -4,6 +4,7 @@ package com.blink.framework.common.data;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 public class UserInfoRedisDO implements Serializable {
@@ -41,6 +42,16 @@ public class UserInfoRedisDO implements Serializable {
      * 用户权限
      */
     private Set<String> permissions;
+
+    /**
+     * 超级管理员标志（0否 1是）
+     */
+    private Integer superFlag;
+
+    /**
+     * 角色ID列表
+     */
+    private List<Integer> roleIds;
 
     public Integer getUserId() {
         return userId;
@@ -90,6 +101,22 @@ public class UserInfoRedisDO implements Serializable {
         this.permissions = permissions;
     }
 
+    public Integer getSuperFlag() {
+        return superFlag;
+    }
+
+    public void setSuperFlag(Integer superFlag) {
+        this.superFlag = superFlag;
+    }
+
+    public List<Integer> getRoleIds() {
+        return roleIds;
+    }
+
+    public void setRoleIds(List<Integer> roleIds) {
+        this.roleIds = roleIds;
+    }
+
     @Override
     public String toString() {
         return "UserInfoRedisDO{" +
@@ -99,6 +126,8 @@ public class UserInfoRedisDO implements Serializable {
                 ", loginDateTime=" + loginDateTime +
                 ", token='" + token + '\'' +
                 ", permissions=" + permissions +
+                ", superFlag=" + superFlag +
+                ", roleIds=" + roleIds +
                 '}';
     }
 }

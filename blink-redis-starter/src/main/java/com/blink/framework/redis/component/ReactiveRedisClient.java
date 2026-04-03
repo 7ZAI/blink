@@ -738,7 +738,7 @@ public class ReactiveRedisClient {
      * @param callback ReactiveRedisCallback 回调接口
      * @return Flux<Object> 操作结果流
      */
-    public Flux<Object> executePipelined(ReactiveRedisCallback callback) {
+    public <T> Flux<T> executePipelined(ReactiveRedisCallback<T> callback) {
         return template.execute(callback);
     }
 
@@ -939,6 +939,7 @@ public class ReactiveRedisClient {
      * @param streamOffset Stream 偏移量配置
      * @return Flux<MapRecord < String, String, Object>> 消息记录流
      */
+    @SuppressWarnings("unchecked")
     public Flux<MapRecord<String, Object, Object>> xReadGroup(Consumer consumer, StreamOffset<String> streamOffset) {
         return template.opsForStream().read(consumer, streamOffset);
     }
@@ -952,6 +953,7 @@ public class ReactiveRedisClient {
      * @param count        最大读取数量
      * @return Flux<MapRecord < String, String, Object>> 消息记录流
      */
+    @SuppressWarnings("unchecked")
     public Flux<MapRecord<String, Object, Object>> xReadGroup(Consumer consumer, StreamOffset<String> streamOffset, long count) {
         return template.opsForStream().read(consumer, StreamReadOptions.empty().count(count), streamOffset);
     }

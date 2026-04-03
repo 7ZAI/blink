@@ -20,9 +20,11 @@ dependencies {
 }
 
 // 打包sourcesJar任务
-task sourcesJar(type: Jar, dependsOn: classes) {
-    archiveClassifier = 'sources'
-    from sourceSets.main.allSource
+if (!tasks.findByName('sourcesJar')) {
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        archiveClassifier = 'sources'
+        from sourceSets.main.allSource
+    }
 }
 
 tasks.withType(JavaCompile) {

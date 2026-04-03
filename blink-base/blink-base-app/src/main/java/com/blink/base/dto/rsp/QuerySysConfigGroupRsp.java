@@ -2,7 +2,8 @@
 package com.blink.base.dto.rsp;
 
 import lombok.Data;
-import java.io.Serializable;
+
+import com.blink.base.entity.SysConfigGroupDO;
 import com.blink.framework.common.data.PageDTO;
 import lombok.EqualsAndHashCode;
 
@@ -18,7 +19,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class QuerySysConfigGroupRsp extends PageDTO implements Serializable {
+public class QuerySysConfigGroupRsp extends PageDTO<SysConfigGroupDO> {
 
   private static final long serialVersionUID = 1L;
 

@@ -4,13 +4,12 @@ import com.baomidou.mybatisplus.annotation.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * <p>
- * 数据范围权限类型
- * </p>
+ * 数据权限过滤规则实体
  *
  * @author binblink
  * @since 2023-12-15
@@ -20,61 +19,62 @@ import java.time.LocalDateTime;
 @TableName("sys_data_filter")
 public class SysDataFilterDO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /**
-     * 数据过滤id
+     * 数据过滤ID
      */
-    @TableId(value = "data_ac_id", type = IdType.AUTO)
-    private Integer dataAcId;
+    @TableId(value = "data_filter_id", type = IdType.AUTO)
+    private Integer dataFilterId;
 
     /**
-     * 所属权限名称
-     */
-    @TableField("ac_name")
-    private Integer acName;
-
-    /**
-     * 所属权限id
-     */
-    @TableField("ac_id")
-    private Integer acId;
-
-    /**
-     * 所属权限url
-     */
-    @TableField("ac_url")
-    private Integer acUrl;
-
-    /**
-     * 数据过滤名称
+     * 过滤规则名称
      */
     @TableField("data_filter_name")
     private String dataFilterName;
 
     /**
-     * 数据过滤英文名称
+     * 过滤规则英文名称
      */
-    @TableField("data_filter_name_en_name")
-    private String dataFilterNameEnName;
+    @TableField("data_filter_en_name")
+    private String dataFilterEnName;
 
     /**
-     * 数据过滤类型 0 字段过滤 1条件过滤 3日期过滤
+     * 实体类全限定名（如 com.blink.base.entity.SysUserDO）
      */
-    @TableField("fliter_type")
-    private Integer fliterType;
+    @TableField("entity_class")
+    private String entityClass;
 
     /**
-     * 过滤表达式
+     * 对应表名（如 sys_user）
      */
-    @TableField("fliter_expression")
-    private String fliterExpression;
+    @TableField("table_name")
+    private String tableName;
 
     /**
-     * 状态 0启动 1禁用
+     * 规则类型：FIELD_FILTER/CREATOR_FILTER/DATE_RANGE_FILTER/CUSTOM_SQL
+     */
+    @TableField("rule_type")
+    private String ruleType;
+
+    /**
+     * 规则配置JSON
+     */
+    @TableField("rule_config")
+    private String ruleConfig;
+
+    /**
+     * 状态 0启用 1禁用
      */
     @TableField("status")
-    private Integer status;
+    private Byte status;
+
+    /**
+     * 备注
+     */
+    @TableField("remark")
+    private String remark;
 
     /**
      * 创建者
@@ -99,12 +99,4 @@ public class SysDataFilterDO implements Serializable {
      */
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
-
-    /**
-     * 备注
-     */
-    @TableField("remark")
-    private String remark;
-
-
 }

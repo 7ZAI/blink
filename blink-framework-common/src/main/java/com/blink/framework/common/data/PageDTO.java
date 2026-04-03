@@ -107,4 +107,27 @@ public class PageDTO<T> implements Serializable {
                 ", rows=" + rows +
                 '}';
     }
+
+    /**
+     * 静态工厂方法，创建分页对象
+     *
+     * @param rows     数据列表
+     * @param total    总记录数
+     * @param pageNum  当前页
+     * @param pageSize 每页大小
+     * @param <T>      数据类型
+     * @return PageDTO对象
+     */
+    public static <T> PageDTO<T> of(List<T> rows, int total, Integer pageNum, Integer pageSize) {
+        PageDTO<T> pageDTO = new PageDTO<>();
+        pageDTO.setRows(rows);
+        pageDTO.setTotal(total);
+        pageDTO.setPageNum(pageNum != null ? pageNum : 1);
+        pageDTO.setPageSize(pageSize != null ? pageSize : 10);
+        // 计算总页数
+        int size = pageSize != null ? pageSize : 10;
+        int pages = size > 0 ? (int) Math.ceil((double) total / size) : 0;
+        pageDTO.setPages(pages);
+        return pageDTO;
+    }
 }

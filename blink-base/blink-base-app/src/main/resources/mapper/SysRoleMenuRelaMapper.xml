@@ -41,5 +41,13 @@
 
     </delete>
 
+    <!-- 根据菜单ID查询关联的角色列表 -->
+    <select id="selectRolesByMenuId" resultType="com.blink.base.dto.vo.SysRoleVO">
+        SELECT sr.role_id, sr.role_name, sr.role_en_name, sr.role_code, sr.status, sr.role_type
+        FROM sys_role_menu_rela srm
+        INNER JOIN sys_role sr ON srm.role_id = sr.role_id
+        WHERE srm.menu_id = #{menuId}
+    </select>
+
 
 </mapper>

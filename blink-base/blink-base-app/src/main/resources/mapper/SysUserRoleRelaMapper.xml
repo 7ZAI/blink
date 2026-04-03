@@ -10,4 +10,25 @@
         </foreach>
         ON DUPLICATE KEY UPDATE user_id = VALUES(user_id)
     </insert>
+
+    <!-- 根据角色ID列表查询用户ID列表 -->
+    <select id="selectUserIdsByRoleIds" resultType="java.lang.Integer">
+        SELECT DISTINCT user_id
+        FROM sys_user_role_rela
+        WHERE role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" close=")" separator=",">
+            #{roleId}
+        </foreach>
+    </select>
+
+    <!-- 根据角色ID列表查询用户登入名列表 -->
+    <select id="selectLoginNamesByRoleIds" resultType="java.lang.String">
+        SELECT DISTINCT su.login_name
+        FROM sys_user_role_rela surr
+        INNER JOIN sys_user su ON surr.user_id = su.user_id
+        WHERE surr.role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" close=")" separator=",">
+            #{roleId}
+        </foreach>
+    </select>
 </mapper>

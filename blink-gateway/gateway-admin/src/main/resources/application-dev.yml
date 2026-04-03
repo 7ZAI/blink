@@ -1,0 +1,88 @@
+
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/gateway?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8
+    username: root
+    password: 123456
+    druid:
+      initialSize: 8
+      minIdle: 8
+      maxActive: 500
+      maxWait: 60000
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: SELECT 1
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+      poolPreparedStatements: true
+      maxPoolPreparedStatementPerConnectionSize: 20
+      filters: stat,wall,slf4j
+      connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+      remove-abandoned-timeout: 120
+      remove-abandoned: true
+      log-abandoned: true
+      monitor:
+        loginUsername: druid
+        loginPassword: druid123
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password: 123456
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          max-wait: -1ms
+          min-idle: 0
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 自定义部署配置
+gateway-admin:
+  deploy:
+    # 部署模式: single(单实例) / cluster(多实例集群)
+    mode: single
+    # 权限缓存开关（多实例必须开启）
+    cache-enabled: false
+
+# SA-Token 配置
+sa-token:
+  token-name: x-blink-token
+  timeout: 604800           # Token 有效期 7 天
+  active-timeout: 7200      # 活动超时 2 小时
+  is-concurrent: true       # 允许多端登录
+  is-share: false           # 每次登录生成新 Token
+  token-style: uuid
+  is-read-header: true
+  is-read-cookie: false
+  is-read-body: false
+  # Redis 存储 token 数据，解决服务重启后 token 失效问题
+  alone-redis:
+    database: 2
+    host: 127.0.0.1
+    port: 6379
+    password: 123456
+
+
+
+# Dubbo 配置
+dubbo:
+  application:
+    name: gateway-admin
+    qos-enable: false
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    address: nacos://127.0.0.1:8848
+    namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
+  consumer:
+    check: false
+    timeout: 10000

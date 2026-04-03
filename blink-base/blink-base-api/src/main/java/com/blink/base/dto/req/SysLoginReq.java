@@ -6,18 +6,18 @@ import jakarta.validation.constraints.NotBlank;
 public class SysLoginReq {
 
     @NotBlank
-    private String username;
+    private String loginName;
     @NotBlank
     private String password;
 
     private CaptchaVO captchaVO;
 
-    public String getUsername() {
-        return username;
+    public String getLoginName() {
+        return loginName;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setLoginName(String loginName) {
+        this.loginName = loginName;
     }
 
     public String getPassword() {

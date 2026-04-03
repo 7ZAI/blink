@@ -1,15 +1,16 @@
 package com.blink.base.service;
 
+
 import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
 import com.blink.base.dto.rsp.QueryPermissionIdentityRsp;
 import com.blink.base.dto.rsp.QuerySysPermissionRsp;
 import com.blink.base.dto.rsp.QueryUserPermissionRsp;
 import com.blink.base.dto.vo.SysPermissionVO;
-import com.blink.base.entity.SysPermissionDO;
-import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
+import com.blink.base.entity.SysPermissionDO;
+
 
 import java.util.List;
 import java.util.Set;
@@ -58,7 +59,7 @@ public interface SysPermissionService {
      * @return
      * @throws BlinkException
      */
-    QuerySysPermissionRsp<SysPermissionDO> getSysPermissionList(QuerySysPermissionReq queryParam) throws BlinkException;
+    QuerySysPermissionRsp<SysPermissionVO> getSysPermissionList(QuerySysPermissionReq queryParam) throws BlinkException;
 
     /**
      * 根据url 查询 权限标识

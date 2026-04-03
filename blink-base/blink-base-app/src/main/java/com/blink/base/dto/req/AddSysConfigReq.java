@@ -1,6 +1,8 @@
 
 package com.blink.base.dto.req;
 
+import com.blink.base.constants.BaseErrCodeConstant;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.io.Serial;
@@ -11,8 +13,6 @@ import java.time.LocalDateTime;
  * <p>
  * AddSysConfigReqDTO 新增参数配置表请求参数对象
  * </p>
- * ${dtoName}
- * sys_config
  *
  * @author blink
  * @since 2025-09-05
@@ -23,28 +23,27 @@ public class AddSysConfigReq implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-
     /**
      * 主键ID
      */
     private Integer id;
 
-
     /**
      * 参数键名
      */
+    @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     private String configKey;
-
 
     /**
      * 参数名称
      */
+    @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     private String configName;
-
 
     /**
      * 参数值
      */
+    @NotBlank(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     private String configValue;
 
 

@@ -20,7 +20,7 @@ import static com.blink.framework.common.constrant.SysConstant.*;
 @Slf4j
 public class BlinkRequestContextInterceptor implements HandlerInterceptor {
 
-    @Value("${spring.application.name}")
+    @Value("${spring.application.name:unknown}")
     private String appName;
 
 

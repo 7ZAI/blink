@@ -9,11 +9,10 @@ import com.blink.base.dto.rsp.QuerySysConfigGroupRsp;
 import com.blink.base.entity.SysConfigGroupDO;
 import com.blink.base.mapper.SysConfigGroupMapper;
 import com.blink.base.service.SysConfigGroupService;
-import com.blink.datasource.PageUtils;
+import com.blink.datasource.utils.PageUtils;
 import com.blink.framework.common.exception.BlinkException;
+import lombok.extern.slf4j.Slf4j;
 import jakarta.annotation.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,9 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Transactional(rollbackFor = Exception.class)
 @Service
+@Slf4j
 public class SysConfigGroupServiceImpl implements SysConfigGroupService {
-
-    private final Logger logger = LoggerFactory.getLogger(SysConfigGroupServiceImpl.class);
 
     @Resource
     private SysConfigGroupMapper sysConfigGroupMapper;
@@ -45,6 +43,8 @@ public class SysConfigGroupServiceImpl implements SysConfigGroupService {
         BeanUtil.copyProperties(saveParam, sysConfigGroupDO);
 
         sysConfigGroupMapper.insert(sysConfigGroupDO);
+        log.info("[SysConfigGroup] 新增参数分组成功 | id: {}, groupKey: {}, groupName: {}",
+                sysConfigGroupDO.getId(), sysConfigGroupDO.getGroupKey(), sysConfigGroupDO.getGroupName());
     }
 
     /**
@@ -56,13 +56,13 @@ public class SysConfigGroupServiceImpl implements SysConfigGroupService {
     @Override
     public void deleteSysConfigGroup(DeleteSysConfigGroupReq deleteParam) throws BlinkException {
 
-
-        if (deleteParam.isBatchDelete()) {
-            sysConfigGroupMapper.deleteBatchIds(deleteParam.getIdList());
+        if (Boolean.TRUE.equals(deleteParam.getBatchDelete())) {
+            sysConfigGroupMapper.deleteByIds(deleteParam.getIdList());
+            log.info("[SysConfigGroup] 批量删除参数分组成功 | ids: {}", deleteParam.getIdList());
         } else {
             sysConfigGroupMapper.deleteById(deleteParam.getDeleteId());
+            log.info("[SysConfigGroup] 删除参数分组成功 | id: {}", deleteParam.getDeleteId());
         }
-
     }
 
     /**
@@ -77,6 +77,8 @@ public class SysConfigGroupServiceImpl implements SysConfigGroupService {
         BeanUtil.copyProperties(updateParam, sysConfigGroupDO);
 
         sysConfigGroupMapper.updateById(sysConfigGroupDO);
+        log.info("[SysConfigGroup] 更新参数分组成功 | id: {}, groupKey: {}, groupName: {}",
+                sysConfigGroupDO.getId(), sysConfigGroupDO.getGroupKey(), sysConfigGroupDO.getGroupName());
     }
 
     /**

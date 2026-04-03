@@ -5,6 +5,7 @@ import lombok.Data;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @author binblink
@@ -71,9 +72,29 @@ public class SysMenuVO implements Serializable {
     private String componentPath;
 
     /**
+     * 关联的权限ID
+     */
+    private Integer permId;
+
+    /**
+     * 关联的权限标识（如 sysUser:add）
+     */
+    private String permIdentity;
+
+    /**
+     * 关联的权限名称
+     */
+    private String permName;
+
+    /**
      * 是否有子菜单（按钮不算）
      */
     private Boolean hasChildren;
+
+    /**
+     * 子菜单列表
+     */
+    private List<SysMenuVO> children;
 
     /**
      * 创建者
