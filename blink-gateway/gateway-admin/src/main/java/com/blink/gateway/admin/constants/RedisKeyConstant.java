@@ -48,4 +48,16 @@ public interface RedisKeyConstant {
      * 网关指标采集分布式锁 Redis Key
      */
     String GATEWAY_METRICS_COLLECT_LOCK = "blink:gateway:metrics:collect:lock";
+
+    // ==================== 消息通知相关 ====================
+
+    /**
+     * 消息通知 Pub/Sub Channel
+     */
+    String NOTIFICATION_CHANNEL = BLINK_PREFIX + ":notification:channel";
+
+    /**
+     * 用户未读消息计数 Redis Key 前缀
+     */
+    String NOTIFICATION_USER_UNREAD = BLINK_PREFIX + ":notification:unread:";
 }

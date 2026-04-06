@@ -247,4 +247,21 @@ public interface ErrCodeConstant {
      * 刷新密钥失败
      */
     String REFRESH_SECRET_FAILED = "GATE0143";
+
+    // ============ 消息通知错误码 GATE0150-GATE0159 ============
+
+    /**
+     * 消息通知不存在
+     */
+    String NOTIFICATION_NOT_EXIST = "GATE0150";
+
+    /**
+     * 消息已阅读
+     */
+    String NOTIFICATION_ALREADY_READ = "GATE0151";
+
+    /**
+     * SSE连接失败
+     */
+    String SSE_CONNECTION_FAILED = "GATE0152";
 }
