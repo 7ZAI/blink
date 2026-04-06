@@ -198,6 +198,213 @@ RewriteRequestBodyFilter（重写请求体）
 
 ---
 
+## 缓存同步机制
+
+### 概述
+
+gateway-admin 与 gateway-reactive 之间通过 **Redis Stream** 实现缓存同步，确保渠道信息、路由配置等数据在多实例环境下的一致性。
+
+### 核心组件
+
+| 组件 | 位置 | 说明 |
+|------|------|------|
+| `CacheMsg` | blink-gateway-admin-api-dubbo | 缓存消息 DTO，包含 key、value、operator、version |
+| `GateWayStreamMessageProducer` | gateway-admin | Redis Stream 消息生产者 |
+| `ChannelAsyncSyncService` | gateway-admin | 渠道异步同步服务，带重试和失败补偿 |
+| `CommonEventStreamListener` | gateway-reactive | Redis Stream 消息消费者 |
+| `MultiLevelCacheComponent` | gateway-reactive | 多级缓存组件（本地 + Redis） |
+| `RedisCacheKeyConstant` | blink-framework-common | 共享缓存 Key 常量 |
+
+### 消息结构
+
+```java
+public class CacheMsg {
+    private String key;        // 缓存 key，格式: blink:channel:{appKey}
+    private Object value;      // 缓存数据
+    private String operator;   // 操作类型: A(新增)/M(修改)/D(删除)
+    private Integer version;   // 版本号（时间戳），防止消息乱序
+}
+```
+
+### 操作类型说明
+
+| operator | 含义 | 行为 |
+|----------|------|------|
+| `A` | Add | 新增缓存，同时写入本地缓存和 Redis |
+| `M` | Modify | 修改缓存，同时更新本地缓存和 Redis |
+| `D` | Delete | 删除缓存，同时删除本地缓存和 Redis |
+
+### 数据流架构图
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            gateway-admin                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ChannelServiceImpl                                                          │
+│    ├─ saveChannel()                                                          │
+│    │    1. DB.insert()                                                       │
+│    │    2. channelSecretSyncService.addChannelSecretConfigAsync()           │
+│    │    3. channelAsyncSyncService.syncAddChannel(appKey, channelInfo)      │
+│    │                                                                         │
+│    ├─ modifyChannel()                                                        │
+│    │    1. DB.update()                                                       │
+│    │    2. channelAsyncSyncService.syncModifyChannel(appKey, channelInfo)   │
+│    │    (不再先删除 Redis 缓存，直接推送新值)                                   │
+│    │                                                                         │
+│    └─ deleteChannel()                                                        │
+│         1. DB.delete()                                                       │
+│         2. redisClient.delete(cacheKey)                                      │
+│         3. channelAsyncSyncService.syncDeleteChannel(appKey)                │
+│         4. channelSecretSyncService.deleteChannelSecretConfigAsync(appKey)  │
+│                                                                              │
+│  ChannelAsyncSyncServiceImpl (@Async "ioIntensiveThreadPool")               │
+│    ├─ syncAddChannel()    → CacheMsg(operator="A", value, version)          │
+│    ├─ syncModifyChannel() → CacheMsg(operator="M", value, version)          │
+│    └─ syncDeleteChannel() → CacheMsg(operator="D")                          │
+│                                                                              │
+│  GateWayStreamMessageProducer                                                │
+│    └─ sendCacheSyncMsg(cacheMsg) → 带重试(3次) + 失败记录                     │
+│                                                                              │
+│  CacheSyncFailureServiceImpl                                                 │
+│    ├─ recordFailure()           → 记录失败消息到 redis_mq 表                  │
+│    ├─ retryFailedMessage()      → 单条重试                                   │
+│    └─ retryAllFailedMessages()  → 批量重试                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                       │ Redis Stream
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          gateway-reactive                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  CommonEventStreamListener                                                   │
+│    └─ cacheMsgHandler(CacheMsg)                                              │
+│         ├─ operator="D" → evictTransactional() 删除本地+Redis 缓存           │
+│         └─ operator="A"/"M" → checkVersionAndUpdate()                        │
+│                                ├─ 版本号检查 (防止消息乱序)                    │
+│                                └─ setLocalAndRedisCache() 更新本地+Redis     │
+│                                                                              │
+│  MultiLevelCacheComponent                                                    │
+│    ├─ get() → 本地缓存 → Redis → 远程服务 (带分布式锁保护)                     │
+│    ├─ setLocalAndRedisCache() → 同时更新本地和 Redis                         │
+│    └─ evictTransactional() → 同时删除本地和 Redis                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 并发保护机制
+
+#### 1. 单实例缓存击穿保护
+
+Caffeine `AsyncCache.get(key, loader)` 自动合并同一 key 的并发请求：
+
+```java
+// 多个并发请求同一个 key → 只执行一次 loader
+CompletableFuture<V> future = cache.get(key, (k, executor) -> {
+    return loader.get().subscribeOn(Schedulers.boundedElastic()).toFuture();
+});
+```
+
+#### 2. 多实例缓存击穿保护
+
+使用 Redis 分布式锁，防止多个实例同时调用远程服务：
+
+```java
+private <T> Mono<T> getWithDistributedLock(String key, Class<T> clazz, RemoteService<T> service) {
+    String lockKey = key + ":lock";
+    
+    return tryAcquireLock(lockKey)
+            .flatMap(acquired -> {
+                if (acquired) {
+                    // 获取锁成功，调用远程服务
+                    return service.call(key, clazz)
+                            .flatMap(cache -> setRedisCache(key, cache))
+                            .doFinally(signal -> releaseLock(lockKey));
+                } else {
+                    // 未获取锁，等待其他实例写入后从 Redis 获取
+                    return waitForRedisValue(key, clazz);
+                }
+            });
+}
+```
+
+#### 3. 版本号检查机制
+
+使用时间戳作为版本号，防止消息乱序：
+
+```java
+// 发送端：使用当前时间戳
+cacheMsg.setVersion((int) (System.currentTimeMillis() / 1000));
+
+// 接收端：检查版本号
+if (incomingVersion <= currentVersion) {
+    log.warn("忽略过期消息 | currentVersion: {}, incomingVersion: {}", 
+             currentVersion, incomingVersion);
+    return Mono.just(true);
+}
+```
+
+### 失败补偿机制
+
+当消息发送失败时，自动记录到 `redis_mq` 表，支持手动或定时重试：
+
+```java
+// CacheSyncFailureServiceImpl
+public void recordFailure(CacheMsg cacheMsg, Exception e) {
+    // 记录失败消息到数据库
+    RedisMqDO redisMqDO = new RedisMqDO();
+    redisMqDO.setMsgStatus(MessageStatusConstant.REDIS_MSG_STATUS_SEND_FAILED);
+    redisMqDO.setPayload(JacksonUtil.toJson(cacheMsg));
+    redisMqMapper.insert(redisMqDO);
+}
+
+public boolean retryFailedMessage(String msgId) {
+    // 从数据库读取失败消息并重试发送
+    CacheMsg cacheMsg = JacksonUtil.fromJson(payload, CacheMsg.class);
+    gateWayStreamMessageProducer.sendCacheSyncMsg(cacheMsg);
+    // 更新消息状态
+}
+```
+
+### 缓存 Key 常量管理
+
+所有缓存 Key 前缀统一定义在 `RedisCacheKeyConstant`：
+
+```java
+public interface RedisCacheKeyConstant {
+    String CHANNEL_CACHE_PREFIX = "blink:channel:";           // 渠道信息
+    String GATEWAY_CONFIG_PREFIX = "blink:config:gateway:";   // 网关配置
+    String GATEWAY_STREAM_EVENT = "blink:stream:gateway:event"; // 同步 Stream
+}
+```
+
+### 配置项
+
+```yaml
+# gateway-admin (application.yml)
+web:
+  async:
+    thread-pool:
+      io:
+        enabled: true
+        coreSize: 4
+        maxSize: 8
+        queueCapacity: 1000
+        keepAliveSeconds: 30
+
+# gateway-reactive (application.yml)
+blink:
+  gateway:
+    event-stream-enable: true  # 启用 Redis Stream 监听
+```
+
+### 最佳实践
+
+1. **新增渠道**：使用 `syncAddChannel()`，operator="A"，直接推送新值
+2. **修改渠道**：使用 `syncModifyChannel()`，operator="M"，不再先删除缓存
+3. **删除渠道**：使用 `syncDeleteChannel()`，operator="D"，同时删除本地和 Redis
+4. **失败处理**：定期检查 `redis_mq` 表中的失败消息并重试
+5. **监控告警**：监控 Stream 消息积压和消费延迟
+
+---
+
 ## 配置说明
 
 ### 响应式网关配置 (application.yml)

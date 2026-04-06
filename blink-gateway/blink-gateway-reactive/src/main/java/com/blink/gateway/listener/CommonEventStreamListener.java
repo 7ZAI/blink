@@ -253,6 +253,7 @@ public class CommonEventStreamListener implements CommandLineRunner {
 
     /**
      * 缓存同步事件处理
+     * 支持版本号检查，防止消息乱序
      *
      * @param cacheMsg 缓存消息
      * @return 成功与否
@@ -261,23 +262,82 @@ public class CommonEventStreamListener implements CommandLineRunner {
 
         String operator = cacheMsg.getOperator();
         String key = cacheMsg.getKey();
-        String keyPrefix = key.substring(0, key.lastIndexOf(":"));
+        Integer incomingVersion = cacheMsg.getVersion();
+
+        // 获取 key 前缀和缓存名称
+        int lastColonIndex = key.lastIndexOf(":");
+        String keyPrefix = lastColonIndex > 0 ? key.substring(0, lastColonIndex) : key;
         String cacheName = gateWayCacheComponent.getLocalCacheKeyMapping().get(keyPrefix);
 
-        //删除缓存 重建缓存
+        // 删除缓存（同时删除本地和 Redis）
         if (GatewayConstant.CACHE_OPERATOR_DELETE.equals(operator)) {
-            return cacheComponent.evictLocalCache(cacheName, key);
+            return cacheComponent.evictTransactional(cacheName, key)
+                    .doOnSuccess(r -> log.info("[CacheSync] 删除缓存成功（本地+Redis）| key: {}", key));
         }
 
-        //直接更新缓存
+        // 新增或修改缓存（同时更新本地和 Redis）
         if (GatewayConstant.CACHE_OPERATOR_ADD.equals(operator) || GatewayConstant.CACHE_OPERATOR_MODIFY.equals(operator)) {
-            return cacheComponent.setLocalCache(cacheName, key,cacheMsg.getValue());
+            // 版本号检查：如果消息带有版本号，检查是否为更新的版本
+            if (incomingVersion != null && incomingVersion > 0) {
+                return checkVersionAndUpdate(cacheName, key, cacheMsg.getValue(), incomingVersion);
+            }
+            // 无版本号，同时更新本地和 Redis 缓存
+            return cacheComponent.setLocalAndRedisCache(cacheName, key, cacheMsg.getValue())
+                    .doOnSuccess(r -> log.info("[CacheSync] 更新缓存成功（本地+Redis）| key: {}, operator: {}", key, operator));
         }
 
+        log.warn("[CacheSync] 未知的操作类型 | key: {}, operator: {}", key, operator);
         return Mono.just(true);
     }
 
-    //TODO 定期扫描pel重新投递或者放入死信队列
+    /**
+     * 检查版本号并更新缓存
+     * 使用 Redis 存储版本号，防止消息乱序
+     * 同时更新本地缓存和 Redis 缓存
+     *
+     * @param cacheName        缓存名称
+     * @param key              缓存 key
+     * @param value            缓存值
+     * @param incomingVersion  消息版本号
+     * @return 是否更新成功
+     */
+    private Mono<Boolean> checkVersionAndUpdate(String cacheName, String key, Object value, Integer incomingVersion) {
+        String versionKey = key + ":version";
+
+        return redisClient.get(versionKey)
+                .mapNotNull(currentVersion -> {
+                    try {
+                        return Integer.parseInt(currentVersion.toString());
+                    } catch (NumberFormatException e) {
+                        return 0;
+                    }
+                })
+                .defaultIfEmpty(0)
+                .flatMap(currentVersion -> {
+                    // 版本号检查：如果消息版本号小于等于当前版本，忽略
+                    if (incomingVersion <= currentVersion) {
+                        log.warn("[CacheSync] 忽略过期消息 | key: {}, currentVersion: {}, incomingVersion: {}",
+                                key, currentVersion, incomingVersion);
+                        return Mono.just(true);
+                    }
+
+                    // 同时更新本地缓存和 Redis 缓存
+                    return cacheComponent.setLocalAndRedisCache(cacheName, key, value)
+                            .flatMap(success -> {
+                                if (success) {
+                                    return redisClient.set(versionKey, incomingVersion)
+                                            .map(v -> {
+                                                log.info("[CacheSync] 更新缓存成功（本地+Redis）| key: {}, version: {} -> {}",
+                                                        key, currentVersion, incomingVersion);
+                                                return true;
+                                            });
+                                }
+                                return Mono.just(false);
+                            });
+                });
+    }
+
+    // TODO 定期扫描 PEL 重新投递或者放入死信队列
 
 
 }

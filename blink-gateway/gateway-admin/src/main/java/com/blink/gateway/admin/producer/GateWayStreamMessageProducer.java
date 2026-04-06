@@ -45,12 +45,29 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
 
     /**
      * 数据写操作后 发送同步事件 删除数据缓存
-     * 缓存同步
+     * 缓存同步（仅删除）
      * @param cacheKey
      */
     public void cacheOnChange(String cacheKey) {
         CacheMsg cacheMsg = new CacheMsg();
         cacheMsg.setKey(cacheKey);
+        // D = Delete，表示删除缓存
+        cacheMsg.setOperator("D");
+        //发送通知同步
+        StreamMessage<CacheMsg> msg = StreamMessage.of(GATEWAY_STREAM_EVENT, MessageType.EVENT, cacheMsg);
+        msg.setSender(appName);
+        msg.setPayloadClass(CacheMsg.class.getName());
+        //发送并记录
+        sendAndRecord(msg, cacheMsg);
+    }
+
+    /**
+     * 发送缓存同步消息（支持增加/修改操作）
+     * 用于渠道信息更新等场景，直接更新缓存而非删除重建
+     *
+     * @param cacheMsg 缓存消息对象，包含 key、value、operator
+     */
+    public void sendCacheSyncMsg(CacheMsg cacheMsg) {
         //发送通知同步
         StreamMessage<CacheMsg> msg = StreamMessage.of(GATEWAY_STREAM_EVENT, MessageType.EVENT, cacheMsg);
         msg.setSender(appName);

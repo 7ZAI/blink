@@ -1,86 +1,72 @@
 package com.blink.gateway.constant;
 
+import com.blink.framework.common.constrant.RedisCacheKeyConstant;
+
 /**
- * redis常量
+ * Redis 常量
+ * 使用 RedisCacheKeyConstant 共享定义
  *
  * @author binblink
  */
 public interface RedisConstans {
 
-
     /**
-     * ---------------------------------------------------Redis relate start--------------------------------------------------------
-     **/
-
-    String BLINK_PREFIX = "blink:";
-    /**
-     * 渠道key prefix
+     * 渠道 key prefix
      */
-    String BLINK_CHANNEL_PREFIX = BLINK_PREFIX + "channel:";
+    String BLINK_CHANNEL_PREFIX = RedisCacheKeyConstant.CHANNEL_CACHE_PREFIX;
 
     /**
-     * 认证token
+     * 认证 token
      */
     String USER_TOKEN = "user:token:";
 
     /**
-     * 被踢下线的旧token标记前缀
-     * 用于区分"token过期"和"被挤下线"
-     * 完整key: user:token:old:{token}
-     * value: userId
-     * ttl: 300秒
+     * 被踢下线的旧 token 标记前缀
      */
     String USER_TOKEN_OLD = "user:token:old:";
 
     /**
-     * 用户多设备会话 ZSet key前缀
-     * 用于存储用户所有活跃会话的token及登录时间
-     * 完整key: user:tokens:{loginName}
-     * value: token, score: 登录时间戳
+     * 用户多设备会话 ZSet key 前缀
      */
     String USER_TOKENS = "user:tokens:";
 
     /**
-     * 错误信息key 前缀
+     * 错误信息 key 前缀
      */
-    String ERR_MSG_PREFIX = "system:err:msg:";
+    String ERR_MSG_PREFIX = RedisCacheKeyConstant.ERR_MSG_PREFIX;
 
     /**
      * 用户登入信息
      */
     String USER_INFO = "user:info:";
+
     /**
-     * 请求随机数 验证 key
+     * 请求随机数验证 key
      */
     String REQ_NONCE_PREFIX = "req:nonce:";
 
     /**
      * 用户权限
      */
-    String URL_PERMISSION = "permission:identity:";
+    String URL_PERMISSION = RedisCacheKeyConstant.URL_PERMISSION_PREFIX;
 
     /**
-     * 缓存key前缀
+     * 缓存 key 前缀
      */
-    String GATEWAY_CONFIG_KEY_PREFIX = BLINK_PREFIX + "config:gateway:";
-
+    String GATEWAY_CONFIG_KEY_PREFIX = RedisCacheKeyConstant.GATEWAY_CONFIG_PREFIX;
 
     /**
-     * 保存路由的key前缀
+     * 保存路由的 key 前缀
      */
-    String GATEWAY_DYNAMIC_ROUTES = BLINK_PREFIX + "gateway:routes:";
+    String GATEWAY_DYNAMIC_ROUTES = RedisCacheKeyConstant.GATEWAY_DYNAMIC_ROUTES_PREFIX;
 
     /**
-     *
+     * 缓存 Stream Group 名称
      */
     String CAHCE_STREAM_GROUP_NAME = "groupLocalCache";
 
-
     /**
-     * gateway同步 stream key
+     * Gateway 同步 Stream Key
      */
-    String GATEWAY_STREAM_EVENT = BLINK_PREFIX + "stream:gateway:event";
-
-
-    /**---------------------------------------------------Redis relate end--------------------------------------------------------**/
+    String GATEWAY_STREAM_EVENT = RedisCacheKeyConstant.GATEWAY_STREAM_EVENT;
 }

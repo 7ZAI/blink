@@ -8,6 +8,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.datasource.utils.PageUtils;
+import com.blink.framework.common.constrant.RedisCacheKeyConstant;
+import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.ChannelSecretKey;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
@@ -20,22 +22,25 @@ import com.blink.gateway.admin.constants.ConfigValueConstant;
 import com.blink.gateway.admin.constants.ErrCodeConstant;
 import com.blink.gateway.admin.dto.req.AddChannelReq;
 import com.blink.gateway.admin.dto.req.DeleteChannelReq;
+import com.blink.gateway.admin.dto.req.GetChannelSecretReq;
 import com.blink.gateway.admin.dto.req.IssueChannelTokenReq;
 import com.blink.gateway.admin.dto.req.QueryChannelReq;
 import com.blink.gateway.admin.dto.req.RefreshChannelKeyReq;
 import com.blink.gateway.admin.dto.req.UpdateChannelReq;
+import com.blink.gateway.admin.dto.rsp.ChannelSecretRsp;
 import com.blink.gateway.admin.dto.rsp.ChannelTokenRsp;
 import com.blink.gateway.admin.dto.rsp.QueryChannelRsp;
 import com.blink.gateway.admin.entity.GaChannelDO;
 import com.blink.gateway.admin.mapper.GaChannelMapper;
 import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
+import com.blink.gateway.admin.service.ChannelAsyncSyncService;
+import com.blink.gateway.admin.service.ChannelSecretSyncService;
 import com.blink.gateway.admin.service.ChannelService;
 import com.blink.gateway.dto.req.QueryOneChannelReq;
 import com.blink.gateway.dto.vo.ChannelVO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,10 +48,8 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static com.blink.gateway.admin.constants.ErrCodeConstant.CHANNEL_NOT_EXIST;
-import static com.blink.gateway.admin.constants.ErrCodeConstant.DATA_NOT_EXIST;
-import static com.blink.gateway.admin.constants.ErrCodeConstant.THREAD_INTERRUPTED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.CONFIG_PUSH_FAILED;
-import static com.blink.gateway.admin.constants.RedisKeyConstant.CHANNEL_INFO;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.DATA_NOT_EXIST;
 
 /**
  * 渠道管理服务实现类
@@ -69,6 +72,12 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Resource
     private SecretConfigComponent secretConfigComponent;
+
+    @Resource
+    private ChannelAsyncSyncService channelAsyncSyncService;
+
+    @Resource
+    private ChannelSecretSyncService channelSecretSyncService;
 
     @Override
     public ResponseDTO<QueryChannelRsp> getChannelList(QueryChannelReq req) throws BlinkException {
@@ -99,6 +108,51 @@ public class ChannelServiceImpl implements ChannelService {
     }
 
     @Override
+    public ResponseDTO<ChannelSecretRsp> getChannelSecret(GetChannelSecretReq req) throws BlinkException {
+        // 先查询渠道获取 appKey
+        GaChannelDO channelDO = channelMapper.selectById(req.getChannelId());
+        if (ObjectUtil.isNull(channelDO)) {
+            BlinkException.throwBusinessException(CHANNEL_NOT_EXIST);
+        }
+
+        ChannelSecretRsp rsp = new ChannelSecretRsp();
+        String secretField = req.getSecretField();
+
+        try {
+            // 从 Nacos 配置中心获取密钥信息
+            ChannelSecretKey secretKey = secretConfigComponent.getChannelSecretKey(channelDO.getAppKey());
+            if (ObjectUtil.isNull(secretKey)) {
+                BlinkException.throwBusinessException(CHANNEL_NOT_EXIST);
+            }
+
+            // 根据请求的字段类型返回对应的密钥值
+            String secretValue = switch (secretField) {
+                case "appSecret" -> secretKey.getAppSecret();
+                case "systemPublickey" -> secretKey.getSystemPublickey();
+                case "systemPrivatekey" -> secretKey.getSystemPrivatekey();
+                case "channelPublickey" -> secretKey.getChannelPublicKey();
+                case "channelPrivatekey" -> secretKey.getChannelPrivateKey();
+                default -> null;
+            };
+
+            if (StrUtil.isBlank(secretValue)) {
+                BlinkException.throwBusinessException(DATA_NOT_EXIST);
+            }
+
+            rsp.setSecretValue(secretValue);
+            log.info("[Channel] 获取渠道密钥成功 | channelId: {}, field: {}", req.getChannelId(), secretField);
+
+        } catch (BlinkException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[Channel] 获取渠道密钥失败 | channelId: {}, field: {}, error: {}", req.getChannelId(), secretField, e.getMessage(), e);
+            throw new BlinkException("获取渠道密钥失败: " + e.getMessage(), e, CONFIG_PUSH_FAILED);
+        }
+
+        return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    @Override
     public ResponseDTO<EmptyBody> saveChannel(AddChannelReq req) throws BlinkException {
         GaChannelDO blinkChannelDO = createNewChannelDO(req);
 
@@ -113,38 +167,19 @@ public class ChannelServiceImpl implements ChannelService {
 
         channelMapper.insert(blinkChannelDO);
 
-        // 添加渠道密钥配置到Nacos
-        addChannelSecretConfig(blinkChannelDO);
+        // 异步添加渠道密钥配置到 Nacos
+        channelSecretSyncService.addChannelSecretConfigAsync(blinkChannelDO);
 
-        // 缓存渠道信息到Redis
-        String cacheKey = CHANNEL_INFO + blinkChannelDO.getChannelId();
-        redisClient.set(cacheKey, blinkChannelDO);
+        // 构建渠道信息对象用于同步
+        ChannelInfoRedisDO channelInfo = BeanUtil.copyProperties(blinkChannelDO, ChannelInfoRedisDO.class);
 
-        log.info("[Channel] 新增渠道成功 | channelId: {}, channelName: {}", blinkChannelDO.getChannelId(), blinkChannelDO.getChannelName());
+        // 异步同步渠道信息到网关（新增缓存，operator="A"）
+        channelAsyncSyncService.syncAddChannel(blinkChannelDO.getAppKey(), channelInfo);
+
+        log.info("[Channel] 新增渠道成功 | channelId: {}, channelName: {}, appKey: {}",
+                blinkChannelDO.getChannelId(), blinkChannelDO.getChannelName(), blinkChannelDO.getAppKey());
 
         return ResponseDTO.newSuccessInstance();
-    }
-
-    @Async("ioThreadPool")
-    public void addChannelSecretConfig(GaChannelDO channelDO) throws BlinkException {
-        try {
-            secretConfigComponent.addChannelSecretConfig(channelDO);
-            log.info("[Channel] 添加渠道密钥配置成功 | appKey: {}", channelDO.getAppKey());
-        } catch (Exception e) {
-            log.error("[Channel] 添加渠道密钥配置失败 | appKey: {}, error: {}", channelDO.getAppKey(), e.getMessage(), e);
-            throw new BlinkException("添加渠道密钥配置异常: " + e.getMessage(), e, CONFIG_PUSH_FAILED);
-        }
-    }
-
-    @Async("ioThreadPool")
-    public void deleteChannelSecretConfig(String appKey) throws BlinkException {
-        try {
-            secretConfigComponent.deleteChannelSecretConfig(appKey);
-            log.info("[Channel] 删除渠道密钥配置成功 | appKey: {}", appKey);
-        } catch (Exception e) {
-            log.error("[Channel] 删除渠道密钥配置失败 | appKey: {}, error: {}", appKey, e.getMessage(), e);
-            throw new BlinkException("删除渠道密钥配置异常: " + e.getMessage(), e, CONFIG_PUSH_FAILED);
-        }
     }
 
     @Override
@@ -154,24 +189,17 @@ public class ChannelServiceImpl implements ChannelService {
             BlinkException.throwBusinessException(DATA_NOT_EXIST);
         }
 
-        String cacheKey = CHANNEL_INFO + channel.getChannelId();
-        redisClient.delete(cacheKey);
-
+        // 更新渠道信息
         BeanUtil.copyProperties(req, channel);
         channelMapper.updateById(channel);
 
-        // 延迟删除缓存
-        try {
-            Thread.sleep(300);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new BlinkException("线程中断", e, THREAD_INTERRUPTED);
-        }
+        // 构建渠道信息对象用于同步
+        ChannelInfoRedisDO channelInfo = BeanUtil.copyProperties(channel, ChannelInfoRedisDO.class);
 
-        redisClient.delete(cacheKey);
-        gateWayStreamMessageProducer.cacheOnChange(cacheKey);
+        // 异步同步渠道信息到网关（直接更新缓存，operator="M"，不再先删除 Redis 缓存）
+        channelAsyncSyncService.syncModifyChannel(channel.getAppKey(), channelInfo);
 
-        log.info("[Channel] 更新渠道成功 | channelId: {}", channel.getChannelId());
+        log.info("[Channel] 更新渠道成功 | channelId: {}, appKey: {}", channel.getChannelId(), channel.getAppKey());
 
         ChannelVO channelVO = new ChannelVO();
         BeanUtils.copyProperties(channel, channelVO);
@@ -193,21 +221,17 @@ public class ChannelServiceImpl implements ChannelService {
 
         channelMapper.deleteById(req.getChannelId());
 
-        String cacheKey = CHANNEL_INFO + blinkChannelDO.getChannelId();
-        try {
-            Thread.sleep(300);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new BlinkException("线程中断", e, THREAD_INTERRUPTED);
-        }
-
+        // 删除 Redis 缓存
+        String cacheKey = RedisCacheKeyConstant.CHANNEL_CACHE_PREFIX + blinkChannelDO.getAppKey();
         redisClient.delete(cacheKey);
-        gateWayStreamMessageProducer.cacheOnChange(cacheKey);
 
-        // 删除渠道密钥配置
-        deleteChannelSecretConfig(blinkChannelDO.getAppKey());
+        // 异步同步删除通知到 gateway-reactive（operator="D"）
+        channelAsyncSyncService.syncDeleteChannel(blinkChannelDO.getAppKey());
 
-        log.info("[Channel] 删除渠道成功 | channelId: {}", req.getChannelId());
+        // 异步删除渠道密钥配置
+        channelSecretSyncService.deleteChannelSecretConfigAsync(blinkChannelDO.getAppKey());
+
+        log.info("[Channel] 删除渠道成功 | channelId: {}, appKey: {}", req.getChannelId(), blinkChannelDO.getAppKey());
 
         return ResponseDTO.newSuccessInstance();
     }
@@ -222,8 +246,6 @@ public class ChannelServiceImpl implements ChannelService {
             BlinkException.throwBusinessException(CHANNEL_NOT_EXIST);
         }
 
-        String cacheKey = CHANNEL_INFO + channel.getChannelId();
-
         try {
             // 刷新配置中心密钥配置
             secretConfigComponent.refreshChannelKeyConfig(channel.getAppKey());
@@ -232,9 +254,12 @@ public class ChannelServiceImpl implements ChannelService {
             throw new BlinkException("刷新渠道密钥失败: " + e.getMessage(), e, CONFIG_PUSH_FAILED);
         }
 
+        // 发送删除通知，让 gateway-reactive 重新获取最新配置
+        String cacheKey = RedisCacheKeyConstant.CHANNEL_CACHE_PREFIX + channel.getAppKey();
+        redisClient.delete(cacheKey);
         gateWayStreamMessageProducer.cacheOnChange(cacheKey);
 
-        log.info("[Channel] 刷新渠道密钥成功 | channelId: {}", channel.getChannelId());
+        log.info("[Channel] 刷新渠道密钥成功 | channelId: {}, appKey: {}", channel.getChannelId(), channel.getAppKey());
 
         return ResponseDTO.newSuccessInstance(channel);
     }
@@ -249,8 +274,6 @@ public class ChannelServiceImpl implements ChannelService {
             BlinkException.throwBusinessException(CHANNEL_NOT_EXIST);
         }
 
-        String cacheKey = CHANNEL_INFO + channel.getChannelId();
-
         try {
             // 刷新配置中心密钥配置
             secretConfigComponent.refreshSystemKeyConfig(channel.getAppKey());
@@ -259,9 +282,12 @@ public class ChannelServiceImpl implements ChannelService {
             throw new BlinkException("刷新系统密钥失败: " + e.getMessage(), e, CONFIG_PUSH_FAILED);
         }
 
+        // 发送删除通知，让 gateway-reactive 重新获取最新配置
+        String cacheKey = RedisCacheKeyConstant.CHANNEL_CACHE_PREFIX + channel.getAppKey();
+        redisClient.delete(cacheKey);
         gateWayStreamMessageProducer.cacheOnChange(cacheKey);
 
-        log.info("[Channel] 刷新系统密钥成功 | channelId: {}", channel.getChannelId());
+        log.info("[Channel] 刷新系统密钥成功 | channelId: {}, appKey: {}", channel.getChannelId(), channel.getAppKey());
 
         return ResponseDTO.newSuccessInstance(channel);
     }
