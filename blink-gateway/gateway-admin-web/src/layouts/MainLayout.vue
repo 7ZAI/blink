@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElConfigProvider, ElMessage, ElMessageBox } from 'element-plus'
@@ -53,6 +53,7 @@ import { useAppStore } from '@/stores/app'
 import { useThemeStore } from '@/stores/theme'
 import { useUserStore } from '@/stores/user'
 import { useTabsStore } from '@/stores/tabs'
+import { useNotificationStore } from '@/stores/notification'
 import type { MenuVO } from '@/api/auth'
 
 defineOptions({ name: 'MainLayout' })
@@ -63,10 +64,21 @@ const appStore = useAppStore()
 const themeStore = useThemeStore()
 const userStore = useUserStore()
 const tabsStore = useTabsStore()
+const notificationStore = useNotificationStore()
 
 // Element Plus 语言配置
 const elementLocale = computed(() => {
   return appStore.language === 'zh-cn' ? zhCn : en
+})
+
+// SSE 连接初始化
+onMounted(() => {
+  // Initialize SSE connection after user is logged in
+  notificationStore.connectSse()
+})
+
+onUnmounted(() => {
+  notificationStore.disconnectSse()
 })
 
 // Logo SVG
