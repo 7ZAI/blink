@@ -26,7 +26,8 @@ html, body {
 // 覆盖 MainLayout 中的 el-main 默认样式
 .main-content.el-main {
   padding: 12px;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   height: 100%;
 }
 
@@ -205,6 +206,8 @@ html, body {
     background-color: var(--bg-color-page);
     color: var(--text-color-primary);
     font-weight: 500;
+    font-size: 13px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--border-color-light);
   }
 
@@ -279,6 +282,9 @@ html.dark .el-table {
   .el-table__header th.el-table__cell {
     background-color: var(--bg-color-page);
     color: var(--text-color-primary);
+    font-weight: 500;
+    font-size: 13px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--border-color);
   }
 
@@ -467,91 +473,152 @@ html.dark {
 }
 
 .login-left {
-  flex: 1;
-  background: var(--gradient-subtle);
+  flex: 1.2;
+  background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #cbd5e1 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 40px;
   position: relative;
+  overflow: hidden;
 
-  // 简约几何装饰
+  // 柔和的光晕效果
   &::before {
     content: '';
     position: absolute;
     top: 20%;
-    left: 10%;
-    width: 120px;
-    height: 120px;
-    background: var(--neutral-200);
-    border-radius: 50%;
-    opacity: 0.3;
+    right: 10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+    pointer-events: none;
   }
 
   &::after {
     content: '';
     position: absolute;
-    bottom: 15%;
-    right: 15%;
-    width: 80px;
-    height: 80px;
-    background: var(--primary-color-light-9);
-    border-radius: 12px;
-    opacity: 0.5;
+    bottom: 10%;
+    left: 15%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
+    pointer-events: none;
   }
 
-  .brand-content {
-    text-align: center;
-
-    .logo-wrapper {
-      margin-bottom: 24px;
-
-      .logo-icon {
-        width: 64px;
-        height: 64px;
-        background: var(--primary-color);
-        border-radius: var(--radius-md);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 28px;
-      }
-    }
-
-    .brand-title {
-      font-size: 32px;
-      font-weight: 600;
-      color: var(--text-color-primary);
-      margin-bottom: 12px;
-    }
-
-    .brand-subtitle {
-      font-size: 16px;
-      color: var(--text-color-secondary);
-    }
+  .characters-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    z-index: 1;
   }
 }
 
 .login-right {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  background-color: var(--bg-color);
+  padding: 48px 40px;
+  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+  position: relative;
+
+  // 装饰性背景
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);
+    pointer-events: none;
+  }
+
+  // 登录表单区域 - 竖直居中
+  .login-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin-top: 20px;
+    max-width: 470px;
+  }
+
+  // 品牌区域 - 位于 ::before 区域（高度200px）的竖直中间
+  .brand-content {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    // ::before 高度 200px，中间位置即 100px
+    top: 70px;
+    z-index: 2;
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-wrapper {
+      margin-bottom: 0;
+
+      .logo-icon {
+        width: 48px;
+        height: 48px;
+        background: var(--gradient-primary);
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+      }
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-color-primary);
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      margin: 0;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: var(--text-color-secondary);
+      font-weight: 400;
+      margin: 0;
+    }
+  }
 
   .login-form-wrapper {
     width: 100%;
-    max-width: 400px;
-    padding: 40px;
-    background-color: var(--card-bg);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color-base);
-    box-shadow: var(--shadow-medium);
+    max-width: 430px;
+    padding: 48px 45px;
+    background-color: #ffffff;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.05),
+      0 10px 15px -3px rgba(0, 0, 0, 0.08),
+      0 0 0 1px rgba(255, 255, 255, 0.5);
+    position: relative;
+    z-index: 1;
 
     .form-title {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 600;
       color: var(--text-color-primary);
       margin-bottom: 24px;
@@ -562,13 +629,60 @@ html.dark {
       width: 100%;
       height: 44px;
       font-size: 16px;
+      font-weight: 500;
+      border-radius: var(--radius-md);
     }
 
     .login-footer {
       display: flex;
       justify-content: center;
-      gap: 16px;
-      margin-top: 24px;
+      align-items: center;
+      gap: 12px;
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color-light);
+
+      .nav-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 18px;
+        background: var(--bg-color-page);
+        border: 1px solid var(--border-color-base);
+        border-radius: var(--radius-md);
+        color: var(--text-color-secondary);
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: var(--primary-color-light-9);
+          border-color: var(--primary-color-light);
+          color: var(--primary-color);
+          transform: translateY(-1px);
+        }
+
+        .el-icon {
+          font-size: 16px;
+        }
+
+        .language-icon {
+          width: 16px;
+          height: 16px;
+        }
+
+        span {
+          font-weight: 500;
+        }
+      }
+
+      // Dropdown active state
+      :deep(.el-dropdown-menu__item.is-active) {
+        color: var(--primary-color);
+        background-color: var(--primary-color-light-9);
+      }
     }
   }
 }
@@ -579,29 +693,52 @@ html.dark {
   }
 
   .login-left {
-    min-height: 200px;
-    padding: 24px;
-
-    &::before, &::after {
-      display: none;
-    }
-
-    .brand-content {
-      .brand-title {
-        font-size: 24px;
-      }
-
-      .brand-subtitle {
-        font-size: 14px;
-      }
-    }
+    display: none;
   }
 
   .login-right {
     padding: 24px;
+    background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+
+    .brand-content {
+      margin-bottom: 32px;
+      gap: 6px;
+
+      .brand-header {
+        gap: 12px;
+      }
+
+      .logo-wrapper .logo-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+      }
+
+      .brand-title {
+        font-size: 20px;
+      }
+
+      .brand-subtitle {
+        font-size: 12px;
+      }
+    }
 
     .login-form-wrapper {
       padding: 24px;
+
+      .form-title {
+        font-size: 18px;
+      }
+
+      .login-footer {
+        flex-wrap: wrap;
+        gap: 8px;
+
+        .nav-action {
+          padding: 8px 14px;
+          font-size: 12px;
+        }
+      }
     }
   }
 }
@@ -1717,6 +1854,9 @@ html.dark {
     .el-table__header th.el-table__cell {
       background-color: var(--bg-color-page);
       color: var(--text-color-primary);
+      font-weight: 500;
+      font-size: 13px;
+      padding: 8px 12px;
       border-bottom: 1px solid var(--border-color);
     }
 
@@ -2546,21 +2686,40 @@ html.dark {
   // ============================================
 
   .login-container {
-    background: var(--bg-color);
+    background: #0f172a;
   }
 
   .login-left {
-    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #020617 100%);
 
+    // 深色模式光晕效果
     &::before {
-      background: var(--neutral-700);
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%);
     }
 
     &::after {
-      background: rgba(59, 130, 246, 0.2);
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+    }
+
+    .characters-wrapper {
+      // Characters are visible in dark mode
+    }
+  }
+
+  .login-right {
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+
+    // 装饰性背景 - 深色模式
+    &::before {
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, transparent 100%);
     }
 
     .brand-content {
+      .logo-wrapper .logo-icon {
+        background: var(--gradient-primary);
+        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+      }
+
       .brand-title {
         color: var(--text-color-primary);
       }
@@ -2569,24 +2728,82 @@ html.dark {
         color: var(--text-color-secondary);
       }
     }
-  }
-
-  .login-right {
-    background-color: var(--bg-color);
 
     .login-form-wrapper {
-      background-color: var(--card-bg);
-      border-color: var(--border-color-base);
+      background-color: #1e293b;
+      border-color: #475569;
+      box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.2),
+        0 10px 15px -3px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
       .form-title {
         color: var(--text-color-primary);
       }
 
-      .login-footer .nav-action {
-        color: var(--text-color-secondary);
+      // 深色模式下输入框更明显
+      .el-input {
+        .el-input__wrapper {
+          background-color: #0f172a !important;
+          border: 1px solid #94a3b8 !important;
+          box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.1) !important;
 
-        &:hover {
-          color: var(--primary-color);
+          &:hover {
+            border-color: #cbd5e1 !important;
+          }
+
+          &.is-focus {
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+          }
+        }
+
+        .el-input__inner {
+          color: var(--text-color-primary);
+
+          &::placeholder {
+            color: var(--text-color-placeholder);
+          }
+        }
+
+        // 前缀/后缀图标
+        .el-input__prefix,
+        .el-input__suffix {
+          color: var(--text-color-secondary);
+        }
+      }
+
+      // 复选框样式
+      .el-checkbox {
+        .el-checkbox__inner {
+          background-color: #0f172a !important;
+          border-color: #94a3b8 !important;
+        }
+
+        &.is-checked .el-checkbox__inner {
+          background-color: var(--primary-color) !important;
+          border-color: var(--primary-color) !important;
+        }
+
+        .el-checkbox__label {
+          color: var(--text-color-regular);
+        }
+      }
+
+      .login-footer {
+        border-top-color: #334155;
+
+        .nav-action {
+          background: #0f172a;
+          border-color: #475569;
+          color: var(--text-color-secondary);
+
+          &:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateY(-1px);
+          }
         }
       }
     }

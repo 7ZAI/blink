@@ -28,12 +28,8 @@
         <el-dropdown-item command="profile">
           <el-icon><User /></el-icon>{{ t('header.profile') }}
         </el-dropdown-item>
-        <el-dropdown-item command="theme">
-          <el-icon>
-            <Moon v-if="themeStore.theme === 'light'" />
-            <Sunny v-else />
-          </el-icon>
-          {{ themeStore.theme === 'light' ? t('header.darkMode') : t('header.lightMode') }}
+        <el-dropdown-item command="themeSettings">
+          <el-icon><Setting /></el-icon>{{ t('header.themeSettings') }}
         </el-dropdown-item>
         <el-dropdown-item divided command="logout">
           <el-icon><SwitchButton /></el-icon>{{ t('header.logout') }}
@@ -48,7 +44,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElConfigProvider, ElMessage, ElMessageBox } from 'element-plus'
-import { User, SwitchButton, Sunny, Moon } from '@element-plus/icons-vue'
+import { User, SwitchButton, Setting } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'
 import { MainLayout } from '@blink/components'
@@ -132,10 +128,10 @@ const handleLanguageChange = (lang: string) => {
 const handleUserCommand = async (command: string) => {
   switch (command) {
     case 'profile':
-      router.push('/profile')
+      router.push('/settings')
       break
-    case 'theme':
-      themeStore.toggleTheme()
+    case 'themeSettings':
+      router.push('/settings')
       break
     case 'logout':
       try {

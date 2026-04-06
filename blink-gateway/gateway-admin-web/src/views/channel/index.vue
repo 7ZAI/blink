@@ -28,9 +28,17 @@
     <el-card class="table-card flex-1 flex flex-col overflow-hidden" shadow="never">
       <template #header>
         <div class="table-header">
-          <AuthButton :perm="ButtonPerms.Channel.Add" type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>{{ t('common.add') }}
-          </AuthButton>
+          <div class="header-left">
+            <AuthButton :perm="ButtonPerms.Channel.Add" type="primary" @click="handleAdd">
+              <el-icon><Plus /></el-icon>{{ t('common.add') }}
+            </AuthButton>
+            <AuthButton :perm="ButtonPerms.Channel.Edit" type="success" :disabled="syncDisabled" @click="handleSyncSelected">
+              <el-icon><Refresh /></el-icon>{{ t('channel.sync') }}
+            </AuthButton>
+            <span v-if="selectedChannelIds.length > 0" class="selected-info">
+              {{ t('channel.selectedCount', { count: selectedChannelIds.length }) }}
+            </span>
+          </div>
         </div>
       </template>
 
@@ -41,7 +49,9 @@
           :data="tableData"
           height="100%"
           stripe
+          @selection-change="handleSelectionChange"
         >
+          <el-table-column type="selection" width="50" align="center" />
           <el-table-column prop="channelId" :label="t('channel.channelId')" min-width="180" show-overflow-tooltip>
             <template #default="{ row }">
               <span class="channel-id">{{ row.channelId || '-' }}</span>
@@ -63,7 +73,7 @@
                 v-model="row.encryptionSwitch"
                 :active-value="0"
                 :inactive-value="1"
-                @change="handleEncryptionChange(row)"
+                :before-change="() => handleEncryptionBeforeChange(row)"
               />
             </template>
           </el-table-column>
@@ -78,9 +88,12 @@
               {{ row.createTime || '-' }}
             </template>
           </el-table-column>
-          <el-table-column :label="t('common.operation')" min-width="280" fixed="right">
+          <el-table-column :label="t('common.operation')" min-width="320" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
+                <AuthButton :perm="ButtonPerms.Channel.Edit" type="primary" link size="small" @click="handleDetail(row)">
+                  <el-icon><View /></el-icon>{{ t('common.detail') }}
+                </AuthButton>
                 <AuthButton :perm="ButtonPerms.Channel.Edit" type="primary" link size="small" @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>{{ t('common.edit') }}
                 </AuthButton>
@@ -342,6 +355,106 @@
         <el-button @click="tokenDialogVisible = false">{{ t('common.close') }}</el-button>
       </template>
     </el-dialog>
+
+    <!-- Channel Detail Dialog -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      :title="t('channel.channelInfo')"
+      width="680px"
+      :close-on-click-modal="false"
+      :lock-scroll="false"
+    >
+      <el-descriptions :column="2" border class="channel-detail">
+        <el-descriptions-item :label="t('channel.channelId')">
+          <span class="mono-text">{{ detailData.channelId || '-' }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.channelName')">
+          {{ detailData.channelName || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.appKey')">
+          <span class="mono-text">{{ detailData.appKey || '-' }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.appSecret')">
+          <el-button type="primary" link size="small" @click="showSecret('appSecret')">
+            <el-icon><View /></el-icon>{{ t('common.show') }}
+          </el-button>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.systemPublickey')">
+          <el-button type="primary" link size="small" @click="showSecret('systemPublickey')">
+            <el-icon><View /></el-icon>{{ t('common.show') }}
+          </el-button>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.systemPrivatekey')">
+          <el-button type="primary" link size="small" @click="showSecret('systemPrivatekey')">
+            <el-icon><View /></el-icon>{{ t('common.show') }}
+          </el-button>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.channelPublickey')">
+          <el-button type="primary" link size="small" @click="showSecret('channelPublickey')">
+            <el-icon><View /></el-icon>{{ t('common.show') }}
+          </el-button>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.channelPrivatekey')">
+          <el-button type="primary" link size="small" @click="showSecret('channelPrivatekey')">
+            <el-icon><View /></el-icon>{{ t('common.show') }}
+          </el-button>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('common.status')">
+          <el-tag v-if="detailData.enable === 0" type="success">{{ t('common.enabled') }}</el-tag>
+          <el-tag v-else type="danger">{{ t('common.disabled') }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.encryptionSwitch')">
+          <el-tag v-if="detailData.encryptionSwitch === 0" type="success">{{ t('common.enabled') }}</el-tag>
+          <el-tag v-else type="danger">{{ t('common.disabled') }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.tokenType')">
+          {{ detailData.tokenType === 0 ? t('channel.tokenTypeStateful') : t('channel.tokenTypeJwt') }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('channel.authoritySwitch')">
+          <el-tag v-if="detailData.authoritySwitch === 0" type="success">{{ t('common.enabled') }}</el-tag>
+          <el-tag v-else type="danger">{{ t('common.disabled') }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('common.createTime')">
+          {{ detailData.createTime || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('common.updateTime')">
+          {{ detailData.updateTime || '-' }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('common.remark')" :span="2">
+          {{ detailData.remark || '-' }}
+        </el-descriptions-item>
+      </el-descriptions>
+      <template #footer>
+        <el-button @click="detailDialogVisible = false">{{ t('common.close') }}</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- Secret View Dialog -->
+    <el-dialog
+      v-model="secretDialogVisible"
+      :title="secretTitle"
+      width="600px"
+      :close-on-click-modal="false"
+      :lock-scroll="false"
+    >
+      <div class="secret-content">
+        <el-input
+          v-model="secretContent"
+          type="textarea"
+          :rows="8"
+          readonly
+          class="secret-textarea"
+        />
+        <div class="secret-actions">
+          <el-button type="primary" @click="copySecret">
+            <el-icon><DocumentCopy /></el-icon>{{ t('common.copy') }}
+          </el-button>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="secretDialogVisible = false">{{ t('common.close') }}</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -359,6 +472,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, MoreFilled, DocumentCopy, Key, User, View } from '@element-plus/icons-vue'
 import {
   getChannelList,
+  getChannel,
+  getChannelSecret,
   saveChannel,
   updateChannel,
   deleteChannel,
@@ -369,8 +484,13 @@ import {
   type AddChannelParams,
   type UpdateChannelParams,
   type ChannelInfo,
-  type IssueTokenResult
+  type IssueTokenResult,
+  type GetChannelSecretParams
 } from '@/api/channel'
+import {
+  syncChannelData,
+  type SyncChannelDataParams
+} from '@/api/dataSync'
 import {
   getSimpleUserList,
   getUserPermissionDetail,
@@ -399,6 +519,10 @@ const searchForm = reactive<QueryChannelParams>({
 const loading = ref(false)
 const tableData = ref<ChannelInfo[]>([])
 const total = ref(0)
+
+// 选择状态
+const selectedChannelIds = ref<string[]>([])
+const syncDisabled = computed(() => selectedChannelIds.value.length === 0)
 
 // 弹窗
 const dialogVisible = ref(false)
@@ -460,6 +584,42 @@ const permissionDetail = reactive<UserPermissionDetail>({
   dataFilters: []
 })
 
+// 渠道详情弹窗
+const detailDialogVisible = ref(false)
+const detailData = reactive<ChannelInfo>({
+  channelId: '',
+  channelName: '',
+  appKey: '',
+  appSecret: '',
+  relaUserId: '',
+  accessToken: '',
+  systemPublickey: '',
+  systemPrivatekey: '',
+  channelPublickey: '',
+  channelPrivatekey: '',
+  enable: 0,
+  encryptionSwitch: 0,
+  tokenType: 0,
+  authoritySwitch: 0,
+  remark: '',
+  createBy: '',
+  updateBy: '',
+  createTime: '',
+  updateTime: ''
+})
+
+// 敏感信息查看弹窗
+const secretDialogVisible = ref(false)
+const secretTitle = ref('')
+const secretContent = ref('')
+const secretFieldMap: Record<string, string> = {
+  appSecret: 'channel.appSecret',
+  systemPublickey: 'channel.systemPublickey',
+  systemPrivatekey: 'channel.systemPrivatekey',
+  channelPublickey: 'channel.channelPublickey',
+  channelPrivatekey: 'channel.channelPrivatekey'
+}
+
 /**
  * 加载渠道列表数据
  */
@@ -469,10 +629,51 @@ const loadData = async () => {
     const res = await getChannelList(searchForm)
     tableData.value = res.rows || []
     total.value = res.total || 0
+    // 清空选择
+    selectedChannelIds.value = []
   } catch (error) {
     console.error('[ChannelManagement] Failed to load channel list:', error)
     tableData.value = []
     total.value = 0
+  } finally {
+    loading.value = false
+  }
+}
+
+/**
+ * 处理选择变化
+ */
+const handleSelectionChange = (selection: ChannelInfo[]) => {
+  selectedChannelIds.value = selection.map(item => item.channelId)
+}
+
+/**
+ * 处理同步所选渠道
+ */
+const handleSyncSelected = async () => {
+  if (selectedChannelIds.value.length === 0) {
+    ElMessage.warning(t('channel.selectChannelToSync'))
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      t('channel.syncConfirm'),
+      t('message.tips'),
+      { type: 'info' }
+    )
+
+    loading.value = true
+    await syncChannelData({
+      channelIds: selectedChannelIds.value
+    })
+    ElMessage.success(t('channel.syncSuccess'))
+    // 清空选择
+    selectedChannelIds.value = []
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('[ChannelManagement] Failed to sync channels:', error)
+    }
   } finally {
     loading.value = false
   }
@@ -602,26 +803,38 @@ const resetForm = () => {
 }
 
 /**
- * 处理加密开关变更
+ * 处理加密开关变更前的确认
  * @param row - 渠道信息
  */
-const handleEncryptionChange = async (row: ChannelInfo) => {
+const handleEncryptionBeforeChange = async (row: ChannelInfo): Promise<boolean> => {
+  const willEnable = row.encryptionSwitch === 1
+  const confirmMsg = willEnable ? t('channel.encryptionEnableConfirm') : t('channel.encryptionDisableConfirm')
+
+  try {
+    await ElMessageBox.confirm(confirmMsg, t('message.tips'), { type: 'warning' })
+  } catch {
+    // 用户取消
+    return false
+  }
+
+  // 用户确认，执行更新
+  const newSwitchValue = willEnable ? 0 : 1
   try {
     await updateChannel({
       channelId: row.channelId,
       channelName: row.channelName,
       relaUserId: row.relaUserId,
       enable: row.enable,
-      encryptionSwitch: row.encryptionSwitch,
+      encryptionSwitch: newSwitchValue,
       tokenType: row.tokenType,
       authoritySwitch: row.authoritySwitch,
       remark: row.remark
     })
     ElMessage.success(t('message.success'))
+    return true
   } catch (error) {
     console.error('[ChannelManagement] Failed to update encryption switch:', error)
-    // 恢复开关状态
-    row.encryptionSwitch = row.encryptionSwitch === 0 ? 1 : 0
+    return false
   }
 }
 
@@ -780,6 +993,52 @@ const viewUserPermission = async (user: SimpleUserInfo) => {
   }
 }
 
+/**
+ * 处理查看渠道详情
+ */
+const handleDetail = async (row: ChannelInfo) => {
+  try {
+    // 只获取渠道基本信息，密钥信息在点击查看时才获取
+    const res = await getChannel({ channelId: row.channelId })
+    Object.assign(detailData, res)
+    // 清空密钥信息
+    detailData.appSecret = ''
+    detailData.systemPublickey = ''
+    detailData.systemPrivatekey = ''
+    detailData.channelPublickey = ''
+    detailData.channelPrivatekey = ''
+
+    detailDialogVisible.value = true
+  } catch (error) {
+    console.error('[ChannelManagement] Failed to get channel detail:', error)
+  }
+}
+
+/**
+ * 显示敏感信息
+ */
+const showSecret = async (field: string) => {
+  try {
+    const res = await getChannelSecret({
+      channelId: detailData.channelId,
+      secretField: field as GetChannelSecretParams['secretField']
+    })
+    secretTitle.value = t(secretFieldMap[field] || field)
+    secretContent.value = res.secretValue
+    secretDialogVisible.value = true
+  } catch (error) {
+    console.error('[ChannelManagement] Failed to get channel secret:', error)
+  }
+}
+
+/**
+ * 复制敏感信息
+ */
+const copySecret = () => {
+  navigator.clipboard.writeText(secretContent.value)
+  ElMessage.success(t('common.copy') + t('message.success'))
+}
+
 // 组件挂载时加载初始数据
 onMounted(() => {
   loadData()
@@ -789,8 +1048,27 @@ onMounted(() => {
 <style scoped lang="scss">
 /* 渠道管理页面 - 继承全局 table-page-container 样式 */
 
+.table-header {
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .selected-info {
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+    margin-left: 8px;
+  }
+}
+
 .channel-id,
 .app-key {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+}
+
+.mono-text {
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 13px;
 }
@@ -804,6 +1082,32 @@ onMounted(() => {
 .dialog-form {
   :deep(.el-form-item) {
     margin-bottom: 20px;
+  }
+}
+
+.channel-detail {
+  :deep(.el-descriptions__label) {
+    width: 140px;
+    font-weight: 500;
+  }
+
+  :deep(.el-descriptions__content) {
+    word-break: break-all;
+  }
+}
+
+.secret-content {
+  .secret-textarea {
+    :deep(.el-textarea__inner) {
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+  }
+
+  .secret-actions {
+    margin-top: 12px;
+    text-align: right;
   }
 }
 </style>

@@ -1,22 +1,33 @@
 <template>
   <div class="login-container">
-    <!-- Left Panel - Branding -->
+    <!-- Left Panel - Animated Characters -->
     <div class="login-left">
-      <div class="brand-content">
-        <div class="logo-wrapper">
-          <div class="logo-icon">
-            <el-icon :size="28"><Guide /></el-icon>
-          </div>
-        </div>
-        <h1 class="brand-title">Gateway Admin</h1>
-        <p class="brand-subtitle">{{ t('login.brandSubtitle') }}</p>
+      <div class="characters-wrapper">
+        <AnimatedCharacters
+          :isTyping="isTyping"
+          :showPassword="showPasswordState"
+          :passwordLength="loginForm.password.length"
+        />
       </div>
     </div>
 
     <!-- Right Panel - Login Form -->
     <div class="login-right">
-      <div class="login-form-wrapper">
-        <h2 class="form-title">{{ t('login.welcomeBack') }}</h2>
+      <div class="brand-content">
+        <div class="brand-header">
+          <div class="logo-wrapper">
+            <div class="logo-icon">
+              <el-icon :size="24"><Guide /></el-icon>
+            </div>
+          </div>
+          <h1 class="brand-title">Gateway Admin</h1>
+        </div>
+<!--        <p class="brand-subtitle">{{ t('login.brandSubtitle') }}</p>-->
+      </div>
+
+      <div class="login-content">
+        <div class="login-form-wrapper">
+          <h2 class="form-title">{{ t('login.welcomeBack') }}</h2>
 
         <el-form ref="formRef" :model="loginForm" :rules="rules" size="large">
           <el-form-item prop="loginName">
@@ -29,11 +40,13 @@
 
           <el-form-item prop="password">
             <el-input
+              ref="passwordInputRef"
               v-model="loginForm.password"
               type="password"
               :placeholder="t('login.password')"
               :prefix-icon="Lock"
               show-password
+              @input="handlePasswordInput"
               @keyup.enter="handleLogin"
             />
           </el-form-item>
@@ -57,30 +70,40 @@
         </el-form>
 
         <div class="login-footer">
-          <button class="nav-action" :title="themeStore.theme === 'light' ? 'Dark Mode' : 'Light Mode'" @click="themeStore.toggleTheme">
-            <el-icon v-if="themeStore.theme === 'light'"><Moon /></el-icon>
-            <el-icon v-else><Sunny /></el-icon>
+          <button class="nav-action theme-toggle" :title="themeStore.theme === 'light' ? t('settings.darkMode') : t('settings.lightMode')" @click="themeStore.toggleTheme">
+            <el-icon><Moon v-if="themeStore.theme === 'light'" /><Sunny v-else /></el-icon>
+            <span>{{ themeStore.theme === 'light' ? t('settings.darkMode') : t('settings.lightMode') }}</span>
           </button>
 
-          <el-dropdown @command="handleLanguageChange">
-            <button class="nav-action">
-              {{ appStore.language === 'zh-cn' ? t('settings.chinese') : t('settings.english') }}
+          <el-dropdown @command="handleLanguageChange" trigger="click">
+            <button class="nav-action language-toggle">
+              <svg class="language-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              <span>{{ appStore.language === 'zh-cn' ? '中文' : 'EN' }}</span>
             </button>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="zh-cn">{{ t('settings.chinese') }}</el-dropdown-item>
-                <el-dropdown-item command="en-us">{{ t('settings.english') }}</el-dropdown-item>
+                <el-dropdown-item command="zh-cn" :class="{ 'is-active': appStore.language === 'zh-cn' }">
+                  中文
+                </el-dropdown-item>
+                <el-dropdown-item command="en-us" :class="{ 'is-active': appStore.language === 'en-us' }">
+                  English
+                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
         </div>
+      </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
@@ -88,6 +111,7 @@ import { User, Lock, Guide, Moon, Sunny } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { useAppStore } from '@/stores/app'
+import AnimatedCharacters from './components/AnimatedCharacters.vue'
 
 defineOptions({ name: 'Login' })
 
@@ -99,13 +123,27 @@ const themeStore = useThemeStore()
 const appStore = useAppStore()
 
 const formRef = ref()
+const passwordInputRef = ref()
 const loading = ref(false)
+const isTyping = ref(false)
+const showPasswordState = ref(false)
+let typingTimeout: ReturnType<typeof setTimeout> | null = null
+let observer: MutationObserver | null = null
 
 const loginForm = reactive({
   loginName: '',
   password: '',
   rememberMe: false
 })
+
+// Watch password changes to trigger typing animation
+const handlePasswordInput = () => {
+  isTyping.value = true
+  if (typingTimeout) clearTimeout(typingTimeout)
+  typingTimeout = setTimeout(() => {
+    isTyping.value = false
+  }, 150)
+}
 
 const rules = {
   loginName: [
@@ -152,6 +190,33 @@ const handleLanguageChange = (lang: string) => {
   appStore.setLanguage(lang)
   locale.value = lang
 }
+
+// Monitor password visibility changes using MutationObserver
+onMounted(() => {
+  // Wait for the component to render
+  setTimeout(() => {
+    const inputWrapper = passwordInputRef.value?.$el
+    if (inputWrapper) {
+      const inputElement = inputWrapper.querySelector('input')
+      if (inputElement) {
+        observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'type') {
+              const target = mutation.target as HTMLInputElement
+              showPasswordState.value = target.type === 'text'
+            }
+          })
+        })
+        observer.observe(inputElement, { attributes: true })
+      }
+    }
+  }, 100)
+})
+
+onUnmounted(() => {
+  if (typingTimeout) clearTimeout(typingTimeout)
+  if (observer) observer.disconnect()
+})
 </script>
 
 <style scoped lang="scss">

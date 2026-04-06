@@ -82,6 +82,17 @@ export interface IssueTokenResult {
   expiresIn: number
 }
 
+// Get Channel Secret Params
+export interface GetChannelSecretParams {
+  channelId: string
+  secretField: 'appSecret' | 'systemPublickey' | 'systemPrivatekey' | 'channelPublickey' | 'channelPrivatekey'
+}
+
+// Channel Secret Result
+export interface ChannelSecretResult {
+  secretValue: string
+}
+
 // Page Result
 export interface PageResult<T> {
   pageNum: number
@@ -130,4 +141,9 @@ export const refreshSystemKey = (params: RefreshKeyParams): Promise<ChannelInfo>
 // Issue channel token
 export const issueChannelToken = (params: IssueTokenParams): Promise<IssueTokenResult> => {
   return request.post('/channel/issueChannelToken', { body: params })
+}
+
+// Get channel secret
+export const getChannelSecret = (params: GetChannelSecretParams): Promise<ChannelSecretResult> => {
+  return request.post('/channel/getChannelSecret', { body: params })
 }
