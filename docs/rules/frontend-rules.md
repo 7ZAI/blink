@@ -169,6 +169,72 @@ ElMessageBox.confirm(t('user.deleteConfirm'), t('message.tips'))
 - `src/locales/zh-cn.ts` - 中文
 - `src/locales/en-us.ts` - 英文
 
+### 4.1 路由国际化规范（重要）
+
+**路由 `meta.title` 必须使用 i18n key，禁止硬编码文本：**
+
+```typescript
+// ✅ 正确 - 使用 i18n key
+{
+  path: 'user',
+  name: 'SystemUser',
+  meta: { title: 'menu.user', icon: 'User' }
+}
+
+// ❌ 错误 - 硬编码中文
+{
+  path: 'user',
+  name: 'SystemUser',
+  meta: { title: '用户管理', icon: 'User' }
+}
+```
+
+**i18n key 命名规范：**
+- 使用 `menu.` 前缀
+- 使用 camelCase（如 `userList`、`onlineUser`）
+- 与数据库 `menu_en_name` 字段对应（CamelCase 转 camelCase）
+
+### 4.2 侧边栏菜单国际化（重要）
+
+菜单数据从数据库获取，国际化处理流程：
+
+1. **数据库字段**：`menu_en_name` 存储 CamelCase 格式（如 `UserList`、`System Config`）
+2. **前端转换**：`SidebarMenu.vue` 组件自动将 CamelCase 转为 camelCase
+3. **i18n 匹配**：查找 `menu.{camelCase}` 对应的翻译
+
+```
+数据库 menu_en_name: 'UserList' → 转换 → 'userList' → t('menu.userList')
+数据库 menu_en_name: 'System Config' → 转换 → 'systemConfig' → t('menu.systemConfig')
+```
+
+**添加新菜单时的步骤：**
+
+1. 数据库插入菜单时，`menu_en_name` 使用 PascalCase 或空格分隔的英文
+2. 在 `locales/zh-cn.ts` 和 `locales/en-us.ts` 的 `menu` 对象中添加对应翻译
+3. 如果是路由页面，同时在路由 `meta.title` 中使用相同 i18n key
+
+### 4.3 标签页国际化
+
+标签页标题使用响应式计算属性实现国际化切换：
+
+```vue
+<script setup lang="ts">
+// 使用 computed 包装，响应式响应语言切换
+const translatedTabs = computed(() => {
+  return props.tabs.map(tab => ({
+    ...tab,
+    translatedTitle: t(tab.title)  // tab.title 存储的是 i18n key
+  }))
+})
+</script>
+
+<template>
+  <div v-for="tab in translatedTabs" :key="tab.path">
+    <span>{{ tab.translatedTitle }}</span>
+  </div>
+</template>
+```
+
 ## 5. 样式规范
 
 **CSS变量（支持暗黑模式）：**
@@ -541,3 +607,202 @@ const handleSubmit = async () => {
 - 表单提交按钮
 - 确认操作按钮
 - 保存/删除等关键操作
+
+## 15. 头像处理规范
+
+### 15.1 头像存储格式
+
+用户头像字段 `avatar` 存储的是头像样式名称（如 `lorelei`、`fun-emoji`），而非完整 URL。
+
+### 15.2 头像解析函数
+
+使用 `getLocalAvatarUrl` 函数将头像名称转换为实际 SVG 资源 URL：
+
+```typescript
+import { getLocalAvatarUrl } from '@/utils/avatar'
+
+// 获取头像 URL
+const avatarUrl = getLocalAvatarUrl(user.avatar)
+```
+
+### 15.3 组件中使用头像
+
+**Layout 组件层级传递 `avatarResolver`：**
+
+```vue
+<!-- layout/index.vue - 定义 resolver -->
+<script setup lang="ts">
+import { getLocalAvatarUrl } from '@/utils/avatar'
+
+const avatarResolver = (user: { avatar?: string }) => {
+  return getLocalAvatarUrl(user.avatar)
+}
+</script>
+
+<template>
+  <MainLayout :avatar-resolver="avatarResolver" ... />
+</template>
+
+<!-- MainLayout.vue - 透传给 Header -->
+<Header :avatar-resolver="avatarResolver" ... />
+
+<!-- Header.vue - 透传给 UserDropdown -->
+<UserDropdown :avatar-resolver="avatarResolver" ... />
+
+<!-- UserDropdown.vue - 使用 resolver 解析头像 -->
+<el-avatar :src="resolveAvatar" />
+```
+
+**关键点：**
+- `avatarResolver` 函数在顶层定义，逐层透传
+- 使用 computed 属性确保响应式
+- 头像不存在时自动回退到默认头像
+
+## 16. 布局组件开发规范
+
+### 16.1 组件层级结构
+
+```
+MainLayout.vue           # 主布局容器
+├── Sidebar/             # 侧边栏
+│   └── SidebarMenu.vue  # 菜单项（递归组件）
+├── Header/              # 头部
+│   ├── ThemeToggle.vue  # 主题切换
+│   ├── LanguageSwitch.vue # 语言切换
+│   ├── FullscreenToggle.vue # 全屏切换
+│   └── UserDropdown/    # 用户下拉菜单
+└── TabsView/            # 标签页视图
+```
+
+### 16.2 布局组件设计原则
+
+1. **Props 驱动**：所有配置通过 props 传入，组件内部不直接访问 store
+2. **Slot 扩展**：每个区域提供 slot 支持自定义内容
+3. **事件透传**：用户操作通过 emit 传递给父组件处理
+4. **状态解耦**：使用 composable 管理状态，组件只负责渲染
+
+### 16.3 新增布局配置步骤
+
+添加新的配置项时，需要同步修改：
+
+1. `MainLayout.vue` - 添加 props 定义和透传
+2. `Header.vue` 或 `Sidebar.vue` - 接收并使用 props
+3. `layout/index.vue` - 传入配置值
+4. 更新类型定义 `Props` 接口
+
+## 17. 命名约定补充
+
+### 17.1 数据库字段与前端映射
+
+| 数据库字段 | 前端使用 | 说明 |
+|-----------|---------|------|
+| `menu_en_name` | i18n key | PascalCase → camelCase 转换后作为 `menu.` 前缀的 key |
+| `avatar` | 头像名称 | 通过 `getLocalAvatarUrl()` 转换为 URL |
+
+### 17.2 国际化 Key 命名规范
+
+| 类型 | 前缀 | 示例 |
+|------|------|------|
+| 菜单 | `menu.` | `menu.userList` |
+| 通用 | `common.` | `common.search` |
+| 用户 | `user.` | `user.loginName` |
+| 验证 | `validation.` | `validation.required` |
+| 消息 | `message.` | `message.saveSuccess` |
+| 头部 | `header.` | `header.profile` |
+| 标签页 | `tabs.` | `tabs.refresh` |
+| 偏好设置 | `preferences.` | `preferences.theme` |
+| 头像 | `avatar.` | `avatar.clickToChange` |
+
+## 18. BlinkDialog 弹窗组件规范
+
+### 18.1 基本用法
+
+使用 `BlinkDialog` 替代直接使用 `el-dialog`，统一弹窗风格：
+
+```vue
+<template>
+  <BlinkDialog
+    v-model="visible"
+    title="新增用户"
+    @confirm="handleSubmit"
+  >
+    <el-form>
+      <!-- 表单内容 -->
+    </el-form>
+  </BlinkDialog>
+</template>
+```
+
+### 18.2 Props 配置
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| modelValue | boolean | - | 控制显示，支持 v-model |
+| title | string | '' | 弹窗标题 |
+| width | string \| number | '500px' | 弹窗宽度 |
+| loading | boolean | false | 内容区域 loading |
+| confirmLoading | boolean | false | 确认按钮 loading |
+| showFooter | boolean | true | 是否显示底部 |
+| showCancel | boolean | true | 是否显示取消按钮 |
+| showConfirm | boolean | true | 是否显示确认按钮 |
+| cancelText | string | '取消' | 取消按钮文本 |
+| confirmText | string | '确定' | 确认按钮文本 |
+| confirmType | string | 'primary' | 确认按钮类型 |
+| closeOnClickModal | boolean | false | 点击遮罩关闭 |
+| beforeClose | function | - | 关闭前回调 |
+
+### 18.3 自定义底部
+
+使用 `#footer` 插槽自定义底部内容：
+
+```vue
+<BlinkDialog v-model="visible" title="分配角色">
+  <RoleTransfer v-model="selectedRoles" />
+
+  <template #footer>
+    <el-button @click="visible = false">取消</el-button>
+    <el-button type="primary" :loading="submitting" @click="handleSubmit">
+      确定分配
+    </el-button>
+  </template>
+</BlinkDialog>
+```
+
+### 18.4 关闭确认
+
+使用 `beforeClose` 实现关闭确认：
+
+```vue
+<script setup lang="ts">
+const hasChanged = ref(false)
+
+const handleBeforeClose = (done: () => void) => {
+  if (hasChanged.value) {
+    ElMessageBox.confirm('有未保存的更改，确定关闭吗？', '提示', {
+      type: 'warning'
+    }).then(() => {
+      done()
+    }).catch(() => {})
+  } else {
+    done()
+  }
+}
+</script>
+
+<template>
+  <BlinkDialog v-model="visible" :before-close="handleBeforeClose">
+    <!-- 内容 -->
+  </BlinkDialog>
+</template>
+```
+
+### 18.5 Events
+
+| 事件 | 说明 |
+|------|------|
+| confirm | 点击确认按钮 |
+| cancel | 点击取消按钮 |
+| open | 弹窗打开 |
+| opened | 弹窗打开动画结束 |
+| close | 弹窗关闭 |
+| closed | 弹窗关闭动画结束 |
