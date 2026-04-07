@@ -184,3 +184,60 @@ export const FONT_SIZE_CONFIG = {
  * 用户自定义预设限制
  */
 export const MAX_CUSTOM_PRESETS = 10
+
+/**
+ * 系统级配置
+ */
+export interface SystemConfig {
+  /** 全局圆角 (0-24px) */
+  borderRadius: number
+  /** 阴影强度 */
+  shadowIntensity: 'none' | 'light' | 'medium' | 'strong'
+  /** 紧凑模式 */
+  compactMode: boolean
+  /** 内容宽度 */
+  contentWidth: 'fluid' | 'fixed'
+}
+
+/**
+ * 完整主题配置（用于 v-model）
+ */
+export interface FullThemeConfig {
+  presetId?: string
+  colors: ThemeColors
+  font: {
+    family: string
+    baseSize: number
+    largeSize: number
+    smallSize: number
+  }
+  animationsEnabled: boolean
+  system: SystemConfig
+}
+
+/**
+ * 默认系统配置
+ */
+export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
+  borderRadius: 8,
+  shadowIntensity: 'medium',
+  compactMode: false,
+  contentWidth: 'fluid',
+}
+
+/**
+ * 字体选项（用于下拉选择）
+ */
+export type FontOption = ThemeFont
+
+/**
+ * 预设主题（包含颜色）
+ */
+export type PresetTheme = ThemeConfig
+
+/**
+ * 自定义预设（包含创建时间）
+ */
+export interface CustomPreset extends PresetTheme {
+  createdAt: number
+}
