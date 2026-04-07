@@ -148,7 +148,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, Key, Menu, View, User } from '@element-plus/icons-vue'
 import { getRoleList, deleteRole, type RoleInfo } from '@/api/role'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 
 defineOptions({
   name: 'SystemRole',

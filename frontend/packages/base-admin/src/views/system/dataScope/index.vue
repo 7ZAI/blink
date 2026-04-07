@@ -145,7 +145,6 @@ import {
   type EntityInfo
 } from '@/api/dataScope'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 import { useTransition } from '@/composables/useDataTransition'
 import DataFilterFormDialog from './components/DataFilterFormDialog.vue'
 

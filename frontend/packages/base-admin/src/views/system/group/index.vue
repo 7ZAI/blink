@@ -68,7 +68,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete } from '@element-plus/icons-vue'
 import { getGroupTree, deleteGroup, type GroupInfo } from '@/api/group'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 
 defineOptions({
   name: 'SystemGroup',

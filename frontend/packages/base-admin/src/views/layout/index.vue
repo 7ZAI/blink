@@ -89,7 +89,6 @@ import { useSystemConfigStore } from '@/stores/systemConfig'
 import { setLocale, getCurrentLocale } from '@/locales'
 import MainLayout from '@/components/Layout/MainLayout.vue'
 import ThemeEditor from '@/views/settings/components/ThemeEditor.vue'
-import BlinkIcon from '@/components/BlinkIcon/index.vue'
 import { getLocalAvatarUrl } from '@/utils/avatar'
 import type { TabItem } from '@/components/Layout/TabsView/index.vue'
 

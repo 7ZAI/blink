@@ -61,7 +61,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Refresh, SwitchButton } from '@element-plus/icons-vue'
 import { getOnlineUserList, kickoutUser, type OnlineUser } from '@/api/online-user'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 
 defineOptions({
   name: 'SystemOnlineUser',

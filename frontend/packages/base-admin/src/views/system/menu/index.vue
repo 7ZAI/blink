@@ -144,7 +144,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete } from '@element-plus/icons-vue'
 import { getMenuList, deleteMenu, checkMenuRoleAssignment, type MenuInfo } from '@/api/menu'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 
 defineOptions({
   name: 'SystemMenu',

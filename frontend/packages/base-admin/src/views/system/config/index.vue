@@ -203,7 +203,6 @@ import { Search, Check, Edit, User, View } from '@element-plus/icons-vue'
 import { getConfigsByGroupKey, batchUpdateConfigs, type ConfigItem } from '@/api/config'
 import { getAvatarUrl } from '@/utils/avatar'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 import AvatarSelector from '@/components/AvatarSelector.vue'
 
 defineOptions({
