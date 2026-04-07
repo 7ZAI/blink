@@ -1,0 +1,13 @@
+{
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.compile.annotationProcessing.enabled": true,
+    "java.compiler.useJavac": true,
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "/usr/lib/jvm/java-17-openjdk-amd64", // 改成你自己的JDK路径
+            "default": true
+        }
+    ],
+    "java.configuration.updateBuildConfiguration": "automatic"
+}
