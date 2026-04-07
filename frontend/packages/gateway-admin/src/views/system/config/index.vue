@@ -202,9 +202,7 @@ import { useI18n } from 'vue-i18n'
 import { Search, Check, Edit, View } from '@element-plus/icons-vue'
 import { getConfigsByGroupKey, batchUpdateConfigs, type ConfigItem } from '@/api/config'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 import AvatarSelector from '@/components/AvatarSelector.vue'
-import BlinkIcon from '@/components/BlinkIcon/index.vue'
 
 defineOptions({
   name: 'SystemConfig',

@@ -102,7 +102,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { getDictTypeList, deleteDictType, type DictTypeInfo } from '@/api/dict'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 
 defineOptions({
   name: 'SystemDictType',

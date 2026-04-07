@@ -499,7 +499,6 @@ import {
   type UserPermissionDetail
 } from '@/api/channelUser'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 
 defineOptions({
   name: 'ChannelManagement'

@@ -94,7 +94,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { getPermissionList, deletePermission, type PermissionInfo } from '@/api/permission'
 import { ButtonPerms } from '@/composables/usePermission'
-import AuthButton from '@/components/AuthButton.vue'
 
 defineOptions({
   name: 'SystemPermission',
