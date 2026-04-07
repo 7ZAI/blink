@@ -861,6 +861,8 @@ const operations: TableOperation[] = [
 
 ### 19.4 插槽模式（复杂场景）
 
+使用 `BlinkTableColumn` 子组件自定义列内容，适用于需要自定义渲染的场景：
+
 ```vue
 <template>
   <BlinkTable :data="userList" :loading="loading">
@@ -870,10 +872,18 @@ const operations: TableOperation[] = [
         <el-avatar :src="getAvatarUrl(row.avatar)" />
       </template>
     </BlinkTableColumn>
-    <BlinkTableColumn prop="status" label="状态" type="tag" :tag-type="getStatusType" />
+    <BlinkTableColumn prop="status" label="状态">
+      <template #default="{ row }">
+        <el-tag :type="getStatusType(row.status)">
+          {{ getStatusLabel(row.status) }}
+        </el-tag>
+      </template>
+    </BlinkTableColumn>
   </BlinkTable>
 </template>
 ```
+
+> **注意**: `BlinkTableColumn` 仅支持 `type="index" | "selection" | "expand"`。标签、图片等特殊列类型需通过自定义插槽实现。
 
 ### 19.5 选择功能
 
@@ -896,7 +906,40 @@ const checkSelectable = (row: UserInfo) => {
 </script>
 ```
 
-### 19.6 Expose 方法
+### 19.6 Props 配置
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| data | T[] | - | 表格数据 |
+| columns | TableColumn[] | - | 列配置（配置模式） |
+| rowKey | string \| function | 'id' | 行唯一标识 |
+| selectable | boolean | false | 是否可选 |
+| selectedKeys | (string \| number)[] | - | 选中行 keys，支持 v-model |
+| selectType | 'checkbox' \| 'radio' | 'checkbox' | 选择类型 |
+| checkSelectable | function | - | 判断行是否可选 |
+| loading | boolean | false | 加载状态 |
+| emptyText | string | '暂无数据' | 空数据提示 |
+| height | string \| number | - | 表格高度 |
+| maxHeight | string \| number | - | 最大高度 |
+| stripe | boolean | true | 斑马纹 |
+| border | boolean | true | 边框 |
+| showOverflowTooltip | boolean | true | 溢出 tooltip |
+| operations | TableOperation[] | - | 操作列配置 |
+| operationWidth | number | 200 | 操作列宽度 |
+| operationFixed | string \| boolean | 'right' | 操作列固定 |
+
+### 19.7 Events
+
+| 事件 | 说明 |
+|------|------|
+| selection-change | 选择变化 |
+| select | 选中某一行 |
+| select-all | 全选 |
+| sort-change | 排序变化 |
+| row-click | 点击行 |
+| row-dblclick | 双击行 |
+
+### 19.8 Expose 方法
 
 ```vue
 <script setup lang="ts">
@@ -905,6 +948,26 @@ const tableRef = ref()
 // 清空选择
 const clearSelection = () => {
   tableRef.value?.clearSelection()
+}
+
+// 切换行选择状态
+const toggleRowSelection = (row) => {
+  tableRef.value?.toggleRowSelection(row)
+}
+
+// 全选/取消全选
+const toggleAllSelection = () => {
+  tableRef.value?.toggleAllSelection()
+}
+
+// 清空排序
+const clearSort = () => {
+  tableRef.value?.clearSort()
+}
+
+// 重新布局
+const doLayout = () => {
+  tableRef.value?.doLayout()
 }
 </script>
 
