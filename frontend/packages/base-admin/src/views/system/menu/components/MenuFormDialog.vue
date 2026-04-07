@@ -129,7 +129,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Close } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { addMenu, updateMenu, getMenuList, checkMenuRoleAssignment, type MenuInfo, type PermissionInfo } from '@/api/menu'
-import IconSelector from '@/components/IconSelector/index.vue'
+import { IconSelector } from '@blink/components'
 import PermissionSelectDialog from './PermissionSelectDialog.vue'
 import { useSubmitGuard } from '@/composables/useSubmitGuard'
 

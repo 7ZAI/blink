@@ -87,10 +87,9 @@ import { useTabsStore } from '@/stores/tabs'
 import { useThemeStore } from '@/stores/theme'
 import { useSystemConfigStore } from '@/stores/systemConfig'
 import { setLocale, getCurrentLocale } from '@/locales'
-import MainLayout from '@/components/Layout/MainLayout.vue'
+import { MainLayout, type TabItem } from '@blink/components'
 import ThemeEditor from '@/views/settings/components/ThemeEditor.vue'
 import { getLocalAvatarUrl } from '@/utils/avatar'
-import type { TabItem } from '@/components/Layout/TabsView/index.vue'
 
 // ============================================
 // Store 和路由
