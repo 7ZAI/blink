@@ -238,10 +238,11 @@ const handleRemoveUser = (user: RoleUserInfo) => {
 
 const handleSubmit = async () => {
   if (!props.role) return
+  const role = props.role
 
   await submitGuard(async () => {
     await assignRoleToUsers({
-      roleId: props.role.roleId,
+      roleId: role.roleId,
       userIds: selectedUsers.value.map(u => u.userId),
     })
     ElMessage.success(t('message.operationSuccess'))

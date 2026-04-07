@@ -1,8 +1,8 @@
 <template>
   <el-container class="layout-container">
-    <!-- 侧边栏 -->
-    <Sidebar
-      ref="sidebarRef"
+    <slot
+      v-if="showSidebar"
+      name="sidebar"
       :logo="logo"
       :title="title"
       :menu-list="menuList"
@@ -10,11 +10,36 @@
       :default-width="defaultSidebarWidth"
       :min-width="minSidebarWidth"
       :max-width="maxSidebarWidth"
-    />
+      :sidebar-ref="sidebarRef"
+      :toggle-sidebar="toggleSidebar"
+    >
+      <!-- 侧边栏 -->
+      <Sidebar
+        ref="sidebarRef"
+        :logo="logo"
+        :title="title"
+        :menu-list="menuList"
+        :resizable="resizable"
+        :default-width="defaultSidebarWidth"
+        :min-width="minSidebarWidth"
+        :max-width="maxSidebarWidth"
+      >
+        <template v-if="slots['sidebar-logo']" #logo="slotProps">
+          <slot name="sidebar-logo" v-bind="slotProps" />
+        </template>
+        <template v-if="slots['sidebar-menu']" #menu="slotProps">
+          <slot name="sidebar-menu" v-bind="slotProps" />
+        </template>
+        <template v-if="slots['sidebar-collapse-trigger']" #collapse-trigger="slotProps">
+          <slot name="sidebar-collapse-trigger" v-bind="slotProps" />
+        </template>
+      </Sidebar>
+    </slot>
 
     <el-container direction="vertical">
-      <!-- 头部 -->
-      <Header
+      <slot
+        v-if="showHeader"
+        name="header"
         :user-info="userInfo"
         :theme="currentTheme"
         :current-language="currentLanguage"
@@ -22,52 +47,81 @@
         :show-theme-toggle="showThemeToggle"
         :show-language-switch="showLanguageSwitch"
         :show-theme-settings="showThemeSettings"
-        @theme-toggle="handleThemeToggle"
-        @language-change="handleLanguageChange"
-        @user-command="handleUserCommand"
+        :toggle-sidebar="toggleSidebar"
       >
-        <template #left>
-          <Breadcrumb />
-        </template>
-        <template #right>
-          <slot name="header-right"></slot>
-        </template>
-        <template #dropdown-menu>
-          <slot name="dropdown-menu"></slot>
-        </template>
-      </Header>
+        <!-- 头部 -->
+        <Header
+          :user-info="userInfo"
+          :theme="currentTheme"
+          :current-language="currentLanguage"
+          :show-fullscreen="showFullscreen"
+          :show-theme-toggle="showThemeToggle"
+          :show-language-switch="showLanguageSwitch"
+          :show-theme-settings="showThemeSettings"
+          @theme-toggle="handleThemeToggle"
+          @language-change="handleLanguageChange"
+          @user-command="handleUserCommand"
+        >
+          <template #left>
+            <slot name="header-left">
+              <Breadcrumb v-if="showBreadcrumb" />
+            </slot>
+          </template>
+          <template #right-before>
+            <slot name="header-right-before"></slot>
+          </template>
+          <template #right>
+            <slot name="header-right"></slot>
+          </template>
+          <template v-if="slots['dropdown-menu']" #dropdown-menu>
+            <slot name="dropdown-menu"></slot>
+          </template>
+          <template v-if="slots['header-user-menu']" #user-menu="slotProps">
+            <slot name="header-user-menu" v-bind="slotProps"></slot>
+          </template>
+        </Header>
+      </slot>
 
-      <!-- 标签页视图 -->
-      <TabsView
+      <slot
+        v-if="showTabs"
+        name="tabs"
         :tabs="tabs"
         :cached-views="cachedViews"
-        @add-tab="handleAddTab"
-        @close-tab="handleCloseTab"
-        @close-other-tabs="handleCloseOtherTabs"
-        @close-right-tabs="handleCloseRightTabs"
-        @close-left-tabs="handleCloseLeftTabs"
-        @close-all-tabs="handleCloseAllTabs"
-        @del-cached-view="handleDelCachedView"
-        @add-cached-view="handleAddCachedView"
-      />
+      >
+        <!-- 标签页视图 -->
+        <TabsView
+          :tabs="tabs"
+          :cached-views="cachedViews"
+          @add-tab="handleAddTab"
+          @close-tab="handleCloseTab"
+          @close-other-tabs="handleCloseOtherTabs"
+          @close-right-tabs="handleCloseRightTabs"
+          @close-left-tabs="handleCloseLeftTabs"
+          @close-all-tabs="handleCloseAllTabs"
+          @del-cached-view="handleDelCachedView"
+          @add-cached-view="handleAddCachedView"
+        />
+      </slot>
 
       <!-- 主内容区域 -->
       <el-main class="main-content transition-theme">
-        <router-view v-slot="{ Component, route }">
-          <keep-alive :include="cachedViews">
-            <component :is="Component" :key="route.path" />
-          </keep-alive>
-        </router-view>
+        <slot name="main">
+          <slot>
+            <router-view v-if="useRouterView" v-slot="{ Component, route }">
+              <keep-alive v-if="enableKeepAlive" :include="cachedViews">
+                <component :is="Component" :key="route.path" />
+              </keep-alive>
+              <component v-else :is="Component" :key="route.path" />
+            </router-view>
+          </slot>
+        </slot>
       </el-main>
     </el-container>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, useSlots } from 'vue'
 import Sidebar from './Sidebar/index.vue'
 import Header, { type UserInfo } from './Header/index.vue'
 import TabsView, { type TabItem } from './TabsView/index.vue'
@@ -110,6 +164,18 @@ interface Props {
   showLanguageSwitch?: boolean
   /** 是否显示主题设置 */
   showThemeSettings?: boolean
+  /** 是否显示侧边栏 */
+  showSidebar?: boolean
+  /** 是否显示头部 */
+  showHeader?: boolean
+  /** 是否显示标签页 */
+  showTabs?: boolean
+  /** 是否显示默认面包屑 */
+  showBreadcrumb?: boolean
+  /** 是否渲染默认 router-view */
+  useRouterView?: boolean
+  /** 是否启用 keep-alive */
+  enableKeepAlive?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -129,6 +195,12 @@ const props = withDefaults(defineProps<Props>(), {
   showThemeToggle: true,
   showLanguageSwitch: true,
   showThemeSettings: false,
+  showSidebar: true,
+  showHeader: true,
+  showTabs: true,
+  showBreadcrumb: true,
+  useRouterView: true,
+  enableKeepAlive: true,
 })
 
 const emit = defineEmits<{
@@ -145,10 +217,12 @@ const emit = defineEmits<{
   (e: 'add-cached-view', name: string): void
 }>()
 
-const { t } = useI18n()
-const router = useRouter()
-
+const slots = useSlots()
 const sidebarRef = ref<InstanceType<typeof Sidebar>>()
+
+const toggleSidebar = () => {
+  sidebarRef.value?.toggleSidebar()
+}
 
 const handleThemeToggle = () => {
   emit('theme-toggle')
@@ -197,7 +271,7 @@ const handleAddCachedView = (name: string) => {
 
 // 暴露方法供父组件调用
 defineExpose({
-  toggleSidebar: () => sidebarRef.value?.toggleSidebar(),
+  toggleSidebar,
 })
 </script>
 
@@ -214,6 +288,8 @@ defineExpose({
   background: var(--bg-color-page);
   transition: background-color var(--duration-normal) var(--ease-out-expo);
   position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
 
   /* 添加微妙的网格背景 */
   &::before {

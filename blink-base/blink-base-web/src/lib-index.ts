@@ -8,6 +8,7 @@
 export { default as MainLayout } from './components/Layout/MainLayout.vue'
 export { default as Sidebar } from './components/Layout/Sidebar/index.vue'
 export { default as Header } from './components/Layout/Header/index.vue'
+export { default as UserDropdown } from './components/Layout/UserDropdown/index.vue'
 export { default as TabsView } from './components/Layout/TabsView/index.vue'
 export { default as Breadcrumb } from './components/Breadcrumb/index.vue'
 
@@ -26,6 +27,8 @@ export { default as BlinkIcon } from './components/BlinkIcon/index.vue'
 export type { MenuItem } from './components/Layout/Sidebar/SidebarMenu.vue'
 export type { UserInfo } from './components/Layout/Header/index.vue'
 export type { TabItem } from './components/Layout/TabsView/index.vue'
+export type { BreadcrumbItem } from './components/Breadcrumb/index.vue'
+export type { IconGroup } from './components/IconSelector/index.vue'
 
 // ============================================
 // Composables 导出

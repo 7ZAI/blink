@@ -9,19 +9,19 @@
     <div ref="scrollContainer" class="tabs-scroll-container">
       <div ref="scrollWrapper" class="tabs-scroll-wrapper" :style="{ transform: `translateX(${left}px)` }">
         <div
-          v-for="tag in tabs"
-          :key="tag.path"
+          v-for="tab in tabs"
+          :key="tab.path"
           class="tags-item"
-          :class="{ active: isActive(tag) }"
-          @click="handleTagClick(tag)"
-          @click.middle="closeSelectedTag(tag)"
-          @contextmenu.prevent="openContextMenu($event, tag)"
+          :class="{ active: isActive(tab) }"
+          @click="handleTabClick(tab)"
+          @click.middle="closeTab(tab)"
+          @contextmenu.prevent="openContextMenu($event, tab)"
         >
-          <span class="tags-title">{{ getTabTitle(tag) }}</span>
+          <span class="tags-title">{{ getTabTitle(tab) }}</span>
           <el-icon
-            v-if="!tag.affix"
+            v-if="!tab.affix"
             class="tags-close"
-            @click.stop="closeSelectedTag(tag)"
+            @click.stop="closeTab(tab)"
           >
             <Close />
           </el-icon>
@@ -37,7 +37,7 @@
 
     <teleport to="body">
       <div
-        v-show="contextMenuVisible"
+        v-show="showContextMenu && contextMenuVisible"
         class="tabs-context-menu"
         :style="contextMenuStyle"
         @click.stop
@@ -46,10 +46,7 @@
           <el-icon><Refresh /></el-icon>
           <span>{{ t('tabs.refresh') }}</span>
         </div>
-        <div
-          class="context-menu-item"
-          @click="handleContextCommand('close')"
-        >
+        <div class="context-menu-item" @click="handleContextCommand('close')">
           <el-icon><Close /></el-icon>
           <span>{{ t('tabs.close') }}</span>
         </div>
@@ -77,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
@@ -91,9 +88,6 @@ import {
   FolderDelete,
 } from '@element-plus/icons-vue'
 
-/**
- * 标签页项接口
- */
 export interface TabItem {
   path: string
   name: string
@@ -104,16 +98,40 @@ export interface TabItem {
   affix?: boolean
 }
 
+const LEGACY_TITLE_MAP: Record<string, string> = {
+  '首页': 'menu.dashboard',
+  '系统管理': 'menu.system',
+  '用户管理': 'menu.user',
+  '角色管理': 'menu.role',
+  '菜单管理': 'menu.menu',
+}
+
 interface Props {
-  /** 标签页列表 */
   tabs: TabItem[]
-  /** 缓存的视图名称列表 */
   cachedViews?: string[]
+  activePath?: string
+  routeIntegration?: boolean
+  autoAddCurrentRoute?: boolean
+  closeFallbackPath?: string
+  refreshRedirectPrefix?: string
+  useRefreshRedirect?: boolean
+  showContextMenu?: boolean
+  titleMap?: Record<string, string>
+  titleResolver?: (tab: TabItem) => string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   tabs: () => [],
   cachedViews: () => [],
+  activePath: '',
+  routeIntegration: true,
+  autoAddCurrentRoute: true,
+  closeFallbackPath: '/dashboard',
+  refreshRedirectPrefix: '/redirect',
+  useRefreshRedirect: true,
+  showContextMenu: true,
+  titleMap: () => ({ ...LEGACY_TITLE_MAP }),
+  titleResolver: undefined,
 })
 
 const emit = defineEmits<{
@@ -126,10 +144,10 @@ const emit = defineEmits<{
   (e: 'refresh-tab', name: string): void
   (e: 'del-cached-view', name: string): void
   (e: 'add-cached-view', name: string): void
+  (e: 'tab-click', tab: TabItem): void
 }>()
 
 const { t } = useI18n()
-
 const route = useRoute()
 const router = useRouter()
 
@@ -137,56 +155,63 @@ const scrollContainer = ref<HTMLElement>()
 const scrollWrapper = ref<HTMLElement>()
 const left = ref(0)
 const showScrollButtons = ref(false)
+const contextMenuVisible = ref(false)
+const contextMenuStyle = ref({ left: '0px', top: '0px' })
+const selectedTab = ref<TabItem | null>(null)
 
-const isActive = (tag: TabItem) => tag.path === route.path
+const currentPath = computed(() => props.activePath || route.path)
+
+const isActive = (tab: TabItem) => tab.path === currentPath.value
 
 const checkScrollButtons = () => {
   nextTick(() => {
     const container = scrollContainer.value
     const wrapper = scrollWrapper.value
-    if (!container || !wrapper) {
-      showScrollButtons.value = false
-      return
-    }
-    showScrollButtons.value = wrapper.scrollWidth > container.clientWidth
+    showScrollButtons.value = !!container && !!wrapper && wrapper.scrollWidth > container.clientWidth
   })
 }
 
-const getTabTitle = (tag: TabItem): string => {
-  const titleMap: Record<string, string> = {
-    '首页': t('menu.dashboard'),
-    '系统管理': t('menu.system'),
-    '用户管理': t('menu.user'),
-    '角色管理': t('menu.role'),
-    '菜单管理': t('menu.menu'),
+const getTabTitle = (tab: TabItem): string => {
+  if (props.titleResolver) {
+    return props.titleResolver(tab)
   }
 
-  const key = titleMap[tag.title]
-  if (key) {
-    return key
+  const mappedKey = props.titleMap[tab.title]
+  if (mappedKey) {
+    return t(mappedKey)
   }
-  return t(tag.title) || tag.title
+
+  const translated = t(tab.title)
+  return translated !== tab.title ? translated : tab.title
 }
 
-const addTags = () => {
+const addCurrentRouteTab = () => {
+  if (!props.routeIntegration || !props.autoAddCurrentRoute) {
+    return
+  }
+
   const { name, path, meta, fullPath, query, params } = route
-  if (name) {
-    emit('add-tab', {
-      name: name as string,
-      path,
-      title: (meta?.title as string) || 'no-name',
-      fullPath,
-      query: query as Record<string, any>,
-      params: params as Record<string, any>,
-      affix: meta?.affix as boolean,
-    })
+  if (!name) {
+    return
   }
+
+  emit('add-tab', {
+    name: String(name),
+    path,
+    title: (meta?.title as string) || 'no-name',
+    fullPath,
+    query: query as Record<string, any>,
+    params: params as Record<string, any>,
+    affix: meta?.affix as boolean,
+  })
 }
 
-const moveToCurrentTag = () => {
+const moveToCurrentTab = () => {
   nextTick(() => {
     const tags = scrollWrapper.value?.querySelectorAll('.tags-item')
-    if (!tags) return
+    if (!tags) {
+      return
+    }
 
     for (const tag of tags) {
       if ((tag as HTMLElement).classList.contains('active')) {
@@ -199,7 +224,9 @@ const moveToCurrentTag = () => {
 
 const moveToTarget = (target: HTMLElement) => {
   const container = scrollContainer.value
-  if (!container) return
+  if (!container) {
+    return
+  }
 
   const containerWidth = container.offsetWidth
   const targetWidth = target.offsetWidth
@@ -212,42 +239,99 @@ const moveToTarget = (target: HTMLElement) => {
   }
 }
 
-const handleTagClick = (tag: TabItem) => {
-  if (tag.path !== route.path) {
-    router.push({
-      path: tag.path,
-      query: tag.query || {},
-    })
+const navigateToTab = (tab: TabItem) => {
+  if (!props.routeIntegration) {
+    return
+  }
+
+  router.push({
+    path: tab.path,
+    query: tab.query || {},
+  })
+}
+
+const handleTabClick = (tab: TabItem) => {
+  emit('tab-click', tab)
+  if (tab.path !== currentPath.value) {
+    navigateToTab(tab)
   }
 }
 
-const closeSelectedTag = (tag: TabItem) => {
-  if (tag.affix) return
-
-  emit('close-tab', tag.path)
-
-  // 如果关闭的是当前标签页，跳转到下一个标签页
-  if (tag.path === route.path) {
-    const currentIndex = props.tabs.findIndex(t => t.path === tag.path)
-    const nextTab = props.tabs[currentIndex + 1] || props.tabs[currentIndex - 1]
-    if (nextTab) {
-      router.push(nextTab.path)
-    } else {
-      router.push('/dashboard')
-    }
+const closeTab = (tab: TabItem) => {
+  if (tab.affix) {
+    return
   }
+
+  emit('close-tab', tab.path)
+
+  if (!props.routeIntegration || tab.path !== currentPath.value) {
+    return
+  }
+
+  const currentIndex = props.tabs.findIndex(item => item.path === tab.path)
+  const nextTab = props.tabs[currentIndex + 1] || props.tabs[currentIndex - 1]
+
+  if (nextTab) {
+    navigateToTab(nextTab)
+  } else if (props.closeFallbackPath) {
+    router.push(props.closeFallbackPath)
+  }
+}
+
+const handleRefresh = (tab: TabItem) => {
+  if (!tab.name) {
+    return
+  }
+
+  emit('refresh-tab', tab.name)
+  emit('del-cached-view', tab.name)
+
+  nextTick(() => {
+    emit('add-cached-view', tab.name!)
+
+    if (!props.routeIntegration) {
+      return
+    }
+
+    if (!props.useRefreshRedirect) {
+      if (tab.path === currentPath.value) {
+        router.replace({
+          path: tab.path,
+          query: { ...tab.query, _t: String(Date.now()) },
+        })
+      }
+      return
+    }
+
+    if (tab.path === currentPath.value) {
+      router.replace({
+        path: `${props.refreshRedirectPrefix}${tab.path}`,
+        query: tab.query,
+      }).then(() => {
+        router.replace({
+          path: tab.path,
+          query: { ...tab.query, _t: String(Date.now()) },
+        })
+      })
+    } else {
+      router.push({
+        path: tab.path,
+        query: { ...tab.query, _t: String(Date.now()) },
+      })
+    }
+  })
 }
 
 const scrollLeft = () => {
-  const container = scrollContainer.value
-  if (!container) return
   left.value = Math.min(0, left.value + 200)
 }
 
 const scrollRight = () => {
   const container = scrollContainer.value
   const wrapper = scrollWrapper.value
-  if (!container || !wrapper) return
+  if (!container || !wrapper) {
+    return
+  }
 
   const containerWidth = container.offsetWidth
   const wrapperWidth = wrapper.offsetWidth
@@ -257,78 +341,60 @@ const scrollRight = () => {
   }
 }
 
-const contextMenuVisible = ref(false)
-const contextMenuStyle = ref({ left: '0px', top: '0px' })
-const selectedTag = ref<TabItem | null>(null)
+const openContextMenu = (event: MouseEvent, tab: TabItem) => {
+  if (!props.showContextMenu) {
+    return
+  }
 
-const openContextMenu = (e: MouseEvent, tag: TabItem) => {
-  e.preventDefault()
-  e.stopPropagation()
-  selectedTag.value = tag
+  event.preventDefault()
+  event.stopPropagation()
+  selectedTab.value = tab
   contextMenuStyle.value = {
-    left: `${e.clientX}px`,
-    top: `${e.clientY}px`,
+    left: `${event.clientX}px`,
+    top: `${event.clientY}px`,
   }
   contextMenuVisible.value = true
 }
 
 const closeContextMenu = () => {
   contextMenuVisible.value = false
-  selectedTag.value = null
+  selectedTab.value = null
 }
 
 const handleContextCommand = (command: string) => {
-  if (!selectedTag.value) return
+  if (!selectedTab.value) {
+    return
+  }
 
   switch (command) {
     case 'refresh':
-      if (selectedTag.value.name) {
-        emit('del-cached-view', selectedTag.value.name)
-        nextTick(() => {
-          emit('add-cached-view', selectedTag.value.name!)
-          if (selectedTag.value!.path === route.path) {
-            router.replace({
-              path: '/redirect' + selectedTag.value!.path,
-              query: selectedTag.value!.query,
-            }).then(() => {
-              router.replace({
-                path: selectedTag.value!.path,
-                query: { ...selectedTag.value!.query, _t: String(Date.now()) },
-              })
-            })
-          } else {
-            router.push({
-              path: selectedTag.value!.path,
-              query: { ...selectedTag.value!.query, _t: String(Date.now()) },
-            })
-          }
-        })
-      }
+      handleRefresh(selectedTab.value)
       break
     case 'close':
-      closeSelectedTag(selectedTag.value)
+      closeTab(selectedTab.value)
       break
     case 'closeOthers':
-      emit('close-other-tabs', selectedTag.value.path)
+      emit('close-other-tabs', selectedTab.value.path)
       break
     case 'closeRight':
-      emit('close-right-tabs', selectedTag.value.path)
+      emit('close-right-tabs', selectedTab.value.path)
       break
     case 'closeLeft':
-      emit('close-left-tabs', selectedTag.value.path)
+      emit('close-left-tabs', selectedTab.value.path)
       break
     case 'closeAll':
       emit('close-all-tabs')
       break
   }
+
   closeContextMenu()
 }
 
 watch(
   () => route.path,
   () => {
-    addTags()
-    moveToCurrentTag()
+    addCurrentRouteTab()
+    moveToCurrentTab()
     checkScrollButtons()
   },
   { immediate: true }
@@ -342,7 +408,7 @@ watch(
 )
 
 onMounted(() => {
-  addTags()
+  addCurrentRouteTab()
   checkScrollButtons()
   document.addEventListener('click', closeContextMenu)
   window.addEventListener('resize', checkScrollButtons)
@@ -517,28 +583,17 @@ onUnmounted(() => {
     font-size: 13px;
     color: var(--text-color-regular);
     cursor: pointer;
-    transition: all var(--duration-normal) var(--ease-out-expo);
-
-    .el-icon {
-      font-size: 14px;
-      color: var(--text-color-secondary);
-    }
 
     &:hover {
-      background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
       color: var(--primary-color);
-      padding-left: 20px;
-
-      .el-icon {
-        color: var(--primary-color);
-      }
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
     }
   }
 
   .context-menu-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, var(--border-color-light) 50%, transparent 100%);
-    margin: 6px 12px;
+    margin: 6px 0;
+    background: var(--border-color-light);
   }
 }
 </style>

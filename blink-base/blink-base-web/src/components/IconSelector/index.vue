@@ -2,7 +2,7 @@
   <el-popover
     ref="popoverRef"
     placement="bottom-start"
-    :width="450"
+    :width="popoverWidth"
     trigger="click"
     popper-class="icon-selector-popover"
   >
@@ -15,10 +15,10 @@
     </template>
 
     <div class="icon-selector">
-      <div class="search-box">
+      <div v-if="searchable" class="search-box">
         <el-input
           v-model.trim="searchKeyword"
-          :placeholder="t('common.search')"
+          :placeholder="searchPlaceholder || t('common.search')"
           clearable
           size="small"
         >
@@ -30,15 +30,15 @@
 
       <div class="icon-tabs">
         <el-tabs v-model="activeTab" size="small">
-          <el-tab-pane 
-            v-for="group in iconGroups" 
-            :key="group.name" 
-            :label="group.label" 
+          <el-tab-pane
+            v-for="group in visibleGroups"
+            :key="group.name"
+            :label="group.label"
             :name="group.name"
           >
             <div class="icon-grid">
               <div
-                v-for="icon in getFilteredIcons(group.icons)"
+                v-for="icon in filteredIconsMap[group.name] || []"
                 :key="icon"
                 class="icon-item"
                 :class="{ 'is-active': modelValue === icon }"
@@ -47,9 +47,9 @@
                 <BlinkIcon :icon="icon" size="20" class="icon-preview" />
                 <span class="icon-name">{{ getIconShortName(icon) }}</span>
               </div>
-              <el-empty 
-                v-if="getFilteredIcons(group.icons).length === 0" 
-                :description="t('common.noData')" 
+              <el-empty
+                v-if="(filteredIconsMap[group.name] || []).length === 0"
+                :description="noDataText || t('common.noData')"
                 :image-size="60"
               />
             </div>
@@ -61,33 +61,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowDown, Search } from '@element-plus/icons-vue'
+import BlinkIcon from '../BlinkIcon/index.vue'
 
-interface Props {
-  modelValue?: string
-  placeholder?: string
+export interface IconGroup {
+  name: string
+  label: string
+  icons: string[]
 }
-
-const props = withDefaults(defineProps<Props>(), {
-  modelValue: '',
-  placeholder: '',
-})
-
-const emit = defineEmits(['update:modelValue'])
 
 const { t } = useI18n()
 
-const popoverRef = ref()
-const searchKeyword = ref('')
-const activeTab = ref('element')
-
-const isElementIcon = (icon: string): boolean => {
-  return !icon.includes(':')
-}
-
-const elementIcons = [
+const DEFAULT_ELEMENT_ICONS = [
   'HomeFilled', 'Home', 'Setting', 'User', 'UserFilled', 'Menu', 'Key', 'Monitor',
   'Edit', 'Delete', 'Plus', 'Minus', 'Check', 'Close', 'Search', 'Refresh',
   'Folder', 'FolderOpened', 'Document', 'DocumentCopy', 'Files',
@@ -105,11 +92,11 @@ const elementIcons = [
   'Grid', 'List', 'Histogram', 'DataLine', 'DataBoard', 'PieChart',
   'TrendCharts', 'DataAnalysis', 'Coin', 'Money', 'Wallet', 'ShoppingCart',
   'Goods', 'GoodsFilled', 'ShoppingBag', 'Shop', 'Box', 'Present',
-  'Phone', 'PhoneFilled', 'Iphone', 'Cellphone', 'Mouse', 'Monitor',
-  'Cpu', 'Connection', 'Link', 'Platform', 'Document', 'Notebook',
+  'Phone', 'PhoneFilled', 'Iphone', 'Cellphone', 'Mouse',
+  'Cpu', 'Connection', 'Platform', 'Notebook',
 ]
 
-const commonIcons = [
+const DEFAULT_COMMON_ICONS = [
   'mdi:home', 'mdi:home-outline', 'mdi:cog', 'mdi:cog-outline', 'mdi:account', 'mdi:account-outline',
   'mdi:account-group', 'mdi:account-group-outline', 'mdi:file-document', 'mdi:file-document-outline',
   'mdi:folder', 'mdi:folder-outline', 'mdi:plus', 'mdi:minus', 'mdi:close', 'mdi:check',
@@ -125,7 +112,7 @@ const commonIcons = [
   'mdi:filter', 'mdi:filter-outline', 'mdi:sort', 'mdi:fullscreen', 'mdi:fullscreen-exit',
 ]
 
-const systemIcons = [
+const DEFAULT_SYSTEM_ICONS = [
   'mdi:monitor', 'mdi:cellphone', 'mdi:phone', 'mdi:phone-outline',
   'mdi:mouse', 'mdi:cpu', 'mdi:chart-line', 'mdi:chart-bar', 'mdi:chart-pie',
   'mdi:database', 'mdi:server', 'mdi:cloud', 'mdi:cloud-outline',
@@ -136,7 +123,7 @@ const systemIcons = [
   'mdi:code-tags', 'mdi:code-braces', 'mdi:xml',
 ]
 
-const mediaIcons = [
+const DEFAULT_MEDIA_ICONS = [
   'mdi:camera', 'mdi:camera-outline', 'mdi:video', 'mdi:video-outline',
   'mdi:microphone', 'mdi:microphone-outline', 'mdi:headphones', 'mdi:volume-high',
   'mdi:play', 'mdi:pause', 'mdi:stop', 'mdi:skip-next', 'mdi:skip-previous',
@@ -146,7 +133,7 @@ const mediaIcons = [
   'mdi:comment', 'mdi:comment-outline', 'mdi:send', 'mdi:send-outline',
 ]
 
-const lifestyleIcons = [
+const DEFAULT_LIFESTYLE_ICONS = [
   'mdi:weather-sunny', 'mdi:weather-night', 'mdi:weather-cloudy', 'mdi:weather-rainy',
   'mdi:weather-snowy', 'mdi:weather-windy', 'mdi:thermometer',
   'mdi:food', 'mdi:food-apple', 'mdi:coffee', 'mdi:tea', 'mdi:cup',
@@ -157,7 +144,7 @@ const lifestyleIcons = [
   'mdi:party-popper', 'mdi:firework',
 ]
 
-const businessIcons = [
+const DEFAULT_BUSINESS_ICONS = [
   'mdi:cart', 'mdi:cart-outline', 'mdi:shopping', 'mdi:shopping-outline',
   'mdi:store', 'mdi:store-outline', 'mdi:briefcase', 'mdi:briefcase-outline',
   'mdi:currency-usd', 'mdi:currency-eur', 'mdi:currency-cny',
@@ -168,30 +155,72 @@ const businessIcons = [
   'mdi:package', 'mdi:package-variant', 'mdi:truck', 'mdi:truck-outline',
 ]
 
-const iconGroups = [
-  { name: 'element', label: t('iconSelector.elementIcons'), icons: elementIcons },
-  { name: 'common', label: t('iconSelector.commonIcons'), icons: commonIcons },
-  { name: 'system', label: t('iconSelector.systemIcons'), icons: systemIcons },
-  { name: 'media', label: t('iconSelector.mediaIcons'), icons: mediaIcons },
-  { name: 'lifestyle', label: t('iconSelector.lifestyleIcons'), icons: lifestyleIcons },
-  { name: 'business', label: t('iconSelector.businessIcons'), icons: businessIcons },
+const createDefaultGroups = (): IconGroup[] => [
+  { name: 'element', label: t('iconSelector.elementIcons'), icons: DEFAULT_ELEMENT_ICONS },
+  { name: 'common', label: t('iconSelector.commonIcons'), icons: DEFAULT_COMMON_ICONS },
+  { name: 'system', label: t('iconSelector.systemIcons'), icons: DEFAULT_SYSTEM_ICONS },
+  { name: 'media', label: t('iconSelector.mediaIcons'), icons: DEFAULT_MEDIA_ICONS },
+  { name: 'lifestyle', label: t('iconSelector.lifestyleIcons'), icons: DEFAULT_LIFESTYLE_ICONS },
+  { name: 'business', label: t('iconSelector.businessIcons'), icons: DEFAULT_BUSINESS_ICONS },
 ]
 
-const getIconShortName = (icon: string): string => {
-  if (isElementIcon(icon)) {
-    return icon
-  }
-  const parts = icon.split(':')
-  return parts[1] || icon
+interface Props {
+  modelValue?: string
+  placeholder?: string
+  groups?: IconGroup[]
+  popoverWidth?: number
+  defaultTab?: string
+  searchable?: boolean
+  searchPlaceholder?: string
+  noDataText?: string
 }
 
-const getFilteredIcons = (icons: string[]): string[] => {
-  if (!searchKeyword.value) {
-    return icons
-  }
-  return icons.filter(icon => 
-    icon.toLowerCase().includes(searchKeyword.value.toLowerCase())
-  )
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: '',
+  placeholder: '',
+  groups: () => createDefaultGroups(),
+  popoverWidth: 450,
+  defaultTab: '',
+  searchable: true,
+  searchPlaceholder: '',
+  noDataText: '',
+})
+
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string): void
+}>()
+
+const popoverRef = ref()
+const searchKeyword = ref('')
+const activeTab = ref('')
+
+const visibleGroups = computed(() => props.groups.filter(group => group.icons.length > 0))
+
+const filteredIconsMap = computed<Record<string, string[]>>(() => {
+  const keyword = searchKeyword.value.toLowerCase()
+  return visibleGroups.value.reduce<Record<string, string[]>>((result, group) => {
+    result[group.name] = keyword
+      ? group.icons.filter(icon => icon.toLowerCase().includes(keyword))
+      : group.icons
+    return result
+  }, {})
+})
+
+const getInitialTab = () => props.defaultTab || visibleGroups.value[0]?.name || ''
+
+watch(
+  () => [props.defaultTab, props.groups],
+  () => {
+    if (!visibleGroups.value.some(group => group.name === activeTab.value)) {
+      activeTab.value = getInitialTab()
+    }
+  },
+  { immediate: true, deep: true }
+)
+
+const getIconShortName = (icon: string): string => {
+  const parts = icon.split(':')
+  return parts[1] || icon
 }
 
 const handleSelectIcon = (icon: string) => {
@@ -247,11 +276,8 @@ const handleSelectIcon = (icon: string) => {
     :deep(.el-tabs__item) {
       font-size: 13px;
       color: var(--text-color-regular);
-      
-      &.is-active {
-        color: var(--primary-color);
-      }
-      
+
+      &.is-active,
       &:hover {
         color: var(--primary-color);
       }
@@ -261,73 +287,43 @@ const handleSelectIcon = (icon: string) => {
       background-color: var(--border-color-light);
     }
   }
+}
 
-  .icon-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 8px;
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 4px;
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
 
-    &::-webkit-scrollbar {
-      width: 4px;
-    }
+.icon-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-out-expo);
 
-    &::-webkit-scrollbar-thumb {
-      background: var(--border-color-base);
-      border-radius: 2px;
-    }
-
-    .icon-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 8px 4px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: transparent;
-
-      &:hover {
-        background: var(--table-row-hover);
-      }
-
-      &.is-active {
-        background: var(--primary-color);
-        
-        .icon-preview,
-        .icon-name {
-          color: #fff;
-        }
-      }
-
-      .icon-preview {
-        font-size: 20px;
-        margin-bottom: 4px;
-        color: var(--text-color-primary);
-      }
-
-      .icon-name {
-        font-size: 10px;
-        color: var(--text-color-secondary);
-        text-align: center;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        width: 100%;
-      }
-    }
+  &:hover,
+  &.is-active {
+    border-color: var(--primary-color);
+    background: rgba(59, 130, 246, 0.08);
   }
 }
-</style>
 
-<style lang="scss">
-.icon-selector-popover {
-  padding: 12px !important;
-  background: var(--card-bg) !important;
-  border: 1px solid var(--border-color-light) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+.icon-preview {
+  color: var(--text-color-primary);
+}
+
+.icon-name {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+  text-align: center;
+  word-break: break-word;
 }
 </style>

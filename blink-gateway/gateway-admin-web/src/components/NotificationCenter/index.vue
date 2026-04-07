@@ -1,9 +1,9 @@
 <template>
   <el-dropdown trigger="click" @command="handleCommand">
-    <button class="nav-action" style="position: relative;">
+    <div class="header-item notification-trigger">
       <el-icon><Bell /></el-icon>
       <span v-if="unreadCount > 0" class="badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
-    </button>
+    </div>
     <template #dropdown>
       <el-dropdown-menu class="notification-dropdown">
         <div class="notification-header">
@@ -41,6 +41,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Bell, InfoFilled, WarningFilled, CircleCloseFilled, CircleCheckFilled } from '@element-plus/icons-vue'
 import { useNotificationStore, type NotificationItem } from '@/stores/notification'
 
 defineOptions({ name: 'NotificationCenter' })
@@ -64,13 +65,13 @@ const handleCommand = (_command: string) => {
 }
 
 const getIcon = (type: NotificationItem['type']) => {
-  const icons: Record<string, string> = {
-    info: 'InfoFilled',
-    warning: 'WarningFilled',
-    error: 'CircleCloseFilled',
-    success: 'CircleCheckFilled'
+  const icons: Record<string, any> = {
+    info: InfoFilled,
+    warning: WarningFilled,
+    error: CircleCloseFilled,
+    success: CircleCheckFilled
   }
-  return icons[type] || 'InfoFilled'
+  return icons[type] || InfoFilled
 }
 
 const formatTime = (time: Date) => {
@@ -87,21 +88,33 @@ const formatTime = (time: Date) => {
 </script>
 
 <style scoped lang="scss">
+/* 触发按钮样式 - 与 Header 其他按钮一致 */
+.notification-trigger {
+  position: relative;
+
+  .el-icon {
+    @apply text-lg shrink-0;
+  }
+}
+
+/* 未读数徽章 */
 .badge {
   position: absolute;
   top: 2px;
-  right: 2px;
+  right: 4px;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
   font-size: 10px;
+  font-weight: 500;
   line-height: 16px;
   text-align: center;
-  background-color: var(--danger-color);
+  background-color: var(--el-color-danger);
   color: white;
   border-radius: 8px;
 }
 
+/* 下拉面板 */
 .notification-dropdown {
   width: 320px;
 }
@@ -111,18 +124,18 @@ const formatTime = (time: Date) => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--el-border-color-lighter);
 
   .title {
     font-weight: 500;
-    color: var(--text-color-primary);
+    color: var(--el-text-color-primary);
   }
 }
 
 .no-notifications {
   padding: 40px 16px;
   text-align: center;
-  color: var(--text-color-secondary);
+  color: var(--el-text-color-secondary);
 }
 
 .notification-item {
@@ -133,7 +146,7 @@ const formatTime = (time: Date) => {
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: var(--bg-color-page);
+    background-color: var(--el-fill-color-light);
   }
 
   &.unread {
@@ -145,10 +158,10 @@ const formatTime = (time: Date) => {
   font-size: 20px;
   flex-shrink: 0;
 
-  &.info { color: var(--primary-color); }
-  &.warning { color: var(--warning-color); }
-  &.error { color: var(--danger-color); }
-  &.success { color: var(--success-color); }
+  &.info { color: var(--el-color-primary); }
+  &.warning { color: var(--el-color-warning); }
+  &.error { color: var(--el-color-danger); }
+  &.success { color: var(--el-color-success); }
 }
 
 .notification-content {
@@ -158,13 +171,13 @@ const formatTime = (time: Date) => {
 
 .notification-title {
   font-weight: 500;
-  color: var(--text-color-primary);
+  color: var(--el-text-color-primary);
   margin-bottom: 4px;
 }
 
 .notification-message {
   font-size: 13px;
-  color: var(--text-color-secondary);
+  color: var(--el-text-color-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -172,7 +185,7 @@ const formatTime = (time: Date) => {
 
 .notification-time {
   font-size: 12px;
-  color: var(--text-color-placeholder);
+  color: var(--el-text-color-placeholder);
   margin-top: 4px;
 }
 </style>

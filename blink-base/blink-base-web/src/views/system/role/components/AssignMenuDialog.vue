@@ -170,6 +170,7 @@ const updateCheckAllStatus = () => {
 
 const handleSubmit = async () => {
   if (!props.role?.roleId) return
+  const role = props.role
 
   await submitGuard(async () => {
     // 获取选中的节点和半选中的父节点
@@ -180,7 +181,7 @@ const handleSubmit = async () => {
     const allMenuIds = [...new Set([...checkedKeys, ...halfCheckedKeys])]
 
     await assignMenus({
-      roleId: props.role.roleId,
+      roleId: role.roleId,
       menuIds: allMenuIds,
     })
     ElMessage.success(t('message.success'))

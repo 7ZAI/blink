@@ -5,10 +5,12 @@ import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.gateway.admin.dto.req.AddChannelReq;
 import com.blink.gateway.admin.dto.req.DeleteChannelReq;
+import com.blink.gateway.admin.dto.req.GetChannelSecretReq;
 import com.blink.gateway.admin.dto.req.IssueChannelTokenReq;
 import com.blink.gateway.admin.dto.req.QueryChannelReq;
 import com.blink.gateway.admin.dto.req.RefreshChannelKeyReq;
 import com.blink.gateway.admin.dto.req.UpdateChannelReq;
+import com.blink.gateway.admin.dto.rsp.ChannelSecretRsp;
 import com.blink.gateway.admin.dto.rsp.ChannelTokenRsp;
 import com.blink.gateway.admin.dto.rsp.QueryChannelRsp;
 import com.blink.gateway.admin.entity.GaChannelDO;
@@ -57,6 +59,18 @@ public class ChannelController {
     @PostMapping("/getChannel")
     public ResponseDTO<ChannelVO> getChannel(@RequestBody @Validated RequestDTO<QueryOneChannelReq> reqDto) throws BlinkException {
         return channelService.getChannel(reqDto.getBody());
+    }
+
+    /**
+     * 获取渠道密钥信息
+     *
+     * @param reqDto 请求参数
+     * @return 渠道密钥信息
+     * @throws BlinkException 业务异常
+     */
+    @PostMapping("/getChannelSecret")
+    public ResponseDTO<ChannelSecretRsp> getChannelSecret(@RequestBody @Validated RequestDTO<GetChannelSecretReq> reqDto) throws BlinkException {
+        return channelService.getChannelSecret(reqDto.getBody());
     }
 
     /**

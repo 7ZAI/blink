@@ -4,28 +4,43 @@
     class="sidebar transition-sidebar relative overflow-hidden select-none"
     :class="{ 'sidebar-collapsed': isCollapsed }"
   >
-    <!-- Logo 区域 - 展开状态 -->
-    <div class="logo h-[50px] flex items-center px-4 border-b" v-show="!isCollapsed">
-      <div class="logo-icon shrink-0" v-html="logo"></div>
-      <span class="logo-text ml-3">{{ title }}</span>
-    </div>
-    <!-- Logo 区域 - 折叠状态 -->
-    <div class="logo-mini h-[50px] flex items-center justify-center border-b" v-show="isCollapsed">
-      <div class="logo-icon-mini" v-html="logo"></div>
-    </div>
-
-    <!-- 侧边栏菜单 -->
-    <el-menu
-      :default-active="activeMenu"
-      class="sidebar-menu"
-      :collapse="isCollapsed"
-      :collapse-transition="false"
-      router
+    <slot
+      name="logo"
+      :collapsed="isCollapsed"
+      :sidebar-width="sidebarWidth"
+      :toggle-sidebar="toggleSidebar"
     >
-      <template v-for="menu in menuList" :key="menu.menuId">
-        <SidebarMenu :menu="menu" />
-      </template>
-    </el-menu>
+      <!-- Logo 区域 - 展开状态 -->
+      <div class="logo h-[50px] flex items-center px-4 border-b" v-show="!isCollapsed">
+        <div class="logo-icon shrink-0" v-html="logo"></div>
+        <span class="logo-text ml-3">{{ title }}</span>
+      </div>
+      <!-- Logo 区域 - 折叠状态 -->
+      <div class="logo-mini h-[50px] flex items-center justify-center border-b" v-show="isCollapsed">
+        <div class="logo-icon-mini" v-html="logo"></div>
+      </div>
+    </slot>
+
+    <slot
+      name="menu"
+      :active-menu="activeMenu"
+      :collapsed="isCollapsed"
+      :sidebar-width="sidebarWidth"
+      :toggle-sidebar="toggleSidebar"
+    >
+      <!-- 侧边栏菜单 -->
+      <el-menu
+        :default-active="activeMenu"
+        class="sidebar-menu"
+        :collapse="isCollapsed"
+        :collapse-transition="false"
+        router
+      >
+        <template v-for="menu in menuList" :key="menu.menuId">
+          <SidebarMenu :menu="menu" />
+        </template>
+      </el-menu>
+    </slot>
 
     <!-- 拖拽调整宽度的手柄 -->
     <div
@@ -38,18 +53,25 @@
     </div>
   </el-aside>
 
-  <!-- 折叠按钮 -->
-  <div
-    class="collapse-btn"
-    :class="{ 'collapsed': isCollapsed }"
-    @click="toggleSidebar"
+  <slot
+    name="collapse-trigger"
+    :collapsed="isCollapsed"
+    :sidebar-width="sidebarWidth"
+    :toggle-sidebar="toggleSidebar"
   >
-    <el-icon><ArrowLeft v-if="!isCollapsed" /><ArrowRight v-else /></el-icon>
-  </div>
+    <!-- 折叠按钮 -->
+    <div
+      class="collapse-btn"
+      :class="{ 'collapsed': isCollapsed }"
+      @click="toggleSidebar"
+    >
+      <el-icon><ArrowLeft v-if="!isCollapsed" /><ArrowRight v-else /></el-icon>
+    </div>
+  </slot>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowLeft, ArrowRight } from '@element-plus/icons-vue'
 import SidebarMenu, { type MenuItem } from './SidebarMenu.vue'
@@ -69,6 +91,10 @@ interface Props {
   minWidth?: number
   /** 最大宽度 */
   maxWidth?: number
+  /** 折叠阈值 */
+  collapseThreshold?: number
+  /** 本地存储 key，传空禁用持久化 */
+  storageKey?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -79,7 +105,14 @@ const props = withDefaults(defineProps<Props>(), {
   defaultWidth: 220,
   minWidth: 60,
   maxWidth: 400,
+  collapseThreshold: 100,
+  storageKey: 'blink-layout-sidebar',
 })
+
+const emit = defineEmits<{
+  (e: 'collapse-change', collapsed: boolean): void
+  (e: 'width-change', width: number): void
+}>()
 
 const route = useRoute()
 const activeMenu = computed(() => route.path)
@@ -87,11 +120,24 @@ const activeMenu = computed(() => route.path)
 const MIN_WIDTH = props.minWidth
 const MAX_WIDTH = props.maxWidth
 const DEFAULT_WIDTH = props.defaultWidth
-const COLLAPSE_THRESHOLD = 100
+const COLLAPSE_THRESHOLD = props.collapseThreshold
 
 const sidebarWidth = ref(DEFAULT_WIDTH)
 const isCollapsed = ref(false)
 const isResizing = ref(false)
+
+const persistSidebarState = () => {
+  if (!props.storageKey) {
+    return
+  }
+  localStorage.setItem(`${props.storageKey}:width`, String(sidebarWidth.value))
+  localStorage.setItem(`${props.storageKey}:collapsed`, String(isCollapsed.value))
+}
+
+const updateSidebarState = (width: number) => {
+  sidebarWidth.value = width
+  isCollapsed.value = width <= COLLAPSE_THRESHOLD
+}
 
 const startResize = (e: MouseEvent) => {
   if (!props.resizable) return
@@ -110,22 +156,14 @@ const startResize = (e: MouseEvent) => {
       newWidth = MAX_WIDTH
     }
 
-    sidebarWidth.value = newWidth
-
-    if (newWidth <= COLLAPSE_THRESHOLD) {
-      isCollapsed.value = true
-    } else {
-      isCollapsed.value = false
-    }
+    updateSidebarState(newWidth)
   }
 
   const handleMouseUp = () => {
     isResizing.value = false
     document.removeEventListener('mousemove', handleMouseMove)
     document.removeEventListener('mouseup', handleMouseUp)
-
-    localStorage.setItem('sidebarWidth', String(sidebarWidth.value))
-    localStorage.setItem('sidebarCollapsed', String(isCollapsed.value))
+    persistSidebarState()
   }
 
   document.addEventListener('mousemove', handleMouseMove)
@@ -139,17 +177,21 @@ const toggleSidebar = () => {
   } else {
     sidebarWidth.value = DEFAULT_WIDTH
   }
-
-  localStorage.setItem('sidebarWidth', String(sidebarWidth.value))
-  localStorage.setItem('sidebarCollapsed', String(isCollapsed.value))
+  persistSidebarState()
 }
 
-onMounted(() => {
-  const savedWidth = localStorage.getItem('sidebarWidth')
-  const savedCollapsed = localStorage.getItem('sidebarCollapsed')
+const restoreSidebarState = () => {
+  if (!props.storageKey) {
+    return
+  }
+  const savedWidth = localStorage.getItem(`${props.storageKey}:width`)
+  const savedCollapsed = localStorage.getItem(`${props.storageKey}:collapsed`)
 
   if (savedCollapsed !== null) {
     isCollapsed.value = savedCollapsed === 'true'
+    if (isCollapsed.value && savedWidth === null) {
+      sidebarWidth.value = MIN_WIDTH
+    }
   }
 
   if (savedWidth !== null) {
@@ -158,6 +200,16 @@ onMounted(() => {
       sidebarWidth.value = width
     }
   }
+}
+
+restoreSidebarState()
+
+watch(isCollapsed, (value) => {
+  emit('collapse-change', value)
+})
+
+watch(sidebarWidth, (value) => {
+  emit('width-change', value)
 })
 
 defineExpose({

@@ -24,10 +24,13 @@ export const useNotificationStore = defineStore('notification', () => {
     }
 
     const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || ''
     const sseUrl = `${baseUrl}/notification/sse/connect`
 
     sseConnection = useSseConnection({
       url: sseUrl,
+      token,
+      onMessage: handleSseMessage,
       onMessage: handleSseMessage,
       onConnect: () => {
         sseStatus.value = 'connected'

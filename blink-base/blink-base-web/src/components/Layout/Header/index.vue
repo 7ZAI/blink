@@ -6,6 +6,9 @@
       </slot>
     </div>
     <div class="header-right flex items-center gap-1 shrink-0">
+      <!-- 自定义右侧内容（在全屏按钮之前） -->
+      <slot name="right-before"></slot>
+
       <!-- 全屏按钮 -->
       <div
         v-if="showFullscreen"
@@ -41,32 +44,17 @@
         </template>
       </el-dropdown>
 
-      <!-- 用户下拉菜单 -->
-      <el-dropdown v-if="userInfo" class="user-dropdown" @command="handleUserCommand">
-        <div class="header-item user-item">
-          <el-avatar :src="userInfo.avatar" :size="32">
-            <el-icon><UserFilled /></el-icon>
-          </el-avatar>
-          <span class="user-name">{{ userInfo.username || userInfo.loginName }}</span>
-          <el-icon class="dropdown-arrow"><ArrowDown /></el-icon>
-        </div>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <!-- 自定义下拉菜单内容 -->
-            <slot name="dropdown-menu">
-              <el-dropdown-item command="profile">
-                <el-icon><User /></el-icon>{{ t('header.profile') }}
-              </el-dropdown-item>
-              <el-dropdown-item command="themeSettings" v-if="showThemeSettings">
-                <el-icon><Brush /></el-icon>{{ t('header.themeSettings') }}
-              </el-dropdown-item>
-              <el-dropdown-item divided command="logout">
-                <el-icon><SwitchButton /></el-icon>{{ t('header.logout') }}
-              </el-dropdown-item>
-            </slot>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+      <slot name="user-menu" :user-info="userInfo">
+        <UserDropdown
+          :user-info="userInfo"
+          :show-theme-settings="showThemeSettings"
+          @command="handleUserCommand"
+        >
+          <template v-if="slots['dropdown-menu']" #menu>
+            <slot name="dropdown-menu"></slot>
+          </template>
+        </UserDropdown>
+      </slot>
 
       <!-- 自定义右侧内容 -->
       <slot name="right"></slot>
@@ -75,31 +63,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, useSlots } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
-  UserFilled,
-  ArrowDown,
-  User,
-  SwitchButton,
   Moon,
   Sunny,
   FullScreen,
   Aim,
-  Brush,
 } from '@element-plus/icons-vue'
 import Breadcrumb from '../../Breadcrumb/index.vue'
-import BlinkIcon from '../../BlinkIcon/index.vue'
+import UserDropdown, { type UserInfo } from '../UserDropdown/index.vue'
 
 /**
  * 用户信息接口
  */
-export interface UserInfo {
-  username?: string
-  loginName?: string
-  avatar?: string
-  avatarStyle?: string
-}
+export type { UserInfo } from '../UserDropdown/index.vue'
 
 interface Props {
   /** 用户信息 */
@@ -134,6 +112,7 @@ const emit = defineEmits<{
   (e: 'user-command', command: string): void
 }>()
 
+const slots = useSlots()
 const { t } = useI18n()
 
 const isFullscreen = ref(false)
@@ -222,45 +201,4 @@ onUnmounted(() => {
   }
 }
 
-/* 用户项 */
-.user-item {
-  @apply flex items-center gap-2.5 px-3.5;
-
-  .el-avatar {
-    @apply cursor-pointer border-2 border-transparent transition-all w-9 h-9;
-
-    &:hover {
-      @apply border-primary;
-      box-shadow: var(--glow-primary);
-    }
-  }
-
-  .user-name {
-    @apply text-[15px] font-medium max-w-[120px] overflow-hidden text-ellipsis whitespace-nowrap;
-    color: var(--text-color-primary);
-  }
-
-  .dropdown-arrow {
-    @apply text-[13px] transition-transform;
-    color: var(--text-color-secondary);
-  }
-
-  &:hover .dropdown-arrow {
-    @apply rotate-180;
-  }
-}
-
-/* 下拉菜单项 */
-:deep(.el-dropdown-menu__item) {
-  @apply flex items-center gap-2 px-4 py-2.5 text-sm;
-
-  .el-icon {
-    @apply text-base;
-  }
-
-  &:hover {
-    @apply text-primary;
-    background: linear-gradient(90deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
-  }
-}
 </style>

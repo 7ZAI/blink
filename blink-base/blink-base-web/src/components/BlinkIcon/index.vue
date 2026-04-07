@@ -1,18 +1,19 @@
 <template>
   <component
-    :is="isElementIcon ? 'el-icon' : 'span'"
+    :is="wrapperTag"
     class="blink-icon"
     :class="customClass"
     :style="iconStyle"
   >
-    <component v-if="isElementIcon" :is="iconName" />
-    <Icon v-else :icon="icon" />
+    <component v-if="resolvedElementIcon" :is="resolvedElementIcon" />
+    <Icon v-else-if="icon" :icon="icon" />
   </component>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 interface Props {
   icon?: string
@@ -28,24 +29,21 @@ const props = withDefaults(defineProps<Props>(), {
   class: '',
 })
 
-const isElementIcon = computed(() => {
-  if (!props.icon) return false
-  return !props.icon.includes(':')
+const resolvedElementIcon = computed(() => {
+  if (!props.icon || props.icon.includes(':')) {
+    return null
+  }
+  return ElementPlusIconsVue[props.icon as keyof typeof ElementPlusIconsVue] || null
 })
 
-const iconName = computed(() => {
-  return props.icon
-})
+const wrapperTag = computed(() => (resolvedElementIcon.value ? 'el-icon' : 'span'))
 
-const customClass = computed(() => {
-  return props.class
-})
+const customClass = computed(() => props.class)
 
 const iconStyle = computed(() => {
   const style: Record<string, string> = {}
   if (props.size) {
-    const sizeValue = typeof props.size === 'number' ? `${props.size}px` : props.size
-    style.fontSize = sizeValue
+    style.fontSize = typeof props.size === 'number' ? `${props.size}px` : props.size
   }
   if (props.color) {
     style.color = props.color

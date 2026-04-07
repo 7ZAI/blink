@@ -229,6 +229,7 @@ const handleDataSelectionChange = (selection: PermissionInfo[]) => {
 // 提交授权
 const handleSubmit = async () => {
   if (!props.role?.roleId) return
+  const role = props.role
 
   await submitGuard(async () => {
     // 合并接口权限和数据权限的ID
@@ -238,7 +239,7 @@ const handleSubmit = async () => {
     ]
 
     await assignPermissions({
-      roleId: props.role.roleId,
+      roleId: role.roleId,
       permissionIds: selectedIds,
     })
     ElMessage.success(t('message.success'))

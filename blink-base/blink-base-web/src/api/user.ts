@@ -1,6 +1,9 @@
 import request from '@/utils/request'
 import type { ApiResponse, PageResult } from '@/types'
 
+// Re-export PageResult for other modules
+export type { PageResult } from '@/types'
+
 export interface QueryUserParams {
   pageNum: number
   pageSize: number

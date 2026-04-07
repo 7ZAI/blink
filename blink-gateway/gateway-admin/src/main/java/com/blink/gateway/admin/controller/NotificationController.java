@@ -38,7 +38,7 @@ public class NotificationController {
     private NotificationService notificationService;
 
     /**
-     * SSE连接端点
+     * SSE连接端点（POST请求，支持在header中传递token）
      */
     @PostMapping("/sse/connect")
     public SseEmitter connect() {

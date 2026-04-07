@@ -8,12 +8,12 @@
       :current-theme="themeStore.theme"
       :current-language="appStore.language.replace('-', '_')"
       :tabs="tabsStore.getTabs.map(convertTabItem)"
+      :show-breadcrumb="false"
       :cached-views="tabsStore.getCachedViews"
       :show-theme-toggle="true"
       :show-language-switch="true"
       @theme-toggle="themeStore.toggleTheme"
       @language-change="handleLanguageChange"
-      @user-command="handleUserCommand"
       @add-tab="handleAddTab"
       @close-tab="handleCloseTab"
       @close-other-tabs="handleCloseOtherTabs"
@@ -23,17 +23,55 @@
       @del-cached-view="handleDelCachedView"
       @add-cached-view="handleAddCachedView"
     >
-      <!-- 自定义下拉菜单：个人中心、主题设置、退出登录 -->
-      <template #dropdown-menu>
-        <el-dropdown-item command="profile">
-          <el-icon><User /></el-icon>{{ t('header.profile') }}
-        </el-dropdown-item>
-        <el-dropdown-item command="themeSettings">
-          <el-icon><Setting /></el-icon>{{ t('header.themeSettings') }}
-        </el-dropdown-item>
-        <el-dropdown-item divided command="logout">
-          <el-icon><SwitchButton /></el-icon>{{ t('header.logout') }}
-        </el-dropdown-item>
+      <template #header-left>
+        <Breadcrumb
+          :home-path="'/dashboard'"
+          :home-title-key="'menu.dashboard'"
+          :exclude-route-names="['Layout', 'MainLayout']"
+        />
+      </template>
+
+      <template #header-user-menu>
+        <UserDropdown
+          :user-info="userInfoComputed"
+          :show-theme-settings="true"
+          @command="handleUserCommand"
+        >
+          <template #menu>
+            <el-dropdown-item command="profile">
+              <el-icon><User /></el-icon>{{ t('header.profile') }}
+            </el-dropdown-item>
+            <el-dropdown-item command="themeSettings">
+              <el-icon><Setting /></el-icon>{{ t('header.themeSettings') }}
+            </el-dropdown-item>
+            <el-dropdown-item divided command="logout">
+              <el-icon><SwitchButton /></el-icon>{{ t('header.logout') }}
+            </el-dropdown-item>
+          </template>
+        </UserDropdown>
+      </template>
+
+      <template #header-right-before>
+        <NotificationCenter />
+      </template>
+
+      <template #tabs>
+        <TabsView
+          :tabs="tabsStore.getTabs.map(convertTabItem)"
+          :cached-views="tabsStore.getCachedViews"
+          :active-path="tabsStore.getActiveTabPath || undefined"
+          :close-fallback-path="'/dashboard'"
+          :refresh-redirect-prefix="'/redirect'"
+          :show-context-menu="true"
+          @add-tab="handleAddTab"
+          @close-tab="handleCloseTab"
+          @close-other-tabs="handleCloseOtherTabs"
+          @close-right-tabs="handleCloseRightTabs"
+          @close-left-tabs="handleCloseLeftTabs"
+          @close-all-tabs="handleCloseAllTabs"
+          @del-cached-view="handleDelCachedView"
+          @add-cached-view="handleAddCachedView"
+        />
       </template>
     </MainLayout>
   </el-config-provider>
@@ -47,7 +85,8 @@ import { ElConfigProvider, ElMessage, ElMessageBox } from 'element-plus'
 import { User, SwitchButton, Setting } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'
-import { MainLayout } from '@blink/components'
+import { Breadcrumb, MainLayout, TabsView, UserDropdown } from '@blink/components'
+import NotificationCenter from '@/components/NotificationCenter/index.vue'
 import type { MenuItem, TabItem } from '@blink/components'
 import { useAppStore } from '@/stores/app'
 import { useThemeStore } from '@/stores/theme'
@@ -220,5 +259,31 @@ const handleAddCachedView = (name: string) => {
 
 .sidebar .logo-text {
   margin-left: 0 !important;
+}
+
+/* 消息通知按钮样式 - 与 Header 其他按钮一致 */
+:deep(.notification-trigger) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5;
+  padding: 0 12px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+  position: relative;
+  overflow: hidden;
+}
+
+:deep(.notification-trigger:hover) {
+  color: var(--el-color-primary);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+:deep(.notification-trigger .el-icon) {
+  font-size: 18px;
 }
 </style>
