@@ -1,11 +1,8 @@
 package com.blink.base.dto.req;
 
-import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.common.data.Page;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * 查询数据过滤规则请求DTO
@@ -14,10 +11,7 @@ import java.io.Serializable;
  */
 @Getter
 @Setter
-public class QueryDataFilterReq extends PageDTO implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class QueryDataFilterReq extends Page {
 
     /**
      * 过滤规则名称（模糊查询）

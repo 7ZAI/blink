@@ -1,10 +1,8 @@
 package com.blink.gateway.admin.dto.req;
 
-import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.common.data.Page;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.io.Serializable;
 
 /**
  * 查询路由请求DTO
@@ -13,9 +11,7 @@ import java.io.Serializable;
  */
 @Getter
 @Setter
-public class QueryRouteReq extends PageDTO implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class QueryRouteReq extends Page {
 
     /**
      * 路由ID

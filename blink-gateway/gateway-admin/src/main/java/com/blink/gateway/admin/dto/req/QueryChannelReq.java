@@ -1,11 +1,8 @@
 package com.blink.gateway.admin.dto.req;
 
-import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.common.data.Page;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * 查询渠道列表请求参数
@@ -14,10 +11,7 @@ import java.io.Serializable;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class QueryChannelReq extends PageDTO implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class QueryChannelReq extends Page {
 
     /**
      * 渠道 ID

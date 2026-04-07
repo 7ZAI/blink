@@ -10,8 +10,5 @@ import java.io.Serializable;
  *
  * @author binblink
  */
-public class ProcessDefinitionRsp extends PageDTO<ProcessDefinitionVO> implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class ProcessDefinitionRsp extends PageDTO<ProcessDefinitionVO> {
 }

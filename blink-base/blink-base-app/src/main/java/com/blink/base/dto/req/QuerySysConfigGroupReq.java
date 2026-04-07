@@ -1,8 +1,7 @@
 
 package com.blink.base.dto.req;
 
-import java.io.Serializable;
-import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.common.data.Page;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -20,10 +19,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-public class QuerySysConfigGroupReq extends PageDTO implements Serializable {
-
-  private static final long serialVersionUID = 1L;
-
+public class QuerySysConfigGroupReq extends Page {
 
     /**
      * 主键ID

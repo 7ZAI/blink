@@ -10,8 +10,5 @@ import java.io.Serializable;
  *
  * @author binblink
  */
-public class HistoricTaskRsp extends PageDTO<HistoricTaskVO> implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class HistoricTaskRsp extends PageDTO<HistoricTaskVO> {
 }

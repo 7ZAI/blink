@@ -1,12 +1,9 @@
 package com.blink.base.dto.req;
 
-import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.common.data.Page;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * 查询任务请求DTO
@@ -16,10 +13,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @ToString
-public class QueryTaskReq extends PageDTO implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class QueryTaskReq extends Page {
 
     /**
      * 用户ID

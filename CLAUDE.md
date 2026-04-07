@@ -117,22 +117,28 @@ public ResponseDTO<EmptyBody> deleteRoute(@RequestBody RequestDTO<List<String>> 
 public ResponseDTO<Object> getDetail(@RequestBody RequestDTO<String> reqDto) { } // ❌
 ```
 
-**3. 分页查询规范**
+**3. 分页查询规范 (重要)**
 
-- 请求 DTO 继承 `PageDTO`
-- 响应 DTO 继承 `PageDTO<T>`
-- Service 层使用 `PageUtils.queryPage`
+**继承规则：**
+- **请求 DTO** 继承 `Page`（不包含结果集，仅分页参数）
+- **响应 DTO** 继承 `PageDTO<T>`（包含结果集 `rows`）
+
+**原因：** `Page` 是通用分页基类，已实现 `Serializable`；`PageDTO<T>` 继承 `Page` 并添加了 `rows` 字段用于存放结果集。请求 DTO 只需要分页参数，无需 `rows` 字段。
+
+**禁止重复实现 Serializable：** `Page` 已实现 `Serializable`，子类无需再声明。
 
 ```java
-// 分页请求 DTO
+// 分页请求 DTO - 继承 Page（无泛型，无需 Serializable）
 @Getter
 @Setter
-public class QuerySysUserReq extends PageDTO implements Serializable {
+public class QuerySysUserReq extends Page {
     private String loginName;
 }
 
-// 分页响应 DTO
-public class SysUserRsp extends PageDTO<SysUserVO> implements Serializable {
+// 分页响应 DTO - 继承 PageDTO<T>（无需 Serializable）
+@Getter
+@Setter
+public class SysUserRsp extends PageDTO<SysUserVO> {
 }
 
 // Service 实现
@@ -141,6 +147,19 @@ public SysUserRsp getSysUserList(QuerySysUserReq req) {
     SysUserRsp rsp = new SysUserRsp();
     return PageUtils.queryPage(req, () -> sysUserMapper.selectUserList(req), rsp);
 }
+```
+
+**错误示例：**
+
+```java
+// ❌ Wrong - 请求 DTO 不应继承 PageDTO
+public class QuerySysUserReq extends PageDTO { }
+
+// ❌ Wrong - 请求 DTO 不应继承 PageDTO<T>
+public class QuerySysUserReq extends PageDTO<Void> { }
+
+// ❌ Wrong - 父类已实现 Serializable，无需重复声明
+public class QuerySysUserReq extends Page implements Serializable { }
 ```
 
 ### Boolean Field Naming (重要)

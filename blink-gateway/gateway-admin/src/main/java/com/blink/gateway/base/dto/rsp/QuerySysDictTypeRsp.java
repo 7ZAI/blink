@@ -18,8 +18,6 @@ import java.io.Serializable;
 @Getter
 @Setter
 @ToString
-public class QuerySysDictTypeRsp extends PageDTO<SysDictTypeDO> implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class QuerySysDictTypeRsp extends PageDTO<SysDictTypeDO> {
 }
+

@@ -20,9 +20,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-public class QuerySysRoleRsp extends PageDTO<SysRoleVO> implements Serializable {
-
-  private static final long serialVersionUID = 1L;
+public class QuerySysRoleRsp extends PageDTO<SysRoleVO> {
 
 
     /**

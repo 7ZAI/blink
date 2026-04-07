@@ -1,6 +1,6 @@
 package com.blink.base.dto.req;
 
-import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.common.data.Page;
 
-public class QueryOnlineUserReq extends PageDTO {
+public class QueryOnlineUserReq extends Page {
 }

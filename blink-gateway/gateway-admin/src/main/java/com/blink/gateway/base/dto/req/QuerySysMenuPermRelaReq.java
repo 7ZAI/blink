@@ -1,13 +1,9 @@
 
 package com.blink.gateway.base.dto.req;
 
-import com.blink.framework.common.data.PageDTO;
-import lombok.Data;
+import com.blink.framework.common.data.Page;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * <p>
@@ -19,10 +15,7 @@ import java.io.Serializable;
  */
 @Getter
 @Setter
-public class QuerySysMenuPermRelaReq extends PageDTO implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class QuerySysMenuPermRelaReq extends Page {
 
 
     /**

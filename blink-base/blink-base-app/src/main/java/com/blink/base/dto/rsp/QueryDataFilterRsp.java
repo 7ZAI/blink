@@ -5,8 +5,6 @@ import com.blink.base.dto.vo.DataFilterVO;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serializable;
-
 /**
  * 数据过滤规则响应DTO
  *
@@ -14,7 +12,5 @@ import java.io.Serializable;
  */
 @Getter
 @Setter
-public class QueryDataFilterRsp extends PageDTO<DataFilterVO> implements Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class QueryDataFilterRsp extends PageDTO<DataFilterVO> {
 }

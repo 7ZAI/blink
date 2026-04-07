@@ -1,9 +1,8 @@
 
 package com.blink.gateway.base.dto.req;
 
+import com.blink.framework.common.data.Page;
 import lombok.Data;
-import java.io.Serializable;
-import com.blink.framework.common.data.PageDTO;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
@@ -18,9 +17,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class QuerySysConfigHistoryReq extends PageDTO implements Serializable {
-
-  private static final long serialVersionUID = 1L;
+public class QuerySysConfigHistoryReq extends Page {
 
 
     /**

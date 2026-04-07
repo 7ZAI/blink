@@ -11,8 +11,5 @@ import java.io.Serializable;
  *
  * @author binblink
  */
-public class QueryGateWayRoutesRsp extends PageDTO<RouteDefinitionDO> implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class QueryGateWayRoutesRsp extends PageDTO<RouteDefinitionDO> {
 }

@@ -20,8 +20,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class QuerySysDictDataRsp extends PageDTO<SysDictDataDO> implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+public class QuerySysDictDataRsp extends PageDTO<SysDictDataDO> {
 }
+

@@ -1,14 +1,12 @@
 package com.blink.gateway.base.dto.req;
 
 import com.blink.gateway.base.constants.BaseErrCodeConstant;
-import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.common.data.Page;
 import com.blink.framework.validate.annotation.DataDict;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.time.LocalDate;
 
 /**
@@ -18,10 +16,7 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @ToString
-public class QuerySysUserReq extends PageDTO implements Serializable   {
-
-    @Serial
-    private static final long serialVersionUID = -951055160080394698L;
+public class QuerySysUserReq extends Page {
 
     /**
      * 登录名

@@ -1,12 +1,10 @@
 
 package com.blink.base.dto.req;
 
-import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.common.data.Page;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.io.Serial;
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,41 +18,32 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class QuerySysConfigReq extends PageDTO implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
-
+public class QuerySysConfigReq extends Page {
 
     /**
      * 主键ID
      */
     private Integer id;
 
-
     /**
      * 参数键名
      */
     private String configKey;
-
 
     /**
      * 参数名称
      */
     private String configName;
 
-
     /**
      * 参数值
      */
     private String configValue;
 
-
     /**
      * 参数类型：0-字符串 1-数字 2-布尔 3-JSON 4-数组
      */
     private Byte configType;
-
 
     /**
      * 参数分组ID
@@ -66,41 +55,34 @@ public class QuerySysConfigReq extends PageDTO implements Serializable {
      */
     private Boolean findAllChild = false;
 
-
     /**
      * 是否只读：0-可修改 1-只读
      */
     private Boolean readonly;
-
 
     /**
      * 状态：0-禁用 1-启用
      */
     private Boolean status;
 
-
     /**
      * 创建者
      */
     private String createBy;
-
 
     /**
      * 创建时间
      */
     private LocalDateTime createTime;
 
-
     /**
      * 更新者
      */
     private String updateBy;
 
-
     /**
      * 更新时间
      */
     private LocalDateTime updateTime;
-
 
 }

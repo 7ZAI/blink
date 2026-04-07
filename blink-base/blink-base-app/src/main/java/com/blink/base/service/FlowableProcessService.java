@@ -13,8 +13,8 @@ import com.blink.base.dto.rsp.ProcessDefinitionRsp;
 import com.blink.base.dto.rsp.ProcessHistoryRsp;
 import com.blink.base.dto.rsp.ProcessInstanceDetailRsp;
 import com.blink.base.dto.rsp.ProcessInstanceRsp;
-import com.blink.base.dto.rsp.ProcessInstanceVO;
 import com.blink.base.dto.rsp.TaskRsp;
+import com.blink.base.dto.vo.ProcessInstanceVO;
 import com.blink.framework.common.exception.BlinkException;
 
 import java.util.List;

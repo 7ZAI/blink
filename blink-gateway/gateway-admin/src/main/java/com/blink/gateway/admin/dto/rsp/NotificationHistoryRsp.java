@@ -15,5 +15,5 @@ import java.util.List;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class NotificationHistoryRsp extends PageDTO<NotificationItemRsp> implements Serializable {
+public class NotificationHistoryRsp extends PageDTO<NotificationItemRsp> {
 }

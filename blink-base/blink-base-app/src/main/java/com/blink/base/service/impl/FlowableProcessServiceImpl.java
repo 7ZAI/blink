@@ -10,15 +10,15 @@ import com.blink.base.dto.req.QueryProcessInstanceReq;
 import com.blink.base.dto.req.QueryTaskReq;
 import com.blink.base.dto.req.StartProcessReq;
 import com.blink.base.dto.rsp.HistoricTaskRsp;
-import com.blink.base.dto.rsp.HistoricTaskVO;
 import com.blink.base.dto.rsp.ProcessDefinitionRsp;
-import com.blink.base.dto.rsp.ProcessDefinitionVO;
 import com.blink.base.dto.rsp.ProcessHistoryRsp;
 import com.blink.base.dto.rsp.ProcessInstanceDetailRsp;
 import com.blink.base.dto.rsp.ProcessInstanceRsp;
-import com.blink.base.dto.rsp.ProcessInstanceVO;
 import com.blink.base.dto.rsp.TaskRsp;
-import com.blink.base.dto.rsp.TaskVO;
+import com.blink.base.dto.vo.HistoricTaskVO;
+import com.blink.base.dto.vo.ProcessDefinitionVO;
+import com.blink.base.dto.vo.ProcessInstanceVO;
+import com.blink.base.dto.vo.TaskVO;
 import com.blink.base.service.FlowableProcessService;
 import com.blink.datasource.utils.PageUtils;
 import com.blink.framework.common.exception.BlinkException;
@@ -292,7 +292,7 @@ public class FlowableProcessServiceImpl implements FlowableProcessService {
 
             ProcessInstanceRsp rsp = new ProcessInstanceRsp();
 
-            return PageUtils.queryPage(req, () -> executeProcessInstanceQuery(req), rsp);
+            return PageUtils.<QueryProcessInstanceReq, ProcessInstanceVO, ProcessInstanceRsp>queryPage(req, () -> executeProcessInstanceQuery(req), rsp);
 
         } catch (Exception e) {
             log.error("查询流程实例列表失败: {}", e.getMessage(), e);
@@ -398,7 +398,7 @@ public class FlowableProcessServiceImpl implements FlowableProcessService {
             TaskRsp rsp = new TaskRsp();
             QueryTaskReq req = new QueryTaskReq();
 
-            return PageUtils.queryPage(req, () -> executeUserTasksQuery(userId), rsp);
+            return PageUtils.<QueryTaskReq,TaskVO,TaskRsp>queryPage(req, () -> executeUserTasksQuery(userId), rsp);
 
         } catch (Exception e) {
             log.error("查询用户待办任务失败: {}", e.getMessage(), e);
@@ -413,7 +413,7 @@ public class FlowableProcessServiceImpl implements FlowableProcessService {
 
             TaskRsp rsp = new TaskRsp();
 
-            return PageUtils.queryPage(req, () -> executePendingTasksQuery(req), rsp);
+            return PageUtils.<QueryTaskReq,TaskVO,TaskRsp>queryPage(req, () -> executePendingTasksQuery(req), rsp);
 
         } catch (Exception e) {
             log.error("分页查询待办任务失败: {}", e.getMessage(), e);
@@ -428,7 +428,7 @@ public class FlowableProcessServiceImpl implements FlowableProcessService {
 
             HistoricTaskRsp rsp = new HistoricTaskRsp();
 
-            return PageUtils.queryPage(req, () -> executeCompletedTasksQuery(req), rsp);
+            return PageUtils.<QueryTaskReq, HistoricTaskVO, HistoricTaskRsp>queryPage(req, () -> executeCompletedTasksQuery(req), rsp);
 
         } catch (Exception e) {
             log.error("分页查询已办任务失败: {}", e.getMessage(), e);
