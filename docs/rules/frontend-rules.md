@@ -975,3 +975,83 @@ const doLayout = () => {
   <BlinkTable ref="tableRef" :data="userList" :selectable="true" />
 </template>
 ```
+
+## 20. ThemeSettings 主题设置组件规范
+
+### 20.1 基本用法
+
+使用 `ThemeSettings` 组件进行完整的主题配置：
+
+```vue
+<template>
+  <ThemeSettings
+    v-model="themeConfig"
+    :show-system="true"
+    :custom-presets="customPresets"
+    @preset-save="handleSavePreset"
+    @preset-delete="handleDeletePreset"
+  />
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import ThemeSettings from '@/components/ThemeSettings/index.vue'
+
+const themeConfig = ref<FullThemeConfig>({
+  presetId: 'default-blue',
+  colors: { primary: '#3b82f6', success: '#10b981', warning: '#f59e0b', danger: '#ef4444', info: '#6366f1' },
+  font: { family: '...', baseSize: 14, largeSize: 18, smallSize: 12 },
+  animationsEnabled: true,
+  system: { borderRadius: 8, shadowIntensity: 'medium', compactMode: false, contentWidth: 'fluid' }
+})
+
+const customPresets = ref<CustomPreset[]>([])
+</script>
+```
+
+### 20.2 Props 配置
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| modelValue | FullThemeConfig | - | v-model 绑定配置 |
+| showPresets | boolean | true | 显示预设主题 |
+| showColors | boolean | true | 显示颜色设置 |
+| showFonts | boolean | true | 显示字体设置 |
+| showAnimations | boolean | true | 显示动画设置 |
+| showSystem | boolean | true | 显示系统配置 |
+| presetThemes | PresetTheme[] | 内置预设 | 自定义预设主题列表 |
+| presetFonts | FontOption[] | 内置字体 | 自定义字体选项 |
+| maxCustomPresets | number | 5 | 最大自定义预设数量 |
+| customPresets | CustomPreset[] | [] | 自定义预设列表 |
+| readonly | boolean | false | 只读模式 |
+
+### 20.3 Events
+
+| 事件 | 说明 |
+|------|------|
+| update:modelValue | 配置更新 |
+| preset-change | 预设切换 |
+| color-change | 颜色变更 |
+| font-change | 字体变更 |
+| animation-change | 动画开关 |
+| system-change | 系统配置变更 |
+| preset-save | 保存自定义预设 |
+| preset-delete | 删除自定义预设 |
+
+### 20.4 功能模块
+
+**预设主题**: 快速切换内置主题（默认蓝、科技紫、活力橙等）
+
+**颜色设置**: 自定义主题色、成功色、警告色、危险色、信息色
+
+**字体设置**: 选择字体族、调整基础/大/小字号
+
+**动画设置**: 开启/关闭全局动画效果
+
+**系统配置**: 
+- 边框圆角 (0-24px)
+- 阴影强度 (无/轻/中/强)
+- 紧凑模式
+- 内容宽度 (流式/固定)
+
+**自定义预设**: 保存当前配置为自定义预设，支持删除管理
