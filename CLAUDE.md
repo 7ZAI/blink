@@ -652,9 +652,9 @@ Response:
 }
 ```
 
-## Frontend Development Rules (blink-base-web)
+## Frontend Development Rules
 
-详见 [docs/rules/frontend-rules.md](./docs/rules/frontend-rules.md)
+详见 [frontend/RULES.md](./frontend/RULES.md)
 
 
 

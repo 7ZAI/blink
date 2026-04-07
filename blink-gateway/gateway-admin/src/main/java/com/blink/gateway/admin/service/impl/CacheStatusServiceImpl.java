@@ -8,6 +8,7 @@ import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
+import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.dto.req.CacheCheckReq;
 import com.blink.gateway.admin.dto.req.CacheSyncReq;
 import com.blink.gateway.admin.dto.rsp.CacheCheckRsp;
@@ -33,12 +34,19 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.springframework.data.redis.core.Cursor;
+
 import static com.blink.gateway.admin.constants.ErrCodeConstant.DATA_SYNC_FAILED;
-import static com.blink.gateway.admin.constants.RedisKeyConstant.CHANNEL_INFO;
-import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_DYNAMIC_ROUTES;
+import static com.blink.framework.common.constrant.RedisCacheKeyConstant.*;
 
 /**
  * 缓存状态服务实现
+ *
+ * 一致性检查流程：
+ * 1. 从数据库获取源数据，计算 checksum
+ * 2. 直接从 Redis 获取缓存数据，与数据库对比
+ * 3. 通过 actuator 调用各 gateway-reactive 实例，获取本地 Caffeine 缓存状态
+ * 4. 对比三方数据：数据库、Redis、各实例本地缓存
  *
  * @author binblink
  */
@@ -52,6 +60,9 @@ public class CacheStatusServiceImpl implements CacheStatusService {
     private DiscoveryClient discoveryClient;
 
     @Resource
+    private RedisClient redisClient;
+
+    @Resource
     private GaChannelMapper channelMapper;
 
     @Resource
@@ -59,6 +70,15 @@ public class CacheStatusServiceImpl implements CacheStatusService {
 
     @Resource
     private GateWayStreamMessageProducer messageProducer;
+
+    /**
+     * 缓存类型与 Redis key 前缀的映射
+     */
+    private static final Map<String, String> CACHE_KEY_PREFIX_MAP = Map.of(
+            "channel", CHANNEL_CACHE_PREFIX,
+            "config", GATEWAY_CONFIG_PREFIX,
+            "route", GATEWAY_DYNAMIC_ROUTES_PREFIX
+    );
 
     @Override
     public ResponseDTO<?> getGatewayInstances() {
@@ -88,54 +108,36 @@ public class CacheStatusServiceImpl implements CacheStatusService {
         }
 
         try {
-            // 获取数据库中的数据
+            // 1. 获取数据库中的数据
             List<CacheItemStatus> dbItems = getDbItems(type, req.getKeys());
 
-            // 获取各网关实例的缓存状态
+            // 2. 直接从 Redis 获取缓存数据并对比
+            List<CacheItemStatus> redisItems = getRedisCacheItems(type);
+
+            // 3. 对比 Redis 与数据库
+            compareRedisWithDb(redisItems, dbItems);
+
+            // 4. 获取各网关实例的本地缓存状态
             List<ServiceInstance> instances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);
             List<InstanceCacheStatus> instanceStatusList = new ArrayList<>();
 
             for (ServiceInstance instance : instances) {
-                InstanceCacheStatus instanceStatus = getInstanceCacheStatus(instance, type);
+                InstanceCacheStatus instanceStatus = getInstanceCacheStatus(instance, type, dbItems);
                 instanceStatusList.add(instanceStatus);
-            }
-
-            // 对比并设置状态
-            for (InstanceCacheStatus instanceStatus : instanceStatusList) {
-                for (CacheItemStatus item : instanceStatus.getItems()) {
-                    CacheItemStatus dbItem = findDbItem(dbItems, item.getKey());
-                    if (dbItem == null) {
-                        // 数据库中不存在，标记为多余
-                        item.setStatus("ORPHAN");
-                    } else if (dbItem.getChecksum().equals(item.getChecksum())) {
-                        item.setStatus("MATCH");
-                    } else {
-                        item.setStatus("MISMATCH");
-                    }
-                }
-
-                // 检查缺失的项
-                for (CacheItemStatus dbItem : dbItems) {
-                    CacheItemStatus instanceItem = findInstanceItem(instanceStatus.getItems(), dbItem.getKey());
-                    if (instanceItem == null) {
-                        instanceStatus.getItems().add(CacheItemStatus.builder()
-                                .key(dbItem.getKey())
-                                .status("MISSING")
-                                .checksum(null)
-                                .build());
-                    }
-                }
             }
 
             CacheCheckRsp rsp = CacheCheckRsp.builder()
                     .type(type)
                     .dbItems(dbItems)
+                    .redisItems(redisItems)
                     .instances(instanceStatusList)
                     .checkTime(LocalDateTime.now())
                     .build();
 
-            log.info("[CacheStatus] 一致性检查完成 | type: {}, dbCount: {}, instanceCount: {}",
-                    type, dbItems.size(), instanceStatusList.size());
+            // 统计不一致数量
+            int mismatchCount = countMismatches(redisItems, instanceStatusList);
+            log.info("[CacheStatus] 一致性检查完成 | type: {}, dbCount: {}, redisCount: {}, instanceCount: {}, mismatch: {}",
+                    type, dbItems.size(), redisItems.size(), instanceStatusList.size(), mismatchCount);
 
             return ResponseDTO.newSuccessInstance(rsp);
         } catch (BlinkException e) {
@@ -144,6 +146,196 @@ public class CacheStatusServiceImpl implements CacheStatusService {
             log.error("[CacheStatus] 一致性检查失败 | type: {}, error: {}", type, e.getMessage(), e);
             throw new BlinkException("一致性检查失败: " + e.getMessage(), e, DATA_SYNC_FAILED);
         }
+    }
+
+    /**
+     * 从 Redis 获取缓存项
+     *
+     * @param type 缓存类型
+     * @return Redis 缓存项列表
+     */
+    private List<CacheItemStatus> getRedisCacheItems(String type) {
+        List<CacheItemStatus> items = new ArrayList<>();
+        String prefix = CACHE_KEY_PREFIX_MAP.get(type.toLowerCase());
+
+        if (StrUtil.isBlank(prefix)) {
+            return items;
+        }
+
+        try {
+            // 使用 scan 获取所有匹配的 key
+            String matchPattern = prefix + "*";
+            List<String> keys = new ArrayList<>();
+
+            try (Cursor<String> cursor = redisClient.scan(matchPattern, 1000)) {
+                while (cursor.hasNext()) {
+                    keys.add(cursor.next());
+                }
+            }
+
+            if (CollUtil.isEmpty(keys)) {
+                log.info("[CacheStatus] Redis 缓存为空 | type: {}, prefix: {}", type, prefix);
+                return items;
+            }
+
+            for (String key : keys) {
+                Object value = redisClient.get(key);
+                if (value != null) {
+                    String checksum = calculateChecksum(value);
+                    String businessKey = extractBusinessKey(key, prefix);
+
+                    items.add(CacheItemStatus.builder()
+                            .key(businessKey)
+                            .checksum(checksum)
+                            .updateTime(LocalDateTime.now())
+                            .build());
+                }
+            }
+
+            log.info("[CacheStatus] 获取 Redis 缓存项 | type: {}, count: {}", type, items.size());
+        } catch (Exception e) {
+            log.error("[CacheStatus] 获取 Redis 缓存失败 | type: {}, error: {}", type, e.getMessage(), e);
+        }
+
+        return items;
+    }
+
+    /**
+     * 对比 Redis 缓存与数据库数据
+     *
+     * @param redisItems Redis 缓存项
+     * @param dbItems    数据库项
+     */
+    private void compareRedisWithDb(List<CacheItemStatus> redisItems, List<CacheItemStatus> dbItems) {
+        // 设置 Redis 缓存状态
+        for (CacheItemStatus redisItem : redisItems) {
+            CacheItemStatus dbItem = findItemByKey(dbItems, redisItem.getKey());
+            if (dbItem == null) {
+                // 数据库中不存在，标记为多余
+                redisItem.setStatus("ORPHAN");
+            } else if (Objects.equals(dbItem.getChecksum(), redisItem.getChecksum())) {
+                redisItem.setStatus("MATCH");
+            } else {
+                redisItem.setStatus("MISMATCH");
+            }
+        }
+
+        // 检查缺失的项
+        for (CacheItemStatus dbItem : dbItems) {
+            CacheItemStatus redisItem = findItemByKey(redisItems, dbItem.getKey());
+            if (redisItem == null) {
+                redisItems.add(CacheItemStatus.builder()
+                        .key(dbItem.getKey())
+                        .status("MISSING")
+                        .checksum(null)
+                        .build());
+            }
+        }
+    }
+
+    /**
+     * 获取实例本地缓存状态并与数据库对比
+     *
+     * @param instance 网关实例
+     * @param type     缓存类型
+     * @param dbItems  数据库数据
+     * @return 实例缓存状态
+     */
+    @SuppressWarnings("unchecked")
+    private InstanceCacheStatus getInstanceCacheStatus(ServiceInstance instance, String type, List<CacheItemStatus> dbItems) {
+        try {
+            String url = String.format("%s/actuator/cache-status/%s", instance.getUri(), type);
+
+            WebClient webClient = WebClient.builder()
+                    .baseUrl(url)
+                    .build();
+
+            String response = webClient.get()
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            // 解析响应
+            Map<String, Object> responseMap = JacksonUtil.parseMessyJson(response, Map.class);
+            List<Map<String, Object>> itemsMap = (List<Map<String, Object>>) responseMap.get("items");
+
+            List<CacheItemStatus> items = new ArrayList<>();
+            if (CollUtil.isNotEmpty(itemsMap)) {
+                for (Map<String, Object> itemMap : itemsMap) {
+                    CacheItemStatus item = CacheItemStatus.builder()
+                            .key((String) itemMap.get("key"))
+                            .checksum((String) itemMap.get("checksum"))
+                            .build();
+
+                    // 与数据库对比
+                    CacheItemStatus dbItem = findItemByKey(dbItems, item.getKey());
+                    if (dbItem == null) {
+                        item.setStatus("ORPHAN");
+                    } else if (Objects.equals(dbItem.getChecksum(), item.getChecksum())) {
+                        item.setStatus("MATCH");
+                    } else {
+                        item.setStatus("MISMATCH");
+                    }
+
+                    items.add(item);
+                }
+            }
+
+            // 检查缺失的项（本地缓存没有但数据库有）
+            for (CacheItemStatus dbItem : dbItems) {
+                CacheItemStatus instanceItem = findItemByKey(items, dbItem.getKey());
+                if (instanceItem == null) {
+                    items.add(CacheItemStatus.builder()
+                            .key(dbItem.getKey())
+                            .status("MISSING")
+                            .checksum(null)
+                            .build());
+                }
+            }
+
+            return InstanceCacheStatus.builder()
+                    .instanceId(instance.getInstanceId())
+                    .ip(instance.getHost())
+                    .port(instance.getPort())
+                    .items(items)
+                    .build();
+        } catch (Exception e) {
+            log.error("[CacheStatus] 获取实例本地缓存状态失败 | instance: {}, error: {}",
+                    instance.getInstanceId(), e.getMessage(), e);
+
+            return InstanceCacheStatus.builder()
+                    .instanceId(instance.getInstanceId())
+                    .ip(instance.getHost())
+                    .port(instance.getPort())
+                    .items(new ArrayList<>())
+                    .build();
+        }
+    }
+
+    /**
+     * 统计不一致数量
+     */
+    private int countMismatches(List<CacheItemStatus> redisItems, List<InstanceCacheStatus> instanceStatusList) {
+        int count = 0;
+
+        // Redis 不一致
+        for (CacheItemStatus item : redisItems) {
+            if (!"MATCH".equals(item.getStatus())) {
+                count++;
+            }
+        }
+
+        // 实例本地缓存不一致
+        for (InstanceCacheStatus instance : instanceStatusList) {
+            for (CacheItemStatus item : instance.getItems()) {
+                if (!"MATCH".equals(item.getStatus())) {
+                    count++;
+                }
+            }
+        }
+
+        return count;
     }
 
     @Override
@@ -160,15 +352,34 @@ public class CacheStatusServiceImpl implements CacheStatusService {
             switch (type.toLowerCase()) {
                 case "channel" -> {
                     if (syncAll) {
+                        // 全量同步：删除所有 Redis 缓存，通知各实例删除本地缓存
+                        redisClient.deleteByPrefixScan(CHANNEL_CACHE_PREFIX);
                         messageProducer.cacheOnChange("channel:*");
                     } else if (CollUtil.isNotEmpty(req.getKeys())) {
+                        // 指定同步：删除指定 Redis 缓存
                         for (String key : req.getKeys()) {
-                            messageProducer.cacheOnChange(CHANNEL_INFO + key);
+                            String redisKey = CHANNEL_CACHE_PREFIX + key;
+                            redisClient.delete(redisKey);
+                            messageProducer.cacheOnChange(redisKey);
                         }
                     }
                 }
-                case "route" -> messageProducer.routesOnChange(GATEWAY_DYNAMIC_ROUTES);
-                case "config" -> messageProducer.cacheOnChange("config:*");
+                case "route" -> {
+                    // 路由同步：通知各实例刷新路由
+                    messageProducer.routesOnChange(GATEWAY_DYNAMIC_ROUTES_PREFIX);
+                }
+                case "config" -> {
+                    if (syncAll) {
+                        redisClient.deleteByPrefixScan(GATEWAY_CONFIG_PREFIX);
+                        messageProducer.cacheOnChange("config:*");
+                    } else if (CollUtil.isNotEmpty(req.getKeys())) {
+                        for (String key : req.getKeys()) {
+                            String redisKey = GATEWAY_CONFIG_PREFIX + key;
+                            redisClient.delete(redisKey);
+                            messageProducer.cacheOnChange(redisKey);
+                        }
+                    }
+                }
                 default -> BlinkException.throwBusinessException("不支持的同步类型: " + type);
             }
 
@@ -249,14 +460,14 @@ public class CacheStatusServiceImpl implements CacheStatusService {
                 );
                 for (GaChannelDO channel : channels) {
                     items.add(CacheItemStatus.builder()
-                            .key(channel.getChannelId())
+                            .key(channel.getAppKey())
                             .checksum(calculateChecksum(channel))
                             .updateTime(channel.getUpdateTime())
                             .build());
                 }
             }
             case "route" -> {
-                // TODO: 从 Redis 或数据库获取路由数据
+                // TODO: 从数据库获取路由数据
             }
             case "config" -> {
                 // TODO: 获取配置数据
@@ -264,57 +475,6 @@ public class CacheStatusServiceImpl implements CacheStatusService {
         }
 
         return items;
-    }
-
-    /**
-     * 获取实例缓存状态
-     */
-    @SuppressWarnings("unchecked")
-    private InstanceCacheStatus getInstanceCacheStatus(ServiceInstance instance, String type) {
-        try {
-            String url = String.format("%s/actuator/cache-status/%s", instance.getUri(), type);
-
-            WebClient webClient = WebClient.builder()
-                    .baseUrl(url)
-                    .build();
-
-            String response = webClient.get()
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-
-            // 解析响应
-            Map<String, Object> responseMap = JacksonUtil.parseMessyJson(response, Map.class);
-            List<Map<String, Object>> itemsMap = (List<Map<String, Object>>) responseMap.get("items");
-
-            List<CacheItemStatus> items = new ArrayList<>();
-            if (CollUtil.isNotEmpty(itemsMap)) {
-                for (Map<String, Object> itemMap : itemsMap) {
-                    items.add(CacheItemStatus.builder()
-                            .key((String) itemMap.get("key"))
-                            .checksum((String) itemMap.get("checksum"))
-                            .build());
-                }
-            }
-
-            return InstanceCacheStatus.builder()
-                    .instanceId(instance.getInstanceId())
-                    .ip(instance.getHost())
-                    .port(instance.getPort())
-                    .items(items)
-                    .build();
-        } catch (Exception e) {
-            log.error("[CacheStatus] 获取实例缓存状态失败 | instance: {}, error: {}",
-                    instance.getInstanceId(), e.getMessage(), e);
-
-            return InstanceCacheStatus.builder()
-                    .instanceId(instance.getInstanceId())
-                    .ip(instance.getHost())
-                    .port(instance.getPort())
-                    .items(new ArrayList<>())
-                    .build();
-        }
     }
 
     /**
@@ -326,21 +486,25 @@ public class CacheStatusServiceImpl implements CacheStatusService {
     }
 
     /**
-     * 从数据库项列表中查找指定 key
+     * 从 Redis key 中提取业务 key
+     *
+     * @param redisKey Redis key
+     * @param prefix   key 前缀
+     * @return 业务 key
      */
-    private CacheItemStatus findDbItem(List<CacheItemStatus> items, String key) {
-        return items.stream()
-                .filter(item -> key.equals(item.getKey()))
-                .findFirst()
-                .orElse(null);
+    private String extractBusinessKey(String redisKey, String prefix) {
+        if (StrUtil.isNotBlank(prefix) && redisKey.startsWith(prefix)) {
+            return redisKey.substring(prefix.length());
+        }
+        return redisKey;
     }
 
     /**
-     * 从实例项列表中查找指定 key
+     * 从列表中查找指定 key 的项
      */
-    private CacheItemStatus findInstanceItem(List<CacheItemStatus> items, String key) {
+    private CacheItemStatus findItemByKey(List<CacheItemStatus> items, String key) {
         return items.stream()
-                .filter(item -> key.equals(item.getKey()))
+                .filter(item -> Objects.equals(key, item.getKey()))
                 .findFirst()
                 .orElse(null);
     }

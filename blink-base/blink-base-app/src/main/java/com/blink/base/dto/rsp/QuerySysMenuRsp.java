@@ -14,7 +14,6 @@ import java.util.List;
  * 菜单为树形结构展示，不需要分页
  *
  * @author binblink
- * @since 2024-01-05
  */
 public class QuerySysMenuRsp implements Serializable {
 

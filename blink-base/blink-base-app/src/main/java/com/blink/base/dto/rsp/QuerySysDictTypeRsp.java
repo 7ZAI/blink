@@ -6,9 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.io.Serial;
-import java.io.Serializable;
-
 /**
  * 查询字典类型表响应参数对象
  *
@@ -18,8 +15,6 @@ import java.io.Serializable;
 @Getter
 @Setter
 @ToString
-public class QuerySysDictTypeRsp extends PageDTO<SysDictTypeDO> implements Serializable {
+public class QuerySysDictTypeRsp extends PageDTO<SysDictTypeDO> {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
 }

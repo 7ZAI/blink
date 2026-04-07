@@ -18,6 +18,7 @@ import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.base.dto.vo.SysRoleVO;
 import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.dto.vo.DataFilterVO;
+import com.blink.base.dto.vo.SimpleUserVO;
 import com.blink.base.dubbo.service.BaseDubboService;
 import com.blink.base.entity.SysUserDO;
 import com.blink.base.entity.SysRoleDO;
@@ -150,8 +151,6 @@ public class BaseDubboServiceImpl implements BaseDubboService {
             throw new BlinkException(e.getMessage());
         }
     }
-
-
 
     /**
      * 获取错误提示信息
@@ -292,7 +291,8 @@ public class BaseDubboServiceImpl implements BaseDubboService {
     }
 
     @Override
-    public CompletableFuture<ResponseDTO<QueryUserPermissionRsp>> getUserPermissionsByUerIdAsync(RequestDTO<QueryUserPermissionReq> reqDto) {
+    public CompletableFuture<ResponseDTO<QueryUserPermissionRsp>> getUserPermissionsByUerIdAsync(
+            RequestDTO<QueryUserPermissionReq> reqDto) {
         if (ioThreadPool != null) {
             return CompletableFuture.supplyAsync(() -> getUserPermissionsByUerId(reqDto), ioThreadPool);
         }
@@ -300,7 +300,8 @@ public class BaseDubboServiceImpl implements BaseDubboService {
     }
 
     @Override
-    public CompletableFuture<ResponseDTO<QueryUserPermissionRsp>> getUserPermissionsByPathAsync(RequestDTO<QueryUserPermissionReq> reqDto) {
+    public CompletableFuture<ResponseDTO<QueryUserPermissionRsp>> getUserPermissionsByPathAsync(
+            RequestDTO<QueryUserPermissionReq> reqDto) {
         if (ioThreadPool != null) {
             return CompletableFuture.supplyAsync(() -> getUserPermissionsByPath(reqDto), ioThreadPool);
         }
@@ -308,7 +309,8 @@ public class BaseDubboServiceImpl implements BaseDubboService {
     }
 
     @Override
-    public CompletableFuture<ResponseDTO<GetAllApiPermissionsRsp>> getAllApiPermissionsAsync(RequestDTO<GetAllApiPermissionsReq> reqDto) {
+    public CompletableFuture<ResponseDTO<GetAllApiPermissionsRsp>> getAllApiPermissionsAsync(
+            RequestDTO<GetAllApiPermissionsReq> reqDto) {
         if (ioThreadPool != null) {
             return CompletableFuture.supplyAsync(() -> getAllApiPermissions(reqDto), ioThreadPool);
         }
@@ -326,9 +328,12 @@ public class BaseDubboServiceImpl implements BaseDubboService {
     @Override
     public ResponseDTO<QuerySimpleUserRsp> getSimpleUserList(RequestDTO<QuerySimpleUserReq> reqDto) {
         try {
+
             QuerySimpleUserReq req = reqDto.getBody();
             QuerySimpleUserRsp rsp = new QuerySimpleUserRsp();
-            PageUtils.queryPage(req, () -> sysUserMapper.selectSimpleUserList(req), rsp);
+            PageUtils.<QuerySimpleUserReq, SimpleUserVO, QuerySimpleUserRsp>queryPage(req,
+                    () -> sysUserMapper.selectSimpleUserList(req), rsp);
+
             return ResponseDTO.newSuccessInstance(rsp);
         } catch (BlinkException e) {
             log.warn("[BaseDubbo] 查询简化用户列表失败: {}", e.getMessage());
@@ -436,7 +441,8 @@ public class BaseDubboServiceImpl implements BaseDubboService {
     }
 
     @Override
-    public CompletableFuture<ResponseDTO<QuerySimpleUserRsp>> getSimpleUserListAsync(RequestDTO<QuerySimpleUserReq> reqDto) {
+    public CompletableFuture<ResponseDTO<QuerySimpleUserRsp>> getSimpleUserListAsync(
+            RequestDTO<QuerySimpleUserReq> reqDto) {
         if (ioThreadPool != null) {
             return CompletableFuture.supplyAsync(() -> getSimpleUserList(reqDto), ioThreadPool);
         }
@@ -444,7 +450,8 @@ public class BaseDubboServiceImpl implements BaseDubboService {
     }
 
     @Override
-    public CompletableFuture<ResponseDTO<UserPermissionDetailRsp>> getUserPermissionDetailAsync(RequestDTO<UserIdReq> reqDto) {
+    public CompletableFuture<ResponseDTO<UserPermissionDetailRsp>> getUserPermissionDetailAsync(
+            RequestDTO<UserIdReq> reqDto) {
         if (ioThreadPool != null) {
             return CompletableFuture.supplyAsync(() -> getUserPermissionDetail(reqDto), ioThreadPool);
         }

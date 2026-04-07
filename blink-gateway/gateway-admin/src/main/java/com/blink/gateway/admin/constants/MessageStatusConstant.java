@@ -26,4 +26,14 @@ public interface MessageStatusConstant {
      * REDIS 消息状态码 确认消费
      */
     String REDIS_MSG_STATUS_ACK = "3";
+
+    /**
+     * REDIS 消息状态码 消费失败（进入死信）
+     */
+    String REDIS_MSG_STATUS_CONSUME_FAILED = "4";
+
+    /**
+     * 消息最大重试次数
+     */
+    int MAX_RETRY_TIMES = 5;
 }

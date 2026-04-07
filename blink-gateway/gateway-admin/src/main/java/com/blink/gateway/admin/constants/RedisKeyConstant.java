@@ -60,4 +60,23 @@ public interface RedisKeyConstant {
      * 用户未读消息计数 Redis Key 前缀
      */
     String NOTIFICATION_USER_UNREAD = BLINK_PREFIX + ":notification:unread:";
+
+    // ==================== SSE 连接管理 ====================
+
+    /**
+     * SSE 连接注册表 - userId -> instanceId 映射
+     */
+    String SSE_CONNECTION_REGISTRY = BLINK_PREFIX + ":sse:connections";
+
+    /**
+     * SSE 实例心跳前缀 - 记录活跃实例
+     */
+    String SSE_INSTANCE_HEARTBEAT = BLINK_PREFIX + ":sse:instance:";
+
+    // ==================== Stream 死信队列 ====================
+
+    /**
+     * Stream 死信队列 Key
+     */
+    String STREAM_DEAD_LETTER_QUEUE = BLINK_PREFIX + ":stream:dead-letter";
 }

@@ -3,8 +3,6 @@ package com.blink.base.dto.rsp;
 import com.blink.base.entity.SysDictDataDO;
 import com.blink.framework.common.data.PageDTO;
 
-import java.io.Serial;
-import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -20,8 +18,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class QuerySysDictDataRsp extends PageDTO<SysDictDataDO> implements Serializable {
+public class QuerySysDictDataRsp extends PageDTO<SysDictDataDO> {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
 }

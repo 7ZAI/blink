@@ -117,6 +117,16 @@ public class BlinkGatewayProperties {
     }
 
     /**
+     * 获取消费者组名称
+     * 格式：appName:instanceId
+     *
+     * @return 消费者组名称
+     */
+    public String getGroupName() {
+        return "gateway-reactive:" + this.instanceId;
+    }
+
+    /**
      * 动态路由配置
      *
      */

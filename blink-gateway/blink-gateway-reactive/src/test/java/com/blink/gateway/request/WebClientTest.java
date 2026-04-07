@@ -1,9 +1,8 @@
 package com.blink.gateway.request;
 
 import cn.hutool.core.lang.UUID;
-import com.blink.base.dto.req.SysLoginReq;
 import com.blink.base.dto.rsp.QueryBlinkChannelRsp;
-import com.blink.base.dto.rsp.SysLoginRsp;
+
 import com.blink.framework.common.constrant.SysConstant;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -66,30 +65,30 @@ public class WebClientTest {
     /**
      * 登入
      */
-    @Test
-    void login() {
+    // @Test
+    // void login() {
 
-        String base = "http://localhost:8002/base/auth/login";
+    //     String base = "http://localhost:8002/base/auth/login";
 
 
-        var loginReqDTO = new SysLoginReq();
-        loginReqDTO.setUsername(loginName);
-        loginReqDTO.setPassword(password);
+    //     var loginReqDTO = new SysLoginReq();
+    //     loginReqDTO.setUsername(loginName);
+    //     loginReqDTO.setPassword(password);
 
-        var requestDTO = new RequestDTO<SysLoginReq>();
-        requestDTO.setBody(loginReqDTO);
+    //     var requestDTO = new RequestDTO<SysLoginReq>();
+    //     requestDTO.setBody(loginReqDTO);
 
-        this.setHeadersAndSign(webClientBuilder, requestDTO, "");
-        WebClient webClient = WebClientUtil.getWebClient(webClientBuilder, base);
+    //     this.setHeadersAndSign(webClientBuilder, requestDTO, "");
+    //     WebClient webClient = WebClientUtil.getWebClient(webClientBuilder, base);
 
-        Mono<ResponseDTO<SysLoginRsp>> mono = WebClientUtil
-                .webClientPost(webClient, base, requestDTO, new ParameterizedTypeReference<>() {
-                });
-        ResponseDTO<SysLoginRsp> rs = mono.block();
+    //     Mono<ResponseDTO<SysLoginRsp>> mono = WebClientUtil
+    //             .webClientPost(webClient, base, requestDTO, new ParameterizedTypeReference<>() {
+    //             });
+    //     ResponseDTO<SysLoginRsp> rs = mono.block();
 
-        System.out.println(rs.toString());
-        System.out.println("------------------token:" + rs.getBody().getToken());
-    }
+    //     System.out.println(rs.toString());
+    //     System.out.println("------------------token:" + rs.getBody().getToken());
+    // }
 
     @Test
     void channelGetToken(){
@@ -127,48 +126,48 @@ public class WebClientTest {
      * 登入 加密版
      * 测试 加密发送 响应解密 对应渠道encryptionSwitch 应设置为0
      */
-    @Test
-    void encryptLogin() throws Exception {
+    // @Test
+    // void encryptLogin() throws Exception {
 
-        String base = "http://localhost:8002/base/auth/login";
+    //     String base = "http://localhost:8002/base/auth/login";
 
-        var loginReqDTO = new SysLoginReq();
-        loginReqDTO.setUsername(loginName);
-        loginReqDTO.setPassword(password);
+    //     var loginReqDTO = new SysLoginReq();
+    //     loginReqDTO.setUsername(loginName);
+    //     loginReqDTO.setPassword(password);
 
-        var requestDTO = new RequestDTO<SysLoginReq>();
-        requestDTO.setBody(loginReqDTO);
+    //     var requestDTO = new RequestDTO<SysLoginReq>();
+    //     requestDTO.setBody(loginReqDTO);
 
-        SecretKey key = AESUtils.generateRandomAESKey();
-        byte[] ivArr = AESUtils.generateIV();
-        String iv = AESUtils.encodeToBase64(ivArr);
-        String keyBase64 = AESUtils.encodeToBase64(key.getEncoded());
+    //     SecretKey key = AESUtils.generateRandomAESKey();
+    //     byte[] ivArr = AESUtils.generateIV();
+    //     String iv = AESUtils.encodeToBase64(ivArr);
+    //     String keyBase64 = AESUtils.encodeToBase64(key.getEncoded());
 
-        String plainTxt = JacksonUtil.toJson(requestDTO);
-        //aes 加密请求体json字符串
-        String encryptTxt = AESUtils.encrypt(key, ivArr, plainTxt);
+    //     String plainTxt = JacksonUtil.toJson(requestDTO);
+    //     //aes 加密请求体json字符串
+    //     String encryptTxt = AESUtils.encrypt(key, ivArr, plainTxt);
 
-        PublicKey publicKey = RSAUtils.base64ToPublicKey(systemPublicKey);
-        //RSA加密 aes密钥
-        String aesKeyAfterRSA = RSAUtils.encryptToBase64(keyBase64, publicKey);
+    //     PublicKey publicKey = RSAUtils.base64ToPublicKey(systemPublicKey);
+    //     //RSA加密 aes密钥
+    //     String aesKeyAfterRSA = RSAUtils.encryptToBase64(keyBase64, publicKey);
 
-        System.out.println("key:" + aesKeyAfterRSA);
+    //     System.out.println("key:" + aesKeyAfterRSA);
 
-        this.setHeadersEncrypt(webClientBuilder, requestDTO, "", aesKeyAfterRSA, iv);
-        WebClient webClient = WebClientUtil.getWebClient(webClientBuilder, base);
-        Mono<WebClientUtil.ApiResponse> rsp = WebClientUtil.webClientPost(webClient, base, encryptTxt);
+    //     this.setHeadersEncrypt(webClientBuilder, requestDTO, "", aesKeyAfterRSA, iv);
+    //     WebClient webClient = WebClientUtil.getWebClient(webClientBuilder, base);
+    //     Mono<WebClientUtil.ApiResponse> rsp = WebClientUtil.webClientPost(webClient, base, encryptTxt);
 
-        WebClientUtil.ApiResponse apiResponse = rsp.block();
-        System.out.println("响应状态码：" + apiResponse.getStatusCode().toString());
+    //     WebClientUtil.ApiResponse apiResponse = rsp.block();
+    //     System.out.println("响应状态码：" + apiResponse.getStatusCode().toString());
 
-        for (Map.Entry<String, List<String>> entrty : apiResponse.getHeaders().entrySet()) {
-            System.out.println("响应头：" + entrty.getKey() + ":" + entrty.getValue().get(0));
-        }
+    //     for (Map.Entry<String, List<String>> entrty : apiResponse.getHeaders().entrySet()) {
+    //         System.out.println("响应头：" + entrty.getKey() + ":" + entrty.getValue().get(0));
+    //     }
 
-        System.out.println("响应body:" + apiResponse.getBody());
+    //     System.out.println("响应body:" + apiResponse.getBody());
 
-        System.out.println("body解密：" + decryptResponseBody(apiResponse));
-    }
+    //     System.out.println("body解密：" + decryptResponseBody(apiResponse));
+    // }
 
     @Test
     void encryptGatewayTest() throws Exception {

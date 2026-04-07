@@ -19,9 +19,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-public class QueryBlinkChannelRsp extends PageDTO implements Serializable {
-
-  private static final long serialVersionUID = 1L;
+public class QueryBlinkChannelRsp extends PageDTO {
 
 
     /**

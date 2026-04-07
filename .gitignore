@@ -41,3 +41,28 @@ out/
 .trae/
 .claudeignore
 /.mcp.json
+
+### 前端 ###
+# Dependencies
+**/node_modules/
+.pnpm-store/
+
+# Build outputs
+**/dist/
+*.tgz
+
+# Lock files (保留 pnpm-lock.yaml)
+# pnpm-lock.yaml
+
+# Environment
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Test coverage
+**/coverage/
+
+# Cache
+**/.cache/
+**/.parcel-cache/
+**/.eslintcache

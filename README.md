@@ -14,7 +14,8 @@
 | 微服务 | Nacos（注册中心/配置中心）、Dubbo（RPC框架） | 2.3+、3.3.0（Triple协议） |
 | ORM框架 | MyBatis-Plus | 3.5.16 |
 | 工具库 | Hutool | 5.8.29 |
-| 前端技术 | Vue 3、TypeScript、Vite、Element Plus | 3.4+、5.0+、2.6+ |
+| 前端技术 | Vue 3、TypeScript、Vite、Element Plus | 3.5+、5.9+、7.0+、2.13+ |
+| 前端架构 | pnpm Workspace Monorepo | 9.15+ |
 | 构建工具 | Gradle | 8.8+ |
 
 具体版本详情查看 [build.gradle](build.gradle) 及各模块 build.gradle
@@ -59,12 +60,14 @@
 | ├─ [blink-base-app](blink-base/blink-base-app/README.md) | 后端实现 | Spring Boot 服务实现 |
 | ├─ [blink-base-api-dubbo](blink-base/blink-base-api-dubbo/README.md) | Dubbo接口定义 | BaseDubboService接口及DTO |
 | ├─ [blink-base-api](blink-base/blink-base-api/README.md) | Feign接口定义 | OpenFeign接口定义（同步调用） |
-| └─ [blink-base-web](blink-base/blink-base-web/README.md) | 管理前端 | Vue3 + TypeScript + Element Plus |
 | **blink-gateway** | 网关服务集群 | API网关与运维管理 |
 | ├─ [blink-gateway-reactive](blink-gateway/blink-gateway-reactive/README.md) | 响应式网关 | 路由转发、认证鉴权、加解密、限流 |
 | ├─ [gateway-admin](blink-gateway/gateway-admin/README.md) | 网关运维平台 | 渠道/路由/配置管理、监控运维 |
-| ├─ [gateway-admin-web](blink-gateway/gateway-admin-web/README.md) | 网关运维前端 | Vue3 + TypeScript + Element Plus |
-| └─ [blink-gateway-admin-api-dubbo](blink-gateway/blink-gateway-admin-api-dubbo/README.md) | Dubbo接口定义 | GatewayAdminDubboService |
+| ├─ [blink-gateway-admin-api-dubbo](blink-gateway/blink-gateway-admin-api-dubbo/README.md) | Dubbo接口定义 | GatewayAdminDubboService |
+| **frontend** | 前端 Monorepo | 共享组件库 + 两个管理应用 |
+| ├─ [packages/components](frontend/README.md) | 共享组件库 | @blink/components |
+| ├─ [packages/base-admin](frontend/README.md) | Base Admin 前端 | Vue3 前端 (端口 4000) |
+| ├─ [packages/gateway-admin](frontend/README.md) | Gateway Admin 前端 | Vue3 前端 (端口 3001) |
 
 各个模块的具体功能详情，请查看各个模块的README文档
 
@@ -201,33 +204,22 @@ public class BlinkBaseAppApplication {
 
 ### 5. 启动前端项目
 
-#### blink-base-web（RBAC管理前端）
+前端采用 pnpm Workspace Monorepo 架构，统一管理共享组件库和两个应用。
 
 ```bash
-cd blink-base/blink-base-web
+cd frontend
 
 # 安装依赖
-npm install
+pnpm install
 
-# 启动开发服务器
-npm run dev
+# 启动 Base Admin (端口 4000)
+pnpm dev:base
+
+# 启动 Gateway Admin (端口 3001)
+pnpm dev:gateway
 ```
 
-访问地址：http://localhost:5173
-
-#### gateway-admin-web（网关运维前端）
-
-```bash
-cd blink-gateway/gateway-admin-web
-
-# 安装依赖
-npm install
-
-# 启动开发服务器
-npm run dev
-```
-
-访问地址：http://localhost:5174
+详细文档：[frontend/README.md](frontend/README.md)
 
 ## 应用服务
 
@@ -244,9 +236,8 @@ RBAC后台管理服务，具有用户、角色、权限、菜单、字典、操�
 - `blink-base-app`: 后端服务实现
 - `blink-base-api-dubbo`: Dubbo服务接口定义
 - `blink-base-api`: Feign接口定义（同步调用）
-- `blink-base-web`: 前端管理界面
 
-详细文档：[blink-base-app](blink-base/blink-base-app/README.md) | [blink-base-web](blink-base/blink-base-web/README.md)
+详细文档：[blink-base-app](blink-base/blink-base-app/README.md)
 
 ### blink-gateway
 
@@ -281,18 +272,22 @@ RBAC后台管理服务，具有用户、角色、权限、菜单、字典、操�
 
 详细文档：[gateway-admin](blink-gateway/gateway-admin/README.md)
 
-#### gateway-admin-web
+### frontend
 
-网关运维管理前端项目，基于 Vue 3 + TypeScript + Vite 构建：
-- **技术栈**：Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router
-- **功能模块**：
-  - 仪表盘：网关概览、实例状态
-  - 渠道管理：渠道CRUD、密钥管理、Token签发
-  - 路由管理：动态路由配置
-  - 配置管理：网关参数配置、IP黑白名单
-  - 监控中心：实例列表、健康状态
+前端 Monorepo 项目，基于 pnpm Workspace 架构：
 
-详细文档：[gateway-admin-web](blink-gateway/gateway-admin-web/README.md)
+**模块结构：**
+- `packages/components`: 共享组件库 `@blink/components`
+- `packages/base-admin`: Base Admin 前端应用 (端口 4000)
+- `packages/gateway-admin`: Gateway Admin 前端应用 (端口 3001)
+
+**共享组件库主要导出：**
+- 布局组件：MainLayout、Sidebar、Header、TabsView、Breadcrumb
+- 功能组件：ThemeToggle、LanguageSwitch、BlinkTable、ThemeSettings
+- Composables：useSidebarState、useTabsState、useSubmitGuard、useTransition
+- Directives：dataFadeDirective、rippleDirective
+
+详细文档：[frontend/README.md](frontend/README.md) | [frontend/RULES.md](frontend/RULES.md)
 
 ## 系统架构
 
@@ -300,11 +295,17 @@ RBAC后台管理服务，具有用户、角色、权限、菜单、字典、操�
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                              前端层 (Frontend)                                │
+│                     前端层 (Frontend - pnpm Monorepo)                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  packages/components (@blink/components) - 共享组件库                         │
+│  ├─ 布局: MainLayout, Sidebar, Header, TabsView, Breadcrumb                  │
+│  ├─ 功能: ThemeToggle, LanguageSwitch, BlinkTable, ThemeSettings             │
+│  └─ Composables/Directives                                                   │
 ├─────────────────────────────┬───────────────────────────────────────────────┤
-│    blink-base-web           │      gateway-admin-web                        │
-│   (RBAC管理前端)            │     (网关运维前端)                             │
-│   Vue3 + Element Plus       │     Vue3 + Element Plus                       │
+│    packages/base-admin       │      packages/gateway-admin                  │
+│   (Base Admin 前端)          │     (Gateway Admin 前端)                     │
+│   端口: 4000                  │     端口: 3001                               │
+│   Vue3 + Element Plus        │     Vue3 + Element Plus                      │
 └───────────┬─────────────────┴───────────────────────┬───────────────────────┘
             │                                         │
             │         HTTP / HTTPS                    │
@@ -348,15 +349,21 @@ RBAC后台管理服务，具有用户、角色、权限、菜单、字典、操�
 开发测试环境为了方便调试，前端可直接连接后端服务：
 
 ```
-┌─────────────────────────────┐         ┌─────────────────────────────┐
-│    blink-base-web           │────────▶│   blink-base-app            │
-│   (RBAC管理前端)            │         │   (RBAC后端服务)             │
-└─────────────────────────────┘         └─────────────────────────────┘
-
-┌─────────────────────────────┐         ┌─────────────────────────────┐
-│  gateway-admin-web          │────────▶│    gateway-admin            │
-│  (网关运维前端)              │         │   (网关运维平台)             │
-└─────────────────────────────┘         └─────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    frontend (pnpm Monorepo)                      │
+│  ┌─────────────────────────┐  ┌───────────────────────────────┐ │
+│  │   packages/base-admin   │  │   packages/gateway-admin      │ │
+│  │   (Base Admin 前端)      │  │   (Gateway Admin 前端)        │ │
+│  │   端口: 4000             │  │   端口: 3001                  │ │
+│  └───────┬─────────────────┘  └───────────┬───────────────────┘ │
+└──────────┼─────────────────────────────────┼────────────────────┘
+           │                                 │
+           ▼                                 ▼
+┌─────────────────────┐           ┌─────────────────────┐
+│   blink-base-app    │           │    gateway-admin    │
+│   (RBAC后端服务)     │           │   (网关运维平台)     │
+│   端口: 8001         │           │   端口: 8008        │
+└─────────────────────┘           └─────────────────────┘
 ```
 
 ## 项目规则

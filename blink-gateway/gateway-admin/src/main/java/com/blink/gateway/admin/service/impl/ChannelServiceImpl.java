@@ -87,8 +87,10 @@ public class ChannelServiceImpl implements ChannelService {
         LambdaQueryWrapper<GaChannelDO> queryWrapper = new LambdaQueryWrapper<GaChannelDO>()
                 .like(StrUtil.isNotBlank(req.getChannelName()), GaChannelDO::getChannelName, req.getChannelName())
                 .eq(req.getEnable() != null, GaChannelDO::getEnable, req.getEnable());
+                
+        PageUtils.queryPage(req, () -> channelMapper.selectList(queryWrapper), pageRsp);
         // 使用 PageUtils 执行分页查询
-        return ResponseDTO.newSuccessInstance(PageUtils.queryPage(req, () -> channelMapper.selectList(queryWrapper), pageRsp));
+        return ResponseDTO.newSuccessInstance(pageRsp);
     }
 
     @Override

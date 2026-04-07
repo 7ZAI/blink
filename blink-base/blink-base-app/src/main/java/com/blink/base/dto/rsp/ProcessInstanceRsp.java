@@ -1,17 +1,14 @@
 package com.blink.base.dto.rsp;
 
+import com.blink.base.dto.vo.ProcessInstanceVO;
 import com.blink.framework.common.data.PageDTO;
-
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * 流程实例分页响应DTO
  *
  * @author binblink
  */
-public class ProcessInstanceRsp extends PageDTO<ProcessInstanceVO> implements Serializable {
+public class ProcessInstanceRsp extends PageDTO<ProcessInstanceVO>{
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+  
 }

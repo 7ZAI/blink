@@ -1,17 +1,16 @@
 package com.blink.base.dto.rsp;
 
+import java.util.List;
+
+import com.blink.base.dto.vo.TaskVO;
 import com.blink.framework.common.data.PageDTO;
 
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * 待办任务分页响应DTO
  *
  * @author binblink
  */
-public class TaskRsp extends PageDTO<TaskVO> implements Serializable {
+public class TaskRsp extends PageDTO<TaskVO> {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
 }

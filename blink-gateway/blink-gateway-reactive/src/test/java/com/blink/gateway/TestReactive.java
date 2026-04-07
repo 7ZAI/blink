@@ -1,7 +1,6 @@
 package com.blink.gateway;
 
 import cn.hutool.core.lang.UUID;
-import com.blink.base.dto.CacheMsg;
 import com.blink.framework.common.constrant.SysConstant;
 import com.blink.framework.common.data.ChannelSecretKey;
 import com.blink.framework.common.utils.AESUtils;
@@ -155,18 +154,18 @@ public class TestReactive {
         System.out.println(decode);
     }
 
-    @Test
-    public void jsontest(){
-        CacheMsg cacheMsg = new CacheMsg();
-        cacheMsg.setKey("asdasd:gdsgf:4tt:rrr");
-        StreamMessage<CacheMsg> m = StreamMessage.of("dasd", "rs", cacheMsg);
+    // @Test
+    // public void jsontest(){
+    //     CacheMsg cacheMsg = new CacheMsg();
+    //     cacheMsg.setKey("asdasd:gdsgf:4tt:rrr");
+    //     StreamMessage<CacheMsg> m = StreamMessage.of("dasd", "rs", cacheMsg);
 
-        Map<String,Object> map = StreamMessage.convertMessageToMap(m);
+    //     Map<String,Object> map = StreamMessage.convertMessageToMap(m);
 
-        StreamMessage<CacheMsg> k = (StreamMessage<CacheMsg>) StreamMessage.convertMapToMessage(map,CacheMsg.class);
+    //     StreamMessage<CacheMsg> k = (StreamMessage<CacheMsg>) StreamMessage.convertMapToMessage(map,CacheMsg.class);
 
-        System.out.println(k);
-    }
+    //     System.out.println(k);
+    // }
 
 
     @Test

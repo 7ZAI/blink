@@ -138,13 +138,13 @@ class BlinkReactiveGatewayApplicationTests {
             return Mono.just(r);
         }).block();
 
-        var result2 =  baseAppService.getChannelInfo("0ad42e0e8d7760da3d3d2f25862fb8f5d8a4867b").flatMap(r-> {
-            System.out.println(r.toString());
-            return Mono.just(r);
-        }).block();
+        // var result2 =  baseAppService.getChannelInfo("0ad42e0e8d7760da3d3d2f25862fb8f5d8a4867b").flatMap(r-> {
+        //     System.out.println(r.toString());
+        //     return Mono.just(r);
+        // }).block();
 
         System.out.println(result);
-        System.out.println(result2);
+        // System.out.println(result2);
     }
 
 

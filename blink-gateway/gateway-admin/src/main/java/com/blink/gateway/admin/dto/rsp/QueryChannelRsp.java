@@ -6,8 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * 查询渠道列表响应
@@ -17,8 +15,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @ToString
-public class QueryChannelRsp extends PageDTO<GaChannelDO> implements Serializable {
+public class QueryChannelRsp extends PageDTO<GaChannelDO> {
 
-    @Serial
-    private static final long serialVersionUID = 1L;
+  
 }

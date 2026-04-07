@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -20,78 +19,61 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @ToString
-public class QuerySysRoleRsp extends PageDTO<SysRoleVO> implements Serializable {
+public class QuerySysRoleRsp extends PageDTO<SysRoleVO> {
 
-  private static final long serialVersionUID = 1L;
+  /**
+   * 角色id
+   */
+  private Integer roleId;
 
+  /**
+   * 角色名称
+   */
+  private String roleName;
 
-    /**
-     * 角色id
-     */
-    private Integer roleId;
+  /**
+   * 角色英文名称
+   */
+  private String roleEnName;
 
+  /**
+   * 角色状态
+   */
+  private Byte status;
 
-    /**
-     * 角色名称
-     */
-    private String roleName;
+  /**
+   * 角色代码
+   */
+  private String roleCode;
 
+  /**
+   * 组id
+   */
+  private Integer groupId;
 
-    /**
-     * 角色英文名称
-     */
-    private String roleEnName;
+  /**
+   * 角色类型
+   */
+  private Byte roleType;
 
+  /**
+   * 创建者
+   */
+  private String createBy;
 
-    /**
-     * 角色状态
-     */
-    private Byte status;
+  /**
+   * 更新者
+   */
+  private String updateBy;
 
+  /**
+   * 创建时间
+   */
+  private LocalDateTime createTime;
 
-    /**
-     * 角色代码
-     */
-    private String roleCode;
-
-
-    /**
-     * 组id
-     */
-    private Integer groupId;
-
-
-    /**
-     * 角色类型
-     */
-    private Byte roleType;
-
-
-    /**
-     * 创建者
-     */
-    private String createBy;
-
-
-    /**
-     * 更新者
-     */
-    private String updateBy;
-
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
-
-
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
-
-
-
-
+  /**
+   * 更新时间
+   */
+  private LocalDateTime updateTime;
 
 }

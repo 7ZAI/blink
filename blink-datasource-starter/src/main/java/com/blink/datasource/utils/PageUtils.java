@@ -5,6 +5,7 @@ import com.blink.datasource.function.ExecuteFunction;
 import com.blink.datasource.function.ListQueryFunction;
 import com.blink.datasource.function.OrderFieldConverter;
 import com.blink.framework.common.data.PageDTO;
+import com.blink.framework.common.data.Page;
 import com.blink.framework.common.record.PageRecord;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -28,11 +29,11 @@ public class PageUtils {
      * @param selectSql ExecuteFunction 传入执行语句 如 mapper.selectXXX();
      * @param r 响应实际业务对象
      * @return 响应实体对象
+     * @param <P> 分页参数类型
      * @param <T> sql 返回的实体类型
      * @param <R> 返回类型
-     * @param <P> 分页参数类型
      */
-    public static  <T,R extends PageDTO<T>,P extends PageDTO<?>> R queryPage(P page, ExecuteFunction selectSql, R r){
+    public static  <P extends Page,T,R extends PageDTO<T>> R queryPage(P page, ExecuteFunction selectSql, R r){
 
         // 设置排序
         if (page.getOrderBy() != null && !page.getOrderBy().isEmpty()) {
@@ -86,7 +87,7 @@ public class PageUtils {
      * @param <R> 返回类型
      * @param <P> 分页参数类型
      */
-    public static <T, R extends PageDTO<T>, P extends PageDTO> R queryPageCustom(
+    public static <T, R extends PageDTO<T>, P extends Page> R queryPageCustom(
             P page,
             Supplier<Long> countQuery,
             ListQueryFunction<T> listQuery,
@@ -206,7 +207,7 @@ public class PageUtils {
      * @param converter 字段名转换器，接收前端字段名返回数据库字段名
      * @return 转换后的数据库排序字符串，如果输入为空则返回空字符串
      */
-    public static <P extends PageDTO<?>> P transformOrderBy(P page, OrderFieldConverter converter) {
+    public static <P extends Page> P transformOrderBy(P page, OrderFieldConverter converter) {
 
         String originOrderBy = page.getOrderBy();
         // 设置排序

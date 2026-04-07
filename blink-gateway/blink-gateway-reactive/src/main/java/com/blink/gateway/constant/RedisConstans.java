@@ -69,4 +69,9 @@ public interface RedisConstans {
      * Gateway 同步 Stream Key
      */
     String GATEWAY_STREAM_EVENT = RedisCacheKeyConstant.GATEWAY_STREAM_EVENT;
+
+    /**
+     * Stream 死信队列 Key
+     */
+    String STREAM_DEAD_LETTER_QUEUE = "blink:gateway:admin:stream:dead-letter";
 }
