@@ -7,21 +7,11 @@
       :user-info="userInfoComputed"
       :current-theme="themeStore.theme"
       :current-language="appStore.language.replace('-', '_')"
-      :tabs="tabsStore.getTabs.map(convertTabItem)"
       :show-breadcrumb="false"
-      :cached-views="tabsStore.getCachedViews"
       :show-theme-toggle="true"
       :show-language-switch="true"
       @theme-toggle="themeStore.toggleTheme"
       @language-change="handleLanguageChange"
-      @add-tab="handleAddTab"
-      @close-tab="handleCloseTab"
-      @close-other-tabs="handleCloseOtherTabs"
-      @close-right-tabs="handleCloseRightTabs"
-      @close-left-tabs="handleCloseLeftTabs"
-      @close-all-tabs="handleCloseAllTabs"
-      @del-cached-view="handleDelCachedView"
-      @add-cached-view="handleAddCachedView"
     >
       <template #header-left>
         <Breadcrumb
