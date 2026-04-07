@@ -1,0 +1,30 @@
+{
+  "name": "blink-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Blink Frontend Monorepo",
+  "keywords": [
+    "vue",
+    "element-plus",
+    "admin",
+    "monorepo"
+  ],
+  "scripts": {
+    "dev:components": "pnpm --filter @blink/components dev",
+    "dev:base": "pnpm --filter base-admin dev",
+    "dev:gateway": "pnpm --filter gateway-admin dev",
+    "build:components": "pnpm --filter @blink/components build:lib",
+    "build:base": "pnpm --filter base-admin build",
+    "build:gateway": "pnpm --filter gateway-admin build",
+    "build": "pnpm -r build",
+    "test": "pnpm --filter @blink/components test",
+    "test:coverage": "pnpm --filter @blink/components test:coverage",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r clean && rm -rf node_modules"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
