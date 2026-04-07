@@ -806,3 +806,109 @@ const handleBeforeClose = (done: () => void) => {
 | opened | 弹窗打开动画结束 |
 | close | 弹窗关闭 |
 | closed | 弹窗关闭动画结束 |
+
+## 19. BlinkTable 表格组件规范
+
+### 19.1 基本用法
+
+使用 `BlinkTable` 替代直接使用 `el-table`，统一表格风格：
+
+```vue
+<template>
+  <BlinkTable
+    :data="userList"
+    :columns="columns"
+    :loading="loading"
+    :selectable="true"
+    v-model:selected-keys="selectedIds"
+    @selection-change="handleSelectionChange"
+  />
+</template>
+```
+
+### 19.2 列配置（配置模式）
+
+```typescript
+const columns: TableColumn[] = [
+  { prop: 'loginName', label: '登录名', minWidth: 120 },
+  { prop: 'username', label: '用户名', minWidth: 120 },
+  {
+    prop: 'sex',
+    label: '性别',
+    type: 'tag',
+    tagOptions: [
+      { label: '男', value: 1, type: 'primary' },
+      { label: '女', value: 2, type: 'danger' },
+    ]
+  },
+  { prop: 'createTime', label: '创建时间', type: 'datetime', width: 160 },
+]
+```
+
+### 19.3 操作列配置
+
+```typescript
+const operations: TableOperation[] = [
+  { label: '编辑', type: 'primary', onClick: handleEdit },
+  {
+    label: '删除',
+    type: 'danger',
+    onClick: handleDelete,
+    visible: (row) => row.roleId !== 1  // 超级管理员不显示删除按钮
+  },
+]
+```
+
+### 19.4 插槽模式（复杂场景）
+
+```vue
+<template>
+  <BlinkTable :data="userList" :loading="loading">
+    <BlinkTableColumn prop="loginName" label="登录名" />
+    <BlinkTableColumn prop="avatar" label="头像">
+      <template #default="{ row }">
+        <el-avatar :src="getAvatarUrl(row.avatar)" />
+      </template>
+    </BlinkTableColumn>
+    <BlinkTableColumn prop="status" label="状态" type="tag" :tag-type="getStatusType" />
+  </BlinkTable>
+</template>
+```
+
+### 19.5 选择功能
+
+```vue
+<template>
+  <BlinkTable
+    :data="userList"
+    :selectable="true"
+    v-model:selected-keys="selectedIds"
+    :check-selectable="checkSelectable"
+    @selection-change="handleSelectionChange"
+  />
+</template>
+
+<script setup lang="ts">
+// 判断行是否可选
+const checkSelectable = (row: UserInfo) => {
+  return row.superFlag !== 1  // 超级管理员不可选
+}
+</script>
+```
+
+### 19.6 Expose 方法
+
+```vue
+<script setup lang="ts">
+const tableRef = ref()
+
+// 清空选择
+const clearSelection = () => {
+  tableRef.value?.clearSelection()
+}
+</script>
+
+<template>
+  <BlinkTable ref="tableRef" :data="userList" :selectable="true" />
+</template>
+```
