@@ -10,10 +10,15 @@ export default defineConfig({
     dts({
       tsconfigPath: './tsconfig.app.json',
       outDir: 'dist',
-      include: ['src/lib-index.ts', 'src/components/**/*.vue', 'src/composables/**/*.ts', 'src/directives/**/*.ts'],
+      include: ['src/lib-index.ts', 'src/components/**/*.vue', 'src/composables/**/*.ts', 'src/directives/**/*.ts', 'src/config/**/*.ts'],
       exclude: ['node_modules/**', 'src/views/**'],
     })
   ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src')
+    }
+  },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/lib-index.ts'),

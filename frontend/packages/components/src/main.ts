@@ -1,8 +1,9 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import ElementPlus from 'element-plus'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+// Element Plus 样式（组件已通过 unplugin-vue-components 按需引入）
 import 'element-plus/dist/index.css'
+// Element Plus 图标（全局注册用于 BlinkIcon 组件）
+import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 // 引入 Tailwind CSS
 import './styles/tailwind.css'
 import './styles/index.scss'
@@ -61,7 +62,6 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(i18n)
-app.use(ElementPlus)
 
 const themeStore = useThemeStore(pinia)
 // 初始化主题（应用存储的颜色、字体配置）

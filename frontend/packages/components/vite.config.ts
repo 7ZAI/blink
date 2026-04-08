@@ -2,6 +2,9 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 import { channelConfig, HEADER_CONSTANTS } from './src/config/channel'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -16,7 +19,20 @@ export default defineConfig(({ mode }) => {
   console.log(`[Vite Config] 代理目标: ${proxyTarget}`)
 
   return {
-    plugins: [vue()],
+    plugins: [
+      vue(),
+      // 自动导入 Element Plus API
+      AutoImport({
+        resolvers: [ElementPlusResolver()],
+        imports: ['vue', 'vue-router', 'pinia'],
+        dts: 'src/auto-imports.d.ts',
+      }),
+      // 自动注册 Element Plus 组件
+      Components({
+        resolvers: [ElementPlusResolver()],
+        dts: 'src/components.d.ts',
+      }),
+    ],
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
@@ -39,15 +55,13 @@ export default defineConfig(({ mode }) => {
       // 代码分割策略
       rollupOptions: {
         output: {
-          // 分包策略
+          // 分包策略 - Element Plus 已按需引入，无需单独 chunk
           manualChunks: {
             // Vue 核心库
             'vue-vendor': ['vue', 'vue-router', 'pinia'],
-            // Element Plus UI库
-            'element-plus': ['element-plus', '@element-plus/icons-vue'],
             // 国际化
             'i18n': ['vue-i18n'],
-            // 图表和可视化
+            // 图表和可视化（按需加载）
             'visualization': ['@logicflow/core', '@logicflow/extension'],
             // 工具库
             'utils': ['axios', '@iconify/vue'],
@@ -69,7 +83,7 @@ export default defineConfig(({ mode }) => {
       // 启用 CSS 代码分割
       cssCodeSplit: true,
       // 设置 chunk 大小警告限制
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 500,
     },
     // 优化依赖预构建
     optimizeDeps: {

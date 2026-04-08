@@ -4,8 +4,8 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
-    // 扫描 @blink/components 组件库
-    "./node_modules/@blink/components/**/*.{vue,js,ts}",
+    // 扫描 @blink/components 组件库 - 使用精确路径避免匹配过多文件
+    "../components/src/**/*.{vue,js,ts}",
   ],
   // 使用 class 模式控制暗黑模式
   darkMode: 'class',
