@@ -14,6 +14,30 @@ import {
 export type ThemeMode = 'light' | 'dark'
 
 /**
+ * 系统级配置
+ */
+export interface SystemConfig {
+  /** 全局圆角 (0-24px) */
+  borderRadius: number
+  /** 阴影强度 */
+  shadowIntensity: 'none' | 'light' | 'medium' | 'strong'
+  /** 紧凑模式 */
+  compactMode: boolean
+  /** 内容宽度 */
+  contentWidth: 'fluid' | 'fixed'
+}
+
+/**
+ * 默认系统配置
+ */
+export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
+  borderRadius: 8,
+  shadowIntensity: 'medium',
+  compactMode: false,
+  contentWidth: 'fluid',
+}
+
+/**
  * 用户自定义主题（包含创建时间）
  */
 export interface CustomThemePreset extends ThemeConfig {
@@ -41,6 +65,7 @@ const STORAGE_KEYS = {
   CUSTOM_PRESETS: 'themeCustomPresets',
   CURRENT_PRESET_ID: 'themeCurrentPresetId',
   ANIMATIONS_ENABLED: 'themeAnimationsEnabled',
+  SYSTEM_CONFIG: 'themeSystemConfig',
 }
 
 /**
@@ -105,6 +130,9 @@ export const useThemeStore = defineStore('theme', () => {
     localStorage.getItem(STORAGE_KEYS.ANIMATIONS_ENABLED) !== 'false'
   )
 
+  // 系统配置
+  const systemConfig = ref<SystemConfig>(loadSystemConfigFromStorage())
+
   // ========== 计算属性 ==========
 
   // 当前主题是否为预设主题
@@ -153,6 +181,18 @@ export const useThemeStore = defineStore('theme', () => {
       }
     }
     return []
+  }
+
+  function loadSystemConfigFromStorage(): SystemConfig {
+    const stored = localStorage.getItem(STORAGE_KEYS.SYSTEM_CONFIG)
+    if (stored) {
+      try {
+        return JSON.parse(stored)
+      } catch {
+        // ignore
+      }
+    }
+    return { ...DEFAULT_SYSTEM_CONFIG }
   }
 
   // ========== Actions ==========
@@ -329,6 +369,48 @@ export const useThemeStore = defineStore('theme', () => {
       largeSize: FONT_SIZE_CONFIG.large.default,
       smallSize: FONT_SIZE_CONFIG.small.default,
     })
+    setSystemConfig(DEFAULT_SYSTEM_CONFIG)
+  }
+
+  function setSystemConfig(newConfig: SystemConfig) {
+    systemConfig.value = { ...newConfig }
+    localStorage.setItem(STORAGE_KEYS.SYSTEM_CONFIG, JSON.stringify(newConfig))
+    applySystemConfig(newConfig)
+  }
+
+  function applySystemConfig(newConfig: SystemConfig) {
+    const root = document.documentElement
+
+    // 应用圆角
+    root.style.setProperty('--border-radius-base', `${newConfig.borderRadius}px`)
+    root.style.setProperty('--el-border-radius-base', `${newConfig.borderRadius}px`)
+    root.style.setProperty('--el-border-radius-small', `${Math.max(2, newConfig.borderRadius - 2)}px`)
+    root.style.setProperty('--el-border-radius-round', `${newConfig.borderRadius * 2}px`)
+
+    // 应用紧凑模式
+    if (newConfig.compactMode) {
+      root.classList.add('compact-mode')
+      root.style.setProperty('--spacing-base', '8px')
+      root.style.setProperty('--spacing-large', '12px')
+      root.style.setProperty('--spacing-small', '4px')
+    } else {
+      root.classList.remove('compact-mode')
+      root.style.setProperty('--spacing-base', '16px')
+      root.style.setProperty('--spacing-large', '24px')
+      root.style.setProperty('--spacing-small', '8px')
+    }
+
+    // 应用阴影强度
+    const shadowIntensityMap: Record<SystemConfig['shadowIntensity'], string> = {
+      none: 'none',
+      light: '0 2px 8px rgba(0, 0, 0, 0.08)',
+      medium: '0 4px 12px rgba(0, 0, 0, 0.12)',
+      strong: '0 8px 24px rgba(0, 0, 0, 0.16)',
+    }
+    root.style.setProperty('--shadow-base', shadowIntensityMap[newConfig.shadowIntensity])
+
+    // 应用内容宽度
+    root.setAttribute('data-content-width', newConfig.contentWidth)
   }
 
   function initTheme() {
@@ -336,6 +418,7 @@ export const useThemeStore = defineStore('theme', () => {
     applyColors(colors.value)
     applyFont(font.value)
     applyAnimations(animationsEnabled.value)
+    applySystemConfig(systemConfig.value)
   }
 
   watch(mode, (val) => {
@@ -349,6 +432,7 @@ export const useThemeStore = defineStore('theme', () => {
     customPresets,
     currentPresetId,
     animationsEnabled,
+    systemConfig,
     isPresetTheme,
 
     setMode,
@@ -362,6 +446,7 @@ export const useThemeStore = defineStore('theme', () => {
     initTheme,
     setAnimationsEnabled,
     toggleAnimations,
+    setSystemConfig,
 
     // 向后兼容别名
     theme: mode,

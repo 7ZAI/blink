@@ -10,7 +10,7 @@
       :show-breadcrumb="false"
       :show-theme-toggle="true"
       :show-language-switch="true"
-      @theme-toggle="themeStore.toggleTheme"
+      @theme-change="handleThemeChange"
       @language-change="handleLanguageChange"
     >
       <template #header-left>
@@ -64,20 +64,41 @@
         />
       </template>
     </MainLayout>
+
+    <!-- 主题设置抽屉 -->
+    <el-drawer
+      v-model="themeSettingsVisible"
+      :title="t('header.themeSettings')"
+      direction="rtl"
+      size="400px"
+      :append-to-body="true"
+    >
+      <ThemeSettings
+        :model-value="themeConfig"
+        :custom-presets="themeStore.customPresets"
+        @update:model-value="handleThemeConfigUpdate"
+        @preset-change="handlePresetChange"
+        @color-change="handleColorChange"
+        @font-change="handleFontChange"
+        @animation-change="handleAnimationChange"
+        @preset-save="handlePresetSave"
+        @preset-delete="handlePresetDelete"
+      />
+    </el-drawer>
   </el-config-provider>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElConfigProvider, ElMessage, ElMessageBox } from 'element-plus'
 import { User, SwitchButton, Setting } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'
-import { Breadcrumb, MainLayout, TabsView, UserDropdown } from '@blink/components'
+import { Breadcrumb, MainLayout, TabsView, UserDropdown, ThemeSettings } from '@blink/components'
+import type { MenuItem, TabItem, ThemeColors } from '@blink/components'
 import NotificationCenter from '@/components/NotificationCenter/index.vue'
-import type { MenuItem, TabItem } from '@blink/components'
 import { useAppStore } from '@/stores/app'
 import { useThemeStore } from '@/stores/theme'
 import { useUserStore } from '@/stores/user'
@@ -89,16 +110,40 @@ defineOptions({ name: 'MainLayout' })
 
 const { t, locale } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const appStore = useAppStore()
 const themeStore = useThemeStore()
 const userStore = useUserStore()
 const tabsStore = useTabsStore()
 const notificationStore = useNotificationStore()
 
+// 监听路由变化，更新激活的标签页
+watch(
+  () => route.path,
+  (path) => {
+    if (path && tabsStore.getActiveTabPath !== path) {
+      tabsStore.setActiveTab(path)
+    }
+  },
+  { immediate: true }
+)
+
 // Element Plus 语言配置
 const elementLocale = computed(() => {
   return appStore.language === 'zh-cn' ? zhCn : en
 })
+
+// 主题设置抽屉状态
+const themeSettingsVisible = ref(false)
+
+// 主题配置
+const themeConfig = computed(() => ({
+  presetId: themeStore.currentPresetId || undefined,
+  colors: { ...themeStore.colors },
+  font: { ...themeStore.font },
+  animationsEnabled: themeStore.animationsEnabled,
+  system: {},
+}))
 
 // SSE 连接初始化
 onMounted(() => {
@@ -165,6 +210,11 @@ const handleLanguageChange = (lang: string) => {
   locale.value = normalizedLang
 }
 
+// 主题切换
+const handleThemeChange = (theme: 'light' | 'dark') => {
+  themeStore.setTheme(theme)
+}
+
 // 用户菜单命令处理
 const handleUserCommand = async (command: string) => {
   switch (command) {
@@ -172,7 +222,7 @@ const handleUserCommand = async (command: string) => {
       router.push('/settings')
       break
     case 'themeSettings':
-      router.push('/settings')
+      themeSettingsVisible.value = true
       break
     case 'logout':
       try {
@@ -193,6 +243,43 @@ const handleUserCommand = async (command: string) => {
       }
       break
   }
+}
+
+// 主题配置更新
+const handleThemeConfigUpdate = (config: any) => {
+  // 配置更新时同步到 store
+}
+
+// 预设主题切换
+const handlePresetChange = (presetId: string) => {
+  themeStore.applyPreset(presetId)
+}
+
+// 颜色变更
+const handleColorChange = (colors: ThemeColors) => {
+  themeStore.setColors(colors)
+}
+
+// 字体变更
+const handleFontChange = (font: { family: string; baseSize: number; largeSize: number; smallSize: number }) => {
+  themeStore.setFont(font)
+}
+
+// 动画开关变更
+const handleAnimationChange = (enabled: boolean) => {
+  themeStore.setAnimationsEnabled(enabled)
+}
+
+// 保存预设
+const handlePresetSave = (preset: any) => {
+  themeStore.saveAsPreset(preset.name)
+  ElMessage.success(t('settings.presetSaved'))
+}
+
+// 删除预设
+const handlePresetDelete = (presetId: string) => {
+  themeStore.deletePreset(presetId)
+  ElMessage.success(t('settings.presetDeleted'))
 }
 
 // 标签页操作
@@ -249,31 +336,5 @@ const handleAddCachedView = (name: string) => {
 
 .sidebar .logo-text {
   margin-left: 0 !important;
-}
-
-/* 消息通知按钮样式 - 与 Header 其他按钮一致 */
-:deep(.notification-trigger) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5;
-  padding: 0 12px;
-  height: 36px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 13px;
-  color: var(--el-text-color-regular);
-  position: relative;
-  overflow: hidden;
-}
-
-:deep(.notification-trigger:hover) {
-  color: var(--el-color-primary);
-  background-color: rgba(59, 130, 246, 0.1);
-}
-
-:deep(.notification-trigger .el-icon) {
-  font-size: 18px;
 }
 </style>
