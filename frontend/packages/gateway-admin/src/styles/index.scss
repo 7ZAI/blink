@@ -43,6 +43,50 @@ html, body {
 }
 
 // ============================================
+// 侧边栏菜单样式
+// ============================================
+.el-menu--vertical {
+  background-color: transparent !important;
+  border-right: none !important;
+
+  .el-menu-item,
+  .el-sub-menu__title {
+    height: 48px;
+    line-height: 48px;
+    color: var(--sidebar-text);
+    transition: all var(--duration-normal) var(--ease-out-expo);
+
+    &:hover {
+      background-color: var(--sidebar-bg-hover);
+      color: var(--sidebar-text-active);
+    }
+
+    .el-icon {
+      color: inherit;
+    }
+  }
+
+  .el-menu-item.is-active {
+    color: var(--sidebar-text-active);
+    background-color: var(--sidebar-active-bg);
+    border-right: 3px solid var(--primary-color);
+  }
+
+  .el-sub-menu.is-active > .el-sub-menu__title {
+    color: var(--sidebar-text-active);
+  }
+
+  .el-sub-menu .el-menu {
+    background-color: transparent !important;
+  }
+
+  .el-sub-menu .el-menu-item {
+    padding-left: 50px !important;
+    min-width: auto;
+  }
+}
+
+// ============================================
 // Table Page Container - 统一的表格页面布局（现代简约风格）
 // ============================================
 
@@ -473,7 +517,7 @@ html.dark {
 }
 
 .login-left {
-  flex: 1.2;
+  flex: 4.5;
   background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #cbd5e1 100%);
   display: flex;
   align-items: center;
@@ -517,7 +561,7 @@ html.dark {
 }
 
 .login-right {
-  flex: 1;
+  flex: 5.5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -547,7 +591,7 @@ html.dark {
     z-index: 1;
     width: 100%;
     margin-top: 20px;
-    max-width: 470px;
+    max-width: 540px;
   }
 
   // 品牌区域 - 位于 ::before 区域（高度200px）的竖直中间
@@ -605,8 +649,8 @@ html.dark {
 
   .login-form-wrapper {
     width: 100%;
-    max-width: 430px;
-    padding: 48px 45px;
+    max-width: 520px;
+    padding: 48px 50px;
     background-color: #ffffff;
     border-radius: var(--radius-lg);
     border: 1px solid rgba(226, 232, 240, 0.8);

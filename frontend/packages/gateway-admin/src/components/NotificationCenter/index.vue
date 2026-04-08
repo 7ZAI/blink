@@ -1,7 +1,7 @@
 <template>
   <el-dropdown trigger="click" @command="handleCommand">
-    <div class="header-item notification-trigger">
-      <el-icon><Bell /></el-icon>
+    <div class="notification-trigger">
+      <el-icon class="trigger-icon"><Bell /></el-icon>
       <span v-if="unreadCount > 0" class="badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
     </div>
     <template #dropdown>
@@ -14,7 +14,8 @@
         </div>
         <el-scrollbar max-height="300px">
           <div v-if="notifications.length === 0" class="no-notifications">
-            {{ t('common.noNotifications') }}
+            <el-icon class="empty-icon"><Bell /></el-icon>
+            <span>{{ t('common.noNotifications') }}</span>
           </div>
           <div
             v-for="item in notifications"
@@ -23,7 +24,7 @@
             :class="{ unread: !item.read }"
             @click="markAsRead(item.notificationId)"
           >
-            <el-icon :class="item.severity.toLowerCase()" class="notification-icon">
+            <el-icon :class="getSeverityClass(item.severity)" class="notification-icon">
               <component :is="getIcon(item.severity)" />
             </el-icon>
             <div class="notification-content">
@@ -33,6 +34,11 @@
             </div>
           </div>
         </el-scrollbar>
+        <div v-if="notifications.length > 0" class="notification-footer">
+          <el-button type="primary" link size="small" @click="viewAll">
+            {{ t('common.viewAll') }}
+          </el-button>
+        </div>
       </el-dropdown-menu>
     </template>
   </el-dropdown>
@@ -64,6 +70,10 @@ const handleCommand = (_command: string) => {
   // Handle notification click actions
 }
 
+const viewAll = () => {
+  // Navigate to notifications page
+}
+
 const getIcon = (severity: NotificationStoreItem['severity']) => {
   const icons: Record<string, any> = {
     info: InfoFilled,
@@ -72,6 +82,10 @@ const getIcon = (severity: NotificationStoreItem['severity']) => {
     success: CircleCheckFilled
   }
   return icons[severity.toLowerCase()] || InfoFilled
+}
+
+const getSeverityClass = (severity: NotificationStoreItem['severity']) => {
+  return severity.toLowerCase()
 }
 
 const formatTime = (time: string) => {
@@ -88,12 +102,26 @@ const formatTime = (time: string) => {
 </script>
 
 <style scoped lang="scss">
-/* 触发按钮样式 - 与 Header 其他按钮一致 */
+/* 触发按钮样式 - 与 Header 其他按钮统一 */
 .notification-trigger {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-color-regular, #606266);
 
-  .el-icon {
-    @apply text-lg shrink-0;
+  &:hover {
+    color: var(--primary-color, #3b82f6);
+    background: rgba(59, 130, 246, 0.1);
+  }
+
+  .trigger-icon {
+    font-size: 20px;
   }
 }
 
@@ -109,33 +137,58 @@ const formatTime = (time: string) => {
   font-weight: 500;
   line-height: 16px;
   text-align: center;
-  background-color: var(--el-color-danger);
+  background-color: var(--danger-color, #ef4444);
   color: white;
   border-radius: 8px;
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 /* 下拉面板 */
 .notification-dropdown {
-  width: 320px;
+  width: 360px;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
 }
 
 .notification-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color-lighter, #f0f0f0);
+  background: var(--bg-color-overlay, #ffffff);
 
   .title {
-    font-weight: 500;
-    color: var(--el-text-color-primary);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-color-primary, #303133);
   }
 }
 
 .no-notifications {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 40px 16px;
-  text-align: center;
-  color: var(--el-text-color-secondary);
+  color: var(--text-color-secondary, #909399);
+
+  .empty-icon {
+    font-size: 32px;
+    opacity: 0.5;
+  }
 }
 
 .notification-item {
@@ -143,25 +196,43 @@ const formatTime = (time: string) => {
   gap: 12px;
   padding: 12px 16px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid var(--border-color-lighter, #f5f5f5);
+
+  &:last-child {
+    border-bottom: none;
+  }
 
   &:hover {
-    background-color: var(--el-fill-color-light);
+    background-color: var(--bg-color-page, #f5f7fa);
   }
 
   &.unread {
     background-color: rgba(59, 130, 246, 0.05);
+
+    &:hover {
+      background-color: rgba(59, 130, 246, 0.1);
+    }
   }
 }
 
 .notification-icon {
   font-size: 20px;
   flex-shrink: 0;
+  margin-top: 2px;
 
-  &.info { color: var(--el-color-primary); }
-  &.warning { color: var(--el-color-warning); }
-  &.error { color: var(--el-color-danger); }
-  &.success { color: var(--el-color-success); }
+  &.info {
+    color: var(--primary-color, #3b82f6);
+  }
+  &.warning {
+    color: var(--warning-color, #f59e0b);
+  }
+  &.error {
+    color: var(--danger-color, #ef4444);
+  }
+  &.success {
+    color: var(--success-color, #10b981);
+  }
 }
 
 .notification-content {
@@ -171,21 +242,68 @@ const formatTime = (time: string) => {
 
 .notification-title {
   font-weight: 500;
-  color: var(--el-text-color-primary);
+  font-size: 13px;
+  color: var(--text-color-primary, #303133);
   margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .notification-message {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-color-secondary, #909399);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .notification-time {
-  font-size: 12px;
-  color: var(--el-text-color-placeholder);
-  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-color-placeholder, #c0c4cc);
+  margin-top: 6px;
+}
+
+.notification-footer {
+  display: flex;
+  justify-content: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color-lighter, #f0f0f0);
+  background: var(--bg-color-overlay, #ffffff);
+}
+
+/* 深色模式适配 */
+[data-theme='dark'] {
+  .notification-trigger:hover {
+    background: rgba(59, 130, 246, 0.2);
+  }
+
+  .notification-dropdown {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .notification-header,
+  .notification-footer {
+    background: #1e293b;
+    border-color: #334155;
+  }
+
+  .notification-item {
+    border-color: #334155;
+
+    &:hover {
+      background-color: #334155;
+    }
+
+    &.unread {
+      background-color: rgba(59, 130, 246, 0.1);
+
+      &:hover {
+        background-color: rgba(59, 130, 246, 0.15);
+      }
+    }
+  }
 }
 </style>
