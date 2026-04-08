@@ -41,13 +41,13 @@
   --glow-warning: 0 0 20px rgba(245, 158, 11, 0.4);
   --glow-danger: 0 0 20px rgba(239, 68, 68, 0.4);
 
-  /* 玻璃态效果 */
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-bg-light: rgba(255, 255, 255, 0.12);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-border-light: rgba(255, 255, 255, 0.18);
-  --glass-blur: 12px;
-  --glass-blur-heavy: 20px;
+  /* 玻璃态效果 - 使用实色背景避免遮罩效果 */
+  --glass-bg: #ffffff;
+  --glass-bg-light: #f8fafc;
+  --glass-border: #e2e8f0;
+  --glass-border-light: #f1f5f9;
+  --glass-blur: 0px;
+  --glass-blur-heavy: 0px;
 
   /* 渐变色 */
   --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -163,7 +163,7 @@
   --tabs-border: #e2e8f0;
 }
 
-/* 暗黑模式变量 - 科技风增强 */
+/* 暗黑模式变量 - 简洁风格 */
 :root.dark {
   --text-color-primary: #f1f5f9;
   --text-color-regular: #cbd5e1;
@@ -178,42 +178,42 @@
   --bg-color-page: #0f172a;
   --bg-color-card: #1e293b;
 
-  /* 暗黑模式科技风增强 */
-  --sidebar-bg: #0a0f1a;
-  --sidebar-bg-hover: rgba(59, 130, 246, 0.1);
-  --sidebar-border: rgba(59, 130, 246, 0.15);
+  /* 暗黑模式简洁风格 */
+  --sidebar-bg: #0f172a;
+  --sidebar-bg-hover: rgba(100, 116, 139, 0.15);
+  --sidebar-border: #334155;
   --sidebar-text: #94a3b8;
   --sidebar-text-active: #ffffff;
-  --sidebar-active-bg: rgba(59, 130, 246, 0.2);
+  --sidebar-active-bg: rgba(59, 130, 246, 0.15);
 
-  --header-bg: rgba(15, 23, 42, 0.95);
-  --header-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 20px rgba(59, 130, 246, 0.1);
+  --header-bg: #0f172a;
+  --header-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 
-  --card-bg: rgba(30, 41, 59, 0.8);
-  --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 1px rgba(59, 130, 246, 0.1);
-  --card-hover-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.15);
+  --card-bg: #1e293b;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --card-hover-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 
-  --table-header-bg: rgba(15, 23, 42, 0.9);
-  --table-row-hover: rgba(59, 130, 246, 0.08);
+  --table-header-bg: #0f172a;
+  --table-row-hover: rgba(100, 116, 139, 0.1);
   --table-stripe-bg: rgba(15, 23, 42, 0.5);
-  --table-border-color: rgba(59, 130, 246, 0.15);
+  --table-border-color: #334155;
 
-  --input-bg: rgba(15, 23, 42, 0.8);
-  --input-border: rgba(59, 130, 246, 0.2);
-  --input-disabled-bg: rgba(15, 23, 42, 0.5);
-  --input-focus-border-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+  --input-bg: #1e293b;
+  --input-border: #334155;
+  --input-disabled-bg: #0f172a;
+  --input-focus-border-glow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 
-  --select-dropdown-bg: rgba(30, 41, 59, 0.95);
-  --select-option-hover: rgba(59, 130, 246, 0.15);
+  --select-dropdown-bg: #1e293b;
+  --select-option-hover: rgba(100, 116, 139, 0.15);
 
-  --tabs-bg: rgba(15, 23, 42, 0.95);
-  --tabs-border: rgba(59, 130, 246, 0.15);
+  --tabs-bg: #0f172a;
+  --tabs-border: #334155;
 
-  /* 暗黑模式玻璃态增强 */
-  --glass-bg: rgba(30, 41, 59, 0.6);
-  --glass-bg-light: rgba(30, 41, 59, 0.8);
-  --glass-border: rgba(59, 130, 246, 0.15);
-  --glass-border-light: rgba(59, 130, 246, 0.25);
+  /* 暗黑模式简洁风格 */
+  --glass-bg: #1e293b;
+  --glass-bg-light: #334155;
+  --glass-border: #334155;
+  --glass-border-light: #475569;
 }
 
 * {
@@ -292,21 +292,10 @@ a {
 
   /* 搜索卡片特殊样式 */
   &.search-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color-light);
     position: relative;
     overflow: hidden;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
-    }
 
     .el-card__body {
       padding: 16px 20px;
@@ -329,9 +318,8 @@ a {
 
   /* 表格卡片特殊样式 */
   &.table-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(var(--glass-blur));
-    border: 1px solid var(--glass-border);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color-light);
 
     .el-card__header {
       padding: 12px 18px;
@@ -2226,28 +2214,14 @@ a {
 
 /* 暗黑模式下的增强效果 */
 :root.dark {
-  /* 暗黑模式玻璃态增强 */
-  .tech-card {
-    background: var(--glass-bg);
-    border-color: var(--glass-border);
-  }
-
-  .glass-effect {
-    background: var(--glass-bg);
-    border-color: var(--glass-border);
-  }
-
-  /* 弹窗样式增强 - 更不透明的背景 */
+  /* 弹窗样式 */
   .el-dialog {
-    background-color: rgba(30, 41, 59, 0.98);
-    border-color: rgba(59, 130, 246, 0.2);
-    box-shadow:
-      0 0 0 1px rgba(59, 130, 246, 0.15),
-      0 25px 50px -12px rgba(0, 0, 0, 0.5),
-      0 0 40px rgba(59, 130, 246, 0.08);
+    background-color: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 
     .el-dialog__header {
-      border-bottom-color: rgba(59, 130, 246, 0.15);
+      border-bottom-color: #334155;
 
       .el-dialog__title {
         color: var(--text-color-primary);
@@ -2259,23 +2233,11 @@ a {
         width: 28px;
         height: 28px;
         border-radius: 50%;
-        background: rgba(30, 41, 59, 0.95);
-        border: 2px solid rgba(59, 130, 246, 0.3);
-        box-shadow:
-          0 2px 8px rgba(0, 0, 0, 0.3),
-          0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-        opacity: 0.85;
+        background: #1e293b;
+        border: 2px solid #475569;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         overflow: hidden;
         transition: all var(--duration-normal) var(--ease-out-back);
-
-        &::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: radial-gradient(circle at center, rgba(244, 114, 182, 0.25) 0%, transparent 70%);
-          opacity: 0;
-          transition: opacity var(--duration-normal) var(--ease-out-expo);
-        }
 
         .el-dialog__close {
           position: relative;
@@ -2287,37 +2249,23 @@ a {
         }
 
         &:hover {
-          opacity: 1;
           transform: scale(1.15) rotate(90deg);
-          border-color: var(--neon-pink);
-          box-shadow:
-            0 4px 15px rgba(244, 114, 182, 0.4),
-            0 0 30px rgba(244, 114, 182, 0.2),
-            0 0 0 1px rgba(255, 255, 255, 0.2) inset;
-
-          &::before {
-            opacity: 1;
-          }
+          border-color: var(--primary-color);
+          box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
 
           .el-dialog__close {
-            color: var(--neon-pink);
+            color: var(--primary-color);
             transform: scale(1.1);
-            text-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
           }
         }
 
         &:active {
           transform: scale(0.95) rotate(90deg);
-          box-shadow:
-            0 2px 8px rgba(244, 114, 182, 0.3),
-            0 0 0 1px rgba(255, 255, 255, 0.2) inset;
         }
 
         &:focus-visible {
           outline: none;
-          box-shadow:
-            0 4px 15px rgba(244, 114, 182, 0.4),
-            0 0 0 3px rgba(244, 114, 182, 0.2);
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
         }
       }
     }
@@ -2327,39 +2275,35 @@ a {
     }
 
     .el-dialog__footer {
-      border-top-color: rgba(59, 130, 246, 0.15);
+      border-top-color: #334155;
     }
   }
 
-  /* 下拉菜单增强 */
+  /* 下拉菜单 */
   .el-select-dropdown,
   .el-dropdown-menu {
-    background-color: rgba(30, 41, 59, 0.98) !important;
-    border: 1px solid rgba(59, 130, 246, 0.2) !important;
-    box-shadow:
-      0 0 0 1px rgba(59, 130, 246, 0.15),
-      0 10px 30px rgba(0, 0, 0, 0.4);
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   }
 
   .el-dropdown-menu__item {
     color: var(--text-color-regular);
 
     &:hover {
-      background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+      background: rgba(59, 130, 246, 0.15) !important;
       color: var(--primary-color);
     }
   }
 
-  /* 消息弹窗增强 */
+  /* 消息弹窗 */
   .el-message-box {
-    background-color: rgba(30, 41, 59, 0.98) !important;
-    border-color: rgba(59, 130, 246, 0.2) !important;
-    box-shadow:
-      0 0 0 1px rgba(59, 130, 246, 0.15),
-      0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    background-color: #1e293b !important;
+    border-color: #334155 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   }
 
-  /* 树组件增强 - 确保深色模式下文字清晰可见 */
+  /* 树组件 - 确保深色模式下文字清晰可见 */
   .el-tree {
     --el-tree-text-color: var(--text-color-primary) !important;
     --el-tree-node-hover-bg-color: var(--table-row-hover) !important;
