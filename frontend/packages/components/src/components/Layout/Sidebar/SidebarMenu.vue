@@ -1,14 +1,14 @@
 <template>
   <template v-if="!menu.children || menu.children.length === 0">
     <el-menu-item :index="menu.url" v-if="menu.status === 0">
-      <BlinkIcon v-if="menu.icon" :icon="menu.icon" size="18" />
+      <BlinkIcon v-if="menu.icon" :icon="menu.icon" :size="18" menu-mode />
       <template #title>{{ menuTitle }}</template>
     </el-menu-item>
   </template>
   <template v-else>
     <el-sub-menu :index="String(menu.menuId)" v-if="menu.status === 0">
       <template #title>
-        <BlinkIcon v-if="menu.icon" :icon="menu.icon" size="18" />
+        <BlinkIcon v-if="menu.icon" :icon="menu.icon" :size="18" menu-mode />
         <span>{{ menuTitle }}</span>
       </template>
       <template v-for="child in menu.children" :key="child.menuId">
@@ -42,16 +42,16 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 /**
- * 将 PascalCase 或带空格的名称转换为 camelCase
- * 例如: 'UserList' → 'userList', 'System Config' → 'systemConfig'
+ * 将 PascalCase、kebab-case 或带空格的名称转换为 camelCase
+ * 例如: 'UserList' → 'userList', 'System Config' → 'systemConfig', 'gateway-admin' → 'gatewayAdmin'
  */
 const toCamelCase = (str: string): string => {
-  // 移除空格并将后续单词首字母大写
+  // 先将连字符和空格统一处理
   const normalized = str
-    .split(/\s+/)
+    .split(/[\s-]+/)
     .map((word, index) => {
       if (index === 0) {
         return word.charAt(0).toLowerCase() + word.slice(1)
@@ -70,16 +70,13 @@ const menuTitle = computed(() => {
   if (props.menu.menuEnName) {
     const key = toCamelCase(props.menu.menuEnName)
     const i18nKey = `menu.${key}`
-    const translated = t(i18nKey)
-    // 如果翻译存在且不等于 key 本身，使用翻译
-    if (translated !== i18nKey) {
-      return translated
+
+    // 使用 te() 检查翻译是否存在，避免警告
+    if (te(i18nKey)) {
+      return t(i18nKey)
     }
   }
   // 回退到中文名称
   return props.menu.menuName
 })
 </script>
-
-<style scoped lang="scss">
-</style>
