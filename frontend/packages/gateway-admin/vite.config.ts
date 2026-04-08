@@ -20,8 +20,26 @@ export default defineConfig(({ mode }) => {
         '/gateway-admin': {
           target: proxyTarget,
           changeOrigin: true
+        },
+        '/notification': {
+          target: proxyTarget,
+          changeOrigin: true
         }
-      }
+      },
+      // 预热常用文件，加快首次访问速度
+      warmup: {
+        clientFiles: [
+          './src/main.ts',
+          './src/App.vue',
+          './src/router/index.ts',
+          './src/stores/theme.ts',
+          './src/views/login/index.vue',
+        ],
+      },
+      // 文件系统缓存
+      fs: {
+        cachedChecks: true,
+      },
     },
     css: {
       preprocessorOptions: {
@@ -68,19 +86,27 @@ export default defineConfig(({ mode }) => {
       // 设置 chunk 大小警告限制
       chunkSizeWarningLimit: 1000,
     },
-    // 优化依赖预构建
+    // 优化依赖预构建 - 强制预构建大型依赖
     optimizeDeps: {
       include: [
         'vue',
         'vue-router',
         'pinia',
         'element-plus',
+        'element-plus/es',
+        'element-plus/es/components/message/style/css',
+        'element-plus/es/components/notification/style/css',
+        'element-plus/es/components/message-box/style/css',
+        'element-plus/es/components/loading/style/css',
         'vue-i18n',
         'axios',
         '@iconify/vue',
+        '@vueuse/core',
         'echarts',
         'vue-echarts',
       ],
+      // 强制预构建，不等待首次访问
+      force: false,
     },
   }
 })
