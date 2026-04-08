@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import type { CaptchaVO, LoginConfigRsp } from '@/types'
 
 /**
  * 登录请求参数
@@ -7,6 +8,7 @@ export interface LoginReq {
   loginName: string
   password: string
   rememberMe?: boolean
+  captchaVO?: CaptchaVO
 }
 
 /**
@@ -92,4 +94,40 @@ export const getUserInfo = (): Promise<LoginRsp> => {
  */
 export const modifyPassword = (params: { oldPassword: string; newPassword: string }): Promise<void> => {
   return request.post('/auth/modifyPassword', { body: params })
+}
+
+/**
+ * 获取验证码
+ */
+export const getCaptcha = (params: {
+  captchaType: string
+  clientUid?: string
+  ts?: number
+}): Promise<CaptchaVO> => {
+  return request.post('/captcha/get', { body: params })
+}
+
+/**
+ * 校验验证码
+ */
+export const checkCaptcha = (params: {
+  captchaId?: string
+  captchaType?: string
+  pointJson: string
+  clientUid?: string
+  ts?: number
+}): Promise<{
+  result: boolean
+  msg: string
+  captchaId?: string
+  captchaVerification?: string
+}> => {
+  return request.post('/captcha/check', { body: params })
+}
+
+/**
+ * 获取登录配置
+ */
+export const getLoginConfig = (): Promise<LoginConfigRsp> => {
+  return request.post('/auth/getLoginConfig', { body: {} })
 }

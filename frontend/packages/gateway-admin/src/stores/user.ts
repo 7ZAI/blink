@@ -8,6 +8,7 @@ import {
   type MenuVO,
   type UserInfoVO
 } from '@/api/auth'
+import type { CaptchaVO } from '@/types'
 import { useTabsStore } from './tabs'
 
 /**
@@ -60,6 +61,7 @@ export const useUserStore = defineStore('user', () => {
   const functionMenu = ref<MenuVO[]>([])
   const permissions = ref<string[]>([])
   const roles = ref<string[]>([])
+  const captchaVerification = ref<string>('')
 
   const isLoggedIn = computed(() => !!token.value)
   const menuTree = computed(() => buildMenuTree(menus.value))
@@ -70,10 +72,31 @@ export const useUserStore = defineStore('user', () => {
   })
 
   /**
+   * 设置验证码校验结果
+   */
+  const setCaptchaVerification = (verification: string) => {
+    captchaVerification.value = verification
+  }
+
+  /**
    * 用户登录
    */
   const login = async (loginName: string, password: string, rememberMe: boolean): Promise<LoginRsp> => {
-    const rsp = await loginApi({ loginName, password, rememberMe })
+    // 构建登录请求参数，包含验证码信息
+    const loginReq = {
+      loginName,
+      password,
+      rememberMe,
+    } as { loginName: string; password: string; rememberMe: boolean; captchaVO?: CaptchaVO }
+
+    // 如果有验证码校验结果，添加到请求中
+    if (captchaVerification.value) {
+      loginReq.captchaVO = {
+        captchaVerification: captchaVerification.value,
+      }
+    }
+
+    const rsp = await loginApi(loginReq)
 
     // 先存储 token，确保后续请求能携带
     token.value = rsp.token
@@ -89,6 +112,9 @@ export const useUserStore = defineStore('user', () => {
     functionMenu.value = rsp.functionMenu || []
     permissions.value = rsp.permissions || []
     roles.value = rsp.roles || []
+
+    // 登录成功后清空验证码
+    captchaVerification.value = ''
 
     return rsp
   }
@@ -108,6 +134,7 @@ export const useUserStore = defineStore('user', () => {
     functionMenu.value = []
     permissions.value = []
     roles.value = []
+    captchaVerification.value = ''
     localStorage.removeItem('token')
     sessionStorage.removeItem('token')
 
@@ -141,6 +168,8 @@ export const useUserStore = defineStore('user', () => {
     isSuperAdmin,
     login,
     logout,
-    fetchUserInfo
+    fetchUserInfo,
+    captchaVerification,
+    setCaptchaVerification,
   }
 })

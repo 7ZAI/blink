@@ -1,4 +1,29 @@
 /**
+ * 验证码VO
+ */
+export interface CaptchaVO {
+  captchaId?: string
+  captchaType?: string
+  originalImageBase64?: string
+  jigsawImageBase64?: string
+  wordList?: string[]
+  pointJson?: string
+  token?: string
+  captchaVerification?: string
+}
+
+/**
+ * 登录配置
+ */
+export interface LoginConfigRsp {
+  captchaEnabled: boolean
+  systemTitle: string
+  systemLogo: string
+  systemFooter: string
+  defaultAvatar: string
+}
+
+/**
  * API 响应类型
  */
 export interface ApiResponse<T = unknown> {
