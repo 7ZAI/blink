@@ -212,6 +212,7 @@ export default {
     closeRight: '关闭右侧',
     closeLeft: '关闭左侧',
     closeAll: '关闭所有',
+    maxTabsReached: '已达到最大标签数量限制 ({max})，请关闭部分标签后再打开',
   },
   header: {
     profile: '个人中心',
@@ -516,9 +517,12 @@ export default {
     colorSettings: '颜色设置',
     fontSettings: '字体设置',
     animationSettings: '动画设置',
+    systemSettings: '系统设置',
     enableAnimations: '启用动画效果',
     animationsEnabled: '全局动画已开启',
     animationsDisabled: '全局动画已关闭',
+    animationsEnabledDesc: '界面过渡动画已启用',
+    animationsDisabledDesc: '界面过渡动画已禁用',
     primaryColor: '主题色',
     successColor: '成功色',
     warningColor: '警告色',
@@ -532,7 +536,11 @@ export default {
     resetToDefault: '重置为默认',
     myPresets: '我的预设',
     presetName: '预设名称',
+    presetNameEn: '英文名称',
     presetNamePlaceholder: '请输入预设名称',
+    presetNameEnPlaceholder: '请输入英文名称（可选）',
+    presetNameRequired: '请输入预设名称',
+    presetNameLength: '名称长度为2-50个字符',
     maxPresetsReached: '最多只能保存 {max} 个自定义预设',
     presetSaved: '预设保存成功',
     presetDeleted: '预设已删除',
@@ -542,6 +550,58 @@ export default {
     deletePresetConfirm: '确定要删除预设「{name}」吗？',
     noCustomPresets: '暂无自定义预设',
     created: '创建于',
+    available: '个可选',
+    default: '默认',
+    resetColors: '重置颜色',
+    resetFontSizes: '重置字号',
+    colorPreview: '颜色预览',
+
+    // 实时预览
+    realtimePreview: '实时预览',
+    previewHint: '配置变更即时生效',
+    previewTitle: '主题预览标题',
+    previewContent: '这是主题预览内容，用于展示当前配置效果。',
+
+    // 深浅模式
+    displayMode: '显示模式',
+    lightMode: '浅色模式',
+    darkMode: '深色模式',
+
+    // 颜色设置
+    contrastPreview: '对比预览',
+    primaryBtn: '主要按钮',
+    successBtn: '成功按钮',
+    warningBtn: '警告按钮',
+    dangerBtn: '危险按钮',
+
+    // 字体设置
+    sampleLarge: '这是大字号示例文字',
+    sampleBase: '这是基础字号示例文字，用于展示正文效果。',
+    sampleSmall: '这是小字号示例文字',
+
+    // 系统设置
+    borderRadius: '圆角大小',
+    radiusPreview: '圆角预览',
+    shadowIntensity: '阴影强度',
+    shadowNone: '无',
+    shadowLight: '轻',
+    shadowMedium: '中',
+    shadowStrong: '强',
+    shadowPreview: '阴影预览',
+    compactMode: '紧凑模式',
+    compactModeDesc: '启用后减少界面间距，适合小屏幕显示',
+    contentWidth: '内容宽度',
+    contentFluid: '流式布局',
+    contentFixed: '固定宽度',
+    fluidLabel: '流式',
+    fixedLabel: '固定',
+
+    // 风格提示
+    styleModern: '现代简约',
+    styleNatural: '自然清新',
+    styleWarm: '温暖活力',
+    styleCreative: '创意个性',
+    styleClassic: '经典稳重',
   },
   iconSelector: {
     placeholder: '请选择图标',
@@ -551,6 +611,9 @@ export default {
     mediaIcons: '媒体图标',
     lifestyleIcons: '生活图标',
     businessIcons: '业务图标',
+    navigationIcons: '导航图标',
+    gatewayIcons: '网关图标',
+    recentlyUsed: '最近使用',
   },
   avatar: {
     selectStyle: '选择头像',

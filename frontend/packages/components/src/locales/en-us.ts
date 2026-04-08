@@ -212,6 +212,7 @@ export default {
     closeRight: 'Close Right',
     closeLeft: 'Close Left',
     closeAll: 'Close All',
+    maxTabsReached: 'Maximum tab limit reached ({max}), please close some tabs first',
   },
   header: {
     profile: 'Profile',
@@ -506,9 +507,12 @@ export default {
     colorSettings: 'Color Settings',
     fontSettings: 'Font Settings',
     animationSettings: 'Animation Settings',
+    systemSettings: 'System Settings',
     enableAnimations: 'Enable Animations',
     animationsEnabled: 'Global animations enabled',
     animationsDisabled: 'Global animations disabled',
+    animationsEnabledDesc: 'Interface transition animations are enabled',
+    animationsDisabledDesc: 'Interface transition animations are disabled',
     primaryColor: 'Primary Color',
     successColor: 'Success Color',
     warningColor: 'Warning Color',
@@ -522,7 +526,11 @@ export default {
     resetToDefault: 'Reset to Default',
     myPresets: 'My Presets',
     presetName: 'Preset Name',
+    presetNameEn: 'English Name',
     presetNamePlaceholder: 'Enter preset name',
+    presetNameEnPlaceholder: 'Enter English name (optional)',
+    presetNameRequired: 'Please enter preset name',
+    presetNameLength: 'Name length must be 2-50 characters',
     maxPresetsReached: 'Maximum {max} custom presets allowed',
     presetSaved: 'Preset saved successfully',
     presetDeleted: 'Preset deleted',
@@ -532,6 +540,58 @@ export default {
     deletePresetConfirm: 'Are you sure you want to delete preset "{name}"?',
     noCustomPresets: 'No custom presets',
     created: 'Created',
+    available: 'available',
+    default: 'Default',
+    resetColors: 'Reset Colors',
+    resetFontSizes: 'Reset Font Sizes',
+    colorPreview: 'Color Preview',
+
+    // Realtime preview
+    realtimePreview: 'Realtime Preview',
+    previewHint: 'Changes apply instantly',
+    previewTitle: 'Theme Preview Title',
+    previewContent: 'This is preview content to demonstrate the current theme settings.',
+
+    // Display mode
+    displayMode: 'Display Mode',
+    lightMode: 'Light Mode',
+    darkMode: 'Dark Mode',
+
+    // Color settings
+    contrastPreview: 'Contrast Preview',
+    primaryBtn: 'Primary',
+    successBtn: 'Success',
+    warningBtn: 'Warning',
+    dangerBtn: 'Danger',
+
+    // Font settings
+    sampleLarge: 'This is large font sample text',
+    sampleBase: 'This is base font sample text for body content display.',
+    sampleSmall: 'This is small font sample text',
+
+    // System settings
+    borderRadius: 'Border Radius',
+    radiusPreview: 'Radius Preview',
+    shadowIntensity: 'Shadow Intensity',
+    shadowNone: 'None',
+    shadowLight: 'Light',
+    shadowMedium: 'Medium',
+    shadowStrong: 'Strong',
+    shadowPreview: 'Shadow Preview',
+    compactMode: 'Compact Mode',
+    compactModeDesc: 'Reduce spacing for smaller screens',
+    contentWidth: 'Content Width',
+    contentFluid: 'Fluid Layout',
+    contentFixed: 'Fixed Width',
+    fluidLabel: 'Fluid',
+    fixedLabel: 'Fixed',
+
+    // Style hints
+    styleModern: 'Modern',
+    styleNatural: 'Natural',
+    styleWarm: 'Warm',
+    styleCreative: 'Creative',
+    styleClassic: 'Classic',
   },
   iconSelector: {
     placeholder: 'Select Icon',
@@ -541,6 +601,9 @@ export default {
     mediaIcons: 'Media Icons',
     lifestyleIcons: 'Lifestyle Icons',
     businessIcons: 'Business Icons',
+    navigationIcons: 'Navigation Icons',
+    gatewayIcons: 'Gateway Icons',
+    recentlyUsed: 'Recently Used',
   },
   avatar: {
     selectStyle: 'Select Avatar',

@@ -18,9 +18,29 @@ export { default as LanguageSwitch } from './components/Layout/LanguageSwitch/in
 export { default as FullscreenToggle } from './components/Layout/FullscreenToggle/index.vue'
 export { default as SkeletonLoader } from './components/SkeletonLoader/index.vue'
 export { default as BlinkIcon } from './components/BlinkIcon/index.vue'
+export { default as ThemeSettings } from './components/ThemeSettings/index.vue'
+export { default as AuthButton } from './components/AuthButton.vue'
+
+// AuthButton Props 类型导出
+export type { Props as AuthButtonProps } from './components/AuthButton.vue'
 
 // 选择器组件
 export { default as IconSelector } from './components/IconSelector/index.vue'
+
+// IconSelector 工具函数导出
+export {
+  createDefaultGroups,
+  createMenuIconGroups,
+  DEFAULT_ELEMENT_ICONS,
+  NAVIGATION_ICONS,
+  GATEWAY_ICONS,
+  DEFAULT_COMMON_ICONS,
+  DEFAULT_SYSTEM_ICONS,
+  DEFAULT_MEDIA_ICONS,
+  DEFAULT_LIFESTYLE_ICONS,
+  DEFAULT_BUSINESS_ICONS,
+  LABEL_KEY_MAP,
+} from './components/IconSelector/index.vue'
 
 // ============================================
 // 类型导出
