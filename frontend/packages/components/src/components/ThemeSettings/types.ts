@@ -2,7 +2,6 @@
 
 import type {
   ThemeColors,
-  SystemConfig,
   FullThemeConfig,
   PresetTheme,
   CustomPreset,
@@ -18,7 +17,6 @@ export interface ThemeSettingsProps {
   showColors?: boolean
   showFonts?: boolean
   showAnimations?: boolean
-  showSystem?: boolean
 
   // 配置项
   presetThemes?: PresetTheme[]
@@ -29,6 +27,7 @@ export interface ThemeSettingsProps {
   modelValue?: FullThemeConfig
   customPresets?: CustomPreset[]
   readonly?: boolean
+  mode?: 'light' | 'dark'
 }
 
 /**
@@ -40,7 +39,6 @@ export interface ThemeSettingsEmits {
   (e: 'color-change', colors: ThemeColors): void
   (e: 'font-change', font: { family: string; baseSize: number; largeSize: number; smallSize: number }): void
   (e: 'animation-change', enabled: boolean): void
-  (e: 'system-change', config: SystemConfig): void
   (e: 'preset-save', preset: CustomPreset): void
   (e: 'preset-delete', presetId: string): void
 }
@@ -48,7 +46,6 @@ export interface ThemeSettingsEmits {
 // 重导出类型
 export type {
   ThemeColors,
-  SystemConfig,
   FullThemeConfig,
   PresetTheme,
   CustomPreset,

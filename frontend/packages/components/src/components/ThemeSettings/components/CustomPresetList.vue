@@ -1,7 +1,6 @@
 <!-- src/components/ThemeSettings/components/CustomPresetList.vue -->
 <template>
-  <div v-if="presets.length > 0" class="custom-preset-list">
-    <h4 class="section-title">{{ t('settings.myPresets') }}</h4>
+  <div class="custom-preset-list">
     <div class="preset-grid">
       <div
         v-for="preset in presets"
@@ -10,46 +9,69 @@
         :class="{ active: currentPresetId === preset.id }"
         @click="handleSelect(preset.id)"
       >
-        <div class="preset-header">
-          <span class="preset-name">{{ locale === 'zh_cn' ? preset.name : preset.nameEn }}</span>
-          <el-button
-            type="danger"
-            size="small"
-            circle
-            :icon="Delete"
-            class="delete-btn"
-            @click.stop="handleDelete(preset)"
+        <!-- 颜色条 -->
+        <div class="color-bar">
+          <span
+            class="color-segment"
+            :style="{ backgroundColor: preset.colors.primary, width: '40%' }"
+          />
+          <span
+            class="color-segment"
+            :style="{ backgroundColor: preset.colors.success, width: '20%' }"
+          />
+          <span
+            class="color-segment"
+            :style="{ backgroundColor: preset.colors.warning, width: '20%' }"
+          />
+          <span
+            class="color-segment"
+            :style="{ backgroundColor: preset.colors.danger, width: '20%' }"
           />
         </div>
-        <div class="color-dots">
-          <span
-            class="color-dot"
-            :style="{ backgroundColor: preset.colors.primary }"
-            title="Primary"
-          />
-          <span
-            class="color-dot"
-            :style="{ backgroundColor: preset.colors.success }"
-            title="Success"
-          />
-          <span
-            class="color-dot"
-            :style="{ backgroundColor: preset.colors.warning }"
-            title="Warning"
-          />
-          <span
-            class="color-dot"
-            :style="{ backgroundColor: preset.colors.danger }"
-            title="Danger"
-          />
-          <span
-            class="color-dot"
-            :style="{ backgroundColor: preset.colors.info }"
-            title="Info"
-          />
+
+        <!-- 预设信息 -->
+        <div class="preset-content">
+          <div class="preset-header">
+            <span class="preset-name">
+              {{ locale === 'zh_cn' ? preset.name : preset.nameEn }}
+            </span>
+            <el-tooltip :content="t('settings.deletePreset')" placement="top">
+              <el-button
+                type="danger"
+                size="small"
+                circle
+                :icon="Delete"
+                class="delete-btn"
+                @click.stop="handleDelete(preset)"
+              />
+            </el-tooltip>
+          </div>
+
+          <!-- 颜色点 -->
+          <div class="color-dots">
+            <el-tooltip
+              v-for="(color, key) in preset.colors"
+              :key="key"
+              :content="t(`settings.${key}Color`)"
+              placement="top"
+            >
+              <span
+                class="color-dot"
+                :style="{ backgroundColor: color }"
+              />
+            </el-tooltip>
+          </div>
+
+          <!-- 创建时间 -->
+          <div class="preset-meta">
+            <Icon icon="calendar" class="meta-icon" />
+            <span>{{ formatDate(preset.createdAt) }}</span>
+          </div>
         </div>
-        <div class="preset-date">
-          {{ t('settings.created') }}: {{ formatDate(preset.createdAt) }}
+
+        <!-- 选中标记 -->
+        <div v-if="currentPresetId === preset.id" class="active-indicator">
+          <Icon icon="check" class="check-icon" />
         </div>
       </div>
     </div>
@@ -60,6 +82,7 @@
 import { useI18n } from 'vue-i18n'
 import { ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
+import { Icon } from '@iconify/vue'
 import type { CustomPreset } from '../types'
 
 defineOptions({
@@ -103,7 +126,7 @@ const handleDelete = async (preset: CustomPreset) => {
     )
     emit('delete', preset.id)
   } catch {
-    // User cancelled, do nothing
+    // User cancelled
   }
 }
 
@@ -122,31 +145,26 @@ const formatDate = (timestamp: number): string => {
 
 <style scoped lang="scss">
 .custom-preset-list {
-  .section-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-color-primary);
-    margin-bottom: 16px;
-  }
-
   .preset-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 12px;
 
     .preset-card {
+      position: relative;
       display: flex;
       flex-direction: column;
-      padding: 12px;
+      background: var(--bg-color-overlay);
       border: 2px solid var(--border-color-light);
-      border-radius: 8px;
+      border-radius: 10px;
+      overflow: hidden;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
 
       &:hover {
-        border-color: var(--primary-color);
+        border-color: var(--primary-color-light-5);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 
         .delete-btn {
           opacity: 1;
@@ -155,78 +173,124 @@ const formatDate = (timestamp: number): string => {
 
       &.active {
         border-color: var(--primary-color);
-        background: var(--primary-color-light-9);
-        box-shadow: 0 2px 8px var(--primary-color-light-7);
+        box-shadow: 0 0 0 3px var(--primary-color-light-9);
+
+        .preset-content .preset-header .preset-name {
+          color: var(--primary-color);
+        }
       }
 
-      .preset-header {
+      // 颜色条
+      .color-bar {
         display: flex;
-        justify-content: space-between;
+        height: 6px;
+
+        .color-segment {
+          transition: flex 0.2s ease;
+        }
+      }
+
+      // 预设内容
+      .preset-content {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+
+        .preset-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .preset-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 120px;
+          }
+
+          .delete-btn {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+
+            &:hover {
+              opacity: 1 !important;
+            }
+          }
+        }
+
+        // 颜色点
+        .color-dots {
+          display: flex;
+          gap: 6px;
+
+          .color-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid var(--border-color-lighter);
+            transition: transform 0.2s ease;
+
+            &:hover {
+              transform: scale(1.2);
+            }
+          }
+        }
+
+        // 元信息
+        .preset-meta {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11px;
+          color: var(--text-color-secondary);
+
+          .meta-icon {
+            font-size: 12px;
+          }
+        }
+      }
+
+      // 选中标记
+      .active-indicator {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 20px;
+        height: 20px;
+        background: var(--primary-color);
+        border-radius: 50%;
+        display: flex;
         align-items: center;
-        margin-bottom: 10px;
-
-        .preset-name {
-          font-size: 14px;
-          font-weight: 500;
-          color: var(--text-color-primary);
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          max-width: 100px;
-        }
-
-        .delete-btn {
-          opacity: 0;
-          transition: opacity 0.2s ease;
-          flex-shrink: 0;
-
-          &:hover {
-            opacity: 1;
-          }
-        }
-      }
-
-      .color-dots {
-        display: flex;
-        gap: 6px;
         justify-content: center;
-        margin-bottom: 10px;
 
-        .color-dot {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-          transition: transform 0.2s ease;
-
-          &:hover {
-            transform: scale(1.2);
-          }
+        .check-icon {
+          color: white;
+          font-size: 12px;
         }
-      }
-
-      .preset-date {
-        font-size: 12px;
-        color: var(--text-color-secondary);
-        text-align: center;
       }
     }
   }
 }
 
-// Dark mode adjustments
-:root.dark .custom-preset-list {
+// 深色模式适配
+[data-theme='dark'] .custom-preset-list {
   .preset-card {
+    background: #1e293b;
+    border-color: #334155;
+
     &:hover {
+      border-color: var(--primary-color-light-5);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    &.active {
-      box-shadow: 0 2px 8px rgba(var(--primary-color-rgb), 0.3);
-    }
-
-    .color-dots .color-dot {
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    .preset-content {
+      .color-dots .color-dot {
+        border-color: #475569;
+      }
     }
   }
 }

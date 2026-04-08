@@ -1,123 +1,72 @@
 <!-- src/components/ThemeSettings/components/ColorSettings.vue -->
 <template>
   <div class="color-settings">
-    <h4 class="section-title">{{ t('settings.colorSettings') }}</h4>
-    <el-form label-position="left" label-width="100px" class="color-form">
-      <el-form-item :label="t('settings.primaryColor')">
-        <div class="color-input-wrapper">
+    <div class="color-grid">
+      <div
+        v-for="(config, key) in colorConfigs"
+        :key="key"
+        class="color-item"
+      >
+        <div class="color-label-row">
+          <span
+            class="color-dot"
+            :style="{ backgroundColor: localColors[key] }"
+          />
+          <span class="color-label">{{ t(config.label) }}</span>
+        </div>
+        <div class="color-input-row">
           <el-color-picker
-            v-model="localColors.primary"
+            v-model="localColors[key]"
             :predefine="predefineColors"
-            @change="handleColorChange('primary')"
+            size="large"
+            @change="handleColorChange(key)"
           />
           <el-input
-            v-model="localColors.primary"
-            placeholder="#409EFF"
+            v-model="localColors[key]"
+            :placeholder="config.placeholder"
             class="color-text-input"
-            @change="handleColorChange('primary')"
+            @change="handleColorChange(key)"
           >
-            <template #prefix>
-              <span
-                class="color-preview-dot"
-                :style="{ backgroundColor: localColors.primary }"
-              />
+            <template #suffix>
+              <span class="hex-badge">HEX</span>
             </template>
           </el-input>
         </div>
-      </el-form-item>
+      </div>
+    </div>
 
-      <el-form-item :label="t('settings.successColor')">
-        <div class="color-input-wrapper">
-          <el-color-picker
-            v-model="localColors.success"
-            :predefine="predefineColors"
-            @change="handleColorChange('success')"
-          />
-          <el-input
-            v-model="localColors.success"
-            placeholder="#67C23A"
-            class="color-text-input"
-            @change="handleColorChange('success')"
-          >
-            <template #prefix>
-              <span
-                class="color-preview-dot"
-                :style="{ backgroundColor: localColors.success }"
-              />
-            </template>
-          </el-input>
+    <!-- 颜色对比预览 -->
+    <div class="contrast-preview">
+      <div class="preview-header">
+        <span class="preview-label">{{ t('settings.contrastPreview') }}</span>
+      </div>
+      <div class="preview-grid">
+        <div
+          class="preview-button primary"
+          :style="{ backgroundColor: localColors.primary }"
+        >
+          {{ t('settings.primaryBtn') }}
         </div>
-      </el-form-item>
-
-      <el-form-item :label="t('settings.warningColor')">
-        <div class="color-input-wrapper">
-          <el-color-picker
-            v-model="localColors.warning"
-            :predefine="predefineColors"
-            @change="handleColorChange('warning')"
-          />
-          <el-input
-            v-model="localColors.warning"
-            placeholder="#E6A23C"
-            class="color-text-input"
-            @change="handleColorChange('warning')"
-          >
-            <template #prefix>
-              <span
-                class="color-preview-dot"
-                :style="{ backgroundColor: localColors.warning }"
-              />
-            </template>
-          </el-input>
+        <div
+          class="preview-button success"
+          :style="{ backgroundColor: localColors.success }"
+        >
+          {{ t('settings.successBtn') }}
         </div>
-      </el-form-item>
-
-      <el-form-item :label="t('settings.dangerColor')">
-        <div class="color-input-wrapper">
-          <el-color-picker
-            v-model="localColors.danger"
-            :predefine="predefineColors"
-            @change="handleColorChange('danger')"
-          />
-          <el-input
-            v-model="localColors.danger"
-            placeholder="#F56C6C"
-            class="color-text-input"
-            @change="handleColorChange('danger')"
-          >
-            <template #prefix>
-              <span
-                class="color-preview-dot"
-                :style="{ backgroundColor: localColors.danger }"
-              />
-            </template>
-          </el-input>
+        <div
+          class="preview-button warning"
+          :style="{ backgroundColor: localColors.warning }"
+        >
+          {{ t('settings.warningBtn') }}
         </div>
-      </el-form-item>
-
-      <el-form-item :label="t('settings.infoColor')">
-        <div class="color-input-wrapper">
-          <el-color-picker
-            v-model="localColors.info"
-            :predefine="predefineColors"
-            @change="handleColorChange('info')"
-          />
-          <el-input
-            v-model="localColors.info"
-            placeholder="#909399"
-            class="color-text-input"
-            @change="handleColorChange('info')"
-          >
-            <template #prefix>
-              <span
-                class="color-preview-dot"
-                :style="{ backgroundColor: localColors.info }"
-              />
-            </template>
-          </el-input>
+        <div
+          class="preview-button danger"
+          :style="{ backgroundColor: localColors.danger }"
+        >
+          {{ t('settings.dangerBtn') }}
         </div>
-      </el-form-item>
-    </el-form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -142,20 +91,35 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
+// Color configurations
+const colorConfigs = {
+  primary: {
+    label: 'settings.primaryColor',
+    placeholder: '#3b82f6',
+  },
+  success: {
+    label: 'settings.successColor',
+    placeholder: '#10b981',
+  },
+  warning: {
+    label: 'settings.warningColor',
+    placeholder: '#f59e0b',
+  },
+  danger: {
+    label: 'settings.dangerColor',
+    placeholder: '#ef4444',
+  },
+  info: {
+    label: 'settings.infoColor',
+    placeholder: '#6366f1',
+  },
+}
+
 // Predefined colors for quick selection
 const predefineColors = [
-  '#3b82f6',
-  '#8b5cf6',
-  '#f97316',
-  '#10b981',
-  '#ef4444',
-  '#06b6d4',
-  '#64748b',
-  '#1e293b',
-  '#6366f1',
-  '#f43f5e',
-  '#22c55e',
-  '#fbbf24',
+  '#3b82f6', '#8b5cf6', '#f97316', '#10b981', '#ef4444', '#06b6d4',
+  '#64748b', '#1e293b', '#6366f1', '#f43f5e', '#22c55e', '#fbbf24',
+  '#0d9488', '#14b8a6', '#2563eb', '#7c3aed', '#db2777', '#ea580c',
 ]
 
 // Local reactive copy of colors
@@ -182,12 +146,21 @@ watch(
 
 // Handle color change
 const handleColorChange = (key: keyof ThemeColors) => {
-  // Validate hex color format
-  const colorValue = localColors[key]
-  if (colorValue && !/^#[0-9A-Fa-f]{6}$/.test(colorValue)) {
-    // Auto-fix: add # prefix if missing
-    if (/^[0-9A-Fa-f]{6}$/.test(colorValue)) {
-      localColors[key] = `#${colorValue}`
+  let colorValue = localColors[key]
+
+  // Validate and fix hex color format
+  if (colorValue) {
+    // Remove invalid characters
+    colorValue = colorValue.replace(/[^0-9A-Fa-f#]/g, '')
+
+    // Add # prefix if missing
+    if (!colorValue.startsWith('#') && /^[0-9A-Fa-f]{6}$/.test(colorValue)) {
+      colorValue = `#${colorValue}`
+    }
+
+    // Validate 6-digit hex
+    if (/^#[0-9A-Fa-f]{6}$/.test(colorValue)) {
+      localColors[key] = colorValue.toLowerCase()
     }
   }
 
@@ -197,76 +170,155 @@ const handleColorChange = (key: keyof ThemeColors) => {
 
 <style scoped lang="scss">
 .color-settings {
-  .section-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-color-primary);
-    margin-bottom: 16px;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 
-  .color-form {
-    .el-form-item {
-      margin-bottom: 16px;
+  // 颜色网格
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
 
-      &:last-child {
-        margin-bottom: 0;
+    .color-item {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      background: var(--bg-color-page);
+      border-radius: 8px;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background: var(--bg-color-overlay);
       }
-    }
-  }
 
-  .color-input-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex: 1;
+      .color-label-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
 
-    :deep(.el-color-picker) {
-      --el-color-picker-size: 32px;
+        .color-dot {
+          width: 24px;
+          height: 24px;
+          border-radius: 6px;
+          border: 2px solid var(--border-color-light);
+          transition: transform 0.2s ease;
+        }
 
-      .el-color-picker__trigger {
-        border: 1px solid var(--border-color-light);
-        transition: border-color 0.3s ease;
+        .color-label {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-color-regular);
+        }
+      }
 
-        &:hover {
-          border-color: var(--primary-color);
+      .color-input-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        :deep(.el-color-picker) {
+          --el-color-picker-size: 36px;
+
+          .el-color-picker__trigger {
+            border: 2px solid var(--border-color-light);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+
+            &:hover {
+              border-color: var(--primary-color);
+            }
+          }
+
+          &.is-active .el-color-picker__trigger {
+            border-color: var(--primary-color);
+          }
+        }
+
+        .color-text-input {
+          flex: 1;
+
+          :deep(.el-input__wrapper) {
+            padding: 4px 12px;
+            border-radius: 6px;
+          }
+
+          :deep(.el-input__suffix) {
+            display: flex;
+            align-items: center;
+          }
+
+          .hex-badge {
+            font-size: 10px;
+            padding: 2px 4px;
+            background: var(--bg-color-page);
+            border-radius: 3px;
+            color: var(--text-color-secondary);
+            font-weight: 600;
+          }
         }
       }
     }
+  }
 
-    .color-text-input {
-      flex: 1;
-      max-width: 180px;
+  // 对比预览
+  .contrast-preview {
+    padding: 16px;
+    background: var(--bg-color-overlay);
+    border-radius: 10px;
+    border: 1px solid var(--border-color-light);
 
-      :deep(.el-input__wrapper) {
-        padding-left: 8px;
-      }
+    .preview-header {
+      margin-bottom: 12px;
 
-      :deep(.el-input__prefix) {
-        display: flex;
-        align-items: center;
+      .preview-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-color-secondary);
       }
     }
 
-    .color-preview-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
-      border: 1px solid var(--border-color-lighter);
-      display: inline-block;
+    .preview-grid {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      .preview-button {
+        padding: 8px 16px;
+        border-radius: 6px;
+        color: white;
+        font-size: 13px;
+        font-weight: 500;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+      }
+    }
+  }
+}
+
+// 深色模式适配
+[data-theme='dark'] .color-settings {
+  .color-grid .color-item {
+    background: #1e293b;
+
+    &:hover {
+      background: #334155;
+    }
+
+    .color-dot {
+      border-color: #475569;
     }
   }
 
-  // Dark mode adjustments using CSS variables
-  @media (prefers-color-scheme: dark) {
-    .section-title {
-      color: var(--text-color-primary);
-    }
-
-    .color-input-wrapper {
-      :deep(.el-color-picker__trigger) {
-        background-color: var(--bg-color-overlay);
-      }
-    }
+  .contrast-preview {
+    background: #1e293b;
+    border-color: #334155;
   }
 }
 </style>

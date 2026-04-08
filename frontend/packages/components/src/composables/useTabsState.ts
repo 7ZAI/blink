@@ -15,6 +15,13 @@ export interface TabItem {
   affix?: boolean
 }
 
+export interface AddTabResult {
+  success: boolean
+  reason?: 'max_reached' | 'duplicate'
+}
+
+export const MAX_TABS_DEFAULT = 20
+
 export interface UseTabsStateOptions {
   initialTabs?: TabItem[]
   initialCachedViews?: string[]
@@ -23,13 +30,14 @@ export interface UseTabsStateOptions {
   onTabChange?: (tabs: TabItem[]) => void
   onCachedViewChange?: (views: string[]) => void
   routeIntegration?: boolean
+  maxTabs?: number
 }
 
 export interface UseTabsStateReturn {
   tabs: Ref<TabItem[]>
   cachedViews: Ref<string[]>
   activePath: ComputedRef<string>
-  addTab: (tab: TabItem) => void
+  addTab: (tab: TabItem) => AddTabResult
   closeTab: (path: string) => TabItem | null
   closeOtherTabs: (path: string) => void
   closeRightTabs: (path: string) => void
@@ -50,6 +58,7 @@ export function useTabsState(options: UseTabsStateOptions = {}): UseTabsStateRet
     onTabChange,
     onCachedViewChange,
     routeIntegration = true,
+    maxTabs = MAX_TABS_DEFAULT,
   } = options
 
   const tabs = ref<TabItem[]>(initialTabs)
@@ -63,10 +72,18 @@ export function useTabsState(options: UseTabsStateOptions = {}): UseTabsStateRet
   const isActive = (tab: TabItem) => tab.path === activePath.value
   const hasTab = (path: string) => tabs.value.some((t) => t.path === path)
 
-  const addTab = (tab: TabItem) => {
-    if (hasTab(tab.path)) return
+  const addTab = (tab: TabItem): AddTabResult => {
+    if (hasTab(tab.path)) {
+      return { success: true, reason: 'duplicate' }
+    }
+
+    if (tabs.value.length >= maxTabs) {
+      return { success: false, reason: 'max_reached' }
+    }
+
     tabs.value.push(tab)
     onTabChange?.(tabs.value)
+    return { success: true }
   }
 
   const closeTab = (path: string): TabItem | null => {

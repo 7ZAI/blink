@@ -212,17 +212,6 @@ export interface FullThemeConfig {
     smallSize: number
   }
   animationsEnabled: boolean
-  system: SystemConfig
-}
-
-/**
- * 默认系统配置
- */
-export const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
-  borderRadius: 8,
-  shadowIntensity: 'medium',
-  compactMode: false,
-  contentWidth: 'fluid',
 }
 
 /**

@@ -11,6 +11,13 @@ export interface TabItem {
   affix?: boolean
 }
 
+export interface AddTabResult {
+  success: boolean
+  reason?: 'max_reached' | 'duplicate'
+}
+
+export const MAX_TABS_DEFAULT = 20
+
 export const useTabsStore = defineStore('tabs', () => {
   const tabs = ref<TabItem[]>([])
   const activeTab = ref('')
@@ -20,15 +27,23 @@ export const useTabsStore = defineStore('tabs', () => {
   const getActiveTab = computed(() => activeTab.value)
   const getCachedViews = computed(() => cachedViews.value)
 
-  const addTab = (tab: TabItem) => {
+  const addTab = (tab: TabItem, maxTabs = MAX_TABS_DEFAULT): AddTabResult => {
     const exists = tabs.value.some((t) => t.path === tab.path)
-    if (!exists) {
-      tabs.value.push(tab)
+    if (exists) {
+      activeTab.value = tab.path
+      return { success: true, reason: 'duplicate' }
     }
+
+    if (tabs.value.length >= maxTabs) {
+      return { success: false, reason: 'max_reached' }
+    }
+
+    tabs.value.push(tab)
     activeTab.value = tab.path
     if (tab.name && !cachedViews.value.includes(tab.name)) {
       cachedViews.value.push(tab.name)
     }
+    return { success: true }
   }
 
   const closeTab = (path: string): string | null => {
