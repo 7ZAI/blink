@@ -30,10 +30,10 @@
     <el-card class="table-card" shadow="never">
       <template #header>
         <div class="table-header">
-          <AuthButton :perm="ButtonPerms.Role.Add" type="primary" @click="handleAdd">
+          <AuthButton :has-permission="() => checkPermission(ButtonPerms.Role.Add)" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>{{ t('common.add') }}
           </AuthButton>
-          <AuthButton v-if="selectedRoles.length > 0" :perm="ButtonPerms.Role.Delete" type="danger" @click="handleBatchDelete">
+          <AuthButton v-if="selectedRoles.length > 0" :has-permission="() => checkPermission(ButtonPerms.Role.Delete)" type="danger" @click="handleBatchDelete">
             <el-icon><Delete /></el-icon>{{ t('common.batchDelete') }}({{ selectedRoles.length }})
           </AuthButton>
         </div>
@@ -69,22 +69,22 @@
           <el-table-column :label="t('common.operation')" min-width="400" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton v-if="row.roleId !== 1" :perm="ButtonPerms.Role.Edit" type="primary" link size="small" @click="handleEdit(row)">
+                <AuthButton v-if="row.roleId !== 1" :has-permission="() => checkPermission(ButtonPerms.Role.Edit)" type="primary" link size="small" @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>{{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton v-if="row.roleId !== 1" :perm="ButtonPerms.Role.AssignPerm" type="warning" link size="small" @click="handleAssignPermission(row)">
+                <AuthButton v-if="row.roleId !== 1" :has-permission="() => checkPermission(ButtonPerms.Role.AssignPerm)" type="warning" link size="small" @click="handleAssignPermission(row)">
                   <el-icon><Key /></el-icon>{{ t('system.role.assignDataPermission') }}
                 </AuthButton>
-                <AuthButton v-if="row.roleId !== 1" :perm="ButtonPerms.Role.AssignMenu" type="success" link size="small" @click="handleAssignMenu(row)">
+                <AuthButton v-if="row.roleId !== 1" :has-permission="() => checkPermission(ButtonPerms.Role.AssignMenu)" type="success" link size="small" @click="handleAssignMenu(row)">
                   <el-icon><Menu /></el-icon>{{ t('system.role.assignMenu') }}
                 </AuthButton>
                 <el-button v-if="row.roleId !== 1" type="primary" link size="small" @click="handleAssignUser(row)">
                   <el-icon><User /></el-icon>{{ t('system.role.assignUser') }}
                 </el-button>
-                <AuthButton :perm="ButtonPerms.Role.Detail" type="info" link size="small" @click="handleDetail(row)">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Role.Detail)" type="info" link size="small" @click="handleDetail(row)">
                   <el-icon><View /></el-icon>{{ t('common.detail') }}
                 </AuthButton>
-                <AuthButton v-if="row.roleId !== 1" :perm="ButtonPerms.Role.Delete" type="danger" link size="small" @click="handleDelete(row)">
+                <AuthButton v-if="row.roleId !== 1" :has-permission="() => checkPermission(ButtonPerms.Role.Delete)" type="danger" link size="small" @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>{{ t('common.delete') }}
                 </AuthButton>
               </div>
@@ -144,12 +144,14 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, Key, Menu, View, User } from '@element-plus/icons-vue'
 import { getRoleList, deleteRole, type RoleInfo } from '@/api/role'
-import { ButtonPerms } from '@/composables/usePermission'
+import { ButtonPerms, usePermission } from '@/composables/usePermission'
 
 defineOptions({
   name: 'SystemRole',
 })
 import RoleFormDialog from './components/RoleFormDialog.vue'
+
+const { hasPermission: checkPermission } = usePermission()
 import AssignPermissionDialog from './components/AssignPermissionDialog.vue'
 import AssignMenuDialog from './components/AssignMenuDialog.vue'
 import AssignUserDialog from './components/AssignUserDialog.vue'

@@ -28,10 +28,10 @@
     <el-card class="table-card flex-1 flex flex-col overflow-hidden" shadow="never">
       <template #header>
         <div class="table-header">
-          <AuthButton :perm="ButtonPerms.Route.Add" type="primary" @click="handleAdd">
+          <AuthButton :has-permission="() => checkPermission(ButtonPerms.Route.Add)" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>{{ t('route.addRoute') }}
           </AuthButton>
-          <AuthButton :perm="ButtonPerms.Route.Refresh" type="success" @click="handleRefreshRoutes">
+          <AuthButton :has-permission="() => checkPermission(ButtonPerms.Route.Refresh)" type="success" @click="handleRefreshRoutes">
             <el-icon><Refresh /></el-icon>{{ t('dashboard.refreshRoutes') }}
           </AuthButton>
         </div>
@@ -97,10 +97,10 @@
           <el-table-column :label="t('common.operation')" width="180" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :perm="ButtonPerms.Route.Edit" type="primary" link size="small" @click="handleEdit(row)">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Route.Edit)" type="primary" link size="small" @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>{{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton :perm="ButtonPerms.Route.Delete" type="danger" link size="small" @click="handleDelete(row)">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Route.Delete)" type="danger" link size="small" @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>{{ t('common.delete') }}
                 </AuthButton>
               </div>
@@ -297,11 +297,13 @@ import {
   type FilterDefinition,
   type RouteForm
 } from '@/api/route'
-import { ButtonPerms } from '@/composables/usePermission'
+import { ButtonPerms, usePermission } from '@/composables/usePermission'
 
 defineOptions({
   name: 'RouteManagement'
 })
+
+const { hasPermission: checkPermission } = usePermission()
 
 const { t } = useI18n()
 

@@ -29,10 +29,10 @@
       <template #header>
         <div class="table-header">
           <div class="header-left">
-            <AuthButton :perm="ButtonPerms.Channel.Add" type="primary" @click="handleAdd">
+            <AuthButton :has-permission="() => checkPermission(ButtonPerms.Channel.Add)" type="primary" @click="handleAdd">
               <el-icon><Plus /></el-icon>{{ t('common.add') }}
             </AuthButton>
-            <AuthButton :perm="ButtonPerms.Channel.Edit" type="success" :disabled="syncDisabled" @click="handleSyncSelected">
+            <AuthButton :has-permission="() => checkPermission(ButtonPerms.Channel.Edit)" type="success" :disabled="syncDisabled" @click="handleSyncSelected">
               <el-icon><Refresh /></el-icon>{{ t('channel.sync') }}
             </AuthButton>
             <span v-if="selectedChannelIds.length > 0" class="selected-info">
@@ -91,13 +91,13 @@
           <el-table-column :label="t('common.operation')" min-width="320" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :perm="ButtonPerms.Channel.Edit" type="primary" link size="small" @click="handleDetail(row)">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Channel.Edit)" type="primary" link size="small" @click="handleDetail(row)">
                   <el-icon><View /></el-icon>{{ t('common.detail') }}
                 </AuthButton>
-                <AuthButton :perm="ButtonPerms.Channel.Edit" type="primary" link size="small" @click="handleEdit(row)">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Channel.Edit)" type="primary" link size="small" @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>{{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton :perm="ButtonPerms.Channel.Delete" type="danger" link size="small" @click="handleDelete(row)">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Channel.Delete)" type="danger" link size="small" @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>{{ t('common.delete') }}
                 </AuthButton>
                 <el-dropdown @command="(cmd: string) => handleCommand(cmd, row)">
@@ -498,11 +498,13 @@ import {
   type SimpleUserInfo,
   type UserPermissionDetail
 } from '@/api/channelUser'
-import { ButtonPerms } from '@/composables/usePermission'
+import { ButtonPerms, usePermission } from '@/composables/usePermission'
 
 defineOptions({
   name: 'ChannelManagement'
 })
+
+const { hasPermission: checkPermission } = usePermission()
 
 const { t } = useI18n()
 

@@ -118,7 +118,7 @@
             <div class="col-value">
               <div class="action-buttons">
                 <el-button @click="handleCancel">{{ t('common.cancel') }}</el-button>
-                <AuthButton :perm="ButtonPerms.Config.Update" type="primary" :loading="saving" @click="handleBatchSave">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Config.Update)" type="primary" :loading="saving" @click="handleBatchSave">
                   <el-icon><Check /></el-icon>
                   {{ t('common.save') }}
                 </AuthButton>
@@ -163,13 +163,14 @@ import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { Search, Check, Edit } from '@element-plus/icons-vue'
 import { getConfigsByGroupKey, batchUpdateConfigs, type ConfigItem } from '@/api/config'
-import { ButtonPerms } from '@/composables/usePermission'
+import { ButtonPerms, usePermission } from '@/composables/usePermission'
 
 defineOptions({
   name: 'ConfigManagement',
 })
 
 const { t } = useI18n()
+const { hasPermission: checkPermission } = usePermission()
 
 const loading = ref(false)
 const saving = ref(false)

@@ -6,9 +6,9 @@
  * 使用方式：
  * AuthButton perm="sysUser:add" type="primary" @click="handleAdd" 新增 /AuthButton
  * AuthButton :perms="['sysUser:add', 'sysUser:edit']" type="primary" 操作 /AuthButton
+ * AuthButton :has-permission="() => userStore.permissions.includes('xxx')" type="primary" 操作 /AuthButton
  */
 import { computed } from 'vue'
-import { useUserStore } from '@/stores/user'
 
 interface Props {
   /** 单个权限标识 */
@@ -17,52 +17,48 @@ interface Props {
   perms?: string[]
   /** 无权限时禁用而非隐藏 */
   disabledOnNoPerm?: boolean
+  /** 自定义权限检查函数，返回 true 表示有权限 */
+  hasPermission?: () => boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   perm: '',
   perms: () => [],
-  disabledOnNoPerm: false
+  disabledOnNoPerm: false,
+  hasPermission: undefined
 })
-
-const userStore = useUserStore()
 
 /**
  * 检查权限
+ * 注意：如果没有提供 hasPermission 函数，且没有 perm/perms 参数，默认显示按钮
  */
-const hasPermission = computed(() => {
-  // 超级管理员拥有所有权限
-  if (userStore.isSuperAdmin) {
+const checkHasPermission = computed(() => {
+  // 如果提供了自定义权限检查函数，直接使用
+  if (props.hasPermission) {
+    return props.hasPermission()
+  }
+
+  // 没有配置权限要求，默认显示
+  const permList = [...(props.perm ? [props.perm] : []), ...props.perms]
+  if (permList.length === 0) {
     return true
   }
 
-  const permissions = userStore.permissions
-
-  if (!permissions || permissions.length === 0) {
-    return false
-  }
-
-  // 合并单个和多个权限参数
-  const permList = [...(props.perm ? [props.perm] : []), ...props.perms]
-
-  if (permList.length === 0) {
-    return true // 没有配置权限要求，默认显示
-  }
-
-  return permList.some(perm => permissions.includes(perm))
+  // 没有权限检查函数时，默认显示（应由调用方确保提供 hasPermission 或确保全局 userStore 已注册）
+  return true
 })
 
 /**
  * 是否禁用
  */
 const isDisabled = computed(() => {
-  return props.disabledOnNoPerm && !hasPermission.value
+  return props.disabledOnNoPerm && !checkHasPermission.value
 })
 </script>
 
 <template>
   <!-- 无权限且不使用禁用模式，不渲染 -->
-  <template v-if="hasPermission || disabledOnNoPerm">
+  <template v-if="checkHasPermission || disabledOnNoPerm">
     <el-button v-bind="$attrs" :disabled="isDisabled || $attrs.disabled">
       <slot />
     </el-button>

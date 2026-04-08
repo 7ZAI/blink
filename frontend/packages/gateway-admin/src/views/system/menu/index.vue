@@ -6,7 +6,7 @@
           <div class="card-header">
             <span>{{ t('menu.title') }}</span>
             <div class="header-buttons">
-              <AuthButton :perm="ButtonPerms.Menu.Add" type="success" size="small" @click="handleAdd(null)">
+              <AuthButton :has-permission="() => checkPermission(ButtonPerms.Menu.Add)" type="success" size="small" @click="handleAdd(null)">
                 <el-icon><Plus /></el-icon>{{ t('common.add') }}
               </AuthButton>
               <el-button type="info" size="small" @click="fetchMenuList">
@@ -37,13 +37,13 @@
                   <el-tag v-else-if="data.type === 3" type="warning" size="small" class="node-tag">{{ t('menu.typeButton') }}</el-tag>
                 </div>
                 <div class="node-actions">
-                  <AuthButton :perm="ButtonPerms.Menu.Edit" type="primary" link size="small" @click.stop="handleEdit(data)">
+                  <AuthButton :has-permission="() => checkPermission(ButtonPerms.Menu.Edit)" type="primary" link size="small" @click.stop="handleEdit(data)">
                     <el-icon><Edit /></el-icon>
                   </AuthButton>
-                  <AuthButton v-if="data.type !== 3" :perm="ButtonPerms.Menu.Add" type="success" link size="small" @click.stop="handleAdd(data)">
+                  <AuthButton v-if="data.type !== 3" :has-permission="() => checkPermission(ButtonPerms.Menu.Add)" type="success" link size="small" @click.stop="handleAdd(data)">
                     <el-icon><Plus /></el-icon>
                   </AuthButton>
-                  <AuthButton :perm="ButtonPerms.Menu.Delete" type="danger" link size="small" @click.stop="handleDelete(data)">
+                  <AuthButton :has-permission="() => checkPermission(ButtonPerms.Menu.Delete)" type="danger" link size="small" @click.stop="handleDelete(data)">
                     <el-icon><Delete /></el-icon>
                   </AuthButton>
                 </div>
@@ -108,13 +108,13 @@
             </el-descriptions>
 
             <div class="detail-actions">
-              <AuthButton :perm="ButtonPerms.Menu.Edit" type="primary" @click="handleEdit(currentMenu)">
+              <AuthButton :has-permission="() => checkPermission(ButtonPerms.Menu.Edit)" type="primary" @click="handleEdit(currentMenu)">
                 <el-icon><Edit /></el-icon>{{ t('common.edit') }}
               </AuthButton>
-              <AuthButton v-if="currentMenu.type !== 3" :perm="ButtonPerms.Menu.Add" type="success" @click="handleAdd(currentMenu)">
+              <AuthButton v-if="currentMenu.type !== 3" :has-permission="() => checkPermission(ButtonPerms.Menu.Add)" type="success" @click="handleAdd(currentMenu)">
                 <el-icon><Plus /></el-icon>{{ t('menu.addChild') }}
               </AuthButton>
-              <AuthButton :perm="ButtonPerms.Menu.Delete" type="danger" @click="handleDelete(currentMenu)">
+              <AuthButton :has-permission="() => checkPermission(ButtonPerms.Menu.Delete)" type="danger" @click="handleDelete(currentMenu)">
                 <el-icon><Delete /></el-icon>{{ t('common.delete') }}
               </AuthButton>
             </div>
@@ -141,12 +141,14 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete } from '@element-plus/icons-vue'
 import { getMenuList, deleteMenu, checkMenuRoleAssignment, type MenuInfo } from '@/api/menu'
-import { ButtonPerms } from '@/composables/usePermission'
+import { ButtonPerms, usePermission } from '@/composables/usePermission'
 
 defineOptions({
   name: 'SystemMenu',
 })
 import MenuFormDialog from './components/MenuFormDialog.vue'
+
+const { hasPermission: checkPermission } = usePermission()
 
 const { t } = useI18n()
 

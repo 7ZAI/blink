@@ -28,7 +28,7 @@
     <el-card class="table-card" shadow="never">
       <template #header>
         <div class="table-header">
-          <AuthButton :perm="ButtonPerms.DictType.Add" type="primary" @click="handleAdd">
+          <AuthButton :has-permission="() => checkPermission(ButtonPerms.DictType.Add)" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>{{ t('common.add') }}
           </AuthButton>
         </div>
@@ -61,10 +61,10 @@
           <el-table-column :label="t('common.operation')" min-width="180" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :perm="ButtonPerms.DictType.Edit" type="primary" link size="small" @click="handleEdit(row)">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DictType.Edit)" type="primary" link size="small" @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>{{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton :perm="ButtonPerms.DictType.Delete" type="danger" link size="small" @click="handleDelete(row)">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DictType.Delete)" type="danger" link size="small" @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>{{ t('common.delete') }}
                 </AuthButton>
               </div>
@@ -101,12 +101,14 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { getDictTypeList, deleteDictType, type DictTypeInfo } from '@/api/dict'
-import { ButtonPerms } from '@/composables/usePermission'
+import { ButtonPerms, usePermission } from '@/composables/usePermission'
 
 defineOptions({
   name: 'SystemDictType',
 })
 import DictTypeFormDialog from './components/DictTypeFormDialog.vue'
+
+const { hasPermission: checkPermission } = usePermission()
 
 const { t } = useI18n()
 

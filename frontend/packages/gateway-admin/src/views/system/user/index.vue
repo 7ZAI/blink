@@ -44,16 +44,16 @@
     <el-card class="table-card flex-1 flex flex-col overflow-hidden" shadow="never">
       <template #header>
         <div class="table-header">
-          <AuthButton :perm="ButtonPerms.User.Add" type="primary" @click="handleAdd">
+          <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Add)" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>{{ t('common.add') }}
           </AuthButton>
-          <AuthButton :perm="ButtonPerms.User.AssignRole" type="primary" :disabled="selectedRows.length === 0" @click="handleAssignRole">
+          <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.AssignRole)" type="primary" :disabled="selectedRows.length === 0" @click="handleAssignRole">
             <el-icon><UserFilled /></el-icon>{{ t('system.user.assignRole') }}
           </AuthButton>
-          <AuthButton :perm="ButtonPerms.User.ResetPwd" type="warning" :disabled="selectedRows.length !== 1" @click="handleResetPasswordBatch">
+          <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.ResetPwd)" type="warning" :disabled="selectedRows.length !== 1" @click="handleResetPasswordBatch">
             <el-icon><Key /></el-icon>{{ t('system.user.resetPassword') }}
           </AuthButton>
-          <AuthButton :perm="ButtonPerms.User.Delete" type="danger" :disabled="selectedRows.length === 0" @click="handleBatchDelete">
+          <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Delete)" type="danger" :disabled="selectedRows.length === 0" @click="handleBatchDelete">
             <el-icon><Delete /></el-icon>{{ t('common.batchDelete') }}
           </AuthButton>
         </div>
@@ -121,15 +121,15 @@
               <!-- 非超级管理员看不到超级管理员的操作按钮 -->
               <template v-if="userStore.isSuperAdmin || (row.superFlag !== 1 && row.superFlag !== '1')">
                 <div class="operation-buttons">
-                  <AuthButton :perm="ButtonPerms.User.Edit" type="primary" link size="small" @click="handleEdit(row)">
+                  <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Edit)" type="primary" link size="small" @click="handleEdit(row)">
                     <el-icon><Edit /></el-icon>{{ t('common.edit') }}
                   </AuthButton>
-                  <AuthButton :perm="ButtonPerms.User.Detail" type="info" link size="small" @click="handleDetail(row)">
+                  <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Detail)" type="info" link size="small" @click="handleDetail(row)">
                     <el-icon><View /></el-icon>{{ t('common.detail') }}
                   </AuthButton>
                   <AuthButton
                     v-if="row.locked === 0"
-                    :perm="ButtonPerms.User.Lock"
+                    :has-permission="() => checkPermission(ButtonPerms.User.Lock)"
                     type="warning"
                     link
                     size="small"
@@ -139,7 +139,7 @@
                   </AuthButton>
                   <AuthButton
                     v-else
-                    :perm="ButtonPerms.User.Lock"
+                    :has-permission="() => checkPermission(ButtonPerms.User.Lock)"
                     type="success"
                     link
                     size="small"
@@ -147,7 +147,7 @@
                   >
                     <el-icon><Unlock /></el-icon>{{ t('common.unlock') }}
                   </AuthButton>
-                  <AuthButton :perm="ButtonPerms.User.Delete" type="danger" link size="small" @click="handleDelete(row)">
+                  <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Delete)" type="danger" link size="small" @click="handleDelete(row)">
                     <el-icon><Delete /></el-icon>{{ t('common.delete') }}
                   </AuthButton>
                 </div>
@@ -259,7 +259,7 @@ import { getUserList, deleteUser, lockUser, resetPassword, type UserInfo, type Q
 import { useUserStore } from '@/stores/user'
 import { useTransition } from '@/composables/useDataTransition'
 import { useSubmitGuard } from '@/composables/useSubmitGuard'
-import { ButtonPerms } from '@/composables/usePermission'
+import { ButtonPerms, usePermission } from '@/composables/usePermission'
 import UserFormDialog from './components/UserFormDialog.vue'
 import UserDetailDialog from './components/UserDetailDialog.vue'
 import AssignRoleDialog from './components/AssignRoleDialog.vue'
@@ -272,6 +272,7 @@ defineOptions({
 const { t } = useI18n()
 const userStore = useUserStore()
 const { transitionClass, startTransition, finishTransition } = useTransition()
+const { hasPermission: checkPermission } = usePermission()
 
 const searchForm = reactive({
   loginName: '',

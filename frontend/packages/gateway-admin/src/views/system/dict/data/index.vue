@@ -79,7 +79,7 @@
           <template #header>
             <div class="table-header">
               <div class="header-left">
-                <AuthButton :perm="ButtonPerms.DictData.Add" type="primary" @click="handleAdd">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DictData.Add)" type="primary" @click="handleAdd">
                   <el-icon><Plus /></el-icon>{{ t('common.add') }}
                 </AuthButton>
               </div>
@@ -120,10 +120,10 @@
               <el-table-column :label="t('common.operation')" width="180" fixed="right">
                 <template #default="{ row }">
                   <div class="operation-buttons">
-                    <AuthButton :perm="ButtonPerms.DictData.Edit" type="primary" link size="small" @click="handleEdit(row)">
+                    <AuthButton :has-permission="() => checkPermission(ButtonPerms.DictData.Edit)" type="primary" link size="small" @click="handleEdit(row)">
                       <el-icon><Edit /></el-icon>{{ t('common.edit') }}
                     </AuthButton>
-                    <AuthButton :perm="ButtonPerms.DictData.Delete" type="danger" link size="small" @click="handleDelete(row)">
+                    <AuthButton :has-permission="() => checkPermission(ButtonPerms.DictData.Delete)" type="danger" link size="small" @click="handleDelete(row)">
                       <el-icon><Delete /></el-icon>{{ t('common.delete') }}
                     </AuthButton>
                   </div>
@@ -164,12 +164,14 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
 import { getDictTypeList, getDictDataList, deleteDictData, type DictTypeInfo, type DictDataInfo } from '@/api/dict'
 import { useTransition } from '@/composables/useDataTransition'
-import { ButtonPerms } from '@/composables/usePermission'
+import { ButtonPerms, usePermission } from '@/composables/usePermission'
 
 defineOptions({
   name: 'SystemDictData',
 })
 import DictDataFormDialog from './components/DictDataFormDialog.vue'
+
+const { hasPermission: checkPermission } = usePermission()
 
 const { t } = useI18n()
 const { transitionClass, startTransition, finishTransition } = useTransition()
