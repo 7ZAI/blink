@@ -307,31 +307,37 @@ defineExpose({
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 60px;
-  border-radius: 0 8px 8px 0;
+  width: 24px;
+  height: 48px;
+  border-radius: 0 12px 12px 0;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 99;
-  opacity: 0;
+  opacity: 0.4;
   transition: all 0.3s ease;
-  border: 1px solid var(--sidebar-border, rgba(255, 255, 255, 0.1));
+  background: var(--bg-color-page, #f1f5f9);
+  border: 1px solid var(--border-color-light, #f1f5f9);
   border-left: none;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
 
   &:hover {
     opacity: 1;
-    box-shadow: 0 0 10px var(--primary-color, #3b82f6);
+    background: var(--primary-color, #3b82f6);
+    border-color: var(--primary-color, #3b82f6);
+    box-shadow: 2px 0 12px rgba(59, 130, 246, 0.3);
+    width: 28px;
   }
 
   .el-icon {
-    font-size: 12px;
-    color: var(--sidebar-text, rgba(255, 255, 255, 0.7));
+    font-size: 14px;
+    color: var(--text-color-secondary, #64748b);
+    transition: color 0.3s ease;
   }
 
   &:hover .el-icon {
-    color: var(--primary-color, #3b82f6);
+    color: #ffffff;
   }
 
   &.collapsed {
@@ -340,7 +346,27 @@ defineExpose({
 }
 
 .sidebar-container:hover + .sidebar-collapse-btn {
-  opacity: 1;
+  opacity: 0.6;
+}
+</style>
+
+<style lang="scss">
+/* 深色模式适配 - 使用非scoped样式避免:global解析问题 */
+html[data-theme='dark'],
+html.dark {
+  .sidebar-collapse-btn {
+    background: var(--bg-color-page, #0f172a);
+    border-color: var(--border-color-base, #334155);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+
+    .el-icon {
+      color: var(--text-color-secondary, #94a3b8);
+    }
+  }
+
+  .sidebar-container:hover + .sidebar-collapse-btn {
+    opacity: 0.7;
+  }
 }
 
 .sidebar-menu {
@@ -353,6 +379,19 @@ defineExpose({
   &:not(.el-menu--collapse) {
     width: 100%;
   }
+
+  /* 隐藏滚动条但保留滚动功能 */
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  /* Firefox */
+  scrollbar-width: none;
+
+  /* IE/Edge */
+  -ms-overflow-style: none;
 }
 
 .sidebar-collapsed {

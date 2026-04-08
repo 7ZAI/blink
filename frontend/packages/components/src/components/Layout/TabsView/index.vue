@@ -113,6 +113,7 @@ export interface Props {
   showContextMenu?: boolean
   titleMap?: Record<string, string>
   titleResolver?: (tab: TabItem) => string
+  maxTabs?: number
 }
 </script>
 
@@ -120,6 +121,7 @@ export interface Props {
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { ElMessage } from 'element-plus'
 import {
   ArrowLeft,
   ArrowRight,
@@ -143,6 +145,7 @@ const props = withDefaults(defineProps<Props>(), {
   showContextMenu: true,
   titleMap: () => ({ ...LEGACY_TITLE_MAP }),
   titleResolver: undefined,
+  maxTabs: 20,
 })
 
 const emit = defineEmits<{
@@ -211,6 +214,18 @@ const addCurrentRouteTab = () => {
 
   const { name, path, meta, fullPath, query, params } = route
   if (!name) {
+    return
+  }
+
+  // 检查是否已存在该标签
+  const exists = props.tabs.some((t) => t.path === path)
+  if (exists) {
+    return
+  }
+
+  // 检查是否达到最大数量限制
+  if (props.tabs.length >= props.maxTabs) {
+    ElMessage.warning(t('tabs.maxTabsReached', { max: props.maxTabs }))
     return
   }
 
@@ -445,7 +460,6 @@ onUnmounted(() => {
   align-items: center;
   height: 36px;
   background: var(--tabs-bg, var(--header-bg));
-  backdrop-filter: blur(var(--glass-blur));
   border-bottom: 1px solid var(--tabs-border, var(--border-color-light));
   padding: 0 8px;
   transition: all var(--duration-normal) var(--ease-out-expo);
@@ -527,16 +541,15 @@ onUnmounted(() => {
   }
 
   &.active {
-    background: var(--gradient-cyber);
+    background: var(--primary-color);
     color: #ffffff;
-    box-shadow: var(--glow-primary), 0 2px 12px rgba(102, 126, 234, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 
     .tags-close {
-      color: rgba(255, 255, 255, 0.9);
+      color: rgba(255, 255, 255, 0.85);
 
       &:hover {
-        background: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.2);
         color: #ffffff;
       }
     }
@@ -574,7 +587,6 @@ onUnmounted(() => {
 .tabs-context-menu {
   position: fixed;
   background: var(--card-bg);
-  backdrop-filter: blur(var(--glass-blur));
   border-radius: 12px;
   box-shadow: var(--card-shadow), 0 10px 40px rgba(0, 0, 0, 0.2);
   padding: 8px 0;

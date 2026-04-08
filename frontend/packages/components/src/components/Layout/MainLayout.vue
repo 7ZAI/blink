@@ -114,6 +114,7 @@
           :close-fallback-path="closeFallbackPath"
           :show-context-menu="showTabsContextMenu"
           :title-map="titleMap"
+          :max-tabs="maxTabs"
           @add-tab="handleAddTab"
           @close-tab="handleCloseTab"
           @close-other-tabs="handleCloseOtherTabs"
@@ -215,6 +216,8 @@ export interface Props {
   showTabsContextMenu?: boolean
   /** 标题映射表 */
   titleMap?: Record<string, string>
+  /** 最大标签数量 */
+  maxTabs?: number
 
   // === 侧边栏配置 ===
   /** 是否显示侧边栏 */
@@ -317,6 +320,7 @@ const props = withDefaults(defineProps<Props>(), {
   closeFallbackPath: '/dashboard',
   showTabsContextMenu: true,
   titleMap: () => ({}),
+  maxTabs: 20,
   showSidebar: true,
   resizable: true,
   defaultSidebarWidth: 220,
@@ -462,17 +466,6 @@ defineExpose({
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
-
-  /* 微妙的网格背景 */
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.03) 1px, transparent 0);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-  }
 
   > * {
     position: relative;
