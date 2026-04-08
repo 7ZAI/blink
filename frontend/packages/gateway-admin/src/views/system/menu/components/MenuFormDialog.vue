@@ -88,7 +88,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Close } from '@element-plus/icons-vue'
 import { getMenuList, addMenu, updateMenu, type MenuInfo } from '@/api/menu'
-import { IconSelector, type IconGroup } from '@blink/components'
+import { IconSelector, createMenuIconGroups, type IconGroup } from '@blink/components'
 
 const props = defineProps<{
   modelValue: boolean
@@ -126,74 +126,8 @@ const dialogTitle = computed(() =>
   props.type === 'add' ? t('menu.addChild') : t('common.edit')
 )
 
-const menuIconGroups = computed<IconGroup[]>(() => [
-  {
-    name: 'navigation',
-    label: t('menu.typeDirectory'),
-    icons: [
-      'mdi:view-dashboard',
-      'mdi:menu',
-      'mdi:sitemap',
-      'mdi:folder-outline',
-      'mdi:file-tree',
-      'mdi:compass-outline',
-      'mdi:map-marker-path',
-      'mdi:table-large',
-      'mdi:widgets-outline',
-      'mdi:bookmark-outline',
-    ],
-  },
-  {
-    name: 'gateway',
-    label: 'Gateway',
-    icons: [
-      'mdi:router-network',
-      'mdi:router-wireless',
-      'mdi:transit-connection-variant',
-      'mdi:lan-connect',
-      'mdi:source-branch',
-      'mdi:shuffle-variant',
-      'mdi:api',
-      'mdi:web',
-      'mdi:cloud-outline',
-      'mdi:server-network',
-    ],
-  },
-  {
-    name: 'system',
-    label: t('iconSelector.systemIcons'),
-    icons: [
-      'Setting',
-      'User',
-      'UserFilled',
-      'Key',
-      'Lock',
-      'Monitor',
-      'Tools',
-      'Operation',
-      'mdi:cog-outline',
-      'mdi:shield-outline',
-      'mdi:database-outline',
-      'mdi:account-group-outline',
-    ],
-  },
-  {
-    name: 'status',
-    label: t('common.status'),
-    icons: [
-      'SuccessFilled',
-      'WarningFilled',
-      'CircleClose',
-      'InfoFilled',
-      'mdi:check-circle-outline',
-      'mdi:alert-circle-outline',
-      'mdi:close-circle-outline',
-      'mdi:progress-clock',
-      'mdi:flash-outline',
-      'mdi:bell-outline',
-    ],
-  },
-])
+// 使用预设的菜单图标分组
+const menuIconGroups = createMenuIconGroups()
 
 const formRules = {
   menuName: [{ required: true, message: t('common.pleaseInput') + t('menu.menuName'), trigger: 'blur' }],
