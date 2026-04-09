@@ -14,6 +14,7 @@ import router from './router'
 import i18n from './locales'
 import { useThemeStore } from './stores/theme'
 import { BlinkIcon, AuthButton, dataFadeDirective, rippleDirective } from '@blink/components'
+import { DictSelect, DictTag } from '@/components/Dict'
 
 // 在应用挂载前先应用主题，避免加载遮罩颜色闪烁
 const savedTheme = (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
@@ -34,6 +35,10 @@ app.component('BlinkIcon', BlinkIcon)
 
 // 注册 AuthButton 权限按钮组件
 app.component('AuthButton', AuthButton)
+
+// 注册字典组件
+app.component('DictSelect', DictSelect)
+app.component('DictTag', DictTag)
 
 const pinia = createPinia()
 

@@ -24,6 +24,23 @@ request.interceptors.request.use(
     if (token) {
       config.headers['x-blink-token'] = token
     }
+
+    // Add user info from localStorage (set by user store after login)
+    const userInfoStr = localStorage.getItem('userInfo') || sessionStorage.getItem('userInfo')
+    if (userInfoStr) {
+      try {
+        const userInfo = JSON.parse(userInfoStr)
+        if (userInfo.userId) {
+          config.headers['x-blink-usrId'] = String(userInfo.userId)
+        }
+        if (userInfo.loginName) {
+          config.headers['x-blink-loginName'] = userInfo.loginName
+        }
+      } catch (e) {
+        // ignore parse error
+      }
+    }
+
     return config
   },
   (error) => {

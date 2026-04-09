@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useDictStore } from '@/stores/dict'
 
 // 简约现代清新风格的路由加载样式
 const injectLoadingStyle = () => {
@@ -400,6 +401,10 @@ router.beforeEach(async (to, _from, next) => {
 
   // 刷新页面后重新获取用户信息和菜单数据
   const userStore = useUserStore()
+  const dictStore = useDictStore()
+
+  // 常用字典类型列表
+  const commonDictTypes = ['sys_normal_status', 'sys_sex', 'sys_menu_type', 'sys_show_status', 'sys_yes_no']
 
   // 只有当 userInfo 为空时才需要重新获取用户信息
   // 登录成功后 userInfo 会被设置，无需再次获取
@@ -408,6 +413,10 @@ router.beforeEach(async (to, _from, next) => {
     showLoadingOverlay(getLoadingText('loadingData'))
     try {
       await userStore.fetchUserInfo()
+
+      // 预加载常用字典数据
+      await dictStore.loadDictData(commonDictTypes)
+
       // 隐藏全屏遮罩
       hideLoadingOverlay()
     } catch (error) {

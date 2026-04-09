@@ -68,7 +68,6 @@
           >
             <div class="col-name">
               <span class="name-text">{{ config.configName }}</span>
-              <span class="config-key">{{ config.configKey }}</span>
             </div>
             <div class="col-value">
               <template v-if="config.configType === 2">
@@ -250,8 +249,7 @@ const filteredConfigs = computed(() => {
   const keyword = searchKeyword.value.toLowerCase()
   return currentConfigs.value.filter(config =>
     config.configName.toLowerCase().includes(keyword) ||
-    config.description.toLowerCase().includes(keyword) ||
-    config.configKey.toLowerCase().includes(keyword)
+    config.description.toLowerCase().includes(keyword)
   )
 })
 
@@ -628,12 +626,6 @@ onMounted(() => {
         font-size: 13px;
         font-weight: 500;
         color: var(--text-color-primary);
-      }
-
-      .config-key {
-        font-size: 11px;
-        color: var(--text-color-placeholder);
-        font-family: 'Monaco', 'Menlo', monospace;
       }
     }
 

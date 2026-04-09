@@ -47,9 +47,9 @@
     <el-card class="table-card" shadow="never">
       <template #header>
         <div class="table-header">
-          <el-button type="primary" @click="handleAdd">
+          <AuthButton :has-permission="() => checkPermission(ButtonPerms.DataFilter.Add)" type="primary" @click="handleAdd">
             <el-icon><Plus /></el-icon>{{ t('common.add') }}
-          </el-button>
+          </AuthButton>
         </div>
       </template>
 
@@ -87,15 +87,15 @@
           <el-table-column :label="t('common.operation')" width="220" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <el-button type="primary" link size="small" @click="handleDetail(row)">
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DataFilter.Detail)" type="primary" link size="small" @click="handleDetail(row)">
                   <el-icon><View /></el-icon>{{ t('common.detail') }}
-                </el-button>
-                <el-button type="primary" link size="small" @click="handleEdit(row)">
+                </AuthButton>
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DataFilter.Edit)" type="primary" link size="small" @click="handleEdit(row)">
                   <el-icon><Edit /></el-icon>{{ t('common.edit') }}
-                </el-button>
-                <el-button type="danger" link size="small" @click="handleDelete(row)">
+                </AuthButton>
+                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DataFilter.Delete)" type="danger" link size="small" @click="handleDelete(row)">
                   <el-icon><Delete /></el-icon>{{ t('common.delete') }}
-                </el-button>
+                </AuthButton>
               </div>
             </template>
           </el-table-column>
@@ -136,7 +136,6 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, View } from '@element-plus/icons-vue'
-import LoadingSkeleton from '@/components/LoadingSkeleton/index.vue'
 import {
   getDataFilterList,
   deleteDataFilter,
@@ -145,11 +144,13 @@ import {
   type DataFilterInfo,
   type EntityInfo
 } from '@/api/dataScope'
+import { ButtonPerms, usePermission } from '@/composables/usePermission'
 import DataFilterFormDialog from './components/DataFilterFormDialog.vue'
 
 defineOptions({ name: 'SystemDataFilter' })
 
 const { t } = useI18n()
+const { hasPermission: checkPermission } = usePermission()
 
 const loading = ref(false)
 const tableData = ref<DataFilterInfo[]>([])

@@ -17,6 +17,7 @@ export interface CaptchaVO {
  */
 export interface LoginConfigRsp {
   captchaEnabled: boolean
+  captchaType?: string
   systemTitle: string
   systemLogo: string
   systemFooter: string

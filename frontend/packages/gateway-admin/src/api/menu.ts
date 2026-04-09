@@ -123,6 +123,7 @@ export const getApiPermissions = (params?: QueryPermissionParams): Promise<Query
 
 /**
  * 获取菜单树（用于角色分配菜单）
+ * 使用 getSysMenuList 接口，返回的数据已经是树形结构
  */
 export interface MenuVO {
   menuId: number
@@ -137,8 +138,9 @@ export interface MenuVO {
   children?: MenuVO[]
 }
 
-export const getMenuTree = (): Promise<MenuVO[]> => {
-  return request.post('/sysMenu/getMenuTree', { body: {} }) as Promise<MenuVO[]>
+export const getMenuTree = async (): Promise<MenuVO[]> => {
+  const res = await getMenuList()
+  return res.rows || []
 }
 
 export interface QueryPermissionParams {

@@ -102,8 +102,10 @@ export const useUserStore = defineStore('user', () => {
     token.value = rsp.token
     if (rememberMe) {
       localStorage.setItem('token', rsp.token)
+      localStorage.setItem('userInfo', JSON.stringify(rsp.userInfo))
     } else {
       sessionStorage.setItem('token', rsp.token)
+      sessionStorage.setItem('userInfo', JSON.stringify(rsp.userInfo))
     }
 
     // 设置用户信息和菜单
@@ -136,7 +138,9 @@ export const useUserStore = defineStore('user', () => {
     roles.value = []
     captchaVerification.value = ''
     localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
     sessionStorage.removeItem('token')
+    sessionStorage.removeItem('userInfo')
 
     // 清除便签缓存
     const tabsStore = useTabsStore()
@@ -153,6 +157,14 @@ export const useUserStore = defineStore('user', () => {
     functionMenu.value = rsp.functionMenu || []
     permissions.value = rsp.permissions || []
     roles.value = rsp.roles || []
+
+    // 同步更新存储的用户信息
+    if (localStorage.getItem('token')) {
+      localStorage.setItem('userInfo', JSON.stringify(rsp.userInfo))
+    } else {
+      sessionStorage.setItem('userInfo', JSON.stringify(rsp.userInfo))
+    }
+
     return rsp
   }
 
