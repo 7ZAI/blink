@@ -64,6 +64,7 @@ export default {
     unlock: 'Unlock',
     show: 'Show',
     hide: 'Hide',
+    selectAll: 'Select All',
   },
   loading: {
     loadingData: 'Loading data...',
@@ -369,6 +370,7 @@ export default {
     captchaFailed: 'Verification failed, please try again',
     captchaLoadFailed: 'Failed to load captcha',
     pleaseClickWords: 'Please click the words in the image',
+    clickedCount: 'Clicked',
     loggingIn: 'Logging in...',
     loadingUserData: 'Loading user data...',
     loadingMenu: 'Loading menu...',

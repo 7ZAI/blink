@@ -112,15 +112,21 @@
         </div>
       </div>
       </div>
+
+      <!-- 页脚信息 -->
+      <div class="page-footer">
+        <span>{{ systemConfigStore.systemFooter }}</span>
+      </div>
     </div>
 
     <!-- 验证码弹窗 -->
     <el-dialog
       v-model="captchaDialogVisible"
       :title="t('login.captchaTitle')"
-      width="400px"
+      width="360px"
       :close-on-click-modal="false"
       class="captcha-dialog"
+      @closed="handleCaptchaDialogClosed"
     >
       <div class="captcha-container">
         <!-- 滑块验证码 -->
@@ -129,12 +135,14 @@
             <img v-if="captchaData.originalImageBase64"
                  :src="captchaData.originalImageBase64.startsWith('data:') ? captchaData.originalImageBase64 : 'data:image/png;base64,' + captchaData.originalImageBase64"
                  class="captcha-bg-image"
-                 alt="验证码背景" />
+                 alt="验证码背景"
+                 draggable="false" />
             <img v-if="captchaData.jigsawImageBase64"
                  :src="captchaData.jigsawImageBase64.startsWith('data:') ? captchaData.jigsawImageBase64 : 'data:image/png;base64,' + captchaData.jigsawImageBase64"
                  class="captcha-jigsaw-image"
                  :style="{ left: jigsawLeft + 'px' }"
-                 alt="滑块" />
+                 alt="滑块"
+                 draggable="false" />
           </div>
           <div class="slider-container">
             <div class="slider-track">
@@ -150,18 +158,28 @@
             </div>
             <span class="slider-hint">{{ t('login.dragToVerify') }}</span>
           </div>
+          <div class="captcha-actions">
+            <el-button link type="primary" @click="refreshCaptcha">
+              <el-icon><Refresh /></el-icon>
+              {{ t('login.refresh') }}
+            </el-button>
+          </div>
         </div>
 
-        <!-- 点选验证码 -->
+        <!-- 点选文字验证码 -->
         <div v-else-if="captchaType === 'clickWord'" class="click-word-captcha">
           <div class="word-hint">
-            {{ t('login.clickWordHint') }}: <span class="words">{{ captchaData.wordList?.join(', ') }}</span>
+            <el-icon class="hint-icon"><Pointer /></el-icon>
+            <span>{{ t('login.clickWordHint') }}:</span>
+            <span class="words">{{ captchaData.wordList?.join('、') }}</span>
           </div>
           <div class="captcha-image-wrapper" @click="handleWordClick">
             <img v-if="captchaData.originalImageBase64"
                  :src="'data:image/png;base64,' + captchaData.originalImageBase64"
                  class="captcha-bg-image"
-                 alt="验证码" />
+                 alt="验证码"
+                 draggable="false" />
+            <!-- 点击标记点 -->
             <div
               v-for="(point, index) in clickedPoints"
               :key="index"
@@ -171,9 +189,24 @@
               {{ index + 1 }}
             </div>
           </div>
-          <div class="click-actions">
-            <el-button type="primary" @click="submitWordCaptcha">{{ t('login.confirm') }}</el-button>
-            <el-button @click="refreshCaptcha">{{ t('login.refresh') }}</el-button>
+          <div class="captcha-footer">
+            <div class="click-progress">
+              {{ t('login.clickedCount') }}: {{ clickedPoints.length }} / {{ captchaData.wordList?.length || 0 }}
+            </div>
+            <div class="click-actions">
+              <el-button link type="primary" @click="refreshCaptcha">
+                <el-icon><Refresh /></el-icon>
+                {{ t('login.refresh') }}
+              </el-button>
+              <el-button
+                type="primary"
+                size="small"
+                :disabled="clickedPoints.length === 0"
+                @click="submitWordCaptcha"
+              >
+                {{ t('login.confirm') }}
+              </el-button>
+            </div>
           </div>
         </div>
 
@@ -215,7 +248,7 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import { User, Lock, Moon, Sunny, ArrowRight, Check, Loading } from '@element-plus/icons-vue'
+import { User, Lock, Moon, Sunny, ArrowRight, Check, Loading, Refresh, Pointer } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { useAppStore } from '@/stores/app'
@@ -298,20 +331,28 @@ const showCaptchaDialog = async () => {
   await refreshCaptcha()
 }
 
+// 验证码弹窗关闭时重置状态
+const handleCaptchaDialogClosed = () => {
+  clickedPoints.value = []
+  jigsawLeft.value = 0
+  sliderLeft.value = 0
+}
+
 // 刷新验证码
 const refreshCaptcha = async () => {
   try {
-    captchaType.value = 'loading'
-    // 不指定验证码类型，由后端随机返回
+    // 使用后端配置的验证码类型
     const data = await getCaptcha({
-      captchaType: 'default',
+      captchaType: captchaType.value || 'default',
       clientUid: generateUUID(),
       ts: Date.now(),
     })
     captchaData.value = data || {}
 
     // 根据返回的类型设置验证码类型
-    captchaType.value = data?.captchaType || 'blockPuzzle'
+    if (data?.captchaType) {
+      captchaType.value = data.captchaType
+    }
     jigsawLeft.value = 0
     sliderLeft.value = 0
     clickedPoints.value = []
@@ -439,9 +480,14 @@ const submitWordCaptcha = async () => {
 
   try {
     const pointJson = JSON.stringify(clickedPoints.value.map(p => ({ x: p.x, y: p.y })))
+
+    // 使用captchaId或token作为验证码ID，确保captchaType有值
+    const captchaId = captchaData.value.captchaId || captchaData.value.token
+    const captchaTypeValue = captchaData.value.captchaType || captchaType.value || 'clickWord'
+
     const result = await checkCaptcha({
-      captchaId: captchaData.value.captchaId,
-      captchaType: captchaData.value.captchaType,
+      captchaId: captchaId,
+      captchaType: captchaTypeValue,
       pointJson: pointJson,
       clientUid: captchaData.value.token,
       ts: Date.now(),
@@ -570,6 +616,11 @@ const loadLoginConfig = async () => {
     const config = await getLoginConfig()
     captchaEnabled.value = config.captchaEnabled ?? false
 
+    // 设置验证码类型（优先使用后端配置）
+    if (config.captchaType) {
+      captchaType.value = config.captchaType
+    }
+
     // 更新系统配置
     if (config.systemTitle) {
       systemConfigStore.setSystemTitle(config.systemTitle)
@@ -589,6 +640,8 @@ const loadLoginConfig = async () => {
       captchaVerified.value = true
     }
   } catch (error) {
+    // 获取配置失败时使用默认配置
+    systemConfigStore.resetToDefault()
     // 默认关闭验证码
     captchaEnabled.value = false
     captchaVerified.value = true
@@ -638,607 +691,5 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
-.login-container {
-  display: flex;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-}
-
-.login-left {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle at 30% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
-  }
-}
-
-.characters-wrapper {
-  position: relative;
-  z-index: 1;
-}
-
-.login-right {
-  width: 480px;
-  display: flex;
-  flex-direction: column;
-  background: rgba(30, 41, 59, 0.8);
-  backdrop-filter: blur(20px);
-  border-left: 1px solid rgba(59, 130, 246, 0.2);
-  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.3);
-}
-
-.brand-content {
-  padding: 40px 50px 20px;
-  text-align: center;
-}
-
-.brand-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-
-.logo-wrapper {
-  width: 80px;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
-  border-radius: 20px;
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
-}
-
-.logo-icon {
-  :deep(svg) {
-    width: 40px;
-    height: 40px;
-    fill: var(--primary-color, #3b82f6);
-    filter: drop-shadow(0 0 10px var(--primary-color, #3b82f6));
-  }
-}
-
-.brand-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 2px;
-  text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-}
-
-.login-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: 0 50px 40px;
-}
-
-.login-form-wrapper {
-  .form-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 32px;
-    text-align: center;
-  }
-
-  :deep(.el-input__wrapper) {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    box-shadow: none;
-    border-radius: 12px;
-    padding: 0 16px;
-    height: 48px;
-    transition: all 0.3s;
-
-    &:hover {
-      border-color: rgba(59, 130, 246, 0.4);
-    }
-
-    &.is-focus {
-      border-color: var(--primary-color, #3b82f6);
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-    }
-  }
-
-  :deep(.el-input__inner) {
-    color: #e2e8f0;
-    font-size: 15px;
-
-    &::placeholder {
-      color: #64748b;
-    }
-  }
-
-  :deep(.el-input__prefix) {
-    color: #64748b;
-  }
-
-  :deep(.el-checkbox__label) {
-    color: #94a3b8;
-  }
-
-  :deep(.el-checkbox__inner) {
-    background: transparent;
-    border-color: #475569;
-  }
-
-  :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
-    background: var(--primary-color, #3b82f6);
-    border-color: var(--primary-color, #3b82f6);
-  }
-}
-
-.login-btn {
-  width: 100%;
-  height: 48px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-  border: none;
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
-  transition: all 0.3s;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-}
-
-.login-footer {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 32px;
-}
-
-.nav-action {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: rgba(59, 130, 246, 0.1);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 20px;
-  color: #94a3b8;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.3s;
-
-  &:hover {
-    background: rgba(59, 130, 246, 0.2);
-    color: #ffffff;
-  }
-
-  .el-icon {
-    font-size: 16px;
-  }
-}
-
-.language-icon {
-  width: 16px;
-  height: 16px;
-}
-
-// 验证码滑块样式
-.captcha-item {
-  margin-bottom: 16px;
-}
-
-.captcha-slider-wrapper {
-  width: 100%;
-  cursor: pointer;
-}
-
-.captcha-slider {
-  position: relative;
-  height: 44px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  border-radius: 22px;
-  overflow: hidden;
-  transition: all 0.3s;
-
-  &.success {
-    background: rgba(16, 185, 129, 0.15);
-    border-color: rgba(16, 185, 129, 0.3);
-  }
-}
-
-.slider-track {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.slider-text {
-  font-size: 14px;
-  color: #94a3b8;
-  user-select: none;
-}
-
-.slider-btn {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-
-  &:hover {
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
-    transform: scale(1.05);
-  }
-
-  &.success {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    left: calc(100% - 42px);
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-  }
-}
-
-// 验证码弹窗样式
-.captcha-dialog {
-  :deep(.el-dialog__body) {
-    padding: 20px;
-  }
-}
-
-.captcha-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.block-puzzle-captcha {
-  width: 100%;
-}
-
-.captcha-image-wrapper {
-  position: relative;
-  width: 100%;
-  height: 155px;
-  background: #1e293b;
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-.captcha-bg-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.captcha-jigsaw-image {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 60px;
-  object-fit: contain;
-}
-
-.slider-container {
-  position: relative;
-  width: 100%;
-  height: 44px;
-  background: #1e293b;
-  border-radius: 22px;
-  overflow: hidden;
-}
-
-.slider-track {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: #334155;
-  border-radius: 22px;
-}
-
-.slider-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-  border-radius: 22px;
-  transition: width 0.1s;
-}
-
-.slider-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
-  cursor: grab;
-  z-index: 10;
-  transition: transform 0.05s ease-out;
-
-  &:active {
-    cursor: grabbing;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.5);
-  }
-}
-
-.slider-hint {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 14px;
-  color: #94a3b8;
-  pointer-events: none;
-}
-
-// 点选验证码样式
-.click-word-captcha {
-  width: 100%;
-}
-
-.word-hint {
-  margin-bottom: 15px;
-  font-size: 14px;
-  color: #e2e8f0;
-
-  .words {
-    color: var(--primary-color, #3b82f6);
-    font-weight: bold;
-  }
-}
-
-.click-point {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  transform: translate(-50%, -50%);
-  animation: point-appear 0.3s ease;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-}
-
-@keyframes point-appear {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-.click-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-}
-
-// 加载状态
-.captcha-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 40px;
-
-  .loading-icon {
-    font-size: 32px;
-    color: var(--primary-color, #3b82f6);
-    animation: rotate 1s linear infinite;
-  }
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-// 全屏登录加载遮罩层
-.login-loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 1, 20, 0.95);
-  backdrop-filter: blur(10px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.login-loading-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 30px;
-  width: 320px;
-}
-
-.loading-logo-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.loading-logo {
-  width: 60px;
-  height: 60px;
-  fill: #3b82f6;
-  animation: logo-pulse 1.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
-}
-
-@keyframes logo-pulse {
-  0%, 100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
-  }
-  50% {
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 30px rgba(59, 130, 246, 1));
-  }
-}
-
-.loading-progress-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.loading-progress-bar {
-  position: relative;
-  width: 100%;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.loading-progress-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #3b82f6);
-  background-size: 200% 100%;
-  border-radius: 4px;
-  transition: width 0.3s ease;
-  animation: gradient-shift 1.5s linear infinite;
-}
-
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 0%;
-  }
-  100% {
-    background-position: 200% 0%;
-  }
-}
-
-.loading-progress-stripes {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 10px,
-    rgba(255, 255, 255, 0.1) 10px,
-    rgba(255, 255, 255, 0.1) 20px
-  );
-  animation: stripes-move 1s linear infinite;
-}
-
-@keyframes stripes-move {
-  0% {
-    background-position: 0 0;
-  }
-  100% {
-    background-position: 40px 0;
-  }
-}
-
-.loading-progress-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.loading-progress-text {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  letter-spacing: 0.5px;
-}
-
-.loading-progress-percent {
-  font-size: 14px;
-  font-weight: 600;
-  color: #3b82f6;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-@media (max-width: 900px) {
-  .login-container {
-    flex-direction: column;
-  }
-
-  .login-left {
-    display: none;
-  }
-
-  .login-right {
-    width: 100%;
-    border-left: none;
-  }
-}
+// Styles are in global index.scss
 </style>
