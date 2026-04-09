@@ -2,7 +2,7 @@ package com.blink.gateway.base.dto.req;
 
 import com.blink.gateway.base.constants.BaseErrCodeConstant;
 
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -29,7 +29,7 @@ public class AddSysUserReq implements Serializable {
      * 登录名
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name="loginName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
+    @FieldConstraint(name="loginName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
     private String loginName;
 
     /**

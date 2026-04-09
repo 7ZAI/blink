@@ -2,7 +2,7 @@ package com.blink.base.dto.req;
 
 import com.blink.base.constants.BaseErrCodeConstant;
 import com.blink.framework.common.data.Page;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -21,37 +21,37 @@ public class QuerySysUserReq extends Page {
     /**
      * 登录名
      */
-    @DataDict(name="loginName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
+    @FieldConstraint(name="loginName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
     private String loginName;
 
     /**
      * 昵称
      */
-    @DataDict(name="loginName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="loginName",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String username;
 
     /**
      * 性别 1男 2女 3不确定
      */
-    @DataDict(name="flag1",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="flag1",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer sex;
 
     /**
      * 起始日期
      */
-    @DataDict(name="date",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
+    @FieldConstraint(name="date",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
     private LocalDate startDate;
 
     /**
      * 结束日期
      */
-    @DataDict(name="date",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
+    @FieldConstraint(name="date",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
     private LocalDate endDate;
 
     /**
      * 组Id（点击组织架构时传入，后端会自动查询该组织及所有子孙组织下的用户）
      */
-    @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
+    @FieldConstraint(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE )
     private Integer groupId;
 
     /**

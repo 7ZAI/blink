@@ -60,4 +60,10 @@ public interface RedisCacheKeyConstant {
      * 用于缓存变更通知
      */
     String GATEWAY_STREAM_EVENT = BLINK_PREFIX + "stream:gateway:event";
+
+    /**
+     * 字段约束缓存 Key 前缀
+     * 完整格式: system:field:constraint:{constraintName}
+     */
+    String FIELD_CONSTRAINT_KEY_PREFIX = "system:field:constraint:";
 }

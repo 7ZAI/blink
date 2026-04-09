@@ -6,10 +6,12 @@ import com.blink.base.dto.req.GetAllApiPermissionsReq;
 import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
 import com.blink.base.dto.vo.SysPermissionVO;
 import com.blink.base.entity.SysConfigDO;
-import com.blink.base.entity.SysDataDictDO;
+import com.blink.base.entity.SysFieldConstraintDO;
 import com.blink.base.entity.SysMsgInfoDO;
-import com.blink.base.mapper.SysDataDictMapper;
+import com.blink.base.mapper.SysFieldConstraintMapper;
 import com.blink.base.mapper.SysMsgInfoMapper;
+import com.blink.framework.common.constrant.RedisCacheKeyConstant;
+import com.blink.framework.common.data.FieldConstraintCacheDO;
 import com.blink.base.service.SysConfigService;
 import com.blink.base.service.SysPermissionService;
 import com.blink.framework.common.data.DictCacheDO;
@@ -55,7 +57,7 @@ public class CachePreHeating  {
 //    private UserAuthService userAuthService;
 
     @Resource
-    private SysDataDictMapper sysDataDictMapper;
+    private SysFieldConstraintMapper sysFieldConstraintMapper;
 
     @Resource
     private SysMsgInfoMapper sysMsgInfoMapper;
@@ -76,9 +78,9 @@ public class CachePreHeating  {
         // 预热权限数据
         preHeatingPermissions();
 
-        // 预热字典数据
+        // 预热字段约束数据
         if (cacheConfig.getDictionary()) {
-            preHeatingDataDictCache();
+            preHeatingFieldConstraintCache();
         }
 
         // 预热消息数据
@@ -137,18 +139,18 @@ public class CachePreHeating  {
     }
 
     /**
-     * 初始化数据字典缓存
+     * 初始化字段约束缓存
      */
-    private void preHeatingDataDictCache() {
-        log.info("-----------------------preHeatingDataDictCache---------------------------------");
+    private void preHeatingFieldConstraintCache() {
+        log.info("-----------------------preHeatingFieldConstraintCache---------------------------------");
 
-        cacheComponent.loadCacheFromDB(CoreConstant.DICT_KEY_PREFIX, () -> {
-            List<SysDataDictDO> dictList = sysDataDictMapper.findAllDataDicts();
-            List<DictCacheDO> cacheDicts = BeanUtil.copyToList(dictList, DictCacheDO.class);
+        cacheComponent.loadCacheFromDB(RedisCacheKeyConstant.FIELD_CONSTRAINT_KEY_PREFIX, () -> {
+            List<SysFieldConstraintDO> constraintList = sysFieldConstraintMapper.findAllFieldConstraints();
+            List<FieldConstraintCacheDO> cacheList = BeanUtil.copyToList(constraintList, FieldConstraintCacheDO.class);
 
-            return cacheDicts.stream().collect(Collectors.toMap(
-                    dict -> CoreConstant.DICT_KEY_PREFIX + dict.getDictName(),
-                    dict -> dict
+            return cacheList.stream().collect(Collectors.toMap(
+                    constraint -> RedisCacheKeyConstant.FIELD_CONSTRAINT_KEY_PREFIX + constraint.getConstraintName(),
+                    constraint -> constraint
             ));
         });
     }
@@ -170,10 +172,10 @@ public class CachePreHeating  {
     }
 
     /**
-     * 刷新数据字典缓存
+     * 刷新字段约束缓存
      */
-    public void refreshDataDictCache() {
-        preHeatingDataDictCache();
+    public void refreshFieldConstraintCache() {
+        preHeatingFieldConstraintCache();
     }
 
     /**

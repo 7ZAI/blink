@@ -1,7 +1,7 @@
 package com.blink.base.dto.req;
 
 import com.blink.base.constans.BaseErrCodeConstant;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import com.blink.framework.validate.annotation.MutuallyExclusive;
 import lombok.Data;
 
@@ -15,7 +15,7 @@ import lombok.Data;
 @MutuallyExclusive(field1 = "userId",field2 = "url")
 public class QueryUserPermissionReq {
 
-    @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer userId;
 
     private String url;

@@ -1,7 +1,7 @@
 package com.blink.gateway.base.dto.req;
 
 import com.blink.gateway.base.constants.BaseErrCodeConstant;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -14,7 +14,7 @@ public class QueryUserRolesReq implements Serializable {
      * 登录id
      */
     @NotNull
-    @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer userId;
 
 

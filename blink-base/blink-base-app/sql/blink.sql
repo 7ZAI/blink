@@ -263,20 +263,25 @@ CREATE TABLE `sys_config_group`
 ) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='参数分组表';
 
 
--- blink.sys_data_dict definition
+-- blink.sys_field_constraint definition
 
-CREATE TABLE `sys_data_dict`
+CREATE TABLE `sys_field_constraint`
 (
-    `dict_id`          int         NOT NULL AUTO_INCREMENT COMMENT '数据字典id',
-    `dict_name`        varchar(64) NOT NULL COMMENT '数据字典名称',
-    `dict_description` varchar(200)                                                  DEFAULT NULL COMMENT '数据字典描述',
-    `data_type`        varchar(10) NOT NULL                                          DEFAULT 'S' COMMENT '数据字典类型 C char N number D decimal S string T time',
-    `max_length`       int         NOT NULL                                          DEFAULT '10' COMMENT '数据字典最大长度',
-    `data_pattern`     varchar(256) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '数据正则表达式',
-    `data_precision`   int                                                           DEFAULT NULL COMMENT '数据精度（针对小数）',
-    PRIMARY KEY (`dict_id`) USING BTREE,
-    UNIQUE KEY `dict_name` (`dict_name`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb3 ROW_FORMAT=COMPACT COMMENT='数据字典表';
+    `constraint_id`          int         NOT NULL AUTO_INCREMENT COMMENT '字段约束ID',
+    `constraint_name`        varchar(64) NOT NULL COMMENT '约束名称（字段名称）',
+    `constraint_description` varchar(200)                                                  DEFAULT NULL COMMENT '约束描述',
+    `data_type`              varchar(10) NOT NULL                                          DEFAULT 'S' COMMENT '数据类型 C char N number D decimal S string T time',
+    `max_length`             int         NOT NULL                                          DEFAULT '10' COMMENT '最大长度',
+    `data_pattern`           varchar(256) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci DEFAULT NULL COMMENT '数据正则表达式',
+    `data_precision`         int                                                           DEFAULT NULL COMMENT '数据精度（针对小数）',
+    `status`                 tinyint     NOT NULL                                          DEFAULT '0' COMMENT '状态 0启用 1禁用',
+    `create_by`              varchar(64)                                                   DEFAULT NULL COMMENT '创建者',
+    `create_time`            datetime                                                      DEFAULT NULL COMMENT '创建时间',
+    `update_by`              varchar(64)                                                   DEFAULT NULL COMMENT '更新者',
+    `update_time`            datetime                                                      DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`constraint_id`) USING BTREE,
+    UNIQUE KEY `uk_constraint_name` (`constraint_name`)
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COMMENT='字段约束表';
 
 
 -- blink.sys_data_filter definition

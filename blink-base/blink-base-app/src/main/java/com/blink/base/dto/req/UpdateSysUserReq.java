@@ -1,7 +1,7 @@
 package com.blink.base.dto.req;
 
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -27,7 +27,7 @@ public class UpdateSysUserReq implements Serializable {
      * 修改的用户Id
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer userId;
 
 
@@ -57,7 +57,7 @@ public class UpdateSysUserReq implements Serializable {
      */
     @NotBlank
     @Pattern(regexp = "^1[3-9]\\d{9}$", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
-    @DataDict(name="phone",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="phone",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String phone;
 
     /**

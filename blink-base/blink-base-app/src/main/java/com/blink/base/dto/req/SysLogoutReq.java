@@ -1,7 +1,7 @@
 package com.blink.base.dto.req;
 
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
@@ -13,10 +13,10 @@ import lombok.Data;
 public class SysLogoutReq {
 
     @NotBlank
-    @DataDict(name="sysToken",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="sysToken",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String token;
 
     @NotBlank
-    @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String userId;
 }

@@ -297,16 +297,16 @@ String userId = context.getAttribute("userId");
 public class DataPreloader {
 
     @Resource
-    private SysDataDictMapper dataDictMapper;
+    private SysFieldConstraintMapper fieldConstraintMapper;
 
     @Resource
     private CacheComponent cacheComponent;
 
     public void preloadData() {
-        // 预加载数据字典
-        List<SysDataDictDO> dictList = dataDictMapper.selectList(null);
-        for (SysDataDictDO dict : dictList) {
-            cacheComponent.set("dict:" + dict.getDictCode(), dict.getDictValue());
+        // 预加载字段约束规则
+        List<SysFieldConstraintDO> constraintList = fieldConstraintMapper.selectList(null);
+        for (SysFieldConstraintDO constraint : constraintList) {
+            cacheComponent.set("constraint:" + constraint.getConstraintId(), constraint);
         }
     }
 }

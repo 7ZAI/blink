@@ -1,30 +1,49 @@
-package com.blink.gateway.base.entity;
+package com.blink.framework.common.data;
 
 import java.io.Serializable;
 
 /**
- * 数据字典 用来约束入参的最大边界
+ * SysFieldConstraintDO 的镜像实体类，用于缓存
+ * 保证包的隔离性
+ *
+ * @author binblink
+ * @since 2026-03-07
  */
-public class SysDataDictDO implements Serializable {
+public class FieldConstraintCacheDO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private String dictName;
+    /**
+     * 约束名称（字段名称）
+     */
+    private String constraintName;
 
+    /**
+     * 数据类型
+     */
     private String dataType;
 
+    /**
+     * 最大长度
+     */
     private Integer maxLength;
 
+    /**
+     * 数据正则校验模式
+     */
     private String dataPattern;
 
+    /**
+     * 数据精度
+     */
     private Integer dataPrecision;
 
-    public String getDictName() {
-        return dictName;
+    public String getConstraintName() {
+        return constraintName;
     }
 
-    public void setDictName(String dictName) {
-        this.dictName = dictName;
+    public void setConstraintName(String constraintName) {
+        this.constraintName = constraintName;
     }
 
     public String getDataType() {
@@ -61,8 +80,8 @@ public class SysDataDictDO implements Serializable {
 
     @Override
     public String toString() {
-        return "SysDataDictDO{" +
-                "dictName='" + dictName + '\'' +
+        return "FieldConstraintCacheDO{" +
+                "constraintName='" + constraintName + '\'' +
                 ", dataType='" + dataType + '\'' +
                 ", maxLength=" + maxLength +
                 ", dataPattern='" + dataPattern + '\'' +

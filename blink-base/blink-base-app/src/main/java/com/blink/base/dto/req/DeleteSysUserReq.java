@@ -1,7 +1,7 @@
 package com.blink.base.dto.req;
 
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -23,7 +23,7 @@ public class DeleteSysUserReq implements Serializable {
     /**
      * 删除的用户Id
      */
-    @DataDict(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="systemId",message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer userId;
 
     /**

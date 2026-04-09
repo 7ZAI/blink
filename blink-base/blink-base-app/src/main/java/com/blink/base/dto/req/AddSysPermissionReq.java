@@ -3,7 +3,7 @@ package com.blink.base.dto.req;
 import cn.hutool.core.util.StrUtil;
 import com.blink.base.constants.BaseErrCodeConstant;
 import com.blink.base.constants.CommonConstans;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -32,14 +32,14 @@ public class AddSysPermissionReq implements Serializable {
      * 权限名称
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name = "systemName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "systemName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String acName;
 
 
     /**
      * 权限英文名称
      */
-    @DataDict(name = "systemEnName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "systemEnName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String acEnName;
 
 
@@ -47,7 +47,7 @@ public class AddSysPermissionReq implements Serializable {
      * 权限标识
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name = "code30", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "code30", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String acIdentity;
 
 
@@ -62,28 +62,28 @@ public class AddSysPermissionReq implements Serializable {
     /**
      * 权限地址
      */
-    @DataDict(name = "url", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "url", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String url;
 
 
     /**
      * 状态 0启动 1禁用 2隐藏
      */
-    @DataDict(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Byte status;
 
 
     /**
      * 父权限id
      */
-    @DataDict(name = "systemId", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "systemId", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer parentId;
 
 
     /**
      * 数据过滤器id
      */
-    @DataDict(name = "systemId", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "systemId", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer dataFilterId;
 
     @AssertTrue(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)

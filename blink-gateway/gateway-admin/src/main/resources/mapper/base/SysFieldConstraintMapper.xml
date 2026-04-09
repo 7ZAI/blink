@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.base.mapper.SysFieldConstraintMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.base.entity.SysFieldConstraintDO">
+        <id column="constraint_id" property="constraintId"/>
+        <result column="constraint_name" property="constraintName"/>
+        <result column="constraint_description" property="constraintDescription"/>
+        <result column="data_type" property="dataType"/>
+        <result column="max_length" property="maxLength"/>
+        <result column="data_pattern" property="dataPattern"/>
+        <result column="data_precision" property="dataPrecision"/>
+        <result column="status" property="status"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        constraint_id, constraint_name, constraint_description, data_type, max_length, data_pattern, data_precision, status, create_by, create_time, update_by, update_time
+    </sql>
+
+</mapper>

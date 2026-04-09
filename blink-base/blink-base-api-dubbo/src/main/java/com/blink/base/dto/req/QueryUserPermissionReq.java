@@ -1,7 +1,7 @@
 package com.blink.base.dto.req;
 
 import com.blink.base.constans.DubboErrCodeConstant;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import com.blink.framework.validate.annotation.MutuallyExclusive;
 import lombok.Data;
 
@@ -19,7 +19,7 @@ public class QueryUserPermissionReq implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @DataDict(name="systemId",message = DubboErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name="systemId",message = DubboErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer userId;
 
     private String url;

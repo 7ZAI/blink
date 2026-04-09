@@ -1,7 +1,7 @@
 package com.blink.gateway.base.dto.req;
 
 import com.blink.gateway.base.constants.BaseErrCodeConstant;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -28,21 +28,21 @@ public class QuerySysMenuReq implements Serializable {
   /**
    * 菜单名称
    */
-  @DataDict(name = "systemName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+  @FieldConstraint(name = "systemName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
   private String menuName;
 
 
   /**
    * 菜单英文名称
    */
-  @DataDict(name = "systemEnName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+  @FieldConstraint(name = "systemEnName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
   private String menuEnName;
 
 
   /**
    * 菜单类型
    */
-  @DataDict(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+  @FieldConstraint(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
   private Integer type;
 
 }

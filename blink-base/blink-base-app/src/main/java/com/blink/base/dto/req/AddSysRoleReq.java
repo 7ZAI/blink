@@ -2,7 +2,7 @@ package com.blink.base.dto.req;
 
 
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.framework.validate.annotation.DataDict;
+import com.blink.framework.validate.annotation.FieldConstraint;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -28,14 +28,14 @@ public class AddSysRoleReq implements Serializable {
      * 角色名称
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name = "systemName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "systemName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String roleName;
 
 
     /**
      * 角色英文名称
      */
-    @DataDict(name = "systemEnName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "systemEnName", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String roleEnName;
 
 
@@ -43,7 +43,7 @@ public class AddSysRoleReq implements Serializable {
      * 角色状态
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer status;
 
 
@@ -51,7 +51,7 @@ public class AddSysRoleReq implements Serializable {
      * 角色代码
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name = "code30", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "code30", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String roleCode;
 
 
@@ -59,7 +59,7 @@ public class AddSysRoleReq implements Serializable {
      * 角色类型
      */
     @NotNull(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
-    @DataDict(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
+    @FieldConstraint(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private Integer roleType;
 
     /**

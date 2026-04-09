@@ -9,9 +9,9 @@ public interface CoreConstant {
     /**----------------------------------------------Redis key常量-----------------------------------------------------------**/
 
     /**
-     * 数据字典缓存key
+     * 字段约束缓存key
      */
-     String DICT_KEY_PREFIX = "system:dict:";
+    String FIELD_CONSTRAINT_KEY_PREFIX = "system:field:constraint:";
 
     /**
      * 消息缓存key
