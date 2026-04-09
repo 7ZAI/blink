@@ -50,7 +50,7 @@ public class MonitorServiceImpl implements MonitorService {
     @Autowired
     private RedisClient redisClient;
 
-    private static final String GATEWAY_SERVICE_NAME = "gateway-reactive";
+    private static final String GATEWAY_SERVICE_NAME = "gateway-app";
 
     @Override
     public ResponseDTO<GatewayInstanceListRsp> getGatewayInstances(QueryGatewayInstanceReq req) {

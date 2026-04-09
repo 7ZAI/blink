@@ -45,6 +45,7 @@ public class SaTokenConfig implements WebMvcConfigurer {
                         "/auth/login",
                         "/auth/captcha",
                         "/auth/getLoginConfig",
+                        "/captcha/**",
                         "/error",
                         "/actuator/**",
                         "/doc.html",
@@ -55,12 +56,15 @@ public class SaTokenConfig implements WebMvcConfigurer {
                 .order(1);
 
         // 2. 注册权限拦截器（在登录拦截器之后执行）
+        // 注意：BlinkRequestContextInterceptor 由 blink-web-starter 自动注册（order=0）
+        // 从请求头获取 userId、loginName 设置到 BlinkRequestContextHolder
         registry.addInterceptor(permissionInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
                         "/auth/login",
                         "/auth/captcha",
                         "/auth/getLoginConfig",
+                        "/captcha/**",
                         "/auth/logout",
                         "/auth/getUserInfo",
                         "/auth/firstTimeResetPassword",
@@ -71,6 +75,6 @@ public class SaTokenConfig implements WebMvcConfigurer {
                         "/swagger-resources/**",
                         "/v3/api-docs/**"
                 )
-                .order(2);
+                .order(10);
     }
 }

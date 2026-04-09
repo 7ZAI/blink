@@ -17,9 +17,14 @@ public class LoginConfigRsp implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 是否开启登录验证码
+ * 是否开启登录验证码
      */
     private Boolean captchaEnabled;
+
+    /**
+     * 验证码类型: clickWord(点选文字) / blockPuzzle(滑块拼图)
+     */
+    private String captchaType;
 
     /**
      * 系统标题

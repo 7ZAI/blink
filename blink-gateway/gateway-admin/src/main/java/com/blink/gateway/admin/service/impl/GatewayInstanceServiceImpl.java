@@ -45,7 +45,7 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     @Resource
     private GatewayInstanceMapper gatewayInstanceMapper;
 
-    private static final String GATEWAY_SERVICE_NAME = "gateway-reactive";
+    private static final String GATEWAY_SERVICE_NAME = "gateway-app";
 
     private static final Byte STATUS_ONLINE = 0;
     private static final Byte STATUS_OFFLINE = 1;

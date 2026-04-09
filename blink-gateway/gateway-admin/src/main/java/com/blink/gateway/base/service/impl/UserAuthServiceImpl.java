@@ -32,6 +32,7 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.RedisClient;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -77,6 +78,12 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     @Resource
     private UserDataScopeCacheService userDataScopeCacheService;
+
+    /**
+     * 验证码类型配置
+     */
+    @Value("${blink.captcha.type:clickWord}")
+    private String captchaType;
 
     /**
      * Session 中存储用户信息的 key
@@ -306,6 +313,9 @@ public class UserAuthServiceImpl implements UserAuthService {
         Boolean captchaEnabled = sysConfigService.getBooleanConfig(
                 CommonConstants.SysConfigKeys.LOGIN_CAPTCHA_ENABLED, true);
         config.setCaptchaEnabled(captchaEnabled);
+
+        // 验证码类型
+        config.setCaptchaType(captchaType);
 
         var queryParam = new QueryOneSysConfigReq();
         queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_TITLE.replaceAll(RedisKeyConstants.BLINK_PREFIX, ""));
