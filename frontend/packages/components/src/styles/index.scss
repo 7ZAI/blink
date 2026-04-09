@@ -493,6 +493,68 @@ a {
   }
 }
 
+/* 深色模式下固定列样式 - 确保按钮文字清晰可见 */
+html[data-theme='dark'] .el-table,
+html.dark .el-table {
+  /* 表格文字颜色增强 */
+  --el-table-text-color: var(--text-color-regular) !important;
+  --el-table-header-text-color: var(--text-color-primary) !important;
+
+  .el-table__fixed-right {
+    box-shadow: none !important;
+    background: var(--card-bg) !important;
+
+    .el-table__fixed-body-wrapper {
+      background: var(--card-bg) !important;
+    }
+
+    .el-table__cell {
+      background: var(--card-bg) !important;
+      color: var(--text-color-regular) !important;
+    }
+
+    /* 确保操作按钮文字清晰可见 */
+    .operation-buttons,
+    .cell {
+      .el-button.is-link {
+        &.el-button--primary {
+          color: #60a5fa !important;
+          &:hover { color: #93c5fd !important; }
+        }
+
+        &.el-button--danger {
+          color: #f87171 !important;
+          &:hover { color: #fca5a5 !important; }
+        }
+
+        &.el-button--success {
+          color: #34d399 !important;
+          &:hover { color: #6ee7b7 !important; }
+        }
+
+        &.el-button--warning {
+          color: #fbbf24 !important;
+          &:hover { color: #fcd34d !important; }
+        }
+
+        &.el-button--info {
+          color: #94a3b8 !important;
+          &:hover { color: #cbd5e1 !important; }
+        }
+      }
+    }
+
+    tr:hover .el-table__cell {
+      background-color: rgba(51, 65, 85, 0.8) !important;
+    }
+  }
+
+  .el-table__fixed-right-patch {
+    background: var(--card-bg) !important;
+    box-shadow: none !important;
+  }
+}
+
 .el-form-item__label {
   font-size: var(--font-size-base);
   color: var(--text-color-regular);
@@ -1230,9 +1292,34 @@ a {
     background-color: transparent !important;
   }
 
+  /* 多级菜单缩进 */
   .el-sub-menu .el-menu-item {
-    padding-left: 50px !important;
+    padding-left: 55px !important;
     min-width: auto;
+  }
+
+  /* 二级菜单缩进 */
+  .el-sub-menu > .el-menu > .el-menu-item {
+    padding-left: 55px !important;
+  }
+
+  /* 三级菜单缩进 */
+  .el-sub-menu > .el-menu > .el-sub-menu > .el-menu > .el-menu-item {
+    padding-left: 70px !important;
+  }
+
+  /* 四级菜单缩进 */
+  .el-sub-menu > .el-menu > .el-sub-menu > .el-menu > .el-sub-menu > .el-menu > .el-menu-item {
+    padding-left: 85px !important;
+  }
+
+  /* 嵌套子菜单标题缩进 */
+  .el-sub-menu > .el-menu > .el-sub-menu > .el-sub-menu__title {
+    padding-left: 55px !important;
+  }
+
+  .el-sub-menu > .el-menu > .el-sub-menu > .el-menu > .el-sub-menu > .el-sub-menu__title {
+    padding-left: 70px !important;
   }
 }
 

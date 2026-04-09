@@ -49,6 +49,9 @@ html, body {
   background-color: transparent !important;
   border-right: none !important;
 
+  // 设置基础缩进值
+  --el-menu-base-level-padding: 20px;
+
   .el-menu-item,
   .el-sub-menu__title {
     height: 48px;
@@ -80,9 +83,49 @@ html, body {
     background-color: transparent !important;
   }
 
+  // 多级菜单缩进 - 确保层级关系明显
+  // 第一级菜单项 (无子菜单)
+  > .el-menu-item {
+    padding-left: 20px !important;
+  }
+
+  // 第一级子菜单标题
+  > .el-sub-menu > .el-sub-menu__title {
+    padding-left: 20px !important;
+  }
+
+  // 第二级菜单项
   .el-sub-menu .el-menu-item {
-    padding-left: 50px !important;
-    min-width: auto;
+    padding-left: 40px !important;
+  }
+
+  // 第三级子菜单标题
+  .el-sub-menu .el-sub-menu .el-sub-menu__title {
+    padding-left: 40px !important;
+  }
+
+  // 第三级菜单项
+  .el-sub-menu .el-sub-menu .el-menu-item {
+    padding-left: 60px !important;
+  }
+
+  // 第四级子菜单标题
+  .el-sub-menu .el-sub-menu .el-sub-menu .el-sub-menu__title {
+    padding-left: 60px !important;
+  }
+
+  // 第四级菜单项
+  .el-sub-menu .el-sub-menu .el-sub-menu .el-menu-item {
+    padding-left: 80px !important;
+  }
+
+  // 第五级 (以防万一)
+  .el-sub-menu .el-sub-menu .el-sub-menu .el-sub-menu .el-sub-menu__title {
+    padding-left: 80px !important;
+  }
+
+  .el-sub-menu .el-sub-menu .el-sub-menu .el-sub-menu .el-menu-item {
+    padding-left: 100px !important;
   }
 }
 
@@ -434,9 +477,114 @@ html[data-theme='dark'],
 html.dark {
   .operation-buttons {
     .el-button.is-link {
+      // 移除背景颜色
+      background-color: transparent !important;
+
       &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: transparent !important;
       }
+    }
+  }
+
+  // 深色模式表格增强 - 参考 base-admin 的处理方式
+  .el-table {
+    --el-table-text-color: var(--text-color-primary) !important;
+    --el-table-header-text-color: var(--text-color-primary) !important;
+    --el-table-border-color: var(--border-color) !important;
+    --el-table-header-bg-color: var(--bg-color-page) !important;
+
+    color: var(--text-color-regular);
+
+    th.el-table__cell {
+      color: var(--text-color-primary) !important;
+    }
+
+    td.el-table__cell {
+      color: var(--text-color-regular);
+    }
+  }
+
+  // 深色模式下表格固定操作列样式修复 - 确保按钮文字清晰可见
+  .el-table__fixed-right {
+    // 使用 CSS 变量作为背景色
+    background: var(--card-bg) !important;
+
+    .el-table__fixed-body-wrapper {
+      background: var(--card-bg) !important;
+    }
+
+    .el-table__cell {
+      background: var(--card-bg) !important;
+      color: var(--text-color-regular) !important;
+    }
+
+    // 确保操作按钮文字清晰可见，无背景色
+    .operation-buttons {
+      .el-button.is-link {
+        background-color: transparent !important;
+
+        &.el-button--primary {
+          color: #60a5fa !important;
+
+          &:hover {
+            color: #93c5fd !important;
+            background-color: transparent !important;
+          }
+        }
+
+        &.el-button--danger {
+          color: #f87171 !important;
+
+          &:hover {
+            color: #fca5a5 !important;
+            background-color: transparent !important;
+          }
+        }
+
+        &.el-button--success {
+          color: #34d399 !important;
+
+          &:hover {
+            color: #6ee7b7 !important;
+            background-color: transparent !important;
+          }
+        }
+
+        &.el-button--warning {
+          color: #fbbf24 !important;
+
+          &:hover {
+            color: #fcd34d !important;
+            background-color: transparent !important;
+          }
+        }
+
+        &.el-button--info {
+          color: #94a3b8 !important;
+
+          &:hover {
+            color: #cbd5e1 !important;
+            background-color: transparent !important;
+          }
+        }
+      }
+    }
+
+    // 悬停时背景
+    tr:hover .el-table__cell {
+      background-color: #334155 !important;
+    }
+  }
+
+  .el-table__fixed-right-patch {
+    background: var(--card-bg) !important;
+  }
+
+  // 移除Element Plus默认的固定列阴影
+  .el-table--scrollable-x .el-table__body-wrapper,
+  .el-table--scrollable-y .el-table__body-wrapper {
+    &::-webkit-scrollbar {
+      background-color: transparent;
     }
   }
 }
@@ -518,7 +666,7 @@ html.dark {
 
 .login-left {
   flex: 4.5;
-  background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #cbd5e1 100%);
+  background: linear-gradient(135deg, #1e3a5f 0%, #0d2137 50%, #0a1929 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -534,7 +682,7 @@ html.dark {
     right: 10%;
     width: 300px;
     height: 300px;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -545,7 +693,7 @@ html.dark {
     left: 15%;
     width: 200px;
     height: 200px;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -567,7 +715,7 @@ html.dark {
   align-items: center;
   justify-content: center;
   padding: 48px 40px;
-  background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   position: relative;
 
   // 装饰性背景
@@ -578,7 +726,7 @@ html.dark {
     left: 0;
     right: 0;
     height: 200px;
-    background: linear-gradient(180deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);
+    background: linear-gradient(180deg, rgba(59, 130, 246, 0.03) 0%, transparent 100%);
     pointer-events: none;
   }
 
@@ -617,16 +765,17 @@ html.dark {
       margin-bottom: 0;
 
       .logo-icon {
-        width: 48px;
-        height: 48px;
-        background: var(--gradient-primary);
-        border-radius: var(--radius-lg);
+        // 动态 logo 容器
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
-        font-size: 24px;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+
+        // SVG logo 设置固定宽高以确保显示
+        svg {
+          width: 48px;
+          height: 48px;
+          display: block;
+        }
       }
     }
 
@@ -729,6 +878,22 @@ html.dark {
       }
     }
   }
+
+  // 页脚信息
+  .page-footer {
+    position: absolute;
+    bottom: 24px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: var(--text-color-secondary);
+    font-size: 13px;
+    opacity: 0.7;
+
+    span {
+      letter-spacing: 0.5px;
+    }
+  }
 }
 
 @media (max-width: 768px) {
@@ -752,11 +917,10 @@ html.dark {
         gap: 12px;
       }
 
-      .logo-wrapper .logo-icon {
-        width: 40px;
-        height: 40px;
-        font-size: 20px;
-      }
+      .logo-wrapper .logo-icon svg {
+          width: 40px;
+          height: 40px;
+        }
 
       .brand-title {
         font-size: 20px;
@@ -781,6 +945,412 @@ html.dark {
         .nav-action {
           padding: 8px 14px;
           font-size: 12px;
+        }
+      }
+    }
+
+    // 移动端页脚
+    .page-footer {
+      position: relative;
+      bottom: auto;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color-light);
+      font-size: 12px;
+    }
+  }
+}
+
+// ============================================
+// 验证码弹窗样式
+// ============================================
+
+.captcha-dialog {
+  .el-dialog__body {
+    padding: 16px;
+  }
+}
+
+.captcha-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 200px;
+}
+
+// 滑块验证码
+.block-puzzle-captcha {
+  width: 100%;
+
+  .captcha-image-wrapper {
+    position: relative;
+    width: 310px;
+    height: 155px;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    user-select: none;
+
+    .captcha-bg-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .captcha-jigsaw-image {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      pointer-events: none;
+      transition: left 0.05s ease-out;
+    }
+  }
+
+  .slider-container {
+    position: relative;
+    width: 310px;
+    height: 40px;
+    margin-top: 16px;
+    background: linear-gradient(to right, #f7f9fb, #eef1f5);
+    border-radius: 8px;
+    border: 1px solid #e4e7eb;
+    user-select: none;
+
+    .slider-track {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: calc(100% - 50px);
+      height: 2px;
+      margin-left: 50px;
+      background: linear-gradient(to right, #d1d5db, #e5e7eb);
+      border-radius: 1px;
+    }
+
+    .slider-fill {
+      position: absolute;
+      left: 50px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 2px;
+      background: linear-gradient(to right, #3b82f6, #60a5fa);
+      border-radius: 1px;
+      transition: width 0.05s ease-out;
+    }
+
+    .slider-thumb {
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      width: 40px;
+      height: 32px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+      transition: box-shadow 0.2s, transform 0.1s;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      }
+
+      &:active {
+        cursor: grabbing;
+        transform: scale(0.98);
+      }
+
+      .el-icon {
+        color: #fff;
+        font-size: 18px;
+      }
+    }
+
+    .slider-hint {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      color: #9ca3af;
+      pointer-events: none;
+    }
+  }
+
+  .captcha-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+    width: 310px;
+  }
+}
+
+// 点选文字验证码
+.click-word-captcha {
+  width: 100%;
+
+  .word-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-radius: 8px;
+    font-size: 14px;
+    color: #1e40af;
+
+    .hint-icon {
+      font-size: 18px;
+      color: #3b82f6;
+    }
+
+    .words {
+      font-weight: 600;
+      color: #2563eb;
+    }
+  }
+
+  .captcha-image-wrapper {
+    position: relative;
+    width: 310px;
+    height: 155px;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #f0f0f0;
+    cursor: crosshair;
+    user-select: none;
+    border: 1px solid #e5e7eb;
+
+    .captcha-bg-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .click-point {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      margin-left: -12px;
+      margin-top: -12px;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      border: 2px solid #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+      animation: pointPop 0.2s ease-out;
+    }
+  }
+
+  .captcha-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    width: 310px;
+
+    .click-progress {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .click-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+  }
+}
+
+@keyframes pointPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// 验证码加载状态
+.captcha-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--text-color-secondary);
+
+  .loading-icon {
+    font-size: 32px;
+    color: var(--primary-color);
+    animation: spin 1s linear infinite;
+  }
+
+  span {
+    margin-top: 12px;
+    font-size: 14px;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// 验证码滑块组件（表单内）
+.captcha-item {
+  margin-bottom: 16px;
+
+  .captcha-slider-wrapper {
+    width: 100%;
+    cursor: pointer;
+
+    .captcha-slider {
+      position: relative;
+      height: 42px;
+      background: linear-gradient(to right, #f7f9fb, #eef1f5);
+      border-radius: 8px;
+      border: 1px solid var(--border-color-base);
+      overflow: hidden;
+      transition: all 0.3s ease;
+
+      &:hover:not(.success) {
+        border-color: var(--primary-color-light);
+      }
+
+      &.success {
+        background: linear-gradient(to right, #ecfdf5, #d1fae5);
+        border-color: var(--success-color);
+      }
+
+      .slider-track {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+
+        .slider-text {
+          font-size: 14px;
+          color: var(--text-color-secondary);
+        }
+      }
+
+      .slider-btn {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 34px;
+        height: 34px;
+        background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+
+        .el-icon {
+          font-size: 16px;
+          color: var(--text-color-secondary);
+        }
+
+        &.success {
+          background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+
+          .el-icon {
+            color: #fff;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 深色模式验证码样式
+html[data-theme='dark'],
+html.dark {
+  .block-puzzle-captcha {
+    .captcha-image-wrapper {
+      background-color: #1e293b;
+    }
+
+    .slider-container {
+      background: linear-gradient(to right, #1e293b, #334155);
+      border-color: #475569;
+
+      .slider-track {
+        background: linear-gradient(to right, #475569, #64748b);
+      }
+
+      .slider-fill {
+        background: linear-gradient(to right, #3b82f6, #60a5fa);
+      }
+
+      .slider-hint {
+        color: #64748b;
+      }
+    }
+  }
+
+  .click-word-captcha {
+    .word-hint {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+      color: #93c5fd;
+
+      .hint-icon {
+        color: #60a5fa;
+      }
+
+      .words {
+        color: #93c5fd;
+      }
+    }
+
+    .captcha-image-wrapper {
+      background-color: #1e293b;
+      border-color: #475569;
+    }
+  }
+
+  .captcha-item {
+    .captcha-slider-wrapper {
+      .captcha-slider {
+        background: linear-gradient(to right, #1e293b, #334155);
+        border-color: #475569;
+
+        &:hover:not(.success) {
+          border-color: #3b82f6;
+        }
+
+        .slider-track .slider-text {
+          color: #94a3b8;
+        }
+
+        .slider-btn {
+          background: linear-gradient(135deg, #334155 0%, #475569 100%);
+
+          .el-icon {
+            color: #94a3b8;
+          }
         }
       }
     }
@@ -2734,15 +3304,15 @@ html.dark {
   }
 
   .login-left {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 50%, #020617 100%);
+    background: linear-gradient(135deg, #0a1628 0%, #071018 50%, #030810 100%);
 
     // 深色模式光晕效果
     &::before {
-      background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, transparent 70%);
     }
 
     &::after {
-      background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 70%);
     }
 
     .characters-wrapper {
@@ -2751,17 +3321,21 @@ html.dark {
   }
 
   .login-right {
-    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
 
     // 装饰性背景 - 深色模式
     &::before {
-      background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, transparent 100%);
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.1) 0%, transparent 100%);
     }
 
     .brand-content {
       .logo-wrapper .logo-icon {
-        background: var(--gradient-primary);
-        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        // 深色模式下动态 logo
+        svg {
+          width: 48px;
+          height: 48px;
+          display: block;
+        }
       }
 
       .brand-title {
@@ -2850,6 +3424,12 @@ html.dark {
           }
         }
       }
+    }
+
+    // 深色模式页脚
+    .page-footer {
+      color: #94a3b8;
+      opacity: 0.8;
     }
   }
 
