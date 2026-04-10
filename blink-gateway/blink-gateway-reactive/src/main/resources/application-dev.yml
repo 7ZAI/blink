@@ -147,6 +147,11 @@ info:
 #        trance:
 #          step: 2000
 
+blink:
+  gateway:
+    eventStreamEnable: true
+    instance-id: 00
+
 # Dubbo 配置
 dubbo:
   application:

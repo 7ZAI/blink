@@ -86,3 +86,9 @@ dubbo:
   consumer:
     check: false
     timeout: 10000
+
+# Actuator 监控配置
+blink:
+  gateway:
+    monitor:
+      actuator-password: 123456

@@ -75,4 +75,4 @@ blink:
       metrics-expire-seconds: 60       # Redis 指标过期时间（秒）
       history-retention-days: 7        # 历史数据保留天数
   captcha:
-    type: blockPuzzle                   # 验证码类型: clickWord(点选文字) / blockPuzzle(滑块拼图)
+    type: clickWord                   # 验证码类型: clickWord(点选文字) / blockPuzzle(滑块拼图)
