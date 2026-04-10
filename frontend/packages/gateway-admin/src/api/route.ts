@@ -79,10 +79,113 @@ export const refreshRoutes = (): Promise<void> => {
   return request.post('/route/refreshRoutes', { body: {} })
 }
 
+// ========== 新增类型定义 ==========
+
+/** 存储方式 VO */
+export interface StorageModeVO {
+  mode: string
+  name: string
+  description: string
+}
+
+/** 网关实例 VO */
+export interface GatewayInstanceVO {
+  instanceId: string
+  serviceId: string
+  host: string
+  port: number
+  uri: string
+  status: number
+  statusDesc: string
+}
+
+/** 同步路由请求 */
+export interface SyncRoutesReq {
+  storageMode: string
+  routesGroup?: string
+  dataId?: string
+  group?: string
+  pushMode: string
+  targetInstanceIds?: string[]
+  routeIds?: string[]
+}
+
+/** Nacos 路由查询请求 */
+export interface QueryNacosRouteReq {
+  dataId: string
+  group?: string
+  pageNum?: number
+  pageSize?: number
+}
+
+/** Nacos 路由保存请求 */
+export interface SaveNacosRouteReq {
+  dataId: string
+  group?: string
+  routes: RouteDefinition[]
+}
+
+/** Nacos 路由删除请求 */
+export interface DeleteNacosRouteReq {
+  dataId: string
+  group?: string
+  routeIds: string[]
+}
+
+// ========== 新增 API 接口 ==========
+
+/**
+ * 获取支持的存储方式列表
+ */
+export const getStorageModes = (): Promise<StorageModeVO[]> => {
+  return request.post('/route/getStorageModes', { body: {} })
+}
+
+/**
+ * 获取在线网关实例列表
+ */
+export const getOnlineGatewayInstances = (): Promise<GatewayInstanceVO[]> => {
+  return request.post('/route/getOnlineGatewayInstances', { body: {} })
+}
+
+/**
+ * 同步路由到指定实例
+ */
+export const syncRoutesToInstances = (data: SyncRoutesReq): Promise<void> => {
+  return request.post('/route/syncRoutesToInstances', { body: data })
+}
+
+/**
+ * 查询 Nacos 路由列表
+ */
+export const getNacosRouteList = (params: QueryNacosRouteReq): Promise<PageResult<RouteDefinition>> => {
+  return request.post('/route/getNacosRouteList', { body: params })
+}
+
+/**
+ * 保存 Nacos 路由
+ */
+export const saveNacosRoute = (data: SaveNacosRouteReq): Promise<void> => {
+  return request.post('/route/saveNacosRoute', { body: data })
+}
+
+/**
+ * 删除 Nacos 路由
+ */
+export const deleteNacosRoute = (params: DeleteNacosRouteReq): Promise<void> => {
+  return request.post('/route/deleteNacosRoute', { body: params })
+}
+
 // Route API object (for component using routeApi.xxx pattern)
 export const routeApi = {
   getList: getRouteList,
   save: saveRoute,
   delete: deleteRoute,
   refresh: refreshRoutes,
+  getStorageModes,
+  getOnlineGatewayInstances,
+  syncRoutesToInstances,
+  getNacosRouteList,
+  saveNacosRoute,
+  deleteNacosRoute,
 }

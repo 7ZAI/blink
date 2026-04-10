@@ -83,6 +83,8 @@ export default {
     confirmDelete: '确定删除吗？',
     fetchFailed: '获取数据失败',
     passwordResetSuccess: '密码重置成功',
+    passwordChangeSuccess: '密码修改成功',
+    resetSuccess: '重置成功',
     success: '操作成功',
   },
   sidebar: {
@@ -381,6 +383,36 @@ export default {
     zhCN: '简体中文',
     enUS: 'English',
   },
+  profile: {
+    personalInfo: '个人信息',
+    preferences: '偏好设置',
+  },
+  user: {
+    loginName: '登录名',
+    username: '用户昵称',
+    sex: '性别',
+    male: '男',
+    female: '女',
+    unknown: '未知',
+    phone: '手机号',
+    email: '邮箱',
+    remark: '备注',
+    changePassword: '修改密码',
+    oldPassword: '原密码',
+    newPassword: '新密码',
+    confirmPassword: '确认密码',
+  },
+  preferences: {
+    theme: '主题设置',
+    language: '语言设置',
+    sidebar: '侧边栏',
+    autoTheme: '跟随系统',
+    collapsed: '折叠',
+    expanded: '展开',
+    fontSize: '字体大小',
+    saveSuccess: '偏好设置已保存',
+    resetSuccess: '偏好设置已重置',
+  },
   tabs: {
     refresh: '刷新',
     close: '关闭',
@@ -401,6 +433,8 @@ export default {
       password: '密码',
       confirmPassword: '确认密码',
       newPassword: '新密码',
+      oldPassword: '原密码',
+      changePassword: '修改密码',
       avatar: '头像',
       sex: '性别',
       male: '男',
@@ -853,6 +887,13 @@ export default {
     invalidJson: 'JSON格式无效',
     jsonPlaceholder: '请输入JSON格式的配置值',
     noConfig: '该分组暂无配置项',
+    // IP输入相关
+    ipPlaceholder: '输入IP地址后回车添加',
+    ipFormatHint: '支持单个IP或CIDR网段，如 192.168.1.1 或 10.0.0.0/8',
+    invalidIpFormat: 'IP格式无效',
+    // 路由模式选项
+    nacosMode: 'Nacos配置中心',
+    redisMode: 'Redis缓存存储',
   },
   validation: {
     required: '{field}不能为空',
@@ -860,7 +901,7 @@ export default {
     email: '请输入正确的邮箱地址',
     phone: '请输入正确的手机号码',
     passwordNotMatch: '两次输入的密码不一致',
-    passwordLength: '密码长度不能少于6位',
+    passwordLength: '密码长度为6-20个字符',
   },
   iconSelector: {
     placeholder: '请选择图标',
@@ -874,6 +915,7 @@ export default {
   avatar: {
     selectStyle: '选择头像',
     styles: '头像样式',
+    clickToChange: '点击更换头像',
   },
   notification: {
     title: '消息通知',
@@ -896,5 +938,17 @@ export default {
     warning: '警告',
     error: '错误',
     success: '成功',
+    // 新增字段
+    detail: '通知详情',
+    content: '内容',
+    type: '类型',
+    severity: '严重程度',
+    status: '状态',
+    read: '已读',
+    unread: '未读',
+    timeRange: '时间范围',
+    startDate: '开始日期',
+    endDate: '结束日期',
+    deleteSelectedConfirm: '确定删除选中的 {count} 条通知吗？',
   },
 }

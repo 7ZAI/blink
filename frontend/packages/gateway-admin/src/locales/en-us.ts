@@ -83,6 +83,8 @@ export default {
     confirmDelete: 'Are you sure to delete?',
     fetchFailed: 'Failed to fetch data',
     passwordResetSuccess: 'Password reset successfully',
+    passwordChangeSuccess: 'Password changed successfully',
+    resetSuccess: 'Reset successfully',
     success: 'Success',
   },
   sidebar: {
@@ -319,6 +321,13 @@ export default {
     invalidJson: 'Invalid JSON format',
     jsonPlaceholder: 'Please enter JSON format config value',
     noConfig: 'No config items in this group',
+    // IP input related
+    ipPlaceholder: 'Enter IP address and press Enter to add',
+    ipFormatHint: 'Supports single IP or CIDR range, e.g. 192.168.1.1 or 10.0.0.0/8',
+    invalidIpFormat: 'Invalid IP format',
+    // Route mode options
+    nacosMode: 'Nacos Config Center',
+    redisMode: 'Redis Cache Storage',
   },
   monitor: {
     title: 'Monitor Center',
@@ -427,6 +436,36 @@ export default {
     zhCN: '简体中文',
     enUS: 'English',
   },
+  profile: {
+    personalInfo: 'Personal Info',
+    preferences: 'Preferences',
+  },
+  user: {
+    loginName: 'Login Name',
+    username: 'Username',
+    sex: 'Gender',
+    male: 'Male',
+    female: 'Female',
+    unknown: 'Unknown',
+    phone: 'Phone',
+    email: 'Email',
+    remark: 'Remark',
+    changePassword: 'Change Password',
+    oldPassword: 'Old Password',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm Password',
+  },
+  preferences: {
+    theme: 'Theme',
+    language: 'Language',
+    sidebar: 'Sidebar',
+    autoTheme: 'Auto',
+    collapsed: 'Collapsed',
+    expanded: 'Expanded',
+    fontSize: 'Font Size',
+    saveSuccess: 'Preferences saved',
+    resetSuccess: 'Preferences reset',
+  },
   tabs: {
     refresh: 'Refresh',
     close: 'Close',
@@ -447,6 +486,8 @@ export default {
       password: 'Password',
       confirmPassword: 'Confirm Password',
       newPassword: 'New Password',
+      oldPassword: 'Old Password',
+      changePassword: 'Change Password',
       avatar: 'Avatar',
       sex: 'Gender',
       male: 'Male',
@@ -864,7 +905,7 @@ export default {
     email: 'Please enter a valid email address',
     phone: 'Please enter a valid phone number',
     passwordNotMatch: 'Passwords do not match',
-    passwordLength: 'Password must be at least 6 characters',
+    passwordLength: 'Password length must be 6-20 characters',
   },
   iconSelector: {
     placeholder: 'Select Icon',
@@ -878,6 +919,7 @@ export default {
   avatar: {
     selectStyle: 'Select Avatar',
     styles: 'Avatar Styles',
+    clickToChange: 'Click to change avatar',
   },
   notification: {
     title: 'Notifications',
@@ -900,5 +942,17 @@ export default {
     warning: 'Warning',
     error: 'Error',
     success: 'Success',
+    // New fields
+    detail: 'Notification Detail',
+    content: 'Content',
+    type: 'Type',
+    severity: 'Severity',
+    status: 'Status',
+    read: 'Read',
+    unread: 'Unread',
+    timeRange: 'Time Range',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    deleteSelectedConfirm: 'Delete {count} selected notifications?',
   },
 }

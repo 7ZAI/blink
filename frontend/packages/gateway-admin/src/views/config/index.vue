@@ -70,41 +70,14 @@
               <span class="name-text">{{ config.configName }}</span>
             </div>
             <div class="col-value">
-              <template v-if="config.configType === 2">
-                <el-switch
-                  v-model="configStates[config.id]"
-                  size="small"
-                  @change="markAsModified(config.id)"
-                />
-              </template>
-
-              <template v-else-if="config.configType === 1">
-                <el-input-number
-                  v-model="configStates[config.id]"
-                  :min="0"
-                  controls-position="right"
-                  size="small"
-                  style="width: 120px"
-                  @change="markAsModified(config.id)"
-                />
-              </template>
-
-              <template v-else-if="config.configType === 3 || config.configType === 4">
-                <el-button type="primary" size="small" text @click="openJsonEditor(config)">
-                  <el-icon><Edit /></el-icon>
-                  {{ t('config.editJson') }}
-                </el-button>
-              </template>
-
-              <template v-else>
-                <el-input
-                  v-model.trim="configStates[config.id]"
-                  :placeholder="t('common.pleaseInput')"
-                  size="small"
-                  style="width: 180px"
-                  @input="markAsModified(config.id)"
-                />
-              </template>
+              <SmartConfigInput
+                :config-key="config.configKey"
+                :config-type="config.configType"
+                :model-value="configStates[config.id]"
+                size="small"
+                @update:model-value="(val) => handleValueUpdate(config.id, val)"
+                @change="markAsModified(config.id)"
+              />
             </div>
             <div class="col-desc">{{ config.description }}</div>
           </div>
@@ -135,31 +108,6 @@
         </div>
       </div>
     </div>
-
-    <el-dialog
-      v-model="jsonEditorVisible"
-      :title="t('config.editJson')"
-      width="650px"
-      :close-on-click-modal="false"
-      class="json-dialog"
-    >
-      <div class="json-editor-wrapper">
-        <el-input
-          v-model="jsonEditorContent"
-          type="textarea"
-          :rows="18"
-          :placeholder="t('config.jsonPlaceholder')"
-          class="json-textarea"
-        />
-      </div>
-      <template #footer>
-        <el-button @click="jsonEditorVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="saveJsonConfig">
-          <el-icon><Check /></el-icon>
-          {{ t('common.confirm') }}
-        </el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -167,9 +115,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
-import { Search, Check, Edit } from '@element-plus/icons-vue'
+import { Search, Check } from '@element-plus/icons-vue'
 import { getConfigsByGroupKey, batchUpdateConfigs, type ConfigItem } from '@/api/config'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
+import SmartConfigInput from '@/components/SmartConfigInput.vue'
 
 defineOptions({
   name: 'ConfigManagement',
@@ -186,10 +135,6 @@ const currentConfigs = ref<ConfigItem[]>([])
 const configStates = ref<Record<number, any>>({})
 const originalStates = ref<Record<number, any>>({})
 const modifiedIds = ref<number[]>([])
-
-const jsonEditorVisible = ref(false)
-const jsonEditorContent = ref('')
-const currentJsonConfig = ref<ConfigItem | null>(null)
 
 // 网关配置分组（使用 gateway 分组下的配置）
 const configGroups = computed(() => [
@@ -291,32 +236,9 @@ const handleGroupChange = (groupKey: string) => {
   searchKeyword.value = ''
 }
 
-const openJsonEditor = (config: ConfigItem) => {
-  currentJsonConfig.value = config
-  try {
-    const parsed = JSON.parse(config.configValue)
-    jsonEditorContent.value = JSON.stringify(parsed, null, 2)
-  } catch {
-    jsonEditorContent.value = config.configValue
-  }
-  jsonEditorVisible.value = true
-}
-
-const saveJsonConfig = () => {
-  if (!currentJsonConfig.value) return
-
-  try {
-    JSON.parse(jsonEditorContent.value)
-  } catch {
-    ElMessage.error(t('config.invalidJson'))
-    return
-  }
-
-  configStates.value[currentJsonConfig.value.id] = jsonEditorContent.value
-  if (!modifiedIds.value.includes(currentJsonConfig.value.id)) {
-    modifiedIds.value.push(currentJsonConfig.value.id)
-  }
-  jsonEditorVisible.value = false
+// 处理智能输入组件的值更新
+const handleValueUpdate = (configId: number, value: any) => {
+  configStates.value[configId] = value
 }
 
 const handleBatchSave = async () => {
@@ -634,26 +556,6 @@ onMounted(() => {
 :deep(.el-input) {
   .el-input__wrapper {
     border-radius: 4px;
-  }
-}
-
-.json-dialog {
-  .json-editor-wrapper {
-    background: var(--bg-color-page);
-    border-radius: 8px;
-    padding: 4px;
-  }
-
-  .json-textarea {
-    :deep(.el-textarea__inner) {
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 13px;
-      line-height: 1.6;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      border-radius: 8px;
-    }
   }
 }
 
