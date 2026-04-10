@@ -189,3 +189,30 @@ export const getUserPermissions = (userId: number): Promise<UserPermissionRsp> =
     body: { userId },
   }) as Promise<UserPermissionRsp>
 }
+
+// 用户偏好设置
+export interface UserPreference {
+  preferenceId?: number
+  userId?: number
+  theme: string
+  language: string
+  sidebarCollapsed: boolean
+  fontSize: number
+  createTime?: string
+  updateTime?: string
+}
+
+export interface SavePreferenceParams {
+  theme: string
+  language: string
+  sidebarCollapsed: boolean
+  fontSize: number
+}
+
+export const saveUserPreference = (params: SavePreferenceParams): Promise<void> => {
+  return request.post('/sysUser/saveUserPreference', { body: params }) as Promise<void>
+}
+
+export const getUserPreference = (): Promise<UserPreference> => {
+  return request.post('/sysUser/getUserPreference', { body: {} }) as Promise<UserPreference>
+}

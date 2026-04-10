@@ -1,12 +1,6 @@
 <template>
   <div class="profile-page">
     <el-card shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span class="title">{{ t('header.profile') }}</span>
-        </div>
-      </template>
-
       <el-tabs v-model="activeTab" class="profile-tabs">
         <!-- 个人信息 Tab -->
         <el-tab-pane :label="t('profile.personalInfo')" name="info">
@@ -449,17 +443,6 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .profile-page {
-  .card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    .title {
-      font-size: 16px;
-      font-weight: 600;
-    }
-  }
-
   .profile-tabs {
     :deep(.el-tabs__header) {
       margin-bottom: 24px;
