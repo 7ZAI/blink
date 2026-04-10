@@ -8,11 +8,19 @@
     destroy-on-close
   >
     <el-descriptions :column="2" border v-loading="loading">
-      <el-descriptions-item :label="t('operationLog.logId')" :span="1">{{ logDetail?.logId }}</el-descriptions-item>
-      <el-descriptions-item :label="t('operationLog.operationTime')" :span="1">{{ logDetail?.operationTime }}</el-descriptions-item>
+      <el-descriptions-item :label="t('operationLog.logId')" :span="1">
+        {{ logDetail?.logId }}
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('operationLog.operationTime')" :span="1">
+        {{ logDetail?.operationTime }}
+      </el-descriptions-item>
 
-      <el-descriptions-item :label="t('operationLog.operator')" :span="1">{{ logDetail?.loginName }}</el-descriptions-item>
-      <el-descriptions-item :label="t('operationLog.userId')" :span="1">{{ logDetail?.userId }}</el-descriptions-item>
+      <el-descriptions-item :label="t('operationLog.operator')" :span="1">
+        {{ logDetail?.loginName }}
+      </el-descriptions-item>
+      <el-descriptions-item :label="t('operationLog.userId')" :span="1">
+        {{ logDetail?.userId }}
+      </el-descriptions-item>
 
       <el-descriptions-item :label="t('operationLog.logType')" :span="1">
         <el-tag :type="getLogTypeTagType(logDetail?.logType)">
@@ -20,7 +28,9 @@
         </el-tag>
       </el-descriptions-item>
 
-      <el-descriptions-item :label="t('operationLog.description')" :span="1">{{ logDetail?.description || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('operationLog.description')" :span="1">
+        {{ logDetail?.description || '-' }}
+      </el-descriptions-item>
 
       <el-descriptions-item :label="t('operationLog.requestUrl')" :span="2">
         <code class="url-code">{{ logDetail?.requestMethod }} {{ logDetail?.requestUrl }}</code>
@@ -32,10 +42,14 @@
         </el-tag>
       </el-descriptions-item>
       <el-descriptions-item :label="t('operationLog.executeTimeMs')" :span="1">
-        <span :class="getExecuteTimeClass(logDetail?.executeTimeMs)">{{ logDetail?.executeTimeMs }}ms</span>
+        <span :class="getExecuteTimeClass(logDetail?.executeTimeMs)">
+          {{ logDetail?.executeTimeMs }}ms
+        </span>
       </el-descriptions-item>
 
-      <el-descriptions-item :label="t('operationLog.ipAddress')" :span="1">{{ logDetail?.ipAddress }}</el-descriptions-item>
+      <el-descriptions-item :label="t('operationLog.ipAddress')" :span="1">
+        {{ logDetail?.ipAddress }}
+      </el-descriptions-item>
       <el-descriptions-item :label="t('operationLog.userAgent')" :span="1">
         <el-tooltip :content="logDetail?.userAgent" placement="top">
           <span class="truncate-text">{{ logDetail?.userAgent }}</span>
@@ -51,7 +65,11 @@
       </el-descriptions-item>
 
       <!-- 响应数据 -->
-      <el-descriptions-item :label="t('operationLog.responseData')" :span="2" v-if="logDetail?.executeStatus === 0">
+      <el-descriptions-item
+        :label="t('operationLog.responseData')"
+        :span="2"
+        v-if="logDetail?.executeStatus === 0"
+      >
         <div class="json-content" v-if="logDetail?.responseData">
           <pre>{{ formatJson(logDetail.responseData) }}</pre>
         </div>
@@ -59,7 +77,11 @@
       </el-descriptions-item>
 
       <!-- 错误信息 -->
-      <el-descriptions-item :label="t('operationLog.errorMsg')" :span="2" v-if="logDetail?.executeStatus === 1">
+      <el-descriptions-item
+        :label="t('operationLog.errorMsg')"
+        :span="2"
+        v-if="logDetail?.executeStatus === 1"
+      >
         <div class="error-content">
           {{ logDetail?.errorMsg }}
         </div>
@@ -94,24 +116,33 @@ const loading = ref(false)
 const logDetail = ref<OperationLogDetail | null>(null)
 
 // 监听visible变化
-watch(() => props.modelValue, (val) => {
-  visible.value = val
-  if (val && props.logId) {
-    fetchLogDetail()
+watch(
+  () => props.modelValue,
+  (val) => {
+    visible.value = val
+    if (val && props.logId) {
+      fetchLogDetail()
+    }
   }
-})
+)
 
 // 监听visible变化同步到父组件
-watch(() => visible.value, (val) => {
-  emit('update:modelValue', val)
-})
+watch(
+  () => visible.value,
+  (val) => {
+    emit('update:modelValue', val)
+  }
+)
 
 // 监听logId变化
-watch(() => props.logId, (newLogId) => {
-  if (newLogId && visible.value) {
-    fetchLogDetail()
+watch(
+  () => props.logId,
+  (newLogId) => {
+    if (newLogId && visible.value) {
+      fetchLogDetail()
+    }
   }
-})
+)
 
 /**
  * 获取日志详情

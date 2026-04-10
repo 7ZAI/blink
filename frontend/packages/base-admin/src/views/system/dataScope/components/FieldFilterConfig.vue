@@ -14,7 +14,7 @@
         :titles="[t('dataScope.availableFields'), t('dataScope.selectedFields')]"
         :props="{
           key: 'columnName',
-          label: 'columnName'
+          label: 'columnName',
         }"
         filterable
         :filter-placeholder="t('common.pleaseInput')"
@@ -41,7 +41,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  disabled: false
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -100,7 +100,7 @@ const handleFieldChange = () => {
 const updateConfig = () => {
   const config: FieldFilterConfig = {
     excludeFields: matchMode.value === 'exclude' ? selectedFields.value : null,
-    includeFields: matchMode.value === 'include' ? selectedFields.value : null
+    includeFields: matchMode.value === 'include' ? selectedFields.value : null,
   }
   emit('update:modelValue', JSON.stringify(config))
 }

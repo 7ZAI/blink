@@ -137,7 +137,7 @@ export interface StartProcessParams {
 export interface LeaveApprovalParams {
   applicantId: string
   applicantName: string
-  leaveType: 1 | 2 | 3 | 4  // 1-事假 2-病假 3-年假 4-调休
+  leaveType: 1 | 2 | 3 | 4 // 1-事假 2-病假 3-年假 4-调休
   startDate: string
   endDate: string
   leaveDays: number
@@ -172,43 +172,57 @@ export const deployProcess = (params: DeployProcessParams): Promise<string> => {
 /**
  * 分页查询流程定义列表
  */
-export const getProcessDefinitionList = (params?: QueryProcessDefinitionParams): Promise<PageResult<ProcessDefinitionInfo>> => {
-  return request.post('/workflow/getProcessDefinitionList', { body: params || {} }) as Promise<PageResult<ProcessDefinitionInfo>>
+export const getProcessDefinitionList = (
+  params?: QueryProcessDefinitionParams
+): Promise<PageResult<ProcessDefinitionInfo>> => {
+  return request.post('/workflow/getProcessDefinitionList', { body: params || {} }) as Promise<
+    PageResult<ProcessDefinitionInfo>
+  >
 }
 
 /**
  * 获取流程图XML
  */
 export const getProcessDiagramXml = (processDefinitionId: string): Promise<string> => {
-  return request.post('/workflow/getProcessDiagramXml', { body: { processDefinitionId } }) as Promise<string>
+  return request.post('/workflow/getProcessDiagramXml', {
+    body: { processDefinitionId },
+  }) as Promise<string>
 }
 
 /**
  * 获取流程实例的流程图图片（高亮当前节点）
  */
 export const getProcessDiagramImage = (processInstanceId: string): Promise<string> => {
-  return request.post('/workflow/getProcessDiagramImage', { body: { processInstanceId } }) as Promise<string>
+  return request.post('/workflow/getProcessDiagramImage', {
+    body: { processInstanceId },
+  }) as Promise<string>
 }
 
 /**
  * 挂起流程定义
  */
 export const suspendProcessDefinition = (processDefinitionId: string): Promise<void> => {
-  return request.post('/workflow/suspendProcessDefinition', { body: { processDefinitionId } }) as Promise<void>
+  return request.post('/workflow/suspendProcessDefinition', {
+    body: { processDefinitionId },
+  }) as Promise<void>
 }
 
 /**
  * 激活流程定义
  */
 export const activateProcessDefinition = (processDefinitionId: string): Promise<void> => {
-  return request.post('/workflow/activateProcessDefinition', { body: { processDefinitionId } }) as Promise<void>
+  return request.post('/workflow/activateProcessDefinition', {
+    body: { processDefinitionId },
+  }) as Promise<void>
 }
 
 /**
  * 删除流程定义
  */
 export const deleteProcessDefinition = (deploymentId: string, cascade?: boolean): Promise<void> => {
-  return request.post('/workflow/deleteProcessDefinition', { body: { deploymentId, cascade } }) as Promise<void>
+  return request.post('/workflow/deleteProcessDefinition', {
+    body: { deploymentId, cascade },
+  }) as Promise<void>
 }
 
 // ==================== 流程实例管理 API ====================
@@ -224,35 +238,55 @@ export const startProcess = (params: StartProcessParams): Promise<ProcessInstanc
  * 启动请假审批流程
  */
 export const startLeaveProcess = (params: LeaveApprovalParams): Promise<ProcessInstanceInfo> => {
-  return request.post('/workflow/startLeaveProcess', { body: params }) as Promise<ProcessInstanceInfo>
+  return request.post('/workflow/startLeaveProcess', {
+    body: params,
+  }) as Promise<ProcessInstanceInfo>
 }
 
 /**
  * 分页查询流程实例列表
  */
-export const getProcessInstanceList = (params?: QueryProcessInstanceParams): Promise<PageResult<ProcessInstanceInfo>> => {
-  return request.post('/workflow/getProcessInstanceList', { body: params || {} }) as Promise<PageResult<ProcessInstanceInfo>>
+export const getProcessInstanceList = (
+  params?: QueryProcessInstanceParams
+): Promise<PageResult<ProcessInstanceInfo>> => {
+  return request.post('/workflow/getProcessInstanceList', { body: params || {} }) as Promise<
+    PageResult<ProcessInstanceInfo>
+  >
 }
 
 /**
  * 查询用户发起的流程实例
  */
-export const getMyProcessInstances = (userId: string, status?: 'running' | 'completed' | 'all'): Promise<ProcessInstanceInfo[]> => {
-  return request.post('/workflow/getMyProcessInstances', { body: { userId, status: status || 'all' } }) as Promise<ProcessInstanceInfo[]>
+export const getMyProcessInstances = (
+  userId: string,
+  status?: 'running' | 'completed' | 'all'
+): Promise<ProcessInstanceInfo[]> => {
+  return request.post('/workflow/getMyProcessInstances', {
+    body: { userId, status: status || 'all' },
+  }) as Promise<ProcessInstanceInfo[]>
 }
 
 /**
  * 查询流程实例详情
  */
-export const getProcessInstanceDetail = (processInstanceId: string): Promise<ProcessInstanceInfo> => {
-  return request.post('/workflow/getProcessInstanceDetail', { body: { processInstanceId } }) as Promise<ProcessInstanceInfo>
+export const getProcessInstanceDetail = (
+  processInstanceId: string
+): Promise<ProcessInstanceInfo> => {
+  return request.post('/workflow/getProcessInstanceDetail', {
+    body: { processInstanceId },
+  }) as Promise<ProcessInstanceInfo>
 }
 
 /**
  * 删除流程实例
  */
-export const deleteProcessInstance = (processInstanceId: string, reason?: string): Promise<void> => {
-  return request.post('/workflow/deleteProcessInstance', { body: { processInstanceId, reason } }) as Promise<void>
+export const deleteProcessInstance = (
+  processInstanceId: string,
+  reason?: string
+): Promise<void> => {
+  return request.post('/workflow/deleteProcessInstance', {
+    body: { processInstanceId, reason },
+  }) as Promise<void>
 }
 
 // ==================== 任务管理 API ====================
@@ -261,21 +295,29 @@ export const deleteProcessInstance = (processInstanceId: string, reason?: string
  * 查询用户待办任务
  */
 export const getUserTasks = (userId: string): Promise<PageResult<TaskInfo>> => {
-  return request.post('/workflow/getUserTasks', { body: { userId } }) as Promise<PageResult<TaskInfo>>
+  return request.post('/workflow/getUserTasks', { body: { userId } }) as Promise<
+    PageResult<TaskInfo>
+  >
 }
 
 /**
  * 分页查询待办任务
  */
 export const getPendingTasks = (params?: QueryTaskParams): Promise<PageResult<TaskInfo>> => {
-  return request.post('/workflow/getPendingTasks', { body: params || {} }) as Promise<PageResult<TaskInfo>>
+  return request.post('/workflow/getPendingTasks', { body: params || {} }) as Promise<
+    PageResult<TaskInfo>
+  >
 }
 
 /**
  * 分页查询已办任务
  */
-export const getCompletedTasks = (params?: QueryTaskParams): Promise<PageResult<HistoricTaskInfo>> => {
-  return request.post('/workflow/getCompletedTasks', { body: params || {} }) as Promise<PageResult<HistoricTaskInfo>>
+export const getCompletedTasks = (
+  params?: QueryTaskParams
+): Promise<PageResult<HistoricTaskInfo>> => {
+  return request.post('/workflow/getCompletedTasks', { body: params || {} }) as Promise<
+    PageResult<HistoricTaskInfo>
+  >
 }
 
 /**
@@ -312,5 +354,7 @@ export const unclaimTask = (taskId: string): Promise<void> => {
  * 查询流程历史
  */
 export const getProcessHistory = (processInstanceId: string): Promise<ProcessHistoryInfo[]> => {
-  return request.post('/workflow/getProcessHistory', { body: { processInstanceId } }) as Promise<ProcessHistoryInfo[]>
+  return request.post('/workflow/getProcessHistory', { body: { processInstanceId } }) as Promise<
+    ProcessHistoryInfo[]
+  >
 }

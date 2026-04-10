@@ -13,7 +13,12 @@
     <!-- 有用户字段时显示配置 -->
     <template v-else>
       <el-form-item :label="t('dataScope.matchField')">
-        <el-select v-model="config.field" :placeholder="t('common.pleaseSelect')" :disabled="disabled" @change="updateConfig">
+        <el-select
+          v-model="config.field"
+          :placeholder="t('common.pleaseSelect')"
+          :disabled="disabled"
+          @change="updateConfig"
+        >
           <el-option
             v-for="field in userFields"
             :key="field.columnName"
@@ -24,7 +29,12 @@
       </el-form-item>
 
       <el-form-item :label="t('dataScope.matchType')">
-        <el-select v-model="config.matchType" :placeholder="t('common.pleaseSelect')" :disabled="disabled" @change="handleMatchTypeChange">
+        <el-select
+          v-model="config.matchType"
+          :placeholder="t('common.pleaseSelect')"
+          :disabled="disabled"
+          @change="handleMatchTypeChange"
+        >
           <el-option :label="t('dataScope.currentUser')" value="CURRENT_USER" />
           <el-option :label="t('dataScope.specifiedUser')" value="USER_LIST" />
           <el-option :label="t('dataScope.roleUser')" value="ROLE_USER" />
@@ -33,7 +43,11 @@
 
       <!-- 指定用户选择 -->
       <el-form-item v-if="config.matchType === 'USER_LIST'" :label="t('dataScope.selectUser')">
-        <div class="select-trigger" :class="{ 'is-disabled': disabled }" @click="!disabled && (userSelectVisible = true)">
+        <div
+          class="select-trigger"
+          :class="{ 'is-disabled': disabled }"
+          @click="!disabled && (userSelectVisible = true)"
+        >
           <div v-if="selectedUsers.length > 0" class="selected-tags">
             <el-tag
               v-for="user in selectedUsers.slice(0, 3)"
@@ -54,7 +68,11 @@
 
       <!-- 角色用户选择 -->
       <el-form-item v-if="config.matchType === 'ROLE_USER'" :label="t('dataScope.selectRole')">
-        <div class="select-trigger" :class="{ 'is-disabled': disabled }" @click="!disabled && (roleSelectVisible = true)">
+        <div
+          class="select-trigger"
+          :class="{ 'is-disabled': disabled }"
+          @click="!disabled && (roleSelectVisible = true)"
+        >
           <div v-if="selectedRoles.length > 0" class="selected-tags">
             <el-tag
               v-for="role in selectedRoles.slice(0, 3)"
@@ -119,7 +137,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  disabled: false
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -132,21 +150,25 @@ const emit = defineEmits<{
  */
 const userFields = computed(() => {
   // 只匹配登入名字段（数据库字段名）
-  const loginNameFieldPatterns = [
-    'create_by', 'update_by', 'creator', 'updater'
-  ]
+  const loginNameFieldPatterns = ['create_by', 'update_by', 'creator', 'updater']
 
-  return props.fields.filter(field => {
+  return props.fields.filter((field) => {
     // 使用 columnName（数据库字段名）匹配
     const columnNameLower = field.columnName.toLowerCase()
-    return loginNameFieldPatterns.some(pattern => columnNameLower === pattern || columnNameLower.includes(pattern))
+    return loginNameFieldPatterns.some(
+      (pattern) => columnNameLower === pattern || columnNameLower.includes(pattern)
+    )
   })
 })
 
 // 当用户字段列表变化时，通知父组件
-watch(userFields, (fields) => {
-  emit('update:valid', fields.length > 0)
-}, { immediate: true })
+watch(
+  userFields,
+  (fields) => {
+    emit('update:valid', fields.length > 0)
+  },
+  { immediate: true }
+)
 
 interface CreatorFilterConfig {
   field: string
@@ -159,7 +181,7 @@ const config = reactive<CreatorFilterConfig>({
   field: '',
   matchType: 'CURRENT_USER',
   loginNames: null,
-  roleIds: null
+  roleIds: null,
 })
 
 // 弹窗显示状态
@@ -213,7 +235,7 @@ const updateConfig = () => {
     field: config.field,
     matchType: config.matchType,
     loginNames: config.matchType === 'USER_LIST' ? config.loginNames : null,
-    roleIds: config.matchType === 'ROLE_USER' ? config.roleIds : null
+    roleIds: config.matchType === 'ROLE_USER' ? config.roleIds : null,
   }
   emit('update:modelValue', JSON.stringify(result))
 }
@@ -223,7 +245,7 @@ const updateConfig = () => {
  */
 const handleUserConfirm = (users: UserInfo[]) => {
   selectedUsers.value = users
-  config.loginNames = users.map(u => u.loginName)
+  config.loginNames = users.map((u) => u.loginName)
   updateConfig()
 }
 
@@ -232,7 +254,7 @@ const handleUserConfirm = (users: UserInfo[]) => {
  */
 const handleRoleConfirm = (roles: RoleInfo[]) => {
   selectedRoles.value = roles
-  config.roleIds = roles.map(r => r.roleId)
+  config.roleIds = roles.map((r) => r.roleId)
   updateConfig()
 }
 
@@ -240,8 +262,8 @@ const handleRoleConfirm = (roles: RoleInfo[]) => {
  * 移除已选用户
  */
 const handleRemoveUser = (user: UserInfo) => {
-  selectedUsers.value = selectedUsers.value.filter(u => u.userId !== user.userId)
-  config.loginNames = selectedUsers.value.map(u => u.loginName)
+  selectedUsers.value = selectedUsers.value.filter((u) => u.userId !== user.userId)
+  config.loginNames = selectedUsers.value.map((u) => u.loginName)
   updateConfig()
 }
 
@@ -249,8 +271,8 @@ const handleRemoveUser = (user: UserInfo) => {
  * 移除已选角色
  */
 const handleRemoveRole = (role: RoleInfo) => {
-  selectedRoles.value = selectedRoles.value.filter(r => r.roleId !== role.roleId)
-  config.roleIds = selectedRoles.value.map(r => r.roleId)
+  selectedRoles.value = selectedRoles.value.filter((r) => r.roleId !== role.roleId)
+  config.roleIds = selectedRoles.value.map((r) => r.roleId)
   updateConfig()
 }
 </script>

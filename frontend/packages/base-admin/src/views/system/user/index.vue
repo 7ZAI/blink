@@ -2,13 +2,24 @@
   <!-- 用户管理页面 - 左右布局 -->
   <div class="user-management table-page-container">
     <!-- 左侧面板 - 组织树 -->
-    <div class="left-panel shrink-0 transition-all duration-300" :class="{ 'collapsed w-12': isLeftPanelCollapsed, 'w-[260px]': !isLeftPanelCollapsed }">
+    <div
+      class="left-panel shrink-0 transition-all duration-300"
+      :class="{ 'collapsed w-12': isLeftPanelCollapsed, 'w-[260px]': !isLeftPanelCollapsed }"
+    >
       <el-card shadow="never" class="h-full flex flex-col">
         <template #header>
           <div class="card-header flex justify-between items-center px-4 py-3 border-b">
-            <span v-if="!isLeftPanelCollapsed" class="font-medium text-text-primary">{{ t('group.title') }}</span>
+            <span v-if="!isLeftPanelCollapsed" class="font-medium text-text-primary">
+              {{ t('group.title') }}
+            </span>
             <div class="header-actions flex items-center gap-1">
-              <el-button v-if="!isLeftPanelCollapsed" type="primary" link @click="handleRefreshGroup" :title="t('group.refresh')">
+              <el-button
+                v-if="!isLeftPanelCollapsed"
+                type="primary"
+                link
+                @click="handleRefreshGroup"
+                :title="t('group.refresh')"
+              >
                 <el-icon><Refresh /></el-icon>
               </el-button>
               <el-button type="primary" link @click="toggleLeftPanel">
@@ -48,22 +59,37 @@
           <!-- 操作按钮行 -->
           <div class="search-buttons mb-3">
             <el-button type="info" @click="handleSearch">
-              <el-icon><Search /></el-icon>{{ t('common.search') }}
+              <el-icon><Search /></el-icon>
+              {{ t('common.search') }}
             </el-button>
             <el-button @click="handleReset">
-              <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+              <el-icon><Refresh /></el-icon>
+              {{ t('common.reset') }}
             </el-button>
           </div>
           <!-- 查询条件行 -->
           <div class="search-conditions grid grid-cols-4 gap-x-4 gap-y-3">
             <el-form-item :label="t('user.loginName')" class="mb-0">
-              <el-input v-model.trim="searchForm.loginName" :placeholder="t('common.pleaseInput') + t('user.loginName')" clearable />
+              <el-input
+                v-model.trim="searchForm.loginName"
+                :placeholder="t('common.pleaseInput') + t('user.loginName')"
+                clearable
+              />
             </el-form-item>
             <el-form-item :label="t('user.username')" class="mb-0">
-              <el-input v-model.trim="searchForm.username" :placeholder="t('common.pleaseInput') + t('user.username')" clearable />
+              <el-input
+                v-model.trim="searchForm.username"
+                :placeholder="t('common.pleaseInput') + t('user.username')"
+                clearable
+              />
             </el-form-item>
             <el-form-item :label="t('user.sex')" class="mb-0">
-              <el-select v-model="searchForm.sex" :placeholder="t('common.pleaseSelect')" clearable class="w-full">
+              <el-select
+                v-model="searchForm.sex"
+                :placeholder="t('common.pleaseSelect')"
+                clearable
+                class="w-full"
+              >
                 <el-option :label="t('user.male')" :value="1" />
                 <el-option :label="t('user.female')" :value="2" />
                 <el-option :label="t('user.unknown')" :value="3" />
@@ -91,16 +117,35 @@
           <div class="table-header">
             <div class="header-left flex items-center gap-4">
               <AuthButton :perm="ButtonPerms.User.Add" type="primary" @click="handleAdd">
-                <el-icon><Plus /></el-icon>{{ t('common.add') }}
+                <el-icon><Plus /></el-icon>
+                {{ t('common.add') }}
               </AuthButton>
-              <AuthButton :perm="ButtonPerms.User.AssignRole" type="primary" :disabled="selectedRows.length === 0" @click="handleAssignRole">
-                <el-icon><UserFilled /></el-icon>{{ t('user.assignRole') }}
+              <AuthButton
+                :perm="ButtonPerms.User.AssignRole"
+                type="primary"
+                :disabled="selectedRows.length === 0"
+                @click="handleAssignRole"
+              >
+                <el-icon><UserFilled /></el-icon>
+                {{ t('user.assignRole') }}
               </AuthButton>
-              <AuthButton :perm="ButtonPerms.User.ResetPwd" type="warning" :disabled="selectedRows.length !== 1" @click="handleResetPasswordBatch">
-                <el-icon><Key /></el-icon>{{ t('user.resetPassword') }}
+              <AuthButton
+                :perm="ButtonPerms.User.ResetPwd"
+                type="warning"
+                :disabled="selectedRows.length !== 1"
+                @click="handleResetPasswordBatch"
+              >
+                <el-icon><Key /></el-icon>
+                {{ t('user.resetPassword') }}
               </AuthButton>
-              <AuthButton :perm="ButtonPerms.User.Delete" type="danger" :disabled="selectedRows.length === 0" @click="handleBatchDelete">
-                <el-icon><Delete /></el-icon>{{ t('common.batchDelete') }}
+              <AuthButton
+                :perm="ButtonPerms.User.Delete"
+                type="danger"
+                :disabled="selectedRows.length === 0"
+                @click="handleBatchDelete"
+              >
+                <el-icon><Delete /></el-icon>
+                {{ t('common.batchDelete') }}
               </AuthButton>
             </div>
           </div>
@@ -142,7 +187,12 @@
                 {{ row.phone || '-' }}
               </template>
             </el-table-column>
-            <el-table-column prop="email" :label="t('user.email')" min-width="150" show-overflow-tooltip>
+            <el-table-column
+              prop="email"
+              :label="t('user.email')"
+              min-width="150"
+              show-overflow-tooltip
+            >
               <template #default="{ row }">
                 {{ row.email || '-' }}
               </template>
@@ -155,7 +205,9 @@
             <el-table-column prop="locked" :label="t('user.status')" width="100">
               <template #default="{ row }">
                 <el-tag v-if="row.locked === 0" type="success">{{ t('user.normal') }}</el-tag>
-                <el-tag v-else-if="row.locked === 1" type="danger">{{ t('user.adminLocked') }}</el-tag>
+                <el-tag v-else-if="row.locked === 1" type="danger">
+                  {{ t('user.adminLocked') }}
+                </el-tag>
                 <el-tag v-else type="warning">{{ t('user.passwordLocked') }}</el-tag>
               </template>
             </el-table-column>
@@ -172,13 +224,29 @@
             <el-table-column :label="t('common.operation')" width="300" fixed="right">
               <template #default="{ row }">
                 <!-- 非超级管理员看不到超级管理员的操作按钮 -->
-                <template v-if="userStore.isSuperAdmin || (row.superFlag !== 1 && row.superFlag !== '1')">
+                <template
+                  v-if="userStore.isSuperAdmin || (row.superFlag !== 1 && row.superFlag !== '1')"
+                >
                   <div class="operation-buttons">
-                    <AuthButton :perm="ButtonPerms.User.Edit" type="primary" link size="small" @click="handleEdit(row)">
-                      <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                    <AuthButton
+                      :perm="ButtonPerms.User.Edit"
+                      type="primary"
+                      link
+                      size="small"
+                      @click="handleEdit(row)"
+                    >
+                      <el-icon><Edit /></el-icon>
+                      {{ t('common.edit') }}
                     </AuthButton>
-                    <AuthButton :perm="ButtonPerms.User.Detail" type="info" link size="small" @click="handleDetail(row)">
-                      <el-icon><View /></el-icon>{{ t('common.detail') }}
+                    <AuthButton
+                      :perm="ButtonPerms.User.Detail"
+                      type="info"
+                      link
+                      size="small"
+                      @click="handleDetail(row)"
+                    >
+                      <el-icon><View /></el-icon>
+                      {{ t('common.detail') }}
                     </AuthButton>
                     <AuthButton
                       v-if="row.locked === 0"
@@ -188,7 +256,8 @@
                       size="small"
                       @click="handleLock(row, 1)"
                     >
-                      <el-icon><Lock /></el-icon>{{ t('common.lock') }}
+                      <el-icon><Lock /></el-icon>
+                      {{ t('common.lock') }}
                     </AuthButton>
                     <AuthButton
                       v-else
@@ -198,10 +267,18 @@
                       size="small"
                       @click="handleLock(row, 0)"
                     >
-                      <el-icon><Unlock /></el-icon>{{ t('common.unlock') }}
+                      <el-icon><Unlock /></el-icon>
+                      {{ t('common.unlock') }}
                     </AuthButton>
-                    <AuthButton :perm="ButtonPerms.User.Delete" type="danger" link size="small" @click="handleDelete(row)">
-                      <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                    <AuthButton
+                      :perm="ButtonPerms.User.Delete"
+                      type="danger"
+                      link
+                      size="small"
+                      @click="handleDelete(row)"
+                    >
+                      <el-icon><Delete /></el-icon>
+                      {{ t('common.delete') }}
                     </AuthButton>
                   </div>
                 </template>
@@ -237,10 +314,7 @@
         @success="handleSearch"
       />
 
-      <UserDetailDialog
-        v-model="detailVisible"
-        :login-name="currentLoginName"
-      />
+      <UserDetailDialog v-model="detailVisible" :login-name="currentLoginName" />
 
       <AssignRoleDialog
         v-model="assignRoleVisible"
@@ -284,7 +358,11 @@
         </el-form>
         <template #footer>
           <el-button @click="resetPasswordVisible = false">{{ t('common.cancel') }}</el-button>
-          <el-button type="primary" :loading="resetPasswordSubmitting" @click="handleResetPasswordSubmit">
+          <el-button
+            type="primary"
+            :loading="resetPasswordSubmitting"
+            @click="handleResetPasswordSubmit"
+          >
             {{ t('common.confirm') }}
           </el-button>
         </template>
@@ -311,11 +389,17 @@ import {
   UserFilled,
   Key,
 } from '@element-plus/icons-vue'
-import { getUserList, deleteUser, lockUser, resetPassword, type UserInfo, type QueryUserParams } from '@/api/user'
+import {
+  getUserList,
+  deleteUser,
+  lockUser,
+  resetPassword,
+  type UserInfo,
+  type QueryUserParams,
+} from '@/api/user'
 import { getGroupTree, type GroupInfo } from '@/api/group'
 import { useUserStore } from '@/stores/user'
-import { useTransition } from '@/composables/useDataTransition'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useTransition, useSubmitGuard } from '@blink/components'
 import { ButtonPerms } from '@/composables/usePermission'
 import UserFormDialog from './components/UserFormDialog.vue'
 import UserDetailDialog from './components/UserDetailDialog.vue'
@@ -371,10 +455,14 @@ const resetPasswordForm = reactive({
   userId: 0,
   loginName: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
-const validateResetConfirmPassword = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+const validateResetConfirmPassword = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void
+) => {
   if (value === '') {
     callback(new Error(t('validation.required', { field: t('user.confirmPassword') })))
   } else if (value !== resetPasswordForm.newPassword) {
@@ -387,11 +475,9 @@ const validateResetConfirmPassword = (_rule: unknown, value: string, callback: (
 const resetPasswordRules = reactive<FormRules>({
   newPassword: [
     { required: true, message: t('common.pleaseInput') + t('user.newPassword'), trigger: 'blur' },
-    { min: 6, max: 20, message: t('validation.passwordLength'), trigger: 'blur' }
+    { min: 6, max: 20, message: t('validation.passwordLength'), trigger: 'blur' },
   ],
-  confirmPassword: [
-    { required: true, validator: validateResetConfirmPassword, trigger: 'blur' }
-  ]
+  confirmPassword: [{ required: true, validator: validateResetConfirmPassword, trigger: 'blur' }],
 })
 
 const groupTreeData = ref<GroupInfo[]>([])
@@ -421,46 +507,50 @@ const fetchGroupTree = async () => {
     // 如果组织树为空，使用当前用户的部门作为根节点
     if (groupTreeData.value.length === 0 && userStore.userInfo?.group) {
       const userGroup = userStore.userInfo.group
-      groupTreeData.value = [{
-        groupId: userGroup.groupId,
-        groupName: userGroup.groupName,
-        groupParentId: 0,
-        groupNo: '',
-        groupEnName: '',
-        groupLevel: 1,
-        isLeaf: 1,
-        groupLeader: '',
-        groupAddress: '',
-        phone: '',
-        createTime: '',
-        createBy: '',
-        updateTime: '',
-        updateBy: '',
-        children: []
-      }]
+      groupTreeData.value = [
+        {
+          groupId: userGroup.groupId,
+          groupName: userGroup.groupName,
+          groupParentId: 0,
+          groupNo: '',
+          groupEnName: '',
+          groupLevel: 1,
+          isLeaf: 1,
+          groupLeader: '',
+          groupAddress: '',
+          phone: '',
+          createTime: '',
+          createBy: '',
+          updateTime: '',
+          updateBy: '',
+          children: [],
+        },
+      ]
     }
   } catch (error) {
     console.error('[UserManagement] Failed to fetch group tree:', error)
     // 如果查询失败，尝试使用当前用户的部门作为根节点
     if (userStore.userInfo?.group) {
       const userGroup = userStore.userInfo.group
-      groupTreeData.value = [{
-        groupId: userGroup.groupId,
-        groupName: userGroup.groupName,
-        groupParentId: 0,
-        groupNo: '',
-        groupEnName: '',
-        groupLevel: 1,
-        isLeaf: 1,
-        groupLeader: '',
-        groupAddress: '',
-        phone: '',
-        createTime: '',
-        createBy: '',
-        updateTime: '',
-        updateBy: '',
-        children: []
-      }]
+      groupTreeData.value = [
+        {
+          groupId: userGroup.groupId,
+          groupName: userGroup.groupName,
+          groupParentId: 0,
+          groupNo: '',
+          groupEnName: '',
+          groupLevel: 1,
+          isLeaf: 1,
+          groupLeader: '',
+          groupAddress: '',
+          phone: '',
+          createTime: '',
+          createBy: '',
+          updateTime: '',
+          updateBy: '',
+          children: [],
+        },
+      ]
     } else {
       groupTreeData.value = []
     }
@@ -646,7 +736,7 @@ const handleResetPasswordSubmit = async () => {
     try {
       await resetPassword({
         userId: resetPasswordForm.userId,
-        newPassword: resetPasswordForm.newPassword
+        newPassword: resetPasswordForm.newPassword,
       })
       ElMessage.success(t('message.passwordResetSuccess'))
       resetPasswordVisible.value = false

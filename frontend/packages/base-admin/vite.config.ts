@@ -46,11 +46,11 @@ export default defineConfig(({ mode }) => {
             // Element Plus UI库
             'element-plus': ['element-plus', '@element-plus/icons-vue'],
             // 国际化
-            'i18n': ['vue-i18n'],
+            i18n: ['vue-i18n'],
             // 图表和可视化
-            'visualization': ['@logicflow/core', '@logicflow/extension'],
+            visualization: ['@logicflow/core', '@logicflow/extension'],
             // 工具库
-            'utils': ['axios', '@iconify/vue'],
+            utils: ['axios', '@iconify/vue'],
           },
           // 文件命名
           chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -73,14 +73,7 @@ export default defineConfig(({ mode }) => {
     },
     // 优化依赖预构建
     optimizeDeps: {
-      include: [
-        'vue',
-        'vue-router',
-        'pinia',
-        'element-plus',
-        'vue-i18n',
-        'axios',
-      ],
+      include: ['vue', 'vue-router', 'pinia', 'element-plus', 'vue-i18n', 'axios'],
     },
   }
 })

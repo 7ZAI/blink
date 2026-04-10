@@ -7,11 +7,11 @@ function buildMenuTree(menus: Menu[]): Menu[] {
   const menuMap = new Map<number, Menu>()
   const rootMenus: Menu[] = []
 
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     menuMap.set(menu.menuId, { ...menu, children: [] })
   })
 
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     const currentMenu = menuMap.get(menu.menuId)!
     if (!menu.parentId || menu.parentId === 0) {
       rootMenus.push(currentMenu)
@@ -29,7 +29,7 @@ function buildMenuTree(menus: Menu[]): Menu[] {
   const sortMenus = (menus: Menu[]): Menu[] => {
     return menus
       .sort((a, b) => (a.orderNumber || 0) - (b.orderNumber || 0))
-      .map(menu => {
+      .map((menu) => {
         if (menu.children && menu.children.length > 0) {
           menu.children = sortMenus(menu.children)
         }
@@ -58,9 +58,11 @@ export const useUserStore = defineStore('user', () => {
 
   // 判断当前用户是否为超级管理员
   const isSuperAdmin = computed(() => {
-    return roles.value.includes('superAdmin') ||
-           userInfo.value?.superFlag === 1 ||
-           String(userInfo.value?.superFlag) === '1'
+    return (
+      roles.value.includes('superAdmin') ||
+      userInfo.value?.superFlag === 1 ||
+      String(userInfo.value?.superFlag) === '1'
+    )
   })
 
   const setToken = (newToken: string) => {
@@ -99,7 +101,6 @@ export const useUserStore = defineStore('user', () => {
         captchaVerification: captchaVerification.value,
       }
     }
-
 
     const res = await loginApi(loginReq)
 
@@ -144,7 +145,7 @@ export const useUserStore = defineStore('user', () => {
     if (!token.value) {
       return false
     }
-    
+
     try {
       const res = await getUserInfoApi()
       if (res) {
@@ -154,7 +155,7 @@ export const useUserStore = defineStore('user', () => {
     } catch (error) {
       clearUserInfo()
     }
-    
+
     return false
   }
 
@@ -162,7 +163,7 @@ export const useUserStore = defineStore('user', () => {
     if (!token.value) {
       return false
     }
-    
+
     try {
       const res = await getUserInfoApi()
       if (res) {
@@ -172,7 +173,7 @@ export const useUserStore = defineStore('user', () => {
     } catch (error) {
       console.error('Failed to fetch user info:', error)
     }
-    
+
     return false
   }
 

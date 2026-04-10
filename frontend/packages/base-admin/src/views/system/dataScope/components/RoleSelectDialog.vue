@@ -29,10 +29,12 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -120,7 +122,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'confirm': [roles: RoleInfo[]]
+  confirm: [roles: RoleInfo[]]
 }>()
 
 const { t } = useI18n()
@@ -173,8 +175,8 @@ const fetchRoleList = async () => {
  * 恢复表格选中状态
  */
 const restoreSelection = () => {
-  const selectedIds = new Set(selectedRoles.value.map(r => r.roleId))
-  roleList.value.forEach(role => {
+  const selectedIds = new Set(selectedRoles.value.map((r) => r.roleId))
+  roleList.value.forEach((role) => {
     if (selectedIds.has(role.roleId)) {
       tableRef.value?.toggleRowSelection(role, true)
     }
@@ -204,8 +206,8 @@ const handleReset = () => {
  */
 const handleSelectionChange = (selection: RoleInfo[]) => {
   // 合并新选择的角色，保留之前选择的其他页的角色
-  const currentPageIds = new Set(roleList.value.map(r => r.roleId))
-  const otherPageSelected = selectedRoles.value.filter(r => !currentPageIds.has(r.roleId))
+  const currentPageIds = new Set(roleList.value.map((r) => r.roleId))
+  const otherPageSelected = selectedRoles.value.filter((r) => !currentPageIds.has(r.roleId))
   selectedRoles.value = [...otherPageSelected, ...selection]
 }
 
@@ -213,7 +215,7 @@ const handleSelectionChange = (selection: RoleInfo[]) => {
  * 移除已选角色
  */
 const handleRemoveRole = (role: RoleInfo) => {
-  selectedRoles.value = selectedRoles.value.filter(r => r.roleId !== role.roleId)
+  selectedRoles.value = selectedRoles.value.filter((r) => r.roleId !== role.roleId)
   // 同步取消表格选中状态
   tableRef.value?.toggleRowSelection(role, false)
 }
@@ -240,11 +242,14 @@ const handleClose = () => {
 /**
  * 监听弹窗打开
  */
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    fetchRoleList()
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      fetchRoleList()
+    }
   }
-})
+)
 </script>
 
 <style scoped lang="scss">

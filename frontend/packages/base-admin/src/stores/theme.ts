@@ -49,7 +49,10 @@ const STORAGE_KEYS = {
 function lighten(hex: string, amount: number): string {
   const num = parseInt(hex.replace('#', ''), 16)
   const r = Math.min(255, Math.floor((num >> 16) + (255 - (num >> 16)) * amount))
-  const g = Math.min(255, Math.floor(((num >> 8) & 0x00ff) + (255 - ((num >> 8) & 0x00ff)) * amount))
+  const g = Math.min(
+    255,
+    Math.floor(((num >> 8) & 0x00ff) + (255 - ((num >> 8) & 0x00ff)) * amount)
+  )
   const b = Math.min(255, Math.floor((num & 0x0000ff) + (255 - (num & 0x0000ff)) * amount))
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`
 }
@@ -84,7 +87,9 @@ export const useThemeStore = defineStore('theme', () => {
   // ========== 状态 ==========
 
   // 深色/浅色模式
-  const mode = ref<ThemeMode>((localStorage.getItem(STORAGE_KEYS.THEME_MODE) as ThemeMode) || 'light')
+  const mode = ref<ThemeMode>(
+    (localStorage.getItem(STORAGE_KEYS.THEME_MODE) as ThemeMode) || 'light'
+  )
 
   // 当前主题颜色
   const colors = ref<ThemeColors>(loadColorsFromStorage())

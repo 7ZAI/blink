@@ -11,7 +11,9 @@ export const useSystemConfigStore = defineStore('systemConfig', () => {
   const systemTitle = ref('Blink管理系统')
 
   // 系统Logo (SVG或HTML代码)
-  const systemLogo = ref('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 32" fill="#3b82f6"><path transform="translate(-1, 0)" d="M7 2L2 14h5l-2 12 9-16h-5l2-8z"/></svg>')
+  const systemLogo = ref(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 32" fill="#3b82f6"><path transform="translate(-1, 0)" d="M7 2L2 14h5l-2 12 9-16h-5l2-8z"/></svg>'
+  )
 
   // 页脚信息
   const systemFooter = ref('© 2026 Blink Admin')

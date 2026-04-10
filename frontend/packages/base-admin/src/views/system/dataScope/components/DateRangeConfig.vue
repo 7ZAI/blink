@@ -13,7 +13,12 @@
     <!-- 有时间字段时显示配置 -->
     <template v-else>
       <el-form-item :label="t('dataScope.matchField')">
-        <el-select v-model="config.field" :placeholder="t('common.pleaseSelect')" :disabled="disabled" @change="updateConfig">
+        <el-select
+          v-model="config.field"
+          :placeholder="t('common.pleaseSelect')"
+          :disabled="disabled"
+          @change="updateConfig"
+        >
           <el-option
             v-for="field in timeFields"
             :key="field.columnName"
@@ -34,8 +39,17 @@
       <template v-if="config.rangeType === 'RELATIVE'">
         <el-form-item :label="t('dataScope.timeValue')">
           <div class="time-input-group">
-            <el-input-number v-model="config.relativeValue" :disabled="disabled" @change="updateConfig" />
-            <el-select v-model="config.relativeUnit" :placeholder="t('common.pleaseSelect')" :disabled="disabled" @change="updateConfig">
+            <el-input-number
+              v-model="config.relativeValue"
+              :disabled="disabled"
+              @change="updateConfig"
+            />
+            <el-select
+              v-model="config.relativeUnit"
+              :placeholder="t('common.pleaseSelect')"
+              :disabled="disabled"
+              @change="updateConfig"
+            >
               <el-option :label="t('dataScope.day')" value="DAY" />
               <el-option :label="t('dataScope.week')" value="WEEK" />
               <el-option :label="t('dataScope.month')" value="MONTH" />
@@ -88,7 +102,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  disabled: false
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -101,15 +115,32 @@ const emit = defineEmits<{
  * 支持：LocalDateTime, Date, Timestamp, LocalDate, LocalTime, Instant
  */
 const timeFields = computed(() => {
-  const timeTypes = ['LocalDateTime', 'Date', 'Timestamp', 'LocalDate', 'LocalTime', 'Instant', 'java.util.Date', 'java.sql.Timestamp', 'java.time.LocalDateTime', 'java.time.LocalDate', 'java.time.LocalTime', 'java.time.Instant']
+  const timeTypes = [
+    'LocalDateTime',
+    'Date',
+    'Timestamp',
+    'LocalDate',
+    'LocalTime',
+    'Instant',
+    'java.util.Date',
+    'java.sql.Timestamp',
+    'java.time.LocalDateTime',
+    'java.time.LocalDate',
+    'java.time.LocalTime',
+    'java.time.Instant',
+  ]
 
-  return props.fields.filter(field => timeTypes.includes(field.fieldType))
+  return props.fields.filter((field) => timeTypes.includes(field.fieldType))
 })
 
 // 当时间字段列表变化时，通知父组件
-watch(timeFields, (fields) => {
-  emit('update:valid', fields.length > 0)
-}, { immediate: true })
+watch(
+  timeFields,
+  (fields) => {
+    emit('update:valid', fields.length > 0)
+  },
+  { immediate: true }
+)
 
 interface DateRangeConfig {
   field: string
@@ -126,7 +157,7 @@ const config = reactive<DateRangeConfig>({
   relativeValue: -7,
   relativeUnit: 'DAY',
   startTime: null,
-  endTime: null
+  endTime: null,
 })
 
 // 初始化配置
@@ -144,8 +175,7 @@ const initConfig = () => {
   try {
     const parsed: DateRangeConfig = JSON.parse(props.modelValue)
     Object.assign(config, parsed)
-  } catch (e) {
-  }
+  } catch (e) {}
 }
 
 watch(() => props.modelValue, initConfig, { immediate: true })
@@ -157,7 +187,7 @@ const updateConfig = () => {
     relativeValue: config.rangeType === 'RELATIVE' ? config.relativeValue : null,
     relativeUnit: config.rangeType === 'RELATIVE' ? config.relativeUnit : 'DAY',
     startTime: config.rangeType === 'ABSOLUTE' ? config.startTime : null,
-    endTime: config.rangeType === 'ABSOLUTE' ? config.endTime : null
+    endTime: config.rangeType === 'ABSOLUTE' ? config.endTime : null,
   }
   emit('update:modelValue', JSON.stringify(result))
 }

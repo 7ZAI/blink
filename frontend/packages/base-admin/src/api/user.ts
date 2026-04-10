@@ -222,5 +222,7 @@ export interface PermissionInfo {
 }
 
 export const getUserPermissions = (userId: number): Promise<UserPermissionRsp> => {
-  return request.post('/sysUser/getUserPermissions', { body: { userId } }) as Promise<UserPermissionRsp>
+  return request.post('/sysUser/getUserPermissions', {
+    body: { userId },
+  }) as Promise<UserPermissionRsp>
 }

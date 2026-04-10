@@ -3,10 +3,18 @@
     <el-card class="search-card" shadow="never">
       <el-form :model="searchForm" inline class="search-form">
         <el-form-item :label="t('permission.acName')">
-          <el-input v-model.trim="searchForm.acName" :placeholder="t('common.pleaseInput')" clearable />
+          <el-input
+            v-model.trim="searchForm.acName"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+          />
         </el-form-item>
         <el-form-item :label="t('permission.acIdentity')">
-          <el-input v-model.trim="searchForm.acIdentity" :placeholder="t('common.pleaseInput')" clearable />
+          <el-input
+            v-model.trim="searchForm.acIdentity"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+          />
         </el-form-item>
         <el-form-item :label="t('permission.createTime')">
           <el-date-picker
@@ -21,10 +29,12 @@
         </el-form-item>
         <el-form-item>
           <el-button type="info" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -35,7 +45,8 @@
         <div class="table-header">
           <div class="header-left">
             <AuthButton :perm="ButtonPerms.Permission.Add" type="primary" @click="handleAdd">
-              <el-icon><Plus /></el-icon>{{ t('common.add') }}
+              <el-icon><Plus /></el-icon>
+              {{ t('common.add') }}
             </AuthButton>
           </div>
         </div>
@@ -45,18 +56,53 @@
         <el-table v-loading="loading" :data="permissionList" height="100%" stripe border>
           <el-table-column prop="acName" :label="t('permission.acName')" min-width="120" />
           <el-table-column prop="acEnName" :label="t('permission.acEnName')" min-width="120" />
-          <el-table-column prop="acIdentity" :label="t('permission.acIdentity')" min-width="150" show-overflow-tooltip />
-          <el-table-column v-if="fixedAcType === 1" prop="url" :label="t('permission.url')" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="createBy" :label="t('permission.createBy')" width="120" align="center" />
-          <el-table-column prop="createTime" :label="t('permission.createTime')" width="180" align="center" />
+          <el-table-column
+            prop="acIdentity"
+            :label="t('permission.acIdentity')"
+            min-width="150"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            v-if="fixedAcType === 1"
+            prop="url"
+            :label="t('permission.url')"
+            min-width="180"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="createBy"
+            :label="t('permission.createBy')"
+            width="120"
+            align="center"
+          />
+          <el-table-column
+            prop="createTime"
+            :label="t('permission.createTime')"
+            width="180"
+            align="center"
+          />
           <el-table-column :label="t('common.operation')" width="160" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :perm="ButtonPerms.Permission.Edit" type="primary" link size="small" @click="handleEdit(row)">
-                  <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                <AuthButton
+                  :perm="ButtonPerms.Permission.Edit"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  <el-icon><Edit /></el-icon>
+                  {{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton :perm="ButtonPerms.Permission.Delete" type="danger" link size="small" @click="handleDelete(row)">
-                  <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                <AuthButton
+                  :perm="ButtonPerms.Permission.Delete"
+                  type="danger"
+                  link
+                  size="small"
+                  @click="handleDelete(row)"
+                >
+                  <el-icon><Delete /></el-icon>
+                  {{ t('common.delete') }}
                 </AuthButton>
               </div>
             </template>

@@ -12,7 +12,13 @@
       <div class="selected-info">
         <span class="info-label">{{ t('user.selectedUsers') }}:</span>
         <div class="user-tags">
-          <el-tag v-for="user in users" :key="user.userId" class="user-tag" type="primary" effect="plain">
+          <el-tag
+            v-for="user in users"
+            :key="user.userId"
+            class="user-tag"
+            type="primary"
+            effect="plain"
+          >
             {{ user.username || user.loginName }}
           </el-tag>
         </div>
@@ -43,8 +49,8 @@
 
       <div v-if="selectedRoleDetails.length > 0" class="role-details">
         <el-tabs v-model="activeDetailTab" type="border-card" class="role-tabs">
-          <el-tab-pane 
-            v-for="detail in selectedRoleDetails" 
+          <el-tab-pane
+            v-for="detail in selectedRoleDetails"
             :key="detail.roleInfo.roleId"
             :label="detail.roleInfo.roleName"
             :name="String(detail.roleInfo.roleId)"
@@ -57,19 +63,36 @@
                   <el-tag size="small" type="info">{{ detail.permissions?.length || 0 }}</el-tag>
                 </div>
                 <div class="section-content">
-                  <el-table 
+                  <el-table
                     v-if="detail.permissions && detail.permissions.length > 0"
-                    :data="detail.permissions" 
-                    stripe 
-                    size="small" 
+                    :data="detail.permissions"
+                    stripe
+                    size="small"
                     max-height="200"
                   >
-                    <el-table-column prop="acName" :label="t('permission.acName')" min-width="150" />
-                    <el-table-column prop="acIdentity" :label="t('permission.acIdentity')" min-width="150" />
-                    <el-table-column prop="acType" :label="t('permission.acType')" width="100" align="center">
+                    <el-table-column
+                      prop="acName"
+                      :label="t('permission.acName')"
+                      min-width="150"
+                    />
+                    <el-table-column
+                      prop="acIdentity"
+                      :label="t('permission.acIdentity')"
+                      min-width="150"
+                    />
+                    <el-table-column
+                      prop="acType"
+                      :label="t('permission.acType')"
+                      width="100"
+                      align="center"
+                    >
                       <template #default="{ row }">
-                        <el-tag v-if="row.acType === 1" type="primary" size="small">{{ t('permission.typePage') }}</el-tag>
-                        <el-tag v-else-if="row.acType === 2" type="success" size="small">{{ t('permission.typeButton') }}</el-tag>
+                        <el-tag v-if="row.acType === 1" type="primary" size="small">
+                          {{ t('permission.typePage') }}
+                        </el-tag>
+                        <el-tag v-else-if="row.acType === 2" type="success" size="small">
+                          {{ t('permission.typeButton') }}
+                        </el-tag>
                         <el-tag v-else type="info" size="small">{{ row.acType }}</el-tag>
                       </template>
                     </el-table-column>
@@ -77,7 +100,7 @@
                   <el-empty v-else :description="t('common.noData')" :image-size="60" />
                 </div>
               </div>
-              
+
               <div class="detail-section">
                 <div class="section-header">
                   <el-icon><Menu /></el-icon>
@@ -97,9 +120,25 @@
                     <template #default="{ node, data }">
                       <span class="custom-tree-node">
                         <span class="node-label">{{ node.label }}</span>
-                        <el-tag v-if="data.type === 1" size="small" type="info" class="tree-tag">{{ t('menu.typeDirectory') }}</el-tag>
-                        <el-tag v-else-if="data.type === 2" size="small" type="success" class="tree-tag">{{ t('menu.typeMenu') }}</el-tag>
-                        <el-tag v-else-if="data.type === 3" size="small" type="primary" class="tree-tag">{{ t('menu.typeButton') }}</el-tag>
+                        <el-tag v-if="data.type === 1" size="small" type="info" class="tree-tag">
+                          {{ t('menu.typeDirectory') }}
+                        </el-tag>
+                        <el-tag
+                          v-else-if="data.type === 2"
+                          size="small"
+                          type="success"
+                          class="tree-tag"
+                        >
+                          {{ t('menu.typeMenu') }}
+                        </el-tag>
+                        <el-tag
+                          v-else-if="data.type === 3"
+                          size="small"
+                          type="primary"
+                          class="tree-tag"
+                        >
+                          {{ t('menu.typeButton') }}
+                        </el-tag>
                       </span>
                     </template>
                   </el-tree>
@@ -132,7 +171,7 @@ import { Key, Menu } from '@element-plus/icons-vue'
 import { assignUserRoles, type UserInfo } from '@/api/user'
 import { getAllRoles, getRoleDetail, type RoleInfo, type RoleDetailRsp } from '@/api/role'
 import { useUserStore } from '@/stores/user'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSubmitGuard } from '@blink/components'
 
 interface Props {
   modelValue: boolean
@@ -167,7 +206,7 @@ const filteredRoleList = computed(() => {
   if (isSuperAdmin.value) {
     return roleList.value
   }
-  return roleList.value.filter(role => role.roleId !== SUPER_ADMIN_ROLE_ID)
+  return roleList.value.filter((role) => role.roleId !== SUPER_ADMIN_ROLE_ID)
 })
 
 const menuTreeProps = {
@@ -198,24 +237,26 @@ const fetchRoleDetail = async (roleId: number): Promise<RoleDetailRsp | null> =>
 }
 
 const handleRoleChange = async (newRoleIds: number[]) => {
-  const existingRoleIds = selectedRoleDetails.value.map(d => d.roleInfo.roleId)
-  
-  const toAdd = newRoleIds.filter(id => !existingRoleIds.includes(id))
-  const toRemove = existingRoleIds.filter(id => !newRoleIds.includes(id))
-  
+  const existingRoleIds = selectedRoleDetails.value.map((d) => d.roleInfo.roleId)
+
+  const toAdd = newRoleIds.filter((id) => !existingRoleIds.includes(id))
+  const toRemove = existingRoleIds.filter((id) => !newRoleIds.includes(id))
+
   if (toRemove.length > 0) {
-    selectedRoleDetails.value = selectedRoleDetails.value.filter(d => !toRemove.includes(d.roleInfo.roleId))
+    selectedRoleDetails.value = selectedRoleDetails.value.filter(
+      (d) => !toRemove.includes(d.roleInfo.roleId)
+    )
   }
-  
+
   for (const roleId of toAdd) {
     const detail = await fetchRoleDetail(roleId)
     if (detail) {
       selectedRoleDetails.value.push(detail)
     }
   }
-  
+
   await nextTick()
-  
+
   if (newRoleIds.length > 0) {
     if (!newRoleIds.includes(Number(activeDetailTab.value))) {
       activeDetailTab.value = String(newRoleIds[0])
@@ -229,15 +270,15 @@ const buildMenuTree = (menus: any[]) => {
   if (!menus || menus.length === 0) {
     return []
   }
-  
+
   const menuMap = new Map<number, any>()
   const rootMenus: any[] = []
-  
-  menus.forEach(menu => {
+
+  menus.forEach((menu) => {
     menuMap.set(menu.menuId, { ...menu, children: [] })
   })
-  
-  menus.forEach(menu => {
+
+  menus.forEach((menu) => {
     const menuItem = menuMap.get(menu.menuId)
     if (menuItem) {
       if (menu.parentId === 0 || !menuMap.has(menu.parentId)) {
@@ -250,7 +291,7 @@ const buildMenuTree = (menus: any[]) => {
       }
     }
   })
-  
+
   return rootMenus
 }
 
@@ -346,12 +387,12 @@ watch(
         height: 40px;
         line-height: 40px;
         color: var(--text-color-regular);
-        
+
         &.is-active {
           color: var(--primary-color);
           background: var(--card-bg);
         }
-        
+
         &:hover {
           color: var(--primary-color);
         }
@@ -416,7 +457,7 @@ watch(
     :deep(.el-tree-node__content) {
       height: 32px;
       border-radius: 4px;
-      
+
       &:hover {
         background: var(--table-row-hover);
       }

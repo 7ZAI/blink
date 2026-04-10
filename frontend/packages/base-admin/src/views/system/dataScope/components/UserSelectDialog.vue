@@ -29,10 +29,12 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -114,7 +116,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'confirm': [users: UserInfo[]]
+  confirm: [users: UserInfo[]]
 }>()
 
 const { t } = useI18n()
@@ -167,8 +169,8 @@ const fetchUserList = async () => {
  * 恢复表格选中状态
  */
 const restoreSelection = () => {
-  const selectedLoginNames = new Set(selectedUsers.value.map(u => u.loginName))
-  userList.value.forEach(user => {
+  const selectedLoginNames = new Set(selectedUsers.value.map((u) => u.loginName))
+  userList.value.forEach((user) => {
     if (selectedLoginNames.has(user.loginName)) {
       tableRef.value?.toggleRowSelection(user, true)
     }
@@ -198,8 +200,10 @@ const handleReset = () => {
  */
 const handleSelectionChange = (selection: UserInfo[]) => {
   // 合并新选择的用户，保留之前选择的其他页的用户
-  const currentPageLoginNames = new Set(userList.value.map(u => u.loginName))
-  const otherPageSelected = selectedUsers.value.filter(u => !currentPageLoginNames.has(u.loginName))
+  const currentPageLoginNames = new Set(userList.value.map((u) => u.loginName))
+  const otherPageSelected = selectedUsers.value.filter(
+    (u) => !currentPageLoginNames.has(u.loginName)
+  )
   selectedUsers.value = [...otherPageSelected, ...selection]
 }
 
@@ -207,7 +211,7 @@ const handleSelectionChange = (selection: UserInfo[]) => {
  * 移除已选用户
  */
 const handleRemoveUser = (user: UserInfo) => {
-  selectedUsers.value = selectedUsers.value.filter(u => u.loginName !== user.loginName)
+  selectedUsers.value = selectedUsers.value.filter((u) => u.loginName !== user.loginName)
   // 同步取消表格选中状态
   tableRef.value?.toggleRowSelection(user, false)
 }
@@ -234,13 +238,16 @@ const handleClose = () => {
 /**
  * 监听弹窗打开
  */
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    // 从 props 初始化选中用户
-    selectedUsers.value = [...props.selectedUsers]
-    fetchUserList()
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      // 从 props 初始化选中用户
+      selectedUsers.value = [...props.selectedUsers]
+      fetchUserList()
+    }
   }
-})
+)
 </script>
 
 <style scoped lang="scss">

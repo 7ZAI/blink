@@ -8,18 +8,9 @@
     :lock-scroll="false"
     @closed="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="user-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="user-form">
       <el-form-item :label="t('user.avatar')" prop="avatar">
-        <AvatarSelector
-          v-model="form.avatar"
-          :size="60"
-        />
+        <AvatarSelector v-model="form.avatar" :size="60" />
       </el-form-item>
 
       <el-form-item :label="t('user.loginName')" prop="loginName">
@@ -42,7 +33,11 @@
           @click="groupSelectorVisible = true"
         >
           <template #suffix>
-            <el-icon class="el-input__icon" style="cursor: pointer" @click="groupSelectorVisible = true">
+            <el-icon
+              class="el-input__icon"
+              style="cursor: pointer"
+              @click="groupSelectorVisible = true"
+            >
               <Search />
             </el-icon>
           </template>
@@ -61,7 +56,8 @@
               {{ role.roleName }}
             </el-tag>
             <el-button type="primary" link @click="roleSelectorVisible = true">
-              <el-icon><Plus /></el-icon>{{ t('user.selectRoles') }}
+              <el-icon><Plus /></el-icon>
+              {{ t('user.selectRoles') }}
             </el-button>
           </div>
         </div>
@@ -111,14 +107,20 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { addUser, updateUser, type UserInfo, type AddUserParams, type UpdateUserParams } from '@/api/user'
+import {
+  addUser,
+  updateUser,
+  type UserInfo,
+  type AddUserParams,
+  type UpdateUserParams,
+} from '@/api/user'
 import type { GroupInfo } from '@/api/group'
 import type { RoleInfo } from '@/api/role'
 import AvatarSelector from '@/components/AvatarSelector.vue'
 import GroupSelector from '@/components/GroupSelector.vue'
 import RoleSelector from '@/components/RoleSelector.vue'
 import { useSystemConfigStore } from '@/stores/systemConfig'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSubmitGuard } from '@blink/components'
 
 const { t } = useI18n()
 
@@ -161,21 +163,35 @@ const form = reactive({
 
 const rules = computed<FormRules>(() => ({
   loginName: [
-    { required: true, message: t('validation.required', { field: t('user.loginName') }), trigger: 'blur' },
+    {
+      required: true,
+      message: t('validation.required', { field: t('user.loginName') }),
+      trigger: 'blur',
+    },
     { min: 3, max: 20, message: t('validation.length', { min: 3, max: 20 }), trigger: 'blur' },
   ],
   sex: [
-    { required: true, message: t('validation.required', { field: t('user.sex') }), trigger: 'change' },
+    {
+      required: true,
+      message: t('validation.required', { field: t('user.sex') }),
+      trigger: 'change',
+    },
   ],
   phone: [
-    { required: true, message: t('validation.required', { field: t('user.phone') }), trigger: 'blur' },
+    {
+      required: true,
+      message: t('validation.required', { field: t('user.phone') }),
+      trigger: 'blur',
+    },
     { pattern: /^1[3-9]\d{9}$/, message: t('validation.phone'), trigger: 'blur' },
   ],
-  email: [
-    { type: 'email', message: t('validation.email'), trigger: 'blur' },
-  ],
+  email: [{ type: 'email', message: t('validation.email'), trigger: 'blur' }],
   groupId: [
-    { required: true, message: t('validation.required', { field: t('user.group') }), trigger: 'change' },
+    {
+      required: true,
+      message: t('validation.required', { field: t('user.group') }),
+      trigger: 'change',
+    },
   ],
 }))
 
@@ -284,13 +300,13 @@ watch(
 
 .role-selector {
   width: 100%;
-  
+
   .selected-roles {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
-    
+
     .el-tag {
       margin: 0;
     }

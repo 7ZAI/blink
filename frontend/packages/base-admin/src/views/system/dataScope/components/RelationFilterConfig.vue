@@ -1,12 +1,7 @@
 <template>
   <div class="relation-filter-config">
     <!-- 无关联关系提示 -->
-    <el-alert
-      v-if="!hasRelations"
-      type="warning"
-      :closable="false"
-      show-icon
-    >
+    <el-alert v-if="!hasRelations" type="warning" :closable="false" show-icon>
       {{ t('dataScope.noRelationSupport') }}
     </el-alert>
 
@@ -24,7 +19,10 @@
       </el-form-item>
 
       <!-- 匹配类型选择 -->
-      <el-form-item v-if="selectedRelation && matchTypeOptions.length > 0" :label="t('dataScope.matchType')">
+      <el-form-item
+        v-if="selectedRelation && matchTypeOptions.length > 0"
+        :label="t('dataScope.matchType')"
+      >
         <el-select v-model="internalConfig.relationMatchType" @change="handleMatchTypeChange">
           <el-option
             v-for="option in matchTypeOptions"
@@ -57,12 +55,7 @@
       </el-form-item>
 
       <!-- 当前用户提示 -->
-      <el-alert
-        v-if="showDynamicTip"
-        type="info"
-        :closable="false"
-        show-icon
-      >
+      <el-alert v-if="showDynamicTip" type="info" :closable="false" show-icon>
         {{ dynamicTip }}
       </el-alert>
     </template>
@@ -156,14 +149,22 @@ const parseConfig = (jsonStr: string) => {
 }
 
 // 监听 modelValue 变化，更新内部配置
-watch(() => props.modelValue, (val) => {
-  internalConfig.value = parseConfig(val)
-}, { immediate: true })
+watch(
+  () => props.modelValue,
+  (val) => {
+    internalConfig.value = parseConfig(val)
+  },
+  { immediate: true }
+)
 
 // 监听内部配置变化，更新 modelValue
-watch(internalConfig, (val) => {
-  emit('update:modelValue', JSON.stringify(val))
-}, { deep: true })
+watch(
+  internalConfig,
+  (val) => {
+    emit('update:modelValue', JSON.stringify(val))
+  },
+  { deep: true }
+)
 
 const relations = computed(() => props.entityInfo?.relations || [])
 const hasRelations = computed(() => relations.value.length > 0)
@@ -172,19 +173,25 @@ const selectedRelation = computed(() => relations.value[selectedRelationIndex.va
 // 是否显示匹配值选择器
 const showMatchValues = computed(() => {
   // dynamic=false 的类型需要选择匹配值
-  const currentOption = matchTypeOptions.value.find(o => o.value === internalConfig.value?.relationMatchType)
+  const currentOption = matchTypeOptions.value.find(
+    (o) => o.value === internalConfig.value?.relationMatchType
+  )
   return currentOption && !currentOption.dynamic
 })
 
 // 是否显示动态类型提示
 const showDynamicTip = computed(() => {
-  const currentOption = matchTypeOptions.value.find(o => o.value === internalConfig.value?.relationMatchType)
+  const currentOption = matchTypeOptions.value.find(
+    (o) => o.value === internalConfig.value?.relationMatchType
+  )
   return currentOption && currentOption.dynamic
 })
 
 // 动态类型提示内容
 const dynamicTip = computed(() => {
-  const currentOption = matchTypeOptions.value.find(o => o.value === internalConfig.value?.relationMatchType)
+  const currentOption = matchTypeOptions.value.find(
+    (o) => o.value === internalConfig.value?.relationMatchType
+  )
   if (!currentOption) return ''
   return `将过滤出"${currentOption.label}"相关的数据`
 })
@@ -214,7 +221,7 @@ const loadMatchTypes = async () => {
     if (firstOption && !internalConfig.value?.relationMatchType) {
       internalConfig.value = {
         ...internalConfig.value,
-        relationMatchType: firstOption.value
+        relationMatchType: firstOption.value,
       }
     }
   } catch {
@@ -243,11 +250,11 @@ const handleUserConfirm = (users: UserInfo[]) => {
   selectedUsers.value = users
   internalConfig.value = {
     ...internalConfig.value,
-    relationMatchValues: users.map(u => u.userId)
+    relationMatchValues: users.map((u) => u.userId),
   }
-  selectedMatchItems.value = users.map(u => ({
+  selectedMatchItems.value = users.map((u) => ({
     id: u.userId,
-    name: u.username || u.loginName
+    name: u.username || u.loginName,
   }))
 }
 
@@ -257,11 +264,11 @@ const handleUserConfirm = (users: UserInfo[]) => {
 const handleRoleConfirm = (roles: RoleInfo[]) => {
   internalConfig.value = {
     ...internalConfig.value,
-    relationMatchValues: roles.map(r => r.roleId)
+    relationMatchValues: roles.map((r) => r.roleId),
   }
-  selectedMatchItems.value = roles.map(r => ({
+  selectedMatchItems.value = roles.map((r) => ({
     id: r.roleId,
-    name: r.roleName
+    name: r.roleName,
   }))
 }
 
@@ -271,11 +278,11 @@ const handleRoleConfirm = (roles: RoleInfo[]) => {
 const handleDeptConfirm = (depts: GroupInfo[]) => {
   internalConfig.value = {
     ...internalConfig.value,
-    relationMatchValues: depts.map(d => d.groupId)
+    relationMatchValues: depts.map((d) => d.groupId),
   }
-  selectedMatchItems.value = depts.map(d => ({
+  selectedMatchItems.value = depts.map((d) => ({
     id: d.groupId,
-    name: d.groupName
+    name: d.groupName,
   }))
 }
 
@@ -283,14 +290,14 @@ const handleDeptConfirm = (depts: GroupInfo[]) => {
  * 移除已选择项
  */
 const handleRemoveMatchItem = (item: MatchItem) => {
-  selectedMatchItems.value = selectedMatchItems.value.filter(i => i.id !== item.id)
+  selectedMatchItems.value = selectedMatchItems.value.filter((i) => i.id !== item.id)
   internalConfig.value = {
     ...internalConfig.value,
-    relationMatchValues: selectedMatchItems.value.map(i => i.id)
+    relationMatchValues: selectedMatchItems.value.map((i) => i.id),
   }
   // 同步更新用户列表
   if (internalConfig.value?.relationMatchType === 'USER_LIST') {
-    selectedUsers.value = selectedUsers.value.filter(u => u.userId !== item.id)
+    selectedUsers.value = selectedUsers.value.filter((u) => u.userId !== item.id)
   }
 }
 
@@ -304,7 +311,7 @@ const handleRelationChange = () => {
       relationSourceField: selectedRelation.value.relationSourceField,
       relationTargetField: selectedRelation.value.relationTargetField,
       relationMatchType: '',
-      relationMatchValues: []
+      relationMatchValues: [],
     }
     selectedMatchItems.value = []
     selectedUsers.value = []
@@ -316,7 +323,7 @@ const handleRelationChange = () => {
 const handleMatchTypeChange = () => {
   internalConfig.value = {
     ...internalConfig.value,
-    relationMatchValues: []
+    relationMatchValues: [],
   }
   selectedMatchItems.value = []
   selectedUsers.value = []
@@ -326,38 +333,45 @@ const handleMatchTypeChange = () => {
 const isInitialized = ref(false)
 
 // 初始化
-watch(() => props.entityInfo, () => {
-  if (hasRelations.value) {
-    // 如果已有配置（编辑模式），不重置配置，只加载匹配类型
-    if (props.modelValue && !isInitialized.value) {
-      // 编辑模式：解析已有配置，恢复选中状态
-      const config = parseConfig(props.modelValue)
-      if (config.relationTable) {
-        // 查找已选中的关联关系索引
-        const index = relations.value.findIndex(r => r.relationTable === config.relationTable)
-        if (index >= 0) {
-          selectedRelationIndex.value = index
+watch(
+  () => props.entityInfo,
+  () => {
+    if (hasRelations.value) {
+      // 如果已有配置（编辑模式），不重置配置，只加载匹配类型
+      if (props.modelValue && !isInitialized.value) {
+        // 编辑模式：解析已有配置，恢复选中状态
+        const config = parseConfig(props.modelValue)
+        if (config.relationTable) {
+          // 查找已选中的关联关系索引
+          const index = relations.value.findIndex((r) => r.relationTable === config.relationTable)
+          if (index >= 0) {
+            selectedRelationIndex.value = index
+          }
         }
+        loadMatchTypes()
+      } else if (!isInitialized.value) {
+        // 新增模式：初始化配置
+        handleRelationChange()
       }
-      loadMatchTypes()
-    } else if (!isInitialized.value) {
-      // 新增模式：初始化配置
-      handleRelationChange()
+      isInitialized.value = true
     }
-    isInitialized.value = true
-  }
-}, { immediate: true })
+  },
+  { immediate: true }
+)
 
 // 监听 modelValue 变化重置初始化状态（用于弹窗关闭后重新打开）
-watch(() => props.modelValue, (val, oldVal) => {
-  // 当 modelValue 从有值变为空时，说明是新增模式，重置初始化状态
-  if (oldVal && !val) {
-    isInitialized.value = false
-    selectedRelationIndex.value = 0
-    selectedMatchItems.value = []
-    selectedUsers.value = []
+watch(
+  () => props.modelValue,
+  (val, oldVal) => {
+    // 当 modelValue 从有值变为空时，说明是新增模式，重置初始化状态
+    if (oldVal && !val) {
+      isInitialized.value = false
+      selectedRelationIndex.value = 0
+      selectedMatchItems.value = []
+      selectedUsers.value = []
+    }
   }
-})
+)
 
 onMounted(() => {
   if (hasRelations.value && selectedRelation.value) {

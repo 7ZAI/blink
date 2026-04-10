@@ -7,13 +7,7 @@
     :lock-scroll="false"
     @closed="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="dict-type-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dict-type-form">
       <el-form-item :label="t('dict.dictName')" prop="dictName">
         <el-input v-model.trim="form.dictName" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
@@ -25,7 +19,11 @@
         />
       </el-form-item>
       <el-form-item :label="t('dict.locale')" prop="locale">
-        <el-select v-model="form.locale" :placeholder="t('common.pleaseSelect')" style="width: 100%">
+        <el-select
+          v-model="form.locale"
+          :placeholder="t('common.pleaseSelect')"
+          style="width: 100%"
+        >
           <el-option label="简体中文" value="zh_cn" />
           <el-option label="English" value="en_us" />
         </el-select>
@@ -61,7 +59,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { addDictType, updateDictType, type DictTypeInfo } from '@/api/dict'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSubmitGuard } from '@blink/components'
 import { getCurrentLocale } from '@/locales'
 
 /**

@@ -7,13 +7,7 @@
     :lock-scroll="false"
     @closed="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="menu-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="menu-form">
       <el-form-item :label="t('menu.parentMenu')" prop="parentId">
         <el-tree-select
           v-model="form.parentId"
@@ -94,12 +88,7 @@
           <el-button type="primary" @click="openPermDialog">
             {{ t('common.select') }}
           </el-button>
-          <el-button
-            v-if="form.permId"
-            type="danger"
-            link
-            @click="clearPermSelection"
-          >
+          <el-button v-if="form.permId" type="danger" link @click="clearPermSelection">
             {{ t('common.clear') }}
           </el-button>
         </div>
@@ -128,10 +117,17 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Close } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { addMenu, updateMenu, getMenuList, checkMenuRoleAssignment, type MenuInfo, type PermissionInfo } from '@/api/menu'
+import {
+  addMenu,
+  updateMenu,
+  getMenuList,
+  checkMenuRoleAssignment,
+  type MenuInfo,
+  type PermissionInfo,
+} from '@/api/menu'
 import { IconSelector } from '@blink/components'
 import PermissionSelectDialog from './PermissionSelectDialog.vue'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSubmitGuard } from '@blink/components'
 
 interface Props {
   modelValue: boolean
@@ -150,9 +146,7 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
-const dialogTitle = computed(() =>
-  props.type === 'add' ? t('menu.addMenu') : t('menu.editMenu')
-)
+const dialogTitle = computed(() => (props.type === 'add' ? t('menu.addMenu') : t('menu.editMenu')))
 
 const formRef = ref<FormInstance>()
 const { isSubmitting, submitGuard } = useSubmitGuard()
@@ -186,9 +180,7 @@ const rules: FormRules = {
   menuName: [
     { required: true, message: t('common.pleaseInput') + t('menu.menuName'), trigger: 'blur' },
   ],
-  type: [
-    { required: true, message: t('common.pleaseSelect') + t('menu.type'), trigger: 'change' },
-  ],
+  type: [{ required: true, message: t('common.pleaseSelect') + t('menu.type'), trigger: 'change' }],
   url: [
     {
       validator: (rule, value, callback) => {
@@ -199,8 +191,8 @@ const rules: FormRules = {
           callback()
         }
       },
-      trigger: 'blur'
-    }
+      trigger: 'blur',
+    },
   ],
   componentPath: [
     {
@@ -212,8 +204,8 @@ const rules: FormRules = {
           callback()
         }
       },
-      trigger: 'blur'
-    }
+      trigger: 'blur',
+    },
   ],
 }
 
@@ -221,7 +213,9 @@ const fetchMenuTree = async () => {
   const res = await getMenuList()
   // API 返回的是 { rows: [...] } 结构
   const menuList = res?.rows || []
-  menuTreeData.value = [{ menuId: 0, menuName: t('menu.rootMenu'), children: menuList }] as MenuInfo[]
+  menuTreeData.value = [
+    { menuId: 0, menuName: t('menu.rootMenu'), children: menuList },
+  ] as MenuInfo[]
 }
 
 // 打开权限选择弹窗
@@ -261,12 +255,12 @@ const handleSubmit = async () => {
           orderNumber: form.orderNumber,
           status: form.status,
           parentId: form.parentId || 0,
-          permId: (form.type === 2 || form.type === 3) ? form.permId : undefined,
+          permId: form.type === 2 || form.type === 3 ? form.permId : undefined,
         })
         ElMessage.success(t('message.success'))
       } else {
         // 编辑模式：检查权限是否变更
-        const effectivePermId = (form.type === 2 || form.type === 3) ? form.permId : undefined
+        const effectivePermId = form.type === 2 || form.type === 3 ? form.permId : undefined
         const originalPermId = props.data?.permId
 
         // 如果权限发生变更，先检查菜单是否已分配给角色
@@ -277,7 +271,7 @@ const handleSubmit = async () => {
           })
 
           if (checkResult.assigned && checkResult.roles && checkResult.roles.length > 0) {
-            const roleNames = checkResult.roles.map(r => r.roleName).join('、')
+            const roleNames = checkResult.roles.map((r) => r.roleName).join('、')
             const confirmMsg = t('menu.permChangeConfirmWithRoles', { roles: roleNames })
 
             try {

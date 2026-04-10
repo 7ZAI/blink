@@ -32,7 +32,11 @@
           <span class="menu-label">{{ item.dictName }}</span>
           <el-tag size="small" type="info" class="menu-type">{{ item.dictType }}</el-tag>
         </div>
-        <el-empty v-if="filteredDictTypes.length === 0" :description="t('common.noData')" :image-size="80" />
+        <el-empty
+          v-if="filteredDictTypes.length === 0"
+          :description="t('common.noData')"
+          :image-size="80"
+        />
       </div>
     </div>
 
@@ -44,7 +48,9 @@
           <span class="content-title">{{ currentDictTypeName || t('dict.selectDictType') }}</span>
         </div>
         <div class="header-right">
-          <span v-if="activeDictType" class="data-count">{{ pagination.total }} {{ t('dict.dataItems') }}</span>
+          <span v-if="activeDictType" class="data-count">
+            {{ pagination.total }} {{ t('dict.dataItems') }}
+          </span>
         </div>
       </div>
 
@@ -56,20 +62,31 @@
         <el-card class="search-card" shadow="never">
           <el-form :model="searchForm" inline>
             <el-form-item :label="t('dict.dictLabel')">
-              <el-input v-model.trim="searchForm.dictLabel" :placeholder="t('common.pleaseInput')" clearable />
+              <el-input
+                v-model.trim="searchForm.dictLabel"
+                :placeholder="t('common.pleaseInput')"
+                clearable
+              />
             </el-form-item>
             <el-form-item :label="t('common.status')">
-              <el-select v-model="searchForm.status" :placeholder="t('common.pleaseSelect')" clearable style="width: 120px">
+              <el-select
+                v-model="searchForm.status"
+                :placeholder="t('common.pleaseSelect')"
+                clearable
+                style="width: 120px"
+              >
                 <el-option :label="t('dict.statusEnable')" :value="0" />
                 <el-option :label="t('dict.statusDisable')" :value="1" />
               </el-select>
             </el-form-item>
             <el-form-item>
               <el-button type="info" @click="handleSearch">
-                <el-icon><Search /></el-icon>{{ t('common.search') }}
+                <el-icon><Search /></el-icon>
+                {{ t('common.search') }}
               </el-button>
               <el-button @click="handleReset">
-                <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+                <el-icon><Refresh /></el-icon>
+                {{ t('common.reset') }}
               </el-button>
             </el-form-item>
           </el-form>
@@ -80,7 +97,8 @@
             <div class="table-header">
               <div class="header-left">
                 <AuthButton :perm="ButtonPerms.DictData.Add" type="primary" @click="handleAdd">
-                  <el-icon><Plus /></el-icon>{{ t('common.add') }}
+                  <el-icon><Plus /></el-icon>
+                  {{ t('common.add') }}
                 </AuthButton>
               </div>
             </div>
@@ -91,20 +109,36 @@
               <el-table-column prop="dictCode" label="ID" width="80" align="center" />
               <el-table-column prop="dictLabel" :label="t('dict.dictLabel')" min-width="120">
                 <template #default="{ row }">
-                  <el-tag v-if="row.listClass" :type="row.listClass as any">{{ row.dictLabel }}</el-tag>
+                  <el-tag v-if="row.listClass" :type="row.listClass as any">
+                    {{ row.dictLabel }}
+                  </el-tag>
                   <span v-else>{{ row.dictLabel }}</span>
                 </template>
               </el-table-column>
               <el-table-column prop="dictValue" :label="t('dict.dictValue')" min-width="120" />
-              <el-table-column prop="dictSort" :label="t('dict.dictSort')" width="100" align="center" />
+              <el-table-column
+                prop="dictSort"
+                :label="t('dict.dictSort')"
+                width="100"
+                align="center"
+              />
               <el-table-column prop="locale" :label="t('dict.locale')" width="110" align="center">
                 <template #default="{ row }">
-                  <el-tag v-if="row.locale === 'zh_cn'" type="primary" size="small">简体中文</el-tag>
-                  <el-tag v-else-if="row.locale === 'en_us'" type="success" size="small">English</el-tag>
+                  <el-tag v-if="row.locale === 'zh_cn'" type="primary" size="small">
+                    简体中文
+                  </el-tag>
+                  <el-tag v-else-if="row.locale === 'en_us'" type="success" size="small">
+                    English
+                  </el-tag>
                   <span v-else>{{ row.locale }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="isDefault" :label="t('dict.isDefault')" width="100" align="center">
+              <el-table-column
+                prop="isDefault"
+                :label="t('dict.isDefault')"
+                width="100"
+                align="center"
+              >
                 <template #default="{ row }">
                   <el-tag v-if="row.isDefault === 1" type="success">{{ t('common.yes') }}</el-tag>
                   <el-tag v-else type="info">{{ t('common.no') }}</el-tag>
@@ -112,7 +146,9 @@
               </el-table-column>
               <el-table-column prop="status" :label="t('common.status')" width="80" align="center">
                 <template #default="{ row }">
-                  <el-tag v-if="row.status === 0" type="success">{{ t('dict.statusEnable') }}</el-tag>
+                  <el-tag v-if="row.status === 0" type="success">
+                    {{ t('dict.statusEnable') }}
+                  </el-tag>
                   <el-tag v-else type="danger">{{ t('dict.statusDisable') }}</el-tag>
                 </template>
               </el-table-column>
@@ -120,11 +156,25 @@
               <el-table-column :label="t('common.operation')" width="180" fixed="right">
                 <template #default="{ row }">
                   <div class="operation-buttons">
-                    <AuthButton :perm="ButtonPerms.DictData.Edit" type="primary" link size="small" @click="handleEdit(row)">
-                      <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                    <AuthButton
+                      :perm="ButtonPerms.DictData.Edit"
+                      type="primary"
+                      link
+                      size="small"
+                      @click="handleEdit(row)"
+                    >
+                      <el-icon><Edit /></el-icon>
+                      {{ t('common.edit') }}
                     </AuthButton>
-                    <AuthButton :perm="ButtonPerms.DictData.Delete" type="danger" link size="small" @click="handleDelete(row)">
-                      <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                    <AuthButton
+                      :perm="ButtonPerms.DictData.Delete"
+                      type="danger"
+                      link
+                      size="small"
+                      @click="handleDelete(row)"
+                    >
+                      <el-icon><Delete /></el-icon>
+                      {{ t('common.delete') }}
                     </AuthButton>
                   </div>
                 </template>
@@ -162,8 +212,14 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
-import { getDictTypeList, getDictDataList, deleteDictData, type DictTypeInfo, type DictDataInfo } from '@/api/dict'
-import { useTransition } from '@/composables/useDataTransition'
+import {
+  getDictTypeList,
+  getDictDataList,
+  deleteDictData,
+  type DictTypeInfo,
+  type DictDataInfo,
+} from '@/api/dict'
+import { useTransition } from '@blink/components'
 import { ButtonPerms } from '@/composables/usePermission'
 
 defineOptions({
@@ -205,8 +261,7 @@ const filteredDictTypes = computed(() => {
   const keyword = searchKeyword.value.toLowerCase()
   return dictTypeList.value.filter(
     (item) =>
-      item.dictName.toLowerCase().includes(keyword) ||
-      item.dictType.toLowerCase().includes(keyword)
+      item.dictName.toLowerCase().includes(keyword) || item.dictType.toLowerCase().includes(keyword)
   )
 })
 

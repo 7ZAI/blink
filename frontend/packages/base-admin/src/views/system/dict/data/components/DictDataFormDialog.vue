@@ -7,13 +7,7 @@
     :lock-scroll="false"
     @closed="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="dict-data-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dict-data-form">
       <el-form-item :label="t('dict.dictLabel')" prop="dictLabel">
         <el-input v-model.trim="form.dictLabel" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
@@ -21,16 +15,29 @@
         <el-input v-model.trim="form.dictValue" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
       <el-form-item :label="t('dict.locale')" prop="locale">
-        <el-select v-model="form.locale" :placeholder="t('common.pleaseSelect')" style="width: 100%">
+        <el-select
+          v-model="form.locale"
+          :placeholder="t('common.pleaseSelect')"
+          style="width: 100%"
+        >
           <el-option label="简体中文" value="zh_cn" />
           <el-option label="English" value="en_us" />
         </el-select>
       </el-form-item>
       <el-form-item :label="t('dict.dictSort')" prop="dictSort">
-        <el-input-number v-model="form.dictSort" :min="0" controls-position="right" style="width: 150px" />
+        <el-input-number
+          v-model="form.dictSort"
+          :min="0"
+          controls-position="right"
+          style="width: 150px"
+        />
       </el-form-item>
       <el-form-item :label="t('dict.listClass')" prop="listClass">
-        <el-select v-model="form.listClass" :placeholder="t('common.pleaseSelect')" style="width: 100%">
+        <el-select
+          v-model="form.listClass"
+          :placeholder="t('common.pleaseSelect')"
+          style="width: 100%"
+        >
           <el-option label="默认" value="" />
           <el-option label="主要" value="primary" />
           <el-option label="成功" value="success" />
@@ -77,7 +84,7 @@ import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { addDictData, updateDictData, type DictDataInfo } from '@/api/dict'
 import { getCurrentLocale } from '@/locales'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSubmitGuard } from '@blink/components'
 
 /**
  * 组件属性接口

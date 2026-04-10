@@ -37,7 +37,7 @@ const mouse = {
   y: 0,
   radius: 180,
   isMoving: false,
-  lastMoveTime: 0
+  lastMoveTime: 0,
 }
 
 // 粒子系统
@@ -92,7 +92,9 @@ const frameInterval = 1000 / targetFPS
 
 // 性能优化：设备检测
 const isLowEndDevice = navigator.hardwareConcurrency ? navigator.hardwareConcurrency <= 4 : false
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+  navigator.userAgent
+)
 
 // 颜色主题 - 科技风增强
 const colors = {
@@ -103,7 +105,7 @@ const colors = {
   green: '#10b981',
   orange: '#f97316',
   neonBlue: '#00f5ff',
-  neonPurple: '#bf00ff'
+  neonPurple: '#bf00ff',
 }
 
 // 初始化粒子
@@ -134,7 +136,7 @@ const initParticles = () => {
       color: randomColor,
       alpha: Math.random() * 0.6 + 0.3,
       pulsePhase: Math.random() * Math.PI * 2,
-      type: randomType ?? 'circle'
+      type: randomType ?? 'circle',
     })
   }
 
@@ -161,7 +163,7 @@ const createMeteor = (): Meteor => ({
   speed: Math.random() * 8 + 5,
   angle: Math.PI / 4 + (Math.random() - 0.5) * 0.3,
   alpha: Math.random() * 0.5 + 0.5,
-  color: Math.random() > 0.5 ? colors.neonBlue : colors.neonPurple
+  color: Math.random() > 0.5 ? colors.neonBlue : colors.neonPurple,
 })
 
 // 创建数据流
@@ -169,12 +171,19 @@ const createDataStream = (): DataStream => ({
   x: Math.random() * canvasWidth,
   y: Math.random() * canvasHeight,
   speed: Math.random() * 2 + 1,
-  chars: Array.from({ length: 10 }, () => String.fromCharCode(0x30A0 + Math.random() * 96)),
-  alpha: Math.random() * 0.3 + 0.1
+  chars: Array.from({ length: 10 }, () => String.fromCharCode(0x30a0 + Math.random() * 96)),
+  alpha: Math.random() * 0.3 + 0.1,
 })
 
 // 绘制多边形粒子
-const drawShape = (x: number, y: number, size: number, type: Particle['type'], color: string, alpha: number) => {
+const drawShape = (
+  x: number,
+  y: number,
+  size: number,
+  type: Particle['type'],
+  color: string,
+  alpha: number
+) => {
   ctx!.beginPath()
 
   if (type === 'star') {
@@ -207,7 +216,7 @@ const drawShape = (x: number, y: number, size: number, type: Particle['type'], c
 const updateParticles = () => {
   const currentTime = Date.now()
 
-  particles.forEach(p => {
+  particles.forEach((p) => {
     // 脉冲效果
     p.pulsePhase += 0.03
     const pulse = Math.sin(p.pulsePhase) * 0.4 + 1
@@ -266,7 +275,7 @@ const updateParticles = () => {
   })
 
   // 更新数据流
-  dataStreams.forEach(ds => {
+  dataStreams.forEach((ds) => {
     ds.y += ds.speed
     if (ds.y > canvasHeight + 200) {
       ds.y = -200
@@ -315,9 +324,10 @@ const drawConnections = () => {
 
 // 绘制流星
 const drawMeteors = () => {
-  meteors.forEach(m => {
+  meteors.forEach((m) => {
     const gradient = ctx!.createLinearGradient(
-      m.x, m.y,
+      m.x,
+      m.y,
       m.x - Math.cos(m.angle) * m.length,
       m.y - Math.sin(m.angle) * m.length
     )
@@ -327,10 +337,7 @@ const drawMeteors = () => {
 
     ctx!.beginPath()
     ctx!.moveTo(m.x, m.y)
-    ctx!.lineTo(
-      m.x - Math.cos(m.angle) * m.length,
-      m.y - Math.sin(m.angle) * m.length
-    )
+    ctx!.lineTo(m.x - Math.cos(m.angle) * m.length, m.y - Math.sin(m.angle) * m.length)
     ctx!.strokeStyle = gradient
     ctx!.lineWidth = 2
     ctx!.stroke()
@@ -350,7 +357,7 @@ const drawMeteors = () => {
 const drawDataStreams = () => {
   ctx!.font = '12px monospace'
 
-  dataStreams.forEach(ds => {
+  dataStreams.forEach((ds) => {
     ds.chars.forEach((char, index) => {
       const y = ds.y - index * 15
       const charAlpha = ds.alpha * (1 - index / ds.chars.length)
@@ -363,7 +370,7 @@ const drawDataStreams = () => {
 
 // 绘制粒子
 const drawParticles = () => {
-  particles.forEach(p => {
+  particles.forEach((p) => {
     const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy)
     const size = p.size * (1 + speed * 0.15)
 
@@ -400,10 +407,7 @@ const drawMouseEffect = () => {
   }
 
   // 内部光晕
-  const gradient = ctx!.createRadialGradient(
-    mouse.x, mouse.y, 0,
-    mouse.x, mouse.y, mouse.radius
-  )
+  const gradient = ctx!.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, mouse.radius)
   gradient.addColorStop(0, hexToRgba(colors.primary, 0.2))
   gradient.addColorStop(0.3, hexToRgba(colors.secondary, 0.1))
   gradient.addColorStop(1, 'transparent')
@@ -435,8 +439,12 @@ const drawBackground = () => {
   if (isLightMode.value) {
     // 浅色模式背景
     const gradient = ctx!.createRadialGradient(
-      canvasWidth / 2, canvasHeight / 2, 0,
-      canvasWidth / 2, canvasHeight / 2, Math.max(canvasWidth, canvasHeight)
+      canvasWidth / 2,
+      canvasHeight / 2,
+      0,
+      canvasWidth / 2,
+      canvasHeight / 2,
+      Math.max(canvasWidth, canvasHeight)
     )
     gradient.addColorStop(0, '#f1f5f9')
     gradient.addColorStop(0.5, '#e2e8f0')
@@ -447,8 +455,12 @@ const drawBackground = () => {
   } else {
     // 深色模式背景
     const gradient = ctx!.createRadialGradient(
-      canvasWidth / 2, canvasHeight / 2, 0,
-      canvasWidth / 2, canvasHeight / 2, Math.max(canvasWidth, canvasHeight)
+      canvasWidth / 2,
+      canvasHeight / 2,
+      0,
+      canvasWidth / 2,
+      canvasHeight / 2,
+      Math.max(canvasWidth, canvasHeight)
     )
     gradient.addColorStop(0, '#0f0f2e')
     gradient.addColorStop(0.5, '#0a0a1a')
@@ -654,8 +666,13 @@ onUnmounted(() => {
 }
 
 @keyframes grid-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* 光晕效果层 */
@@ -703,7 +720,8 @@ onUnmounted(() => {
 }
 
 @keyframes float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translate(0, 0) scale(1);
   }
   25% {
@@ -723,7 +741,8 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg,
+  background: linear-gradient(
+    90deg,
     transparent 0%,
     rgba(0, 212, 255, 0.3) 20%,
     rgba(0, 212, 255, 0.8) 50%,
@@ -767,7 +786,9 @@ onUnmounted(() => {
     text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
     animation: hint-fade 4s ease-in-out forwards;
     animation-delay: 3s;
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.05);
+    box-shadow:
+      0 0 20px rgba(0, 212, 255, 0.2),
+      inset 0 0 20px rgba(0, 212, 255, 0.05);
   }
 }
 

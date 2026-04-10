@@ -1,5 +1,5 @@
 <template>
-  <div class="login-container" :class="{ 'dark': themeStore.theme === 'dark' }">
+  <div class="login-container" :class="{ dark: themeStore.theme === 'dark' }">
     <!-- 背景特效 -->
     <BackgroundEffects />
 
@@ -48,19 +48,14 @@
 
           <!-- 验证码滑块组件 -->
           <el-form-item prop="captcha" class="captcha-item" v-if="configLoaded && captchaEnabled">
-            <div class="captcha-slider-wrapper" @click="showCaptchaDialog">
-              <div class="captcha-slider" :class="{ 'success': captchaVerified }">
-                <div class="slider-track">
-                  <span class="slider-text">
-                    {{ captchaVerified ? t('login.captchaVerified') : t('login.clickToVerify') }}
-                  </span>
-                </div>
-                <div class="slider-btn" :class="{ 'success': captchaVerified }">
-                  <el-icon v-if="!captchaVerified"><ArrowRight /></el-icon>
-                  <el-icon v-else><Check /></el-icon>
-                </div>
-              </div>
-            </div>
+            <CaptchaSlider
+              ref="captchaSliderRef"
+              v-model:verified="captchaVerified"
+              :get-captcha-api="handleGetCaptcha"
+              :check-captcha-api="handleCheckCaptcha"
+              :locale="captchaLocale"
+              @success="handleCaptchaSuccess"
+            />
           </el-form-item>
 
           <el-form-item>
@@ -83,7 +78,7 @@
               :current-language="currentLocale"
               :languages="[
                 { code: 'zh_cn', label: '中文', nativeLabel: '简体中文' },
-                { code: 'en_us', label: 'EN', nativeLabel: 'English' }
+                { code: 'en_us', label: 'EN', nativeLabel: 'English' },
               ]"
               class="locale-switch"
               @change="handleLocaleChange"
@@ -106,7 +101,7 @@
         <div class="login-loading-content">
           <div class="loading-logo-wrapper">
             <svg viewBox="0 0 12 32" class="loading-logo">
-              <path d="M7 2L2 14h5l-2 12 9-16h-5l2-8z"/>
+              <path d="M7 2L2 14h5l-2 12 9-16h-5l2-8z" />
             </svg>
           </div>
           <div class="loading-progress-container">
@@ -122,94 +117,28 @@
         </div>
       </div>
     </transition>
-
-    <!-- 验证码弹窗 -->
-    <el-dialog
-      v-model="captchaDialogVisible"
-      :title="t('login.captchaTitle')"
-      width="400px"
-      :close-on-click-modal="false"
-      class="captcha-dialog"
-    >
-      <div class="captcha-container">
-        <!-- 滑块验证码 -->
-        <div v-if="captchaType === 'blockPuzzle'" class="block-puzzle-captcha">
-          <div class="captcha-image-wrapper">
-            <img v-if="captchaData.originalImageBase64" 
-                 :src="captchaData.originalImageBase64.startsWith('data:') ? captchaData.originalImageBase64 : 'data:image/png;base64,' + captchaData.originalImageBase64" 
-                 class="captcha-bg-image" 
-                 alt="验证码背景" />
-            <img v-if="captchaData.jigsawImageBase64" 
-                 :src="captchaData.jigsawImageBase64.startsWith('data:') ? captchaData.jigsawImageBase64 : 'data:image/png;base64,' + captchaData.jigsawImageBase64" 
-                 class="captcha-jigsaw-image" 
-                 :style="{ left: jigsawLeft + 'px' }"
-                 alt="滑块" />
-          </div>
-          <div class="slider-container">
-            <div class="slider-track">
-              <div class="slider-fill" :style="{ width: (sliderLeft + 40) + 'px' }"></div>
-            </div>
-            <div 
-              class="slider-thumb"
-              :style="{ transform: `translateX(${sliderLeft}px)` }"
-              @mousedown="startDrag"
-              @touchstart="startDrag"
-            >
-              <el-icon><ArrowRight /></el-icon>
-            </div>
-            <span class="slider-hint">{{ t('login.dragToVerify') }}</span>
-          </div>
-        </div>
-
-        <!-- 点选验证码 -->
-        <div v-else-if="captchaType === 'clickWord'" class="click-word-captcha">
-          <div class="word-hint">
-            {{ t('login.clickWordHint') }}: <span class="words">{{ captchaData.wordList?.join(', ') }}</span>
-          </div>
-          <div class="captcha-image-wrapper" @click="handleWordClick">
-            <img v-if="captchaData.originalImageBase64" 
-                 :src="'data:image/png;base64,' + captchaData.originalImageBase64" 
-                 class="captcha-bg-image" 
-                 alt="验证码" />
-            <div 
-              v-for="(point, index) in clickedPoints" 
-              :key="index"
-              class="click-point"
-              :style="{ left: point.x + 'px', top: point.y + 'px' }"
-            >
-              {{ index + 1 }}
-            </div>
-          </div>
-          <div class="click-actions">
-            <el-button type="primary" @click="submitWordCaptcha">{{ t('login.confirm') }}</el-button>
-            <el-button @click="refreshCaptcha">{{ t('login.refresh') }}</el-button>
-          </div>
-        </div>
-
-        <!-- 加载状态 -->
-        <div v-else class="captcha-loading">
-          <el-icon class="loading-icon"><Loading /></el-icon>
-          <span>{{ t('login.loading') }}</span>
-        </div>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
-import { User, Lock, Right, ArrowRight, Check, Loading } from '@element-plus/icons-vue'
+import { User, Lock, Right } from '@element-plus/icons-vue'
 import BackgroundEffects from '@/components/BackgroundEffects/index.vue'
-import { ThemeToggle, LanguageSwitch } from '@blink/components'
+import { ThemeToggle, LanguageSwitch, CaptchaSlider } from '@blink/components'
+import type {
+  CaptchaData,
+  CaptchaCheckResult,
+  CaptchaLocale,
+  CaptchaRequestParams,
+  CaptchaCheckParams,
+} from '@blink/components'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
 import { useSystemConfigStore } from '@/stores/systemConfig'
 import { getCaptcha, checkCaptcha, getLoginConfig } from '@/api/auth'
 import { setLocale, getCurrentLocale } from '@/locales'
-import type { CaptchaVO } from '@/types'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -217,15 +146,10 @@ const userStore = useUserStore()
 const themeStore = useThemeStore()
 const systemConfigStore = useSystemConfigStore()
 const loginFormRef = ref()
+const captchaSliderRef = ref()
 const loading = ref(false)
 const showCard = ref(false)
 const captchaVerified = ref(false)
-const captchaDialogVisible = ref(false)
-const captchaType = ref('blockPuzzle')
-const captchaData = ref<CaptchaVO>({})
-const jigsawLeft = ref(0)
-const sliderLeft = ref(0)
-const clickedPoints = ref<{x: number, y: number}[]>([])
 const loginLoading = ref(false)
 const loadingText = ref('正在登录...')
 const loadingProgress = ref(0)
@@ -237,6 +161,22 @@ const currentLocale = ref(getCurrentLocale())
 const currentLocaleLabel = computed(() => {
   return currentLocale.value === 'zh_cn' ? t('login.chinese') : t('login.english')
 })
+
+// 验证码国际化配置
+const captchaLocale = computed<CaptchaLocale>(() => ({
+  clickToVerify: t('login.clickToVerify'),
+  captchaVerified: t('login.captchaVerified'),
+  captchaTitle: t('login.captchaTitle'),
+  dragToVerify: t('login.dragToVerify'),
+  clickWordHint: t('login.clickWordHint'),
+  confirm: t('login.confirm'),
+  refresh: t('login.refresh'),
+  loading: t('login.loading'),
+  captchaSuccess: t('login.captchaSuccess'),
+  captchaFailed: t('login.captchaFailed'),
+  captchaLoadFailed: t('login.captchaLoadFailed'),
+  pleaseClickWords: t('login.pleaseClickWords'),
+}))
 
 const handleLocaleChange = (locale: string) => {
   if (locale !== currentLocale.value) {
@@ -261,201 +201,49 @@ const loginRules = {
   ],
 }
 
-const toggleTheme = () => {
-  themeStore.toggleTheme()
-}
-
 // 兼容 ThemeToggle 组件的 change 事件
 const handleThemeToggleChange = (theme: 'light' | 'dark') => {
   themeStore.setTheme(theme)
 }
 
-// 显示验证码弹窗
-const showCaptchaDialog = async () => {
-  if (captchaVerified.value) return
-  captchaDialogVisible.value = true
-  clickedPoints.value = []
-  await refreshCaptcha()
-}
-
-// 刷新验证码
-const refreshCaptcha = async () => {
-  try {
-    captchaType.value = 'loading'
-    // 不指定验证码类型，由后端随机返回
-    const data = await getCaptcha({
-      captchaType: 'default',  // 使用default让后端随机选择
-      clientUid: generateUUID(),
-      ts: Date.now(),
-    })
-    captchaData.value = data || {}
-    
-    // 根据返回的类型设置验证码类型
-    captchaType.value = data?.captchaType || 'blockPuzzle'
-    jigsawLeft.value = 0
-    sliderLeft.value = 0
-    clickedPoints.value = []
-  } catch (error) {
-    ElMessage.error(t('login.captchaLoadFailed'))
-  }
-}
-
 // 生成UUID
 const generateUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0
-    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
     return v.toString(16)
   })
 }
 
-// 滑块拖动相关
-let isDragging = false
-let startX = 0
-let startLeft = 0
-let animationId: number | null = null
-let currentSliderLeft = 0
-
-const startDrag = (e: MouseEvent | TouchEvent) => {
-  if (captchaVerified.value) return
-  isDragging = true
-  startX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX
-  startLeft = sliderLeft.value
-  currentSliderLeft = sliderLeft.value
-
-  document.addEventListener('mousemove', onDrag)
-  document.addEventListener('mouseup', stopDrag)
-  document.addEventListener('touchmove', onDrag)
-  document.addEventListener('touchend', stopDrag)
+// 获取验证码 API 包装
+const handleGetCaptcha = async (params: CaptchaRequestParams): Promise<CaptchaData> => {
+  return await getCaptcha({
+    captchaType: params.captchaType,
+    clientUid: params.clientUid || generateUUID(),
+    ts: params.ts || Date.now(),
+  })
 }
 
-const onDrag = (e: MouseEvent | TouchEvent) => {
-  if (!isDragging) return
-  e.preventDefault()
+// 校验验证码 API 包装
+const handleCheckCaptcha = async (params: CaptchaCheckParams): Promise<CaptchaCheckResult> => {
+  return await checkCaptcha({
+    captchaId: params.captchaId,
+    captchaType: params.captchaType,
+    pointJson: params.pointJson,
+    clientUid: params.clientUid,
+    ts: params.ts || Date.now(),
+  })
+}
 
-  const currentX = 'touches' in e ? (e.touches[0]?.clientX ?? 0) : e.clientX
-  const diff = currentX - startX
-  // 滑块最大移动距离：容器宽度(310) - 滑块宽度(40) - 边距(4) = 266
-  const maxLeft = 266
-  const newLeft = Math.max(0, Math.min(startLeft + diff, maxLeft))
-  
-  if (newLeft !== currentSliderLeft) {
-    currentSliderLeft = newLeft
-    if (animationId) {
-      cancelAnimationFrame(animationId)
-    }
-    animationId = requestAnimationFrame(() => {
-      sliderLeft.value = currentSliderLeft
-      jigsawLeft.value = currentSliderLeft
-    })
+// 验证码验证成功回调
+const handleCaptchaSuccess = (result: CaptchaCheckResult) => {
+  // 保存验证码校验结果
+  if (result.captchaVerification) {
+    userStore.setCaptchaVerification(result.captchaVerification)
   }
-}
-
-const stopDrag = async () => {
-  if (!isDragging) return
-  isDragging = false
-  
-  if (animationId) {
-    cancelAnimationFrame(animationId)
-    animationId = null
-  }
-  
-  document.removeEventListener('mousemove', onDrag)
-  document.removeEventListener('mouseup', stopDrag)
-  document.removeEventListener('touchmove', onDrag)
-  document.removeEventListener('touchend', stopDrag)
-  
-  // 提交验证
-  await submitSliderCaptcha()
-}
-
-// 提交滑块验证码
-const submitSliderCaptcha = async () => {
-  try {
-    // 确保captchaType有值
-    const captchaTypeValue = captchaData.value.captchaType || 'blockPuzzle'
-
-    const pointJson = JSON.stringify({ x: jigsawLeft.value, y: 5 })
-
-    // 使用captchaId或token作为验证码ID
-    const captchaId = captchaData.value.captchaId || captchaData.value.token
-    
-    const result = await checkCaptcha({
-      captchaId: captchaId,
-      captchaType: captchaTypeValue,
-      pointJson: pointJson,
-      clientUid: captchaData.value.token,
-      ts: Date.now(),
-    })
-    
-    if (result?.result) {
-      captchaVerified.value = true
-      captchaDialogVisible.value = false
-      // 保存验证码校验结果
-      if (result.captchaVerification) {
-        userStore.setCaptchaVerification(result.captchaVerification)
-      }
-      ElMessage.success(t('login.captchaSuccess'))
-      // 只有点击了登录按钮才自动登录
-      if (isLoginClicked.value) {
-        await autoLogin()
-      }
-    } else {
-      ElMessage.error(result?.msg || t('login.captchaFailed'))
-      await refreshCaptcha()
-    }
-  } catch (error) {
-    ElMessage.error(t('login.captchaFailed'))
-    await refreshCaptcha()
-  }
-}
-
-// 处理文字点击
-const handleWordClick = (e: MouseEvent) => {
-  if (captchaType.value !== 'clickWord') return
-  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-  const x = e.clientX - rect.left
-  const y = e.clientY - rect.top
-  clickedPoints.value.push({ x, y })
-}
-
-// 提交文字验证码
-const submitWordCaptcha = async () => {
-  if (clickedPoints.value.length === 0) {
-    ElMessage.warning(t('login.pleaseClickWords'))
-    return
-  }
-  
-  try {
-    const pointJson = JSON.stringify(clickedPoints.value.map(p => ({ x: p.x, y: p.y })))
-    const result = await checkCaptcha({
-      captchaId: captchaData.value.captchaId,
-      captchaType: captchaData.value.captchaType,
-      pointJson: pointJson,
-      clientUid: captchaData.value.token,
-      ts: Date.now(),
-    })
-    
-    if (result?.result) {
-      captchaVerified.value = true
-      captchaDialogVisible.value = false
-      if (result.captchaVerification) {
-        userStore.setCaptchaVerification(result.captchaVerification)
-      }
-      ElMessage.success(t('login.captchaSuccess'))
-      // 只有点击了登录按钮才自动登录
-      if (isLoginClicked.value) {
-        await autoLogin()
-      }
-    } else {
-      ElMessage.error(result?.msg || t('login.captchaFailed'))
-      clickedPoints.value = []
-      await refreshCaptcha()
-    }
-  } catch (error) {
-    ElMessage.error(t('login.captchaFailed'))
-    clickedPoints.value = []
-    await refreshCaptcha()
+  // 只有点击了登录按钮才自动登录
+  if (isLoginClicked.value) {
+    autoLogin()
   }
 }
 
@@ -494,7 +282,7 @@ const autoLogin = async () => {
     loadingProgress.value = 85
 
     // 等待一小段时间确保数据加载完成
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
     // 完成
     loadingProgress.value = 100
@@ -502,7 +290,7 @@ const autoLogin = async () => {
 
     clearInterval(progressInterval)
 
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 300))
 
     router.push('/')
   } catch (error) {
@@ -510,6 +298,8 @@ const autoLogin = async () => {
     userStore.setCaptchaVerification('')
     loginLoading.value = false
     loadingProgress.value = 0
+    // 重置验证码组件
+    captchaSliderRef.value?.reset()
   } finally {
     loading.value = false
   }
@@ -531,7 +321,8 @@ const handleLogin = async () => {
     }
 
     if (!captchaVerified.value) {
-      showCaptchaDialog()
+      // 打开验证码弹窗
+      captchaSliderRef.value?.open()
       return
     }
 
@@ -579,13 +370,6 @@ onMounted(() => {
     showCard.value = true
   }, 100)
 })
-
-onUnmounted(() => {
-  document.removeEventListener('mousemove', onDrag)
-  document.removeEventListener('mouseup', stopDrag)
-  document.removeEventListener('touchmove', onDrag)
-  document.removeEventListener('touchend', stopDrag)
-})
 </script>
 
 <style scoped lang="scss">
@@ -626,7 +410,9 @@ onUnmounted(() => {
   padding: 40px;
   border-radius: 24px;
   border: 1px solid rgba(59, 130, 246, 0.2);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 30px rgba(59, 130, 246, 0.15);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 30px rgba(59, 130, 246, 0.15);
   transform: translateY(30px);
   opacity: 0;
   transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -641,8 +427,12 @@ onUnmounted(() => {
     border-radius: inherit;
     padding: 1px;
     background: var(--gradient-cyber);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     opacity: 0.6;
@@ -683,7 +473,9 @@ onUnmounted(() => {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
   border-radius: 24px;
   border: 1px solid rgba(59, 130, 246, 0.3);
-  box-shadow: var(--glow-primary), 0 10px 30px rgba(59, 130, 246, 0.3);
+  box-shadow:
+    var(--glow-primary),
+    0 10px 30px rgba(59, 130, 246, 0.3);
   animation: pulse 2s infinite;
   position: relative;
 
@@ -708,7 +500,8 @@ onUnmounted(() => {
 }
 
 @keyframes border-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0;
   }
   50% {
@@ -724,7 +517,8 @@ onUnmounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
   }
   50% {
@@ -750,7 +544,9 @@ onUnmounted(() => {
 /* 深色模式标题 */
 .login-container.dark .system-title {
   color: #ffffff;
-  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 30px rgba(59, 130, 246, 0.3);
+  text-shadow:
+    0 0 10px rgba(59, 130, 246, 0.5),
+    0 0 30px rgba(59, 130, 246, 0.3);
 }
 
 /* 标题发光动画 */
@@ -764,7 +560,8 @@ onUnmounted(() => {
 }
 
 @keyframes title-glow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.5;
   }
   50% {
@@ -799,11 +596,11 @@ onUnmounted(() => {
     border: 2px solid var(--border-color-base);
     height: 42px;
     box-sizing: border-box;
-    
+
     &:hover {
       border-color: var(--primary-color-light);
     }
-    
+
     &.is-focus {
       border-color: var(--primary-color);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
@@ -814,7 +611,7 @@ onUnmounted(() => {
     height: 36px;
     font-size: 14px;
     color: var(--text-color-primary);
-    
+
     &::placeholder {
       color: var(--text-color-placeholder);
     }
@@ -831,273 +628,12 @@ onUnmounted(() => {
 }
 
 @keyframes icon-glow {
-  0%, 100% {
+  0%,
+  100% {
     filter: drop-shadow(0 0 2px var(--primary-color));
   }
   50% {
     filter: drop-shadow(0 0 8px var(--primary-color));
-  }
-}
-
-// 验证码滑块样式
-.captcha-slider-wrapper {
-  width: 100%;
-  cursor: pointer;
-}
-
-.captcha-slider {
-  position: relative;
-  height: 44px;
-  background: var(--bg-color);
-  border-radius: 22px;
-  border: none;
-  overflow: hidden;
-  transition: all 0.3s;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-
-  &.success {
-    background: rgba(16, 185, 129, 0.15);
-    box-shadow: inset 0 2px 4px rgba(16, 185, 129, 0.2);
-  }
-}
-
-.slider-track {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.slider-text {
-  font-size: 14px;
-  color: var(--text-color-secondary);
-  user-select: none;
-}
-
-.slider-btn {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-
-  &:hover {
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
-    transform: scale(1.05);
-  }
-
-  &.success {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    left: calc(100% - 42px);
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-  }
-}
-
-// 验证码弹窗样式
-.captcha-dialog {
-  :deep(.el-dialog__body) {
-    padding: 20px;
-  }
-}
-
-.captcha-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.block-puzzle-captcha {
-  width: 100%;
-}
-
-.captcha-image-wrapper {
-  position: relative;
-  width: 100%;
-  height: 155px;
-  background: var(--bg-color);
-  border-radius: 10px;
-  overflow: hidden;
-  margin-bottom: 20px;
-}
-
-.captcha-bg-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.captcha-jigsaw-image {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 60px;
-  object-fit: contain;
-}
-
-.slider-container {
-  position: relative;
-  width: 100%;
-  height: 44px;
-  background: var(--bg-color);
-  border-radius: 22px;
-  overflow: hidden;
-}
-
-.slider-track {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--border-color-base);
-  border-radius: 22px;
-}
-
-.slider-fill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
-  border-radius: 22px;
-  transition: width 0.1s;
-}
-
-.slider-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
-  cursor: grab;
-  z-index: 10;
-  transition: transform 0.05s ease-out;
-
-  &:active {
-    cursor: grabbing;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.5);
-  }
-}
-
-.slider-hint {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 14px;
-  color: var(--text-color-secondary);
-  pointer-events: none;
-}
-
-// 点选验证码样式
-.click-word-captcha {
-  width: 100%;
-}
-
-.word-hint {
-  margin-bottom: 15px;
-  font-size: 14px;
-  color: var(--text-color-primary);
-
-  .words {
-    color: var(--primary-color);
-    font-weight: bold;
-  }
-}
-
-.click-point {
-  position: absolute;
-  width: 24px;
-  height: 24px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
-  transform: translate(-50%, -50%);
-  animation: point-appear 0.3s ease;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
-}
-
-@keyframes point-appear {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.2);
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
-.click-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 15px;
-  
-  :deep(.el-button) {
-    border-radius: 22px;
-    padding: 12px 24px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s;
-    
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-    
-    &:active {
-      transform: translateY(0);
-    }
-  }
-}
-
-// 加载状态
-.captcha-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 40px;
-
-  .loading-icon {
-    font-size: 32px;
-    color: var(--primary-color);
-    animation: rotate 1s linear infinite;
-  }
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
   }
 }
 
@@ -1109,7 +645,9 @@ onUnmounted(() => {
   border-radius: 12px;
   background: var(--gradient-cyber);
   border: none;
-  box-shadow: var(--glow-primary), 0 4px 20px rgba(102, 126, 234, 0.4);
+  box-shadow:
+    var(--glow-primary),
+    0 4px 20px rgba(102, 126, 234, 0.4);
   transition: all var(--duration-normal) var(--ease-out-expo);
   display: flex;
   align-items: center;
@@ -1130,7 +668,9 @@ onUnmounted(() => {
 
   &:hover {
     transform: translateY(-3px);
-    box-shadow: var(--glow-primary), 0 8px 30px rgba(102, 126, 234, 0.5);
+    box-shadow:
+      var(--glow-primary),
+      0 8px 30px rgba(102, 126, 234, 0.5);
 
     &::before {
       transform: translateX(100%);
@@ -1264,7 +804,8 @@ onUnmounted(() => {
 }
 
 @keyframes logo-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.8));
   }

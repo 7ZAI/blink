@@ -15,7 +15,7 @@ onMounted(() => {
   // 2. /redirect?redirect=/path/to/page (query参数方式)
   const redirectPath = route.params.path
     ? '/' + (Array.isArray(route.params.path) ? route.params.path.join('/') : route.params.path)
-    : route.query.redirect as string
+    : (route.query.redirect as string)
 
   if (redirectPath) {
     router.replace(redirectPath)

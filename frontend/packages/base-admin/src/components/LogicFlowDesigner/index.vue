@@ -2,12 +2,8 @@
   <div class="logicflow-designer" :class="{ 'dark-mode': isDark }">
     <div class="toolbar">
       <el-space>
-        <el-button type="primary" @click="handleSave" :icon="DocumentChecked">
-          保存流程
-        </el-button>
-        <el-button @click="handleDeploy" :icon="Upload">
-          部署流程
-        </el-button>
+        <el-button type="primary" @click="handleSave" :icon="DocumentChecked">保存流程</el-button>
+        <el-button @click="handleDeploy" :icon="Upload">部署流程</el-button>
         <el-divider direction="vertical" />
         <el-button-group>
           <el-button @click="handleZoomIn" :icon="ZoomIn" title="放大" />
@@ -20,16 +16,10 @@
           <el-button @click="handleRedo" :icon="RefreshRight" title="重做" />
         </el-button-group>
         <el-divider direction="vertical" />
-        <el-button @click="handleDownloadXML" :icon="Download">
-          导出BPMN
-        </el-button>
-        <el-button @click="handleDownloadImage" :icon="Picture">
-          导出图片
-        </el-button>
+        <el-button @click="handleDownloadXML" :icon="Download">导出BPMN</el-button>
+        <el-button @click="handleDownloadImage" :icon="Picture">导出图片</el-button>
         <el-divider direction="vertical" />
-        <el-button @click="handleClear" :icon="Delete" type="danger">
-          清空画布
-        </el-button>
+        <el-button @click="handleClear" :icon="Delete" type="danger">清空画布</el-button>
       </el-space>
     </div>
 
@@ -53,12 +43,7 @@
         </div>
       </div>
 
-      <div 
-        ref="containerRef" 
-        class="canvas-container"
-        @dragover.prevent
-        @drop="handleDrop"
-      ></div>
+      <div ref="containerRef" class="canvas-container" @dragover.prevent @drop="handleDrop"></div>
 
       <div class="properties-panel">
         <div class="panel-title">属性配置</div>
@@ -77,10 +62,19 @@
             <!-- 用户任务 -->
             <template v-if="selectedElement.type === 'bpmn:userTask'">
               <el-form-item label="受理人">
-                <el-input v-model.trim="nodeForm.assignee" placeholder="请输入受理人" @change="updateNodeProperty('assignee', nodeForm.assignee)" />
+                <el-input
+                  v-model.trim="nodeForm.assignee"
+                  placeholder="请输入受理人"
+                  @change="updateNodeProperty('assignee', nodeForm.assignee)"
+                />
               </el-form-item>
               <el-form-item label="候选组">
-                <el-select v-model="nodeForm.candidateGroups" multiple placeholder="请选择候选组" @change="updateNodeProperty('candidateGroups', nodeForm.candidateGroups)">
+                <el-select
+                  v-model="nodeForm.candidateGroups"
+                  multiple
+                  placeholder="请选择候选组"
+                  @change="updateNodeProperty('candidateGroups', nodeForm.candidateGroups)"
+                >
                   <el-option label="部门经理" value="dept_manager" />
                   <el-option label="HR" value="hr" />
                   <el-option label="财务" value="finance" />
@@ -90,19 +84,31 @@
             <!-- 服务任务 -->
             <template v-if="selectedElement.type === 'bpmn:serviceTask'">
               <el-form-item label="类名">
-                <el-input v-model.trim="nodeForm.className" placeholder="例如: com.example.ServiceClass" @change="updateNodeProperty('className', nodeForm.className)" />
+                <el-input
+                  v-model.trim="nodeForm.className"
+                  placeholder="例如: com.example.ServiceClass"
+                  @change="updateNodeProperty('className', nodeForm.className)"
+                />
               </el-form-item>
             </template>
             <!-- 脚本任务 -->
             <template v-if="selectedElement.type === 'bpmn:scriptTask'">
               <el-form-item label="脚本格式">
-                <el-input v-model.trim="nodeForm.scriptFormat" placeholder="例如: groovy, javascript" @change="updateNodeProperty('scriptFormat', nodeForm.scriptFormat)" />
+                <el-input
+                  v-model.trim="nodeForm.scriptFormat"
+                  placeholder="例如: groovy, javascript"
+                  @change="updateNodeProperty('scriptFormat', nodeForm.scriptFormat)"
+                />
               </el-form-item>
             </template>
             <!-- 定时事件 -->
             <template v-if="selectedElement.type === 'bpmn:timerEvent'">
               <el-form-item label="持续时间">
-                <el-input v-model.trim="nodeForm.timeDuration" placeholder="例如: PT5M" @change="updateNodeProperty('timeDuration', nodeForm.timeDuration)" />
+                <el-input
+                  v-model.trim="nodeForm.timeDuration"
+                  placeholder="例如: PT5M"
+                  @change="updateNodeProperty('timeDuration', nodeForm.timeDuration)"
+                />
               </el-form-item>
             </template>
           </el-form>
@@ -155,14 +161,25 @@
       </el-form>
       <template #footer>
         <el-button @click="deployDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmDeploy" :loading="deployLoading">确定部署</el-button>
+        <el-button type="primary" @click="confirmDeploy" :loading="deployLoading">
+          确定部署
+        </el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, onActivated, onDeactivated, markRaw, computed, watch } from 'vue'
+import {
+  ref,
+  onMounted,
+  onBeforeUnmount,
+  onActivated,
+  onDeactivated,
+  markRaw,
+  computed,
+  watch,
+} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   DocumentChecked,
@@ -180,9 +197,16 @@ import {
   Timer,
   Document,
   Share,
-  Delete
+  Delete,
 } from '@element-plus/icons-vue'
-import LogicFlow, { RectNode, RectNodeModel, CircleNode, CircleNodeModel, DiamondNode, DiamondNodeModel } from '@logicflow/core'
+import LogicFlow, {
+  RectNode,
+  RectNodeModel,
+  CircleNode,
+  CircleNodeModel,
+  DiamondNode,
+  DiamondNodeModel,
+} from '@logicflow/core'
 import { BpmnElement, Menu, SelectionSelect, Snapshot } from '@logicflow/extension'
 import '@logicflow/core/dist/style/index.css'
 import '@logicflow/extension/lib/style/index.css'
@@ -190,7 +214,7 @@ import { useThemeStore } from '@/stores/theme'
 import { deployProcess } from '@/api/workflow'
 
 defineOptions({
-  name: 'LogicFlowDesigner'
+  name: 'LogicFlowDesigner',
 })
 
 const containerRef = ref<HTMLDivElement>()
@@ -209,12 +233,12 @@ const nodeForm = ref({
   candidateGroups: [] as string[],
   className: '',
   scriptFormat: '',
-  timeDuration: ''
+  timeDuration: '',
 })
 
 const edgeForm = ref({
   id: '',
-  condition: ''
+  condition: '',
 })
 
 const nodeTypes = [
@@ -225,7 +249,7 @@ const nodeTypes = [
   { type: 'bpmn:exclusiveGateway', name: '排他网关', icon: markRaw(Share), color: '#909399' },
   { type: 'bpmn:parallelGateway', name: '并行网关', icon: markRaw(Share), color: '#909399' },
   { type: 'bpmn:timerEvent', name: '定时事件', icon: markRaw(Timer), color: '#67C23A' },
-  { type: 'bpmn:scriptTask', name: '脚本任务', icon: markRaw(Document), color: '#E6A23C' }
+  { type: 'bpmn:scriptTask', name: '脚本任务', icon: markRaw(Document), color: '#E6A23C' },
 ]
 
 // 自动保存相关的 key
@@ -237,7 +261,7 @@ const deployLoading = ref(false)
 const deployForm = ref({
   name: '',
   key: '',
-  description: ''
+  description: '',
 })
 
 // 自动保存相关
@@ -249,29 +273,31 @@ let draggedNodeType = ''
 let draggedNodeName = ''
 
 const getThemeColors = () => {
-  return isDark.value ? {
-    bgColor: '#1a1a2e',
-    gridColor: '#2d2d44',
-    gridDotColor: '#6366f1',
-    textColor: '#e2e8f0',
-    nodeTextColor: '#f1f5f9',
-    borderColor: '#6366f1',
-    menuBg: '#1a1a2e',
-    menuHoverBg: '#2d2d44',
-    menuTextColor: '#e2e8f0',
-    menuHoverTextColor: '#818cf8'
-  } : {
-    bgColor: '#FFFFFF',
-    gridColor: '#E2E8F0',
-    gridDotColor: '#3B82F6',
-    textColor: '#4A5568',
-    nodeTextColor: '#1A202C',
-    borderColor: '#E2E8F0',
-    menuBg: '#FFFFFF',
-    menuHoverBg: '#F1F5F9',
-    menuTextColor: '#4A5568',
-    menuHoverTextColor: '#3B82F6'
-  }
+  return isDark.value
+    ? {
+        bgColor: '#1a1a2e',
+        gridColor: '#2d2d44',
+        gridDotColor: '#6366f1',
+        textColor: '#e2e8f0',
+        nodeTextColor: '#f1f5f9',
+        borderColor: '#6366f1',
+        menuBg: '#1a1a2e',
+        menuHoverBg: '#2d2d44',
+        menuTextColor: '#e2e8f0',
+        menuHoverTextColor: '#818cf8',
+      }
+    : {
+        bgColor: '#FFFFFF',
+        gridColor: '#E2E8F0',
+        gridDotColor: '#3B82F6',
+        textColor: '#4A5568',
+        nodeTextColor: '#1A202C',
+        borderColor: '#E2E8F0',
+        menuBg: '#FFFFFF',
+        menuHoverBg: '#F1F5F9',
+        menuTextColor: '#4A5568',
+        menuHoverTextColor: '#3B82F6',
+      }
 }
 
 const updateTheme = () => {
@@ -285,23 +311,23 @@ const updateTheme = () => {
       ry: 5,
       strokeWidth: 2,
       stroke: colors.borderColor,
-      fill: colors.bgColor
+      fill: colors.bgColor,
     },
     circle: {
       r: 20,
       strokeWidth: 2,
       stroke: colors.borderColor,
-      fill: colors.bgColor
+      fill: colors.bgColor,
     },
     nodeText: {
       overflowMode: 'autoWrap',
       fontSize: 12,
-      color: colors.nodeTextColor
+      color: colors.nodeTextColor,
     },
     edgeText: {
       fontSize: 12,
-      color: colors.textColor
-    }
+      color: colors.textColor,
+    },
   } as any)
 
   // 更新网格和背景
@@ -311,8 +337,8 @@ const updateTheme = () => {
     visible: true,
     config: {
       color: colors.gridDotColor,
-      thickness: 1.5
-    }
+      thickness: 1.5,
+    },
   } as any)
 
   // 强制重绘网格
@@ -332,14 +358,14 @@ const initLogicFlow = () => {
       type: 'dot',
       config: {
         color: colors.gridDotColor,
-        thickness: 1.5
-      }
+        thickness: 1.5,
+      },
     },
     background: {
-      backgroundColor: colors.bgColor
+      backgroundColor: colors.bgColor,
     },
     keyboard: {
-      enabled: true
+      enabled: true,
     },
     plugins: [BpmnElement, Menu, SelectionSelect, Snapshot],
     edgeType: 'bpmn:sequenceFlow',
@@ -349,24 +375,24 @@ const initLogicFlow = () => {
         ry: 5,
         strokeWidth: 2,
         stroke: colors.borderColor,
-        fill: colors.bgColor
+        fill: colors.bgColor,
       },
       circle: {
         r: 20,
         strokeWidth: 2,
         stroke: colors.borderColor,
-        fill: colors.bgColor
+        fill: colors.bgColor,
       },
       nodeText: {
         overflowMode: 'autoWrap',
         fontSize: 12,
-        color: colors.nodeTextColor
+        color: colors.nodeTextColor,
       },
       edgeText: {
         fontSize: 12,
-        color: colors.textColor
-      }
-    }
+        color: colors.textColor,
+      },
+    },
   })
 
   // 注册自定义节点类型（BpmnElement未内置的类型）
@@ -382,7 +408,7 @@ const initLogicFlow = () => {
   lf.register({
     type: 'bpmn:parallelGateway',
     view: ParallelGatewayView,
-    model: ParallelGatewayModel
+    model: ParallelGatewayModel,
   })
 
   // 定时事件 - 使用圆形节点
@@ -398,7 +424,7 @@ const initLogicFlow = () => {
   lf.register({
     type: 'bpmn:timerEvent',
     view: TimerEventView,
-    model: TimerEventModel
+    model: TimerEventModel,
   })
 
   // 脚本任务 - 使用矩形节点
@@ -415,7 +441,7 @@ const initLogicFlow = () => {
   lf.register({
     type: 'bpmn:scriptTask',
     view: ScriptTaskView,
-    model: ScriptTaskModel
+    model: ScriptTaskModel,
   })
 
   lf.on('node:click', ({ data }) => {
@@ -428,7 +454,7 @@ const initLogicFlow = () => {
       candidateGroups: data.properties?.candidateGroups || [],
       className: data.properties?.className || '',
       scriptFormat: data.properties?.scriptFormat || '',
-      timeDuration: data.properties?.timeDuration || ''
+      timeDuration: data.properties?.timeDuration || '',
     }
   })
 
@@ -437,7 +463,7 @@ const initLogicFlow = () => {
     selectedElement.value = data
     edgeForm.value = {
       id: data.id,
-      condition: data.properties?.condition || ''
+      condition: data.properties?.condition || '',
     }
   })
 
@@ -448,7 +474,7 @@ const initLogicFlow = () => {
 
   lf.render({
     nodes: [],
-    edges: []
+    edges: [],
   })
 
   isInitialized = true
@@ -542,8 +568,8 @@ const handleDrop = (e: DragEvent) => {
     y: y,
     text: draggedNodeName,
     properties: {
-      name: draggedNodeName
-    }
+      name: draggedNodeName,
+    },
   })
 
   hasUnsavedChanges.value = true
@@ -551,7 +577,7 @@ const handleDrop = (e: DragEvent) => {
 }
 
 const getNodeTypeName = (type: string) => {
-  const node = nodeTypes.find(n => n.type === type)
+  const node = nodeTypes.find((n) => n.type === type)
   return node?.name || type
 }
 
@@ -570,11 +596,14 @@ const autoSave = () => {
 
   const data = lf.getGraphData()
   if (data.nodes.length > 0 || data.edges.length > 0) {
-    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({
-      data,
-      timestamp: Date.now(),
-      deployForm: deployForm.value
-    }))
+    localStorage.setItem(
+      AUTOSAVE_KEY,
+      JSON.stringify({
+        data,
+        timestamp: Date.now(),
+        deployForm: deployForm.value,
+      })
+    )
   }
 }
 
@@ -636,7 +665,7 @@ const confirmDeploy = async () => {
       processName: deployForm.value.name,
       processKey: deployForm.value.key,
       bpmnXmlContent: bpmnXml,
-      description: deployForm.value.description
+      description: deployForm.value.description,
     })
     ElMessage.success('流程部署成功')
     deployDialogVisible.value = false
@@ -644,7 +673,7 @@ const confirmDeploy = async () => {
     deployForm.value = {
       name: '',
       key: '',
-      description: ''
+      description: '',
     }
     hasUnsavedChanges.value = false
     // 清除自动保存的数据
@@ -789,20 +818,18 @@ const handleDownloadImage = () => {
 
 const handleClear = () => {
   if (!lf) return
-  ElMessageBox.confirm(
-    '确定要清空画布吗？未保存的内容将丢失。',
-    '清空确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning',
-    }
-  ).then(() => {
-    lf?.clearData()
-    hasUnsavedChanges.value = false
-    localStorage.removeItem(AUTOSAVE_KEY)
-    ElMessage.success('画布已清空')
-  }).catch(() => {})
+  ElMessageBox.confirm('确定要清空画布吗？未保存的内容将丢失。', '清空确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(() => {
+      lf?.clearData()
+      hasUnsavedChanges.value = false
+      localStorage.removeItem(AUTOSAVE_KEY)
+      ElMessage.success('画布已清空')
+    })
+    .catch(() => {})
 }
 
 const updateNodeName = () => {

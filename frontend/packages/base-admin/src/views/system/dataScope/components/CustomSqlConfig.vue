@@ -56,7 +56,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  disabled: false
+  disabled: false,
 })
 
 const emit = defineEmits<{
@@ -92,16 +92,14 @@ watch(() => props.modelValue, initConfig, { immediate: true })
  */
 const insertTemplate = (type: string) => {
   const templates: Record<string, string> = {
-    last7days: "create_time > DATE_SUB(NOW(), INTERVAL 7 DAY)",
+    last7days: 'create_time > DATE_SUB(NOW(), INTERVAL 7 DAY)',
     thismonth: "DATE_FORMAT(create_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')",
-    statusenabled: "status = 0"
+    statusenabled: 'status = 0',
   }
 
   const template = templates[type]
   if (template) {
-    sqlFragment.value = sqlFragment.value
-      ? `${sqlFragment.value} AND ${template}`
-      : template
+    sqlFragment.value = sqlFragment.value ? `${sqlFragment.value} AND ${template}` : template
     updateConfig()
   }
 }
@@ -110,9 +108,12 @@ const insertTemplate = (type: string) => {
  * 更新配置并触发emit
  */
 const updateConfig = () => {
-  emit('update:modelValue', JSON.stringify({
-    sqlFragment: sqlFragment.value
-  }))
+  emit(
+    'update:modelValue',
+    JSON.stringify({
+      sqlFragment: sqlFragment.value,
+    })
+  )
 }
 </script>
 

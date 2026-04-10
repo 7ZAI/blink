@@ -3,23 +3,38 @@
     <el-card class="search-card" shadow="never">
       <el-form :model="searchForm" inline class="search-form">
         <el-form-item :label="t('dict.dictName')">
-          <el-input v-model.trim="searchForm.dictName" :placeholder="t('common.pleaseInput')" clearable />
+          <el-input
+            v-model.trim="searchForm.dictName"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+          />
         </el-form-item>
         <el-form-item :label="t('dict.dictType')">
-          <el-input v-model.trim="searchForm.dictType" :placeholder="t('common.pleaseInput')" clearable />
+          <el-input
+            v-model.trim="searchForm.dictType"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+          />
         </el-form-item>
         <el-form-item :label="t('common.status')">
-          <el-select v-model="searchForm.status" :placeholder="t('common.pleaseSelect')" clearable style="width: 120px">
+          <el-select
+            v-model="searchForm.status"
+            :placeholder="t('common.pleaseSelect')"
+            clearable
+            style="width: 120px"
+          >
             <el-option :label="t('dict.statusEnable')" :value="0" />
             <el-option :label="t('dict.statusDisable')" :value="1" />
           </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="info" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -30,7 +45,8 @@
         <div class="table-header">
           <div class="header-left">
             <AuthButton :perm="ButtonPerms.DictType.Add" type="primary" @click="handleAdd">
-              <el-icon><Plus /></el-icon>{{ t('common.add') }}
+              <el-icon><Plus /></el-icon>
+              {{ t('common.add') }}
             </AuthButton>
           </div>
         </div>
@@ -59,15 +75,34 @@
             </template>
           </el-table-column>
           <el-table-column prop="createTime" :label="t('common.createTime')" min-width="160" />
-          <el-table-column prop="remark" :label="t('common.remark')" min-width="140" show-overflow-tooltip />
+          <el-table-column
+            prop="remark"
+            :label="t('common.remark')"
+            min-width="140"
+            show-overflow-tooltip
+          />
           <el-table-column :label="t('common.operation')" min-width="180" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :perm="ButtonPerms.DictType.Edit" type="primary" link size="small" @click="handleEdit(row)">
-                  <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                <AuthButton
+                  :perm="ButtonPerms.DictType.Edit"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  <el-icon><Edit /></el-icon>
+                  {{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton :perm="ButtonPerms.DictType.Delete" type="danger" link size="small" @click="handleDelete(row)">
-                  <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                <AuthButton
+                  :perm="ButtonPerms.DictType.Delete"
+                  type="danger"
+                  link
+                  size="small"
+                  @click="handleDelete(row)"
+                >
+                  <el-icon><Delete /></el-icon>
+                  {{ t('common.delete') }}
                 </AuthButton>
               </div>
             </template>

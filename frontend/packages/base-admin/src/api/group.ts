@@ -70,12 +70,12 @@ function buildGroupTree(groups: GroupInfo[]): GroupInfo[] {
   const rootGroups: GroupInfo[] = []
 
   // 第一遍遍历：创建所有节点
-  groups.forEach(group => {
+  groups.forEach((group) => {
     groupMap.set(group.groupId, { ...group, children: [] })
   })
 
   // 第二遍遍历：建立父子关系
-  groups.forEach(group => {
+  groups.forEach((group) => {
     const currentGroup = groupMap.get(group.groupId)!
     if (!group.groupParentId || group.groupParentId === 0) {
       // 根节点
@@ -97,7 +97,7 @@ function buildGroupTree(groups: GroupInfo[]): GroupInfo[] {
   // 按 groupLevel 排序
   const sortGroups = (list: GroupInfo[]): GroupInfo[] => {
     list.sort((a, b) => (a.groupLevel || 0) - (b.groupLevel || 0))
-    list.forEach(group => {
+    list.forEach((group) => {
       if (group.children && group.children.length > 0) {
         sortGroups(group.children)
       }

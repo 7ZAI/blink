@@ -22,7 +22,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   perm: '',
   perms: () => [],
-  disabledOnNoPerm: false
+  disabledOnNoPerm: false,
 })
 
 const userStore = useUserStore()
@@ -49,7 +49,7 @@ const hasPermission = computed(() => {
     return true // 没有配置权限要求，默认显示
   }
 
-  return permList.some(perm => permissions.includes(perm))
+  return permList.some((perm) => permissions.includes(perm))
 })
 
 /**

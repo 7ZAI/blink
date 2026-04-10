@@ -6,7 +6,9 @@
           <div class="header-tabs">
             <el-radio-group v-model="activeStatus" @change="handleStatusChange">
               <el-radio-button value="pending">{{ t('workflow.pendingTasks') }}</el-radio-button>
-              <el-radio-button value="completed">{{ t('workflow.completedTasks') }}</el-radio-button>
+              <el-radio-button value="completed">
+                {{ t('workflow.completedTasks') }}
+              </el-radio-button>
               <el-radio-button value="mine">{{ t('workflow.myProcesses') }}</el-radio-button>
             </el-radio-group>
           </div>
@@ -48,7 +50,12 @@
             </template>
           </el-table-column>
           <el-table-column prop="createTime" :label="t('common.createTime')" width="180" />
-          <el-table-column prop="status" :label="t('common.status')" width="100" v-if="activeStatus !== 'pending'">
+          <el-table-column
+            prop="status"
+            :label="t('common.status')"
+            width="100"
+            v-if="activeStatus !== 'pending'"
+          >
             <template #default="{ row }">
               <el-tag :type="getStatusType(row.status)">
                 {{ getStatusText(row.status) }}
@@ -112,7 +119,9 @@
       </el-form>
       <template #footer>
         <el-button @click="completeDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="confirmComplete" :loading="completeLoading">{{ t('common.confirm') }}</el-button>
+        <el-button type="primary" @click="confirmComplete" :loading="completeLoading">
+          {{ t('common.confirm') }}
+        </el-button>
       </template>
     </el-dialog>
 
@@ -123,12 +132,17 @@
           <el-input :value="currentTask?.taskName" disabled />
         </el-form-item>
         <el-form-item :label="t('workflow.targetUser')">
-          <el-input v-model.trim="delegateForm.targetUserId" :placeholder="t('workflow.targetUserPlaceholder')" />
+          <el-input
+            v-model.trim="delegateForm.targetUserId"
+            :placeholder="t('workflow.targetUserPlaceholder')"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="delegateDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="confirmDelegate" :loading="delegateLoading">{{ t('common.confirm') }}</el-button>
+        <el-button type="primary" @click="confirmDelegate" :loading="delegateLoading">
+          {{ t('common.confirm') }}
+        </el-button>
       </template>
     </el-dialog>
 
@@ -176,11 +190,11 @@ import {
   type TaskInfo,
   type HistoricTaskInfo,
   type ProcessInstanceInfo,
-  type ProcessHistoryInfo
+  type ProcessHistoryInfo,
 } from '@/api/workflow'
 
 defineOptions({
-  name: 'WorkflowTask'
+  name: 'WorkflowTask',
 })
 
 const { t } = useI18n()
@@ -201,13 +215,13 @@ const completeLoading = ref(false)
 const currentTask = ref<TaskInfo | null>(null)
 const completeForm = ref({
   comment: '',
-  approved: true
+  approved: true,
 })
 
 const delegateDialogVisible = ref(false)
 const delegateLoading = ref(false)
 const delegateForm = ref({
-  targetUserId: ''
+  targetUserId: '',
 })
 
 const historyDialogVisible = ref(false)
@@ -228,7 +242,7 @@ const loadTaskList = async () => {
         pageNum: currentPage.value,
         pageSize: pageSize.value,
         userId,
-        taskName: searchName.value || undefined
+        taskName: searchName.value || undefined,
       })
       taskList.value = res.rows || []
       total.value = res.total || 0
@@ -237,7 +251,7 @@ const loadTaskList = async () => {
         pageNum: currentPage.value,
         pageSize: pageSize.value,
         userId,
-        taskName: searchName.value || undefined
+        taskName: searchName.value || undefined,
       })
       taskList.value = res.rows || []
       total.value = res.total || 0
@@ -290,7 +304,7 @@ const handleComplete = (row: TaskInfo) => {
   currentTask.value = row
   completeForm.value = {
     comment: '',
-    approved: true
+    approved: true,
   }
   completeDialogVisible.value = true
 }
@@ -304,7 +318,7 @@ const confirmComplete = async () => {
       taskId: currentTask.value.taskId,
       userId: String(userStore.userInfo?.userId || ''),
       comment: completeForm.value.comment,
-      approved: completeForm.value.approved
+      approved: completeForm.value.approved,
     })
     ElMessage.success(t('message.success'))
     completeDialogVisible.value = false
@@ -332,7 +346,7 @@ const confirmDelegate = async () => {
     await delegateTask({
       taskId: currentTask.value.taskId,
       currentUserId: String(userStore.userInfo?.userId || ''),
-      targetUserId: delegateForm.value.targetUserId
+      targetUserId: delegateForm.value.targetUserId,
     })
     ElMessage.success(t('message.success'))
     delegateDialogVisible.value = false

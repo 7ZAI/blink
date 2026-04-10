@@ -96,9 +96,7 @@ export function useTabsState(options: UseTabsStateOptions = {}): UseTabsStateRet
 
   const closeOtherTabs = (path: string) => {
     tabs.value = tabs.value.filter((t) => t.path === path || t.affix)
-    cachedViews.value = cachedViews.value.filter((name) =>
-      tabs.value.some((t) => t.name === name)
-    )
+    cachedViews.value = cachedViews.value.filter((name) => tabs.value.some((t) => t.name === name))
     onTabChange?.(tabs.value)
     onCachedViewChange?.(cachedViews.value)
   }
@@ -107,9 +105,7 @@ export function useTabsState(options: UseTabsStateOptions = {}): UseTabsStateRet
     const index = tabs.value.findIndex((t) => t.path === path)
     if (index === -1) return
     tabs.value = tabs.value.filter((t, i) => i <= index || t.affix)
-    cachedViews.value = cachedViews.value.filter((name) =>
-      tabs.value.some((t) => t.name === name)
-    )
+    cachedViews.value = cachedViews.value.filter((name) => tabs.value.some((t) => t.name === name))
     onTabChange?.(tabs.value)
     onCachedViewChange?.(cachedViews.value)
   }
@@ -118,18 +114,14 @@ export function useTabsState(options: UseTabsStateOptions = {}): UseTabsStateRet
     const index = tabs.value.findIndex((t) => t.path === path)
     if (index === -1) return
     tabs.value = tabs.value.filter((t, i) => i >= index || t.affix)
-    cachedViews.value = cachedViews.value.filter((name) =>
-      tabs.value.some((t) => t.name === name)
-    )
+    cachedViews.value = cachedViews.value.filter((name) => tabs.value.some((t) => t.name === name))
     onTabChange?.(tabs.value)
     onCachedViewChange?.(cachedViews.value)
   }
 
   const closeAllTabs = () => {
     tabs.value = tabs.value.filter((t) => t.affix)
-    cachedViews.value = cachedViews.value.filter((name) =>
-      tabs.value.some((t) => t.name === name)
-    )
+    cachedViews.value = cachedViews.value.filter((name) => tabs.value.some((t) => t.name === name))
     onTabChange?.(tabs.value)
     onCachedViewChange?.(cachedViews.value)
   }

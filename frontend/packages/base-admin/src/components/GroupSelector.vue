@@ -15,7 +15,7 @@
         <el-icon><Search /></el-icon>
       </template>
     </el-input>
-    
+
     <el-tree
       ref="treeRef"
       :data="groupTreeData"
@@ -28,7 +28,7 @@
       default-expand-all
       @node-click="handleNodeClick"
     />
-    
+
     <template #footer>
       <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
       <el-button type="primary" :disabled="!selectedNode" @click="handleConfirm">
@@ -130,15 +130,15 @@ watch(
 :deep(.el-tree) {
   max-height: 400px;
   overflow-y: auto;
-  
+
   .el-tree-node__content {
     height: 36px;
-    
+
     &:hover {
       background-color: var(--table-row-hover);
     }
   }
-  
+
   .el-tree-node.is-current > .el-tree-node__content {
     background-color: var(--sidebar-active-bg);
     color: var(--primary-color);

@@ -58,7 +58,11 @@
         </el-col>
         <el-col :span="12">
           <el-form-item :label="t('dataScope.tableName')">
-            <el-input v-model="formData.tableName" disabled :placeholder="t('common.pleaseInput')" />
+            <el-input
+              v-model="formData.tableName"
+              disabled
+              :placeholder="t('common.pleaseInput')"
+            />
           </el-form-item>
         </el-col>
       </el-row>
@@ -145,7 +149,9 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">{{ isDetail ? t('common.close') : t('common.cancel') }}</el-button>
+      <el-button @click="handleClose">
+        {{ isDetail ? t('common.close') : t('common.cancel') }}
+      </el-button>
       <el-button v-if="!isDetail" type="primary" :loading="isSubmitting" @click="handleSubmit">
         {{ t('common.confirm') }}
       </el-button>
@@ -172,14 +178,14 @@ import {
   getDataFilterDetail,
   type DataFilterInfo,
   type EntityInfo,
-  type EntityFieldVO
+  type EntityFieldVO,
 } from '@/api/dataScope'
 import FieldFilterConfig from './FieldFilterConfig.vue'
 import CreatorFilterConfig from './CreatorFilterConfig.vue'
 import DateRangeConfig from './DateRangeConfig.vue'
 import CustomSqlConfig from './CustomSqlConfig.vue'
 import RelationFilterConfig from './RelationFilterConfig.vue'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSubmitGuard } from '@blink/components'
 
 defineOptions({ name: 'DataFilterFormDialog' })
 
@@ -195,12 +201,12 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'success': []
+  success: []
 }>()
 
 const visible = computed({
   get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
+  set: (val) => emit('update:modelValue', val),
 })
 
 const formRef = ref<FormInstance>()
@@ -227,11 +233,11 @@ const dialogTitle = computed(() => {
  * 当前选中的实体信息（包含tableName供关联过滤配置使用）
  */
 const selectedEntity = computed(() => {
-  const entity = entityList.value.find(e => e.entityClass === formData.entityClass)
+  const entity = entityList.value.find((e) => e.entityClass === formData.entityClass)
   if (entity) {
     return {
       ...entity,
-      tableName: formData.tableName || entity.tableName
+      tableName: formData.tableName || entity.tableName,
     }
   }
   return undefined
@@ -249,7 +255,7 @@ const formData = reactive({
   ruleType: '',
   ruleConfig: '',
   status: 0,
-  remark: ''
+  remark: '',
 })
 
 /**
@@ -261,17 +267,18 @@ const ruleTypeOptions = computed(() => {
     { value: 'CREATOR_FILTER', label: t('dataScope.creatorFilter') },
     { value: 'DATE_RANGE_FILTER', label: t('dataScope.dateRangeFilter') },
     { value: 'CUSTOM_SQL', label: t('dataScope.customSql') },
-    { value: 'RELATION_FILTER', label: t('dataScope.relationFilter'), disabled: false }
+    { value: 'RELATION_FILTER', label: t('dataScope.relationFilter'), disabled: false },
   ]
 
   // 如果当前实体没有关联关系，禁用关联过滤选项
   if (formData.entityClass) {
-    const entity = entityList.value.find(e => e.entityClass === formData.entityClass)
+    const entity = entityList.value.find((e) => e.entityClass === formData.entityClass)
     if (entity && (!entity.relations || entity.relations.length === 0)) {
-      const relationType = types.find(t => t.value === 'RELATION_FILTER')
+      const relationType = types.find((t) => t.value === 'RELATION_FILTER')
       if (relationType) {
         relationType.disabled = true
-        relationType.label = t('dataScope.relationFilter') + ' (' + t('dataScope.noRelationSupport') + ')'
+        relationType.label =
+          t('dataScope.relationFilter') + ' (' + t('dataScope.noRelationSupport') + ')'
       }
     }
   }
@@ -285,14 +292,10 @@ const ruleTypeOptions = computed(() => {
 const rules: FormRules = {
   dataFilterName: [
     { required: true, message: t('dataScope.nameRequired'), trigger: 'blur' },
-    { max: 64, message: t('dataScope.nameMaxLength', { max: 64 }), trigger: 'blur' }
+    { max: 64, message: t('dataScope.nameMaxLength', { max: 64 }), trigger: 'blur' },
   ],
-  entityClass: [
-    { required: true, message: t('dataScope.entityRequired'), trigger: 'change' }
-  ],
-  ruleType: [
-    { required: true, message: t('dataScope.ruleTypeRequired'), trigger: 'change' }
-  ]
+  entityClass: [{ required: true, message: t('dataScope.entityRequired'), trigger: 'change' }],
+  ruleType: [{ required: true, message: t('dataScope.ruleTypeRequired'), trigger: 'change' }],
 }
 
 /**
@@ -314,7 +317,7 @@ const loadEntityList = async () => {
  * @param entityClass 选中的实体类全路径
  */
 const handleEntityChange = async (entityClass: string) => {
-  const entity = entityList.value.find(e => e.entityClass === entityClass)
+  const entity = entityList.value.find((e) => e.entityClass === entityClass)
   if (entity) {
     formData.tableName = entity.tableName
   }
@@ -356,7 +359,7 @@ const loadDetail = async () => {
         ruleType: detail.ruleType,
         ruleConfig: detail.ruleConfig || '',
         status: detail.status,
-        remark: detail.remark || ''
+        remark: detail.remark || '',
       })
 
       // 加载字段列表
@@ -419,9 +422,10 @@ const handleSubmit = async () => {
 
     // 检查规则配置是否有效
     if (!ruleConfigValid.value) {
-      const warningMsg = formData.ruleType === 'DATE_RANGE_FILTER'
-        ? t('dataScope.noTimeField')
-        : t('dataScope.noUserIdField')
+      const warningMsg =
+        formData.ruleType === 'DATE_RANGE_FILTER'
+          ? t('dataScope.noTimeField')
+          : t('dataScope.noUserIdField')
       ElMessage.warning(warningMsg)
       return
     }
@@ -441,7 +445,7 @@ const handleSubmit = async () => {
           tableName: formData.tableName,
           ruleType: formData.ruleType,
           ruleConfig: formData.ruleConfig,
-          remark: formData.remark || undefined
+          remark: formData.remark || undefined,
         })
         ElMessage.success(t('message.success'))
       } else {
@@ -451,7 +455,7 @@ const handleSubmit = async () => {
           dataFilterEnName: formData.dataFilterEnName || undefined,
           ruleConfig: formData.ruleConfig,
           status: formData.status,
-          remark: formData.remark || undefined
+          remark: formData.remark || undefined,
         })
         ElMessage.success(t('message.success'))
       }

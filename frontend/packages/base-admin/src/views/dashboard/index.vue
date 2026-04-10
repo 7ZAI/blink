@@ -71,11 +71,21 @@
             <span>{{ t('dashboard.systemInfo') }}</span>
           </template>
           <el-descriptions :column="1" border>
-            <el-descriptions-item :label="t('dashboard.systemName')">Blink Base</el-descriptions-item>
-            <el-descriptions-item :label="t('dashboard.systemVersion')">v1.0.0</el-descriptions-item>
-            <el-descriptions-item :label="t('dashboard.currentUser')">{{ userStore.userInfo?.username }}</el-descriptions-item>
-            <el-descriptions-item :label="t('dashboard.userRoles')">{{ userStore.roles?.join(', ') || '-' }}</el-descriptions-item>
-            <el-descriptions-item :label="t('dashboard.userGroup')">{{ userStore.userInfo?.groupName || '-' }}</el-descriptions-item>
+            <el-descriptions-item :label="t('dashboard.systemName')">
+              Blink Base
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('dashboard.systemVersion')">
+              v1.0.0
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('dashboard.currentUser')">
+              {{ userStore.userInfo?.username }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('dashboard.userRoles')">
+              {{ userStore.roles?.join(', ') || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('dashboard.userGroup')">
+              {{ userStore.userInfo?.groupName || '-' }}
+            </el-descriptions-item>
           </el-descriptions>
         </el-card>
       </el-col>
@@ -97,7 +107,8 @@
                 <Collection v-else-if="link.icon === 'Collection'" />
                 <MenuIcon v-else-if="link.icon === 'Menu'" />
                 <OfficeBuilding v-else />
-              </el-icon>{{ t(link.labelKey) }}
+              </el-icon>
+              {{ t(link.labelKey) }}
             </el-button>
           </div>
         </el-card>
@@ -109,7 +120,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Platform, User, UserFilled, Collection, Menu as MenuIcon, OfficeBuilding } from '@element-plus/icons-vue'
+import {
+  Platform,
+  User,
+  UserFilled,
+  Collection,
+  Menu as MenuIcon,
+  OfficeBuilding,
+} from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { getDashboardData, type DashboardData } from '@/api/dashboard'
 import ResetPasswordDialog from '@/views/login/components/ResetPasswordDialog.vue'
@@ -140,7 +158,7 @@ const hasMenuAccess = (path: string): boolean => {
   }
 
   const checkMenus = (menus: Menu[], targetPath: string): boolean => {
-    return menus.some(menu => {
+    return menus.some((menu) => {
       if (menu.url === targetPath) {
         return true
       }
@@ -164,7 +182,7 @@ const quickLinks = [
 
 // 过滤出用户有权限访问的快捷入口
 const visibleQuickLinks = computed(() => {
-  return quickLinks.filter(link => hasMenuAccess(link.path))
+  return quickLinks.filter((link) => hasMenuAccess(link.path))
 })
 
 const today = computed(() => {

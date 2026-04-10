@@ -5,10 +5,12 @@
         <div class="table-header">
           <div class="header-right">
             <AuthButton :perm="ButtonPerms.Group.Add" type="success" @click="handleAdd(null)">
-              <el-icon><Plus /></el-icon>{{ t('common.add') }}
+              <el-icon><Plus /></el-icon>
+              {{ t('common.add') }}
             </AuthButton>
             <el-button type="info" @click="fetchGroupTree">
-              <el-icon><Refresh /></el-icon>{{ t('group.refresh') }}
+              <el-icon><Refresh /></el-icon>
+              {{ t('group.refresh') }}
             </el-button>
           </div>
         </div>
@@ -30,19 +32,45 @@
           <el-table-column prop="groupNo" :label="t('group.groupNo')" min-width="120" />
           <el-table-column prop="groupLeader" :label="t('group.groupLeader')" min-width="100" />
           <el-table-column prop="phone" :label="t('group.phone')" min-width="120" />
-          <el-table-column prop="groupAddress" :label="t('group.groupAddress')" min-width="150" show-overflow-tooltip />
+          <el-table-column
+            prop="groupAddress"
+            :label="t('group.groupAddress')"
+            min-width="150"
+            show-overflow-tooltip
+          />
           <el-table-column prop="createTime" :label="t('group.createTime')" min-width="160" />
           <el-table-column :label="t('common.operation')" width="220" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :perm="ButtonPerms.Group.Edit" type="primary" link size="small" @click="handleEdit(row)">
-                  <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                <AuthButton
+                  :perm="ButtonPerms.Group.Edit"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  <el-icon><Edit /></el-icon>
+                  {{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton :perm="ButtonPerms.Group.Add" type="success" link size="small" @click="handleAdd(row)">
-                  <el-icon><Plus /></el-icon>{{ t('common.add') }}
+                <AuthButton
+                  :perm="ButtonPerms.Group.Add"
+                  type="success"
+                  link
+                  size="small"
+                  @click="handleAdd(row)"
+                >
+                  <el-icon><Plus /></el-icon>
+                  {{ t('common.add') }}
                 </AuthButton>
-                <AuthButton :perm="ButtonPerms.Group.Delete" type="danger" link size="small" @click="handleDelete(row)">
-                  <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                <AuthButton
+                  :perm="ButtonPerms.Group.Delete"
+                  type="danger"
+                  link
+                  size="small"
+                  @click="handleDelete(row)"
+                >
+                  <el-icon><Delete /></el-icon>
+                  {{ t('common.delete') }}
                 </AuthButton>
               </div>
             </template>
@@ -117,7 +145,7 @@ const handleDelete = async (row: GroupInfo) => {
     })
     await deleteGroup({
       deleteId: row.groupId,
-      batchDelete: false
+      batchDelete: false,
     })
     ElMessage.success(t('message.deleteSuccess'))
     fetchGroupTree()

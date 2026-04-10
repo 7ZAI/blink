@@ -7,19 +7,30 @@
         <!-- 操作按钮行 -->
         <div class="search-buttons mb-3">
           <el-button type="info" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </div>
         <!-- 查询条件行 -->
         <div class="search-conditions flex flex-wrap items-center">
           <el-form-item :label="t('operationLog.operator')">
-            <el-input v-model.trim="searchForm.loginName" :placeholder="t('common.pleaseInput') + t('operationLog.operator')" clearable />
+            <el-input
+              v-model.trim="searchForm.loginName"
+              :placeholder="t('common.pleaseInput') + t('operationLog.operator')"
+              clearable
+            />
           </el-form-item>
           <el-form-item :label="t('operationLog.logType')">
-            <el-select v-model="searchForm.logType" :placeholder="t('common.pleaseSelect')" clearable style="width: 120px">
+            <el-select
+              v-model="searchForm.logType"
+              :placeholder="t('common.pleaseSelect')"
+              clearable
+              style="width: 120px"
+            >
               <el-option
                 v-for="item in logTypeOptions"
                 :key="item.value"
@@ -29,7 +40,12 @@
             </el-select>
           </el-form-item>
           <el-form-item :label="t('operationLog.executeStatus')">
-            <el-select v-model="searchForm.executeStatus" :placeholder="t('common.pleaseSelect')" clearable style="width: 100px">
+            <el-select
+              v-model="searchForm.executeStatus"
+              :placeholder="t('common.pleaseSelect')"
+              clearable
+              style="width: 100px"
+            >
               <el-option
                 v-for="item in executeStatusOptions"
                 :key="item.value"
@@ -50,7 +66,11 @@
             />
           </el-form-item>
           <el-form-item :label="t('common.keyword')">
-            <el-input v-model.trim="searchForm.keyword" :placeholder="t('operationLog.keywordPlaceholder')" clearable />
+            <el-input
+              v-model.trim="searchForm.keyword"
+              :placeholder="t('operationLog.keywordPlaceholder')"
+              clearable
+            />
           </el-form-item>
         </div>
       </el-form>
@@ -59,8 +79,7 @@
     <!-- 表格卡片 -->
     <el-card class="table-card" shadow="never">
       <template #header>
-        <div class="table-header">
-        </div>
+        <div class="table-header"></div>
       </template>
 
       <div class="table-wrapper">
@@ -72,21 +91,47 @@
           border
           @sort-change="handleSortChange"
         >
-          <el-table-column prop="operationTime" :label="t('operationLog.operationTime')" min-width="155" sortable="custom" />
+          <el-table-column
+            prop="operationTime"
+            :label="t('operationLog.operationTime')"
+            min-width="155"
+            sortable="custom"
+          />
           <el-table-column prop="loginName" :label="t('operationLog.operator')" min-width="80" />
           <el-table-column prop="logTypeDesc" :label="t('operationLog.logType')" min-width="85">
             <template #default="{ row }">
               <el-tag :type="getLogTypeTagType(row.logType)">{{ row.logTypeDesc }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="description" :label="t('operationLog.description')" min-width="140" show-overflow-tooltip />
-          <el-table-column prop="requestUrl" :label="t('operationLog.requestUrl')" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="executeStatusDesc" :label="t('operationLog.executeStatus')" min-width="80">
+          <el-table-column
+            prop="description"
+            :label="t('operationLog.description')"
+            min-width="140"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="requestUrl"
+            :label="t('operationLog.requestUrl')"
+            min-width="180"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="executeStatusDesc"
+            :label="t('operationLog.executeStatus')"
+            min-width="80"
+          >
             <template #default="{ row }">
-              <el-tag :type="row.executeStatus === 0 ? 'success' : 'danger'">{{ row.executeStatusDesc }}</el-tag>
+              <el-tag :type="row.executeStatus === 0 ? 'success' : 'danger'">
+                {{ row.executeStatusDesc }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="executeTimeMs" :label="t('operationLog.executeTimeMs')" min-width="85" sortable="custom">
+          <el-table-column
+            prop="executeTimeMs"
+            :label="t('operationLog.executeTimeMs')"
+            min-width="85"
+            sortable="custom"
+          >
             <template #default="{ row }">
               <span :class="getExecuteTimeClass(row.executeTimeMs)">{{ row.executeTimeMs }}ms</span>
             </template>
@@ -96,7 +141,8 @@
             <template #default="{ row }">
               <div class="operation-buttons">
                 <el-button type="primary" link size="small" @click="handleDetail(row)">
-                  <el-icon><View /></el-icon>{{ t('common.detail') }}
+                  <el-icon><View /></el-icon>
+                  {{ t('common.detail') }}
                 </el-button>
               </div>
             </template>
@@ -118,10 +164,7 @@
     </el-card>
 
     <!-- 详情弹窗 -->
-    <OperationLogDetailDialog
-      v-model="detailVisible"
-      :log-id="currentLogId"
-    />
+    <OperationLogDetailDialog v-model="detailVisible" :log-id="currentLogId" />
   </div>
 </template>
 
@@ -135,7 +178,7 @@ import {
   type QueryOperationLogParams,
   logTypeOptions,
   executeStatusOptions,
-  LogType
+  LogType,
 } from '@/api/operation-log'
 import OperationLogDetailDialog from './components/OperationLogDetailDialog.vue'
 
@@ -166,7 +209,7 @@ const pagination = reactive({
 // 排序状态
 const sortState = ref<{ prop: string; order: string | null }>({
   prop: 'operationTime',
-  order: 'descending'
+  order: 'descending',
 })
 
 const loading = ref(false)

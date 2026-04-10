@@ -16,7 +16,7 @@
         <el-icon><Search /></el-icon>
       </template>
     </el-input>
-    
+
     <el-table
       ref="tableRef"
       v-loading="loading"
@@ -36,7 +36,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <template #footer>
       <div class="dialog-footer">
         <span class="selected-count">
@@ -88,9 +88,7 @@ const filteredRoles = computed(() => {
     return allRoles.value
   }
   return allRoles.value.filter(
-    (role) =>
-      role.roleName.includes(searchText.value) ||
-      role.roleCode.includes(searchText.value)
+    (role) => role.roleName.includes(searchText.value) || role.roleCode.includes(searchText.value)
   )
 })
 
@@ -143,7 +141,7 @@ watch(
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
+
   .selected-count {
     color: var(--text-color-secondary);
     font-size: 13px;

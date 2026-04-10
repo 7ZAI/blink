@@ -30,42 +30,54 @@
 
       <div class="table-wrapper">
         <el-table :data="processList" stripe v-loading="loading">
-        <el-table-column prop="processDefinitionName" :label="t('workflow.processName')" min-width="150" />
-        <el-table-column prop="processDefinitionKey" :label="t('workflow.processKey')" min-width="150" />
-        <el-table-column prop="version" :label="t('workflow.version')" width="100">
-          <template #default="{ row }">
-            <el-tag type="primary">v{{ row.version }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="deploymentTime" :label="t('common.createTime')" width="180" />
-        <el-table-column prop="suspended" :label="t('common.status')" width="100">
-          <template #default="{ row }">
-            <el-tag :type="!row.suspended ? 'success' : 'warning'">
-              {{ !row.suspended ? t('workflow.active') : t('workflow.suspended') }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column :label="t('common.operation')" width="280" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="handleStart(row)">
-              <el-icon><VideoPlay /></el-icon>
-              {{ t('workflow.start') }}
-            </el-button>
-            <el-button link type="primary" @click="handleViewDiagram(row)">
-              <el-icon><View /></el-icon>
-              {{ t('workflow.viewDiagram') }}
-            </el-button>
-            <el-button link :type="row.suspended ? 'success' : 'warning'" @click="handleToggleSuspend(row)">
-              <el-icon><component :is="row.suspended ? VideoPlay : VideoPause" /></el-icon>
-              {{ row.suspended ? t('workflow.activate') : t('workflow.suspend') }}
-            </el-button>
-            <el-button link type="danger" @click="handleDelete(row)">
-              <el-icon><Delete /></el-icon>
-              {{ t('common.delete') }}
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+          <el-table-column
+            prop="processDefinitionName"
+            :label="t('workflow.processName')"
+            min-width="150"
+          />
+          <el-table-column
+            prop="processDefinitionKey"
+            :label="t('workflow.processKey')"
+            min-width="150"
+          />
+          <el-table-column prop="version" :label="t('workflow.version')" width="100">
+            <template #default="{ row }">
+              <el-tag type="primary">v{{ row.version }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="deploymentTime" :label="t('common.createTime')" width="180" />
+          <el-table-column prop="suspended" :label="t('common.status')" width="100">
+            <template #default="{ row }">
+              <el-tag :type="!row.suspended ? 'success' : 'warning'">
+                {{ !row.suspended ? t('workflow.active') : t('workflow.suspended') }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('common.operation')" width="280" fixed="right">
+            <template #default="{ row }">
+              <el-button link type="primary" @click="handleStart(row)">
+                <el-icon><VideoPlay /></el-icon>
+                {{ t('workflow.start') }}
+              </el-button>
+              <el-button link type="primary" @click="handleViewDiagram(row)">
+                <el-icon><View /></el-icon>
+                {{ t('workflow.viewDiagram') }}
+              </el-button>
+              <el-button
+                link
+                :type="row.suspended ? 'success' : 'warning'"
+                @click="handleToggleSuspend(row)"
+              >
+                <el-icon><component :is="row.suspended ? VideoPlay : VideoPause" /></el-icon>
+                {{ row.suspended ? t('workflow.activate') : t('workflow.suspend') }}
+              </el-button>
+              <el-button link type="danger" @click="handleDelete(row)">
+                <el-icon><Delete /></el-icon>
+                {{ t('common.delete') }}
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
 
       <div class="pagination-container">
@@ -88,12 +100,17 @@
           <el-input :value="currentProcess?.processDefinitionName" disabled />
         </el-form-item>
         <el-form-item :label="t('workflow.businessKey')">
-          <el-input v-model.trim="startForm.businessKey" :placeholder="t('workflow.businessKeyPlaceholder')" />
+          <el-input
+            v-model.trim="startForm.businessKey"
+            :placeholder="t('workflow.businessKeyPlaceholder')"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="startDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="confirmStart" :loading="startLoading">{{ t('common.confirm') }}</el-button>
+        <el-button type="primary" @click="confirmStart" :loading="startLoading">
+          {{ t('common.confirm') }}
+        </el-button>
       </template>
     </el-dialog>
 
@@ -120,11 +137,11 @@ import {
   deleteProcessDefinition,
   startProcess,
   getProcessDiagramXml,
-  type ProcessDefinitionInfo
+  type ProcessDefinitionInfo,
 } from '@/api/workflow'
 
 defineOptions({
-  name: 'WorkflowProcess'
+  name: 'WorkflowProcess',
 })
 
 const { t } = useI18n()
@@ -141,7 +158,7 @@ const startDialogVisible = ref(false)
 const startLoading = ref(false)
 const currentProcess = ref<ProcessDefinitionInfo | null>(null)
 const startForm = ref({
-  businessKey: ''
+  businessKey: '',
 })
 
 const diagramDialogVisible = ref(false)
@@ -158,7 +175,7 @@ const loadProcessList = async () => {
       pageNum: currentPage.value,
       pageSize: pageSize.value,
       name: searchName.value || undefined,
-      latestVersion: true
+      latestVersion: true,
     })
     processList.value = res.rows || []
     total.value = res.total || 0
@@ -195,8 +212,8 @@ const confirmStart = async () => {
       businessKey: startForm.value.businessKey || undefined,
       variables: {
         startUserId: userStore.userInfo?.userId,
-        startUserName: userStore.userInfo?.username
-      }
+        startUserName: userStore.userInfo?.username,
+      },
     })
     ElMessage.success(t('workflow.startSuccess'))
     startDialogVisible.value = false
@@ -210,8 +227,7 @@ const handleViewDiagram = async (row: ProcessDefinitionInfo) => {
   try {
     diagramXml.value = await getProcessDiagramXml(row.processDefinitionId)
     diagramDialogVisible.value = true
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 const handleToggleSuspend = async (row: ProcessDefinitionInfo) => {

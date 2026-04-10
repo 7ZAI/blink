@@ -11,14 +11,13 @@
       </template>
 
       <div class="table-wrapper">
-        <el-table
-          v-loading="loading"
-          :data="userList"
-          height="100%"
-          stripe
-          border
-        >
-          <el-table-column prop="userId" :label="t('onlineUser.userId')" width="100" align="center" />
+        <el-table v-loading="loading" :data="userList" height="100%" stripe border>
+          <el-table-column
+            prop="userId"
+            :label="t('onlineUser.userId')"
+            width="100"
+            align="center"
+          />
           <el-table-column prop="loginName" :label="t('onlineUser.loginName')" min-width="120" />
           <el-table-column prop="username" :label="t('onlineUser.username')" min-width="120" />
           <el-table-column prop="loginTime" :label="t('onlineUser.loginTime')" min-width="180">
@@ -29,7 +28,13 @@
           <el-table-column :label="t('common.operation')" width="150" align="center" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :perm="ButtonPerms.OnlineUser.Kickout" type="danger" link size="small" @click="handleKickout(row)">
+                <AuthButton
+                  :perm="ButtonPerms.OnlineUser.Kickout"
+                  type="danger"
+                  link
+                  size="small"
+                  @click="handleKickout(row)"
+                >
                   <el-icon><SwitchButton /></el-icon>
                   {{ t('onlineUser.kickout') }}
                 </AuthButton>

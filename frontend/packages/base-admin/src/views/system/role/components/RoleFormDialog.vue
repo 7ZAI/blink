@@ -8,13 +8,7 @@
     @closed="handleClose"
   >
     <div v-loading="loading" class="role-form-container">
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-        class="role-form"
-      >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="role-form">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item :label="t('role.roleName')" prop="roleName">
@@ -28,7 +22,11 @@
           </el-col>
           <el-col :span="12">
             <el-form-item :label="t('role.roleCode')" prop="roleCode">
-              <el-input v-model.trim="form.roleCode" :placeholder="t('common.pleaseInput')" :disabled="props.type === 'edit'" />
+              <el-input
+                v-model.trim="form.roleCode"
+                :placeholder="t('common.pleaseInput')"
+                :disabled="props.type === 'edit'"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -50,7 +48,11 @@
               <el-tab-pane :label="t('role.apiPermission')" name="api">
                 <el-table :data="apiPermissions" stripe border max-height="200">
                   <el-table-column prop="acName" :label="t('permission.acName')" min-width="120" />
-                  <el-table-column prop="acIdentity" :label="t('permission.acIdentity')" min-width="140" />
+                  <el-table-column
+                    prop="acIdentity"
+                    :label="t('permission.acIdentity')"
+                    min-width="140"
+                  />
                   <el-table-column prop="url" label="URL" min-width="180" />
                 </el-table>
                 <el-empty v-if="!apiPermissions.length" :description="t('common.noData')" />
@@ -58,8 +60,16 @@
               <el-tab-pane :label="t('role.dataPermission')" name="data">
                 <el-table :data="dataPermissions" stripe border max-height="200">
                   <el-table-column prop="acName" :label="t('permission.acName')" min-width="120" />
-                  <el-table-column prop="acIdentity" :label="t('permission.acIdentity')" min-width="140" />
-                  <el-table-column prop="dataFilterName" :label="t('permission.dataFilterId')" min-width="140" />
+                  <el-table-column
+                    prop="acIdentity"
+                    :label="t('permission.acIdentity')"
+                    min-width="140"
+                  />
+                  <el-table-column
+                    prop="dataFilterName"
+                    :label="t('permission.dataFilterId')"
+                    min-width="140"
+                  />
                 </el-table>
                 <el-empty v-if="!dataPermissions.length" :description="t('common.noData')" />
               </el-tab-pane>
@@ -81,8 +91,12 @@
               <el-table-column prop="type" :label="t('menu.type')" width="100" align="center">
                 <template #default="{ row }">
                   <el-tag v-if="row.type === 1" type="info">{{ t('menu.typeDirectory') }}</el-tag>
-                  <el-tag v-else-if="row.type === 2" type="primary">{{ t('menu.typeMenu') }}</el-tag>
-                  <el-tag v-else-if="row.type === 3" type="warning">{{ t('menu.typeButton') }}</el-tag>
+                  <el-tag v-else-if="row.type === 2" type="primary">
+                    {{ t('menu.typeMenu') }}
+                  </el-tag>
+                  <el-tag v-else-if="row.type === 3" type="warning">
+                    {{ t('menu.typeButton') }}
+                  </el-tag>
                   <el-tag v-else type="info">-</el-tag>
                 </template>
               </el-table-column>
@@ -129,8 +143,15 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { addRole, updateRole, getRoleDetail, type RoleInfo, type RoleDetailRsp, type MenuInfo } from '@/api/role'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import {
+  addRole,
+  updateRole,
+  getRoleDetail,
+  type RoleInfo,
+  type RoleDetailRsp,
+  type MenuInfo,
+} from '@/api/role'
+import { useSubmitGuard } from '@blink/components'
 
 interface Props {
   modelValue: boolean
@@ -148,9 +169,7 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
-const dialogTitle = computed(() =>
-  props.type === 'add' ? t('role.addRole') : t('role.editRole')
-)
+const dialogTitle = computed(() => (props.type === 'add' ? t('role.addRole') : t('role.editRole')))
 
 // 接口权限列表（ac_type=1）
 const apiPermissions = computed(() =>
@@ -171,13 +190,13 @@ const menuTreeData = computed(() => {
 
   // 创建菜单映射
   const menuMap = new Map<number, MenuInfo>()
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     menuMap.set(menu.menuId, { ...menu, children: [] })
   })
 
   // 构建树形结构
   const tree: MenuInfo[] = []
-  menuMap.forEach(menu => {
+  menuMap.forEach((menu) => {
     const parentId = menu.parentId
     if (!parentId || parentId === 0) {
       // 根节点

@@ -7,12 +7,7 @@
     :loading="loading"
     v-bind="$attrs"
   >
-    <el-option
-      v-for="item in options"
-      :key="item.value"
-      :label="item.label"
-      :value="item.value"
-    />
+    <el-option v-for="item in options" :key="item.value" :label="item.label" :value="item.value" />
   </el-select>
 </template>
 
@@ -45,7 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
   modelValue: undefined,
   clearable: true,
   disabled: false,
-  valueType: 'string'
+  valueType: 'string',
 })
 
 const emit = defineEmits<{
@@ -57,9 +52,9 @@ const { options: dictOptions, loading } = useDict(props.dictType)
 
 // 转换选项值类型
 const options = computed<DictOption[]>(() => {
-  return dictOptions.value.map(item => ({
+  return dictOptions.value.map((item) => ({
     ...item,
-    value: props.valueType === 'number' ? Number(item.value) : item.value
+    value: props.valueType === 'number' ? Number(item.value) : item.value,
   }))
 })
 
@@ -73,6 +68,6 @@ const modelValue = computed({
   },
   set: (val) => {
     emit('update:modelValue', val ?? null)
-  }
+  },
 })
 </script>

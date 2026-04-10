@@ -37,10 +37,12 @@
     <!-- 自定义用户下拉菜单 -->
     <template #dropdown-menu>
       <el-dropdown-item command="profile">
-        <el-icon><User /></el-icon>{{ t('header.profile') }}
+        <el-icon><User /></el-icon>
+        {{ t('header.profile') }}
       </el-dropdown-item>
       <el-dropdown-item command="themeSettings">
-        <el-icon><Brush /></el-icon>{{ t('header.themeSettings') }}
+        <el-icon><Brush /></el-icon>
+        {{ t('header.themeSettings') }}
       </el-dropdown-item>
       <el-dropdown-item divided command="toggleTheme">
         <el-icon v-if="themeStore.theme === 'dark'"><Sunny /></el-icon>
@@ -52,7 +54,8 @@
         {{ currentLocale === 'zh_cn' ? t('header.enUS') : t('header.zhCN') }}
       </el-dropdown-item>
       <el-dropdown-item divided command="logout">
-        <el-icon><SwitchButton /></el-icon>{{ t('header.logout') }}
+        <el-icon><SwitchButton /></el-icon>
+        {{ t('header.logout') }}
       </el-dropdown-item>
     </template>
   </MainLayout>

@@ -6,8 +6,14 @@
           <div class="card-header">
             <span>{{ t('menu.title') }}</span>
             <div class="header-buttons">
-              <AuthButton :perm="ButtonPerms.Menu.Add" type="success" size="small" @click="handleAdd(null)">
-                <el-icon><Plus /></el-icon>{{ t('common.add') }}
+              <AuthButton
+                :perm="ButtonPerms.Menu.Add"
+                type="success"
+                size="small"
+                @click="handleAdd(null)"
+              >
+                <el-icon><Plus /></el-icon>
+                {{ t('common.add') }}
               </AuthButton>
               <el-button type="info" size="small" @click="fetchMenuList">
                 <el-icon><Refresh /></el-icon>
@@ -15,9 +21,7 @@
             </div>
           </div>
         </template>
-        <div
-          class="tree-wrapper"
-        >
+        <div class="tree-wrapper">
           <el-tree
             ref="treeRef"
             v-loading="loading"
@@ -34,18 +38,43 @@
                 <div class="node-content">
                   <BlinkIcon v-if="data.icon" :icon="data.icon" size="16" class="node-icon" />
                   <span class="node-label">{{ node.label }}</span>
-                  <el-tag v-if="data.type === 1" type="primary" size="small" class="node-tag">{{ t('menu.typeDirectory') }}</el-tag>
-                  <el-tag v-else-if="data.type === 2" type="success" size="small" class="node-tag">{{ t('menu.typeMenu') }}</el-tag>
-                  <el-tag v-else-if="data.type === 3" type="warning" size="small" class="node-tag">{{ t('menu.typeButton') }}</el-tag>
+                  <el-tag v-if="data.type === 1" type="primary" size="small" class="node-tag">
+                    {{ t('menu.typeDirectory') }}
+                  </el-tag>
+                  <el-tag v-else-if="data.type === 2" type="success" size="small" class="node-tag">
+                    {{ t('menu.typeMenu') }}
+                  </el-tag>
+                  <el-tag v-else-if="data.type === 3" type="warning" size="small" class="node-tag">
+                    {{ t('menu.typeButton') }}
+                  </el-tag>
                 </div>
                 <div class="node-actions">
-                  <AuthButton :perm="ButtonPerms.Menu.Edit" type="primary" link size="small" @click.stop="handleEdit(data)">
+                  <AuthButton
+                    :perm="ButtonPerms.Menu.Edit"
+                    type="primary"
+                    link
+                    size="small"
+                    @click.stop="handleEdit(data)"
+                  >
                     <el-icon><Edit /></el-icon>
                   </AuthButton>
-                  <AuthButton v-if="data.type !== 3" :perm="ButtonPerms.Menu.Add" type="success" link size="small" @click.stop="handleAdd(data)">
+                  <AuthButton
+                    v-if="data.type !== 3"
+                    :perm="ButtonPerms.Menu.Add"
+                    type="success"
+                    link
+                    size="small"
+                    @click.stop="handleAdd(data)"
+                  >
                     <el-icon><Plus /></el-icon>
                   </AuthButton>
-                  <AuthButton :perm="ButtonPerms.Menu.Delete" type="danger" link size="small" @click.stop="handleDelete(data)">
+                  <AuthButton
+                    :perm="ButtonPerms.Menu.Delete"
+                    type="danger"
+                    link
+                    size="small"
+                    @click.stop="handleDelete(data)"
+                  >
                     <el-icon><Delete /></el-icon>
                   </AuthButton>
                 </div>
@@ -63,7 +92,7 @@
             <span>{{ currentMenu ? t('menu.detail') : t('menu.selectMenu') }}</span>
           </div>
         </template>
-        
+
         <transition name="fade-slide" mode="out-in">
           <div v-if="currentMenu" class="menu-detail card-content-fade" :key="currentMenu.menuId">
             <el-descriptions :column="2" border>
@@ -74,12 +103,23 @@
                 {{ currentMenu.menuEnName || '-' }}
               </el-descriptions-item>
               <el-descriptions-item :label="t('menu.type')">
-                <el-tag v-if="currentMenu.type === 1" type="primary">{{ t('menu.typeDirectory') }}</el-tag>
-                <el-tag v-else-if="currentMenu.type === 2" type="success">{{ t('menu.typeMenu') }}</el-tag>
-                <el-tag v-else-if="currentMenu.type === 3" type="warning">{{ t('menu.typeButton') }}</el-tag>
+                <el-tag v-if="currentMenu.type === 1" type="primary">
+                  {{ t('menu.typeDirectory') }}
+                </el-tag>
+                <el-tag v-else-if="currentMenu.type === 2" type="success">
+                  {{ t('menu.typeMenu') }}
+                </el-tag>
+                <el-tag v-else-if="currentMenu.type === 3" type="warning">
+                  {{ t('menu.typeButton') }}
+                </el-tag>
               </el-descriptions-item>
               <el-descriptions-item :label="t('menu.icon')">
-                <BlinkIcon v-if="currentMenu.icon" :icon="currentMenu.icon" size="18" class="detail-icon" />
+                <BlinkIcon
+                  v-if="currentMenu.icon"
+                  :icon="currentMenu.icon"
+                  size="18"
+                  class="detail-icon"
+                />
                 <span v-else>-</span>
               </el-descriptions-item>
               <el-descriptions-item :label="t('menu.url')">
@@ -98,7 +138,9 @@
                 {{ currentMenu.orderNumber || 0 }}
               </el-descriptions-item>
               <el-descriptions-item :label="t('common.status')">
-                <el-tag v-if="currentMenu.status === 0" type="success">{{ t('menu.statusShow') }}</el-tag>
+                <el-tag v-if="currentMenu.status === 0" type="success">
+                  {{ t('menu.statusShow') }}
+                </el-tag>
                 <el-tag v-else type="info">{{ t('menu.statusHide') }}</el-tag>
               </el-descriptions-item>
               <el-descriptions-item :label="t('menu.createTime')">
@@ -108,20 +150,36 @@
                 {{ currentMenu.updateTime || '-' }}
               </el-descriptions-item>
             </el-descriptions>
-            
+
             <div class="detail-actions">
-              <AuthButton :perm="ButtonPerms.Menu.Edit" type="primary" @click="handleEdit(currentMenu)">
-                <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+              <AuthButton
+                :perm="ButtonPerms.Menu.Edit"
+                type="primary"
+                @click="handleEdit(currentMenu)"
+              >
+                <el-icon><Edit /></el-icon>
+                {{ t('common.edit') }}
               </AuthButton>
-              <AuthButton v-if="currentMenu.type !== 3" :perm="ButtonPerms.Menu.Add" type="success" @click="handleAdd(currentMenu)">
-                <el-icon><Plus /></el-icon>{{ t('menu.addChild') }}
+              <AuthButton
+                v-if="currentMenu.type !== 3"
+                :perm="ButtonPerms.Menu.Add"
+                type="success"
+                @click="handleAdd(currentMenu)"
+              >
+                <el-icon><Plus /></el-icon>
+                {{ t('menu.addChild') }}
               </AuthButton>
-              <AuthButton :perm="ButtonPerms.Menu.Delete" type="danger" @click="handleDelete(currentMenu)">
-                <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+              <AuthButton
+                :perm="ButtonPerms.Menu.Delete"
+                type="danger"
+                @click="handleDelete(currentMenu)"
+              >
+                <el-icon><Delete /></el-icon>
+                {{ t('common.delete') }}
               </AuthButton>
             </div>
           </div>
-          
+
           <el-empty v-else :description="t('menu.selectMenuHint')" :key="'empty'" />
         </transition>
       </el-card>
@@ -184,7 +242,7 @@ const fetchMenuList = async () => {
     }
 
     // 设置默认展开一级节点（根节点）
-    expandedKeys.value = menuList.value.map(item => item.menuId)
+    expandedKeys.value = menuList.value.map((item) => item.menuId)
 
     // 如果有当前选中的菜单，需要从新数据中找到并更新
     if (currentMenu.value) {
@@ -193,7 +251,6 @@ const fetchMenuList = async () => {
         currentMenu.value = updatedMenu
       }
     }
-
   } catch (error) {
     menuList.value = []
   } finally {
@@ -239,7 +296,7 @@ const handleDelete = async (row: MenuInfo) => {
 
     // 如果已分配给角色，显示角色信息并确认
     if (checkResult.assigned && checkResult.roles && checkResult.roles.length > 0) {
-      const roleNames = checkResult.roles.map(r => r.roleName).join('、')
+      const roleNames = checkResult.roles.map((r) => r.roleName).join('、')
       const confirmMsg = t('menu.deleteConfirmWithRoles', { roles: roleNames })
 
       await ElMessageBox.confirm(confirmMsg, t('message.tips'), {

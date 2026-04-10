@@ -15,12 +15,7 @@
           <el-tag type="info" size="small">{{ roles.length }}</el-tag>
         </div>
         <div class="section-body">
-          <el-tag
-            v-for="role in roles"
-            :key="role.roleId"
-            type="primary"
-            class="role-tag"
-          >
+          <el-tag v-for="role in roles" :key="role.roleId" type="primary" class="role-tag">
             {{ role.roleName }}
           </el-tag>
           <el-empty v-if="roles.length === 0" :description="t('common.noData')" :image-size="60" />
@@ -44,13 +39,23 @@
             <template #default="{ data }">
               <div class="tree-node">
                 <span class="node-label">{{ data.menuName }}</span>
-                <el-tag v-if="data.type === 1" type="primary" size="small">{{ t('menu.typeDirectory') }}</el-tag>
-                <el-tag v-else-if="data.type === 2" type="success" size="small">{{ t('menu.typeMenu') }}</el-tag>
-                <el-tag v-else-if="data.type === 3" type="warning" size="small">{{ t('menu.typeButton') }}</el-tag>
+                <el-tag v-if="data.type === 1" type="primary" size="small">
+                  {{ t('menu.typeDirectory') }}
+                </el-tag>
+                <el-tag v-else-if="data.type === 2" type="success" size="small">
+                  {{ t('menu.typeMenu') }}
+                </el-tag>
+                <el-tag v-else-if="data.type === 3" type="warning" size="small">
+                  {{ t('menu.typeButton') }}
+                </el-tag>
               </div>
             </template>
           </el-tree>
-          <el-empty v-if="menuTree.length === 0" :description="t('common.noData')" :image-size="60" />
+          <el-empty
+            v-if="menuTree.length === 0"
+            :description="t('common.noData')"
+            :image-size="60"
+          />
         </div>
       </div>
 
@@ -62,28 +67,40 @@
           <el-tag type="info" size="small">{{ permissions.length }}</el-tag>
         </div>
         <div class="section-body">
-          <el-table
-            :data="permissions"
-            stripe
-            border
-            max-height="300px"
-            size="small"
-          >
-            <el-table-column prop="acName" :label="t('permission.acName')" min-width="120" show-overflow-tooltip />
-            <el-table-column prop="acIdentity" :label="t('permission.acIdentity')" min-width="180" show-overflow-tooltip>
+          <el-table :data="permissions" stripe border max-height="300px" size="small">
+            <el-table-column
+              prop="acName"
+              :label="t('permission.acName')"
+              min-width="120"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="acIdentity"
+              :label="t('permission.acIdentity')"
+              min-width="180"
+              show-overflow-tooltip
+            >
               <template #default="{ row }">
                 <el-tag type="info" size="small">{{ row.acIdentity }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="acType" :label="t('permission.acType')" width="120">
               <template #default="{ row }">
-                <el-tag v-if="row.acType === 1" type="primary" size="small">{{ t('permission.acTypeApi') }}</el-tag>
-                <el-tag v-else-if="row.acType === 2" type="success" size="small">{{ t('permission.acTypeData') }}</el-tag>
+                <el-tag v-if="row.acType === 1" type="primary" size="small">
+                  {{ t('permission.acTypeApi') }}
+                </el-tag>
+                <el-tag v-else-if="row.acType === 2" type="success" size="small">
+                  {{ t('permission.acTypeData') }}
+                </el-tag>
                 <el-tag v-else type="info" size="small">-</el-tag>
               </template>
             </el-table-column>
           </el-table>
-          <el-empty v-if="permissions.length === 0" :description="t('common.noData')" :image-size="60" />
+          <el-empty
+            v-if="permissions.length === 0"
+            :description="t('common.noData')"
+            :image-size="60"
+          />
         </div>
       </div>
     </div>
@@ -98,7 +115,13 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { User, Menu, Key } from '@element-plus/icons-vue'
-import { getUserPermissions, type UserPermissionRsp, type RoleInfo, type MenuInfo, type PermissionInfo } from '@/api/user'
+import {
+  getUserPermissions,
+  type UserPermissionRsp,
+  type RoleInfo,
+  type MenuInfo,
+  type PermissionInfo,
+} from '@/api/user'
 
 interface Props {
   modelValue: boolean

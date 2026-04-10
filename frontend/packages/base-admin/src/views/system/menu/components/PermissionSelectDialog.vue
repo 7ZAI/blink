@@ -45,16 +45,27 @@
     >
       <el-table-column width="50" align="center">
         <template #default="{ row }">
-          <el-radio
-            :label="row.acId"
-            v-model="selectedPermId"
-            @click.stop
-          >&nbsp;</el-radio>
+          <el-radio :label="row.acId" v-model="selectedPermId" @click.stop>&nbsp;</el-radio>
         </template>
       </el-table-column>
-      <el-table-column prop="acIdentity" :label="t('permission.acIdentity')" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="acName" :label="t('permission.acName')" min-width="120" show-overflow-tooltip />
-      <el-table-column prop="url" :label="t('permission.url')" min-width="150" show-overflow-tooltip />
+      <el-table-column
+        prop="acIdentity"
+        :label="t('permission.acIdentity')"
+        min-width="150"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="acName"
+        :label="t('permission.acName')"
+        min-width="120"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        prop="url"
+        :label="t('permission.url')"
+        min-width="150"
+        show-overflow-tooltip
+      />
     </el-table>
 
     <!-- 分页 -->

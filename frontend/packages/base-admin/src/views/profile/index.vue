@@ -12,20 +12,26 @@
         <el-tab-pane :label="t('profile.personalInfo')" name="info">
           <div class="profile-content">
             <div class="avatar-section">
-              <AvatarSelector
-                v-model="form.avatar"
-                :size="120"
-              />
+              <AvatarSelector v-model="form.avatar" :size="120" />
               <div class="avatar-tip">{{ t('avatar.clickToChange') }}</div>
             </div>
 
-            <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" class="profile-form">
+            <el-form
+              :model="form"
+              :rules="rules"
+              ref="formRef"
+              label-width="100px"
+              class="profile-form"
+            >
               <el-form-item :label="t('user.loginName')">
                 <el-input v-model="form.loginName" disabled />
               </el-form-item>
 
               <el-form-item :label="t('user.username')" prop="username">
-                <el-input v-model.trim="form.username" :placeholder="t('common.pleaseInput') + t('user.username')" />
+                <el-input
+                  v-model.trim="form.username"
+                  :placeholder="t('common.pleaseInput') + t('user.username')"
+                />
               </el-form-item>
 
               <el-form-item :label="t('user.sex')" prop="sex">
@@ -37,26 +43,40 @@
               </el-form-item>
 
               <el-form-item :label="t('user.phone')" prop="phone">
-                <el-input v-model.trim="form.phone" :placeholder="t('common.pleaseInput') + t('user.phone')" />
+                <el-input
+                  v-model.trim="form.phone"
+                  :placeholder="t('common.pleaseInput') + t('user.phone')"
+                />
               </el-form-item>
 
               <el-form-item :label="t('user.email')" prop="email">
-                <el-input v-model.trim="form.email" :placeholder="t('common.pleaseInput') + t('user.email')" />
+                <el-input
+                  v-model.trim="form.email"
+                  :placeholder="t('common.pleaseInput') + t('user.email')"
+                />
               </el-form-item>
 
               <el-form-item :label="t('user.remark')">
-                <el-input v-model="form.remark" type="textarea" :rows="4" :placeholder="t('common.pleaseInput') + t('user.remark')" />
+                <el-input
+                  v-model="form.remark"
+                  type="textarea"
+                  :rows="4"
+                  :placeholder="t('common.pleaseInput') + t('user.remark')"
+                />
               </el-form-item>
 
               <el-form-item>
                 <el-button type="primary" :loading="submitting" @click="handleSubmit">
-                  <el-icon><Check /></el-icon>{{ t('common.confirm') }}
+                  <el-icon><Check /></el-icon>
+                  {{ t('common.confirm') }}
                 </el-button>
                 <el-button @click="handleReset">
-                  <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+                  <el-icon><Refresh /></el-icon>
+                  {{ t('common.reset') }}
                 </el-button>
                 <el-button type="warning" @click="handleChangePassword">
-                  <el-icon><Lock /></el-icon>{{ t('user.changePassword') }}
+                  <el-icon><Lock /></el-icon>
+                  {{ t('user.changePassword') }}
                 </el-button>
               </el-form-item>
             </el-form>
@@ -71,13 +91,16 @@
               <el-form-item :label="t('preferences.theme')">
                 <el-radio-group v-model="preferenceForm.theme" @change="handleThemeChange">
                   <el-radio-button value="light">
-                    <el-icon><Sunny /></el-icon> {{ t('header.lightMode') }}
+                    <el-icon><Sunny /></el-icon>
+                    {{ t('header.lightMode') }}
                   </el-radio-button>
                   <el-radio-button value="dark">
-                    <el-icon><Moon /></el-icon> {{ t('header.darkMode') }}
+                    <el-icon><Moon /></el-icon>
+                    {{ t('header.darkMode') }}
                   </el-radio-button>
                   <el-radio-button value="auto">
-                    <el-icon><Timer /></el-icon> {{ t('preferences.autoTheme') }}
+                    <el-icon><Timer /></el-icon>
+                    {{ t('preferences.autoTheme') }}
                   </el-radio-button>
                 </el-radio-group>
               </el-form-item>
@@ -102,15 +125,23 @@
 
               <!-- 字体大小 -->
               <el-form-item :label="t('preferences.fontSize')">
-                <el-slider v-model="preferenceForm.fontSize" :min="12" :max="18" :step="1" show-stops />
+                <el-slider
+                  v-model="preferenceForm.fontSize"
+                  :min="12"
+                  :max="18"
+                  :step="1"
+                  show-stops
+                />
               </el-form-item>
 
               <el-form-item>
                 <el-button type="primary" @click="handleSavePreferences">
-                  <el-icon><Check /></el-icon>{{ t('common.save') }}
+                  <el-icon><Check /></el-icon>
+                  {{ t('common.save') }}
                 </el-button>
                 <el-button @click="handleResetPreferences">
-                  <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+                  <el-icon><Refresh /></el-icon>
+                  {{ t('common.reset') }}
                 </el-button>
               </el-form-item>
             </el-form>
@@ -176,7 +207,13 @@ import { ElMessage } from 'element-plus'
 import { Check, Refresh, Lock, Sunny, Moon, Timer } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useThemeStore } from '@/stores/theme'
-import { updateUser, modifyPassword, saveUserPreference, getUserPreference, type UserPreference } from '@/api/user'
+import {
+  updateUser,
+  modifyPassword,
+  saveUserPreference,
+  getUserPreference,
+  type UserPreference,
+} from '@/api/user'
 import AvatarSelector from '@/components/AvatarSelector.vue'
 import { setLocale, getCurrentLocale } from '@/locales'
 import type { FormInstance, FormRules } from 'element-plus'
@@ -206,7 +243,7 @@ const form = reactive({
   sex: 3,
   phone: '',
   email: '',
-  remark: ''
+  remark: '',
 })
 
 // 偏好设置表单
@@ -214,16 +251,20 @@ const preferenceForm = reactive({
   theme: 'light' as 'light' | 'dark' | 'auto',
   language: 'zh_cn',
   sidebarCollapsed: false,
-  fontSize: 14
+  fontSize: 14,
 })
 
 const passwordForm = reactive({
   oldPassword: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
-const validateConfirmPassword = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+const validateConfirmPassword = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void
+) => {
   if (value === '') {
     callback(new Error(t('validation.required', { field: t('user.confirmPassword') })))
   } else if (value !== passwordForm.newPassword) {
@@ -235,24 +276,20 @@ const validateConfirmPassword = (_rule: unknown, value: string, callback: (error
 
 const rules = reactive<FormRules>({
   username: [
-    { required: true, message: t('common.pleaseInput') + t('user.username'), trigger: 'blur' }
+    { required: true, message: t('common.pleaseInput') + t('user.username'), trigger: 'blur' },
   ],
-  sex: [
-    { required: true, message: t('common.pleaseSelect') + t('user.sex'), trigger: 'change' }
-  ]
+  sex: [{ required: true, message: t('common.pleaseSelect') + t('user.sex'), trigger: 'change' }],
 })
 
 const passwordRules = reactive<FormRules>({
   oldPassword: [
-    { required: true, message: t('common.pleaseInput') + t('user.oldPassword'), trigger: 'blur' }
+    { required: true, message: t('common.pleaseInput') + t('user.oldPassword'), trigger: 'blur' },
   ],
   newPassword: [
     { required: true, message: t('common.pleaseInput') + t('user.newPassword'), trigger: 'blur' },
-    { min: 6, max: 20, message: t('validation.passwordLength'), trigger: 'blur' }
+    { min: 6, max: 20, message: t('validation.passwordLength'), trigger: 'blur' },
   ],
-  confirmPassword: [
-    { required: true, validator: validateConfirmPassword, trigger: 'blur' }
-  ]
+  confirmPassword: [{ required: true, validator: validateConfirmPassword, trigger: 'blur' }],
 })
 
 // 加载偏好设置
@@ -339,7 +376,7 @@ const handlePasswordSubmit = async () => {
       await modifyPassword({
         oldPassword: passwordForm.oldPassword,
         newPassword: passwordForm.newPassword,
-        confirmPassword: passwordForm.confirmPassword
+        confirmPassword: passwordForm.confirmPassword,
       })
       ElMessage.success(t('message.passwordChangeSuccess'))
       passwordDialogVisible.value = false
@@ -369,9 +406,11 @@ const handleLanguageChange = () => {
 // 侧边栏切换
 const handleSidebarChange = () => {
   // 触发自定义事件通知 layout 组件
-  window.dispatchEvent(new CustomEvent('sidebar-preference-change', {
-    detail: { collapsed: preferenceForm.sidebarCollapsed }
-  }))
+  window.dispatchEvent(
+    new CustomEvent('sidebar-preference-change', {
+      detail: { collapsed: preferenceForm.sidebarCollapsed },
+    })
+  )
 }
 
 // 保存偏好设置
@@ -381,7 +420,7 @@ const handleSavePreferences = async () => {
       theme: preferenceForm.theme,
       language: preferenceForm.language,
       sidebarCollapsed: preferenceForm.sidebarCollapsed,
-      fontSize: preferenceForm.fontSize
+      fontSize: preferenceForm.fontSize,
     })
     ElMessage.success(t('preferences.saveSuccess'))
   } catch (error) {

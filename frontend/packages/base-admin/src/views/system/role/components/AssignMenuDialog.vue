@@ -9,16 +9,10 @@
   >
     <div class="menu-tree">
       <div class="tree-header">
-        <el-checkbox
-          v-model="checkAll"
-          :indeterminate="isIndeterminate"
-          @change="handleCheckAll"
-        >
+        <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate" @change="handleCheckAll">
           {{ t('common.selectAll') }}
         </el-checkbox>
-        <div class="selected-count">
-          {{ t('role.selectedCount') }}: {{ checkedMenuIds.length }}
-        </div>
+        <div class="selected-count">{{ t('role.selectedCount') }}: {{ checkedMenuIds.length }}</div>
       </div>
 
       <el-tree
@@ -59,7 +53,7 @@ import { ElMessage } from 'element-plus'
 import type { ElTree } from 'element-plus'
 import { getMenuList, type MenuInfo } from '@/api/menu'
 import { assignMenus, getRoleDetail, type RoleInfo } from '@/api/role'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSubmitGuard } from '@blink/components'
 
 interface Props {
   modelValue: boolean
@@ -117,7 +111,6 @@ const fetchMenuTree = async () => {
     } else {
       menuTree.value = []
     }
-
   } catch (error) {
     menuTree.value = []
   } finally {
@@ -132,7 +125,7 @@ const fetchRoleMenus = async () => {
     const detail = await getRoleDetail(props.role.roleId)
     const assignedIds = (detail.menus || []).map((m) => m.menuId)
     checkedMenuIds.value = assignedIds
-    
+
     setTimeout(() => {
       assignedIds.forEach((id) => {
         treeRef.value?.setChecked(id, true, false)

@@ -35,7 +35,9 @@ export interface UpdateConfigParams {
 }
 
 export const getConfigsByGroupKey = (groupKey: string): Promise<ConfigGroup> => {
-  return request.post('/sysConfig/getConfigsByGroupKey', { body: { groupKey } }) as Promise<ConfigGroup>
+  return request.post('/sysConfig/getConfigsByGroupKey', {
+    body: { groupKey },
+  }) as Promise<ConfigGroup>
 }
 
 export const batchUpdateConfigs = (configs: UpdateConfigParams[]): Promise<void> => {

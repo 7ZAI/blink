@@ -87,7 +87,7 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'confirm': [depts: GroupInfo[]]
+  confirm: [depts: GroupInfo[]]
 }>()
 
 const { t } = useI18n()
@@ -146,7 +146,7 @@ const fetchGroupTree = async () => {
 const handleCheck = (data: GroupInfo, { checkedKeys }: { checkedKeys: number[] }) => {
   // 根据 checkedKeys 更新选中列表
   const allNodes = flattenTree(groupTreeData.value)
-  selectedDepts.value = allNodes.filter(node => checkedKeys.includes(node.groupId))
+  selectedDepts.value = allNodes.filter((node) => checkedKeys.includes(node.groupId))
 }
 
 /**
@@ -155,7 +155,7 @@ const handleCheck = (data: GroupInfo, { checkedKeys }: { checkedKeys: number[] }
 const flattenTree = (trees: GroupInfo[]): GroupInfo[] => {
   const result: GroupInfo[] = []
   const traverse = (nodes: GroupInfo[]) => {
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       result.push(node)
       if (node.children && node.children.length > 0) {
         traverse(node.children)
@@ -170,7 +170,7 @@ const flattenTree = (trees: GroupInfo[]): GroupInfo[] => {
  * 移除已选部门
  */
 const handleRemoveDept = (dept: GroupInfo) => {
-  selectedDepts.value = selectedDepts.value.filter(d => d.groupId !== dept.groupId)
+  selectedDepts.value = selectedDepts.value.filter((d) => d.groupId !== dept.groupId)
   treeRef.value?.setChecked(dept.groupId, false, false)
 }
 
@@ -194,13 +194,16 @@ const handleClose = () => {
 /**
  * 监听弹窗打开
  */
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    fetchGroupTree()
-    selectedDepts.value = []
-    filterText.value = ''
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      fetchGroupTree()
+      selectedDepts.value = []
+      filterText.value = ''
+    }
   }
-})
+)
 
 /**
  * 监听部门树数据加载完成，恢复选中状态
@@ -212,7 +215,7 @@ watch(groupTreeData, (data) => {
       treeRef.value?.setCheckedKeys(props.selectedIds)
       // 更新选中列表
       const allNodes = flattenTree(data)
-      selectedDepts.value = allNodes.filter(node => props.selectedIds.includes(node.groupId))
+      selectedDepts.value = allNodes.filter((node) => props.selectedIds.includes(node.groupId))
     }, 100)
   }
 })

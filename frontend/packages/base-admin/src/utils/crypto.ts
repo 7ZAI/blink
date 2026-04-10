@@ -70,11 +70,10 @@ export class AESUtil {
    * 生成随机AES密钥（256位 = 32字节）
    */
   static async generateKey(): Promise<CryptoKey> {
-    return await crypto.subtle.generateKey(
-      { name: 'AES-CBC', length: 256 },
-      true,
-      ['encrypt', 'decrypt']
-    )
+    return await crypto.subtle.generateKey({ name: 'AES-CBC', length: 256 }, true, [
+      'encrypt',
+      'decrypt',
+    ])
   }
 
   /**
@@ -121,13 +120,10 @@ export class AESUtil {
    */
   static async importKeyFromBase64(keyBase64: string): Promise<CryptoKey> {
     const keyData = Base64Util.decode(keyBase64)
-    return await crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'AES-CBC' },
-      true,
-      ['encrypt', 'decrypt']
-    )
+    return await crypto.subtle.importKey('raw', keyData, { name: 'AES-CBC' }, true, [
+      'encrypt',
+      'decrypt',
+    ])
   }
 
   /**
@@ -150,10 +146,10 @@ export class RSAUtil {
    */
   static async encrypt(plainText: string, publicKeyBase64: string): Promise<string> {
     const publicKey = await this.importPublicKey(publicKeyBase64)
-    
+
     const encoder = new TextEncoder()
     const data = encoder.encode(plainText)
-    
+
     const encrypted = await crypto.subtle.encrypt(
       {
         name: 'RSA-OAEP',
@@ -161,7 +157,7 @@ export class RSAUtil {
       publicKey,
       data
     )
-    
+
     return Base64Util.encode(encrypted)
   }
 
@@ -170,9 +166,9 @@ export class RSAUtil {
    */
   static async decrypt(cipherTextBase64: string, privateKeyBase64: string): Promise<string> {
     const privateKey = await this.importPrivateKey(privateKeyBase64)
-    
+
     const data = Base64Util.decode(cipherTextBase64)
-    
+
     const decrypted = await crypto.subtle.decrypt(
       {
         name: 'RSA-OAEP',
@@ -180,7 +176,7 @@ export class RSAUtil {
       privateKey,
       data as BufferSource
     )
-    
+
     const decoder = new TextDecoder()
     return decoder.decode(decrypted)
   }

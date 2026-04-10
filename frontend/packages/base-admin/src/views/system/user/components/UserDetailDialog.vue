@@ -11,7 +11,10 @@
       <el-descriptions-item label="登录名">{{ userDetail.loginName }}</el-descriptions-item>
       <el-descriptions-item label="用户名">{{ userDetail.username }}</el-descriptions-item>
       <el-descriptions-item label="头像">
-        <el-avatar :size="40" :src="getAvatarUrl(userDetail.avatar, userDetail.avatarStyle, userDetail.loginName)" />
+        <el-avatar
+          :size="40"
+          :src="getAvatarUrl(userDetail.avatar, userDetail.avatarStyle, userDetail.loginName)"
+        />
       </el-descriptions-item>
       <el-descriptions-item label="性别">
         <el-tag v-if="userDetail.sex === 1" type="primary">男</el-tag>
@@ -30,27 +33,29 @@
         <span v-else>-</span>
       </el-descriptions-item>
       <el-descriptions-item label="密码重试次数">{{ userDetail.pswRetry }}</el-descriptions-item>
-      <el-descriptions-item label="最后登录时间">{{ userDetail.lastLoginTime }}</el-descriptions-item>
+      <el-descriptions-item label="最后登录时间">
+        {{ userDetail.lastLoginTime }}
+      </el-descriptions-item>
       <el-descriptions-item label="创建者">{{ userDetail.createBy }}</el-descriptions-item>
       <el-descriptions-item label="更新者">{{ userDetail.updateBy }}</el-descriptions-item>
       <el-descriptions-item label="创建时间">{{ userDetail.createTime }}</el-descriptions-item>
       <el-descriptions-item label="更新时间">{{ userDetail.updateTime }}</el-descriptions-item>
       <el-descriptions-item label="锁定时间">{{ userDetail.lockTime || '-' }}</el-descriptions-item>
-      <el-descriptions-item label="备注" :span="2">{{ userDetail.remark || '-' }}</el-descriptions-item>
+      <el-descriptions-item label="备注" :span="2">
+        {{ userDetail.remark || '-' }}
+      </el-descriptions-item>
     </el-descriptions>
     <template #footer>
       <el-button type="primary" @click="handleViewPermission">
-        <el-icon><View /></el-icon>查看角色权限
+        <el-icon><View /></el-icon>
+        查看角色权限
       </el-button>
       <el-button @click="handleClose">关闭</el-button>
     </template>
   </el-dialog>
 
   <!-- 用户权限弹窗 -->
-  <UserPermissionDialog
-    v-model="permissionVisible"
-    :user-id="userId"
-  />
+  <UserPermissionDialog v-model="permissionVisible" :user-id="userId" />
 </template>
 
 <script setup lang="ts">

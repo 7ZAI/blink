@@ -13,13 +13,7 @@
       <span>{{ t('login.resetPasswordHint') }}</span>
     </div>
 
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="reset-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="reset-form">
       <el-form-item :label="t('login.newPassword')" prop="newPassword">
         <el-input
           v-model="form.newPassword"
@@ -56,7 +50,7 @@ import { ElMessage } from 'element-plus'
 import { Warning } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import { firstTimeResetPassword } from '@/api/auth'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSubmitGuard } from '@blink/components'
 
 const { t } = useI18n()
 
@@ -69,7 +63,11 @@ const form = reactive({
   confirmPassword: '',
 })
 
-const validateConfirmPassword = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+const validateConfirmPassword = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void
+) => {
   if (value !== form.newPassword) {
     callback(new Error(t('login.passwordNotMatch')))
   } else {

@@ -43,7 +43,7 @@ export function usePermission() {
     if (userStore.isSuperAdmin) {
       return true
     }
-    return perms.some(perm => userStore.permissions.includes(perm))
+    return perms.some((perm) => userStore.permissions.includes(perm))
   }
 
   /**
@@ -55,7 +55,7 @@ export function usePermission() {
     if (userStore.isSuperAdmin) {
       return true
     }
-    return perms.every(perm => userStore.permissions.includes(perm))
+    return perms.every((perm) => userStore.permissions.includes(perm))
   }
 
   /**
@@ -73,7 +73,7 @@ export function usePermission() {
     hasAnyPermission,
     hasAllPermissions,
     permissions,
-    isSuperAdmin
+    isSuperAdmin,
   }
 }
 
@@ -90,7 +90,7 @@ export const ButtonPerms = {
     Detail: 'sysUser:detail',
     Lock: 'sysUser:lock',
     AssignRole: 'sysUser:assignRole',
-    ResetPwd: 'sysUser:resetPwd'
+    ResetPwd: 'sysUser:resetPwd',
   },
   // 角色管理
   Role: {
@@ -99,52 +99,52 @@ export const ButtonPerms = {
     Delete: 'sysRole:delete',
     Detail: 'sysRole:detail',
     AssignPerm: 'sysRole:assignPerm',
-    AssignMenu: 'sysRole:assignMenu'
+    AssignMenu: 'sysRole:assignMenu',
   },
   // 菜单管理
   Menu: {
     Add: 'sysMenu:add',
     Edit: 'sysMenu:update',
-    Delete: 'sysMenu:delete'
+    Delete: 'sysMenu:delete',
   },
   // 组织管理
   Group: {
     Add: 'sysGroup:add',
     Edit: 'sysGroup:update',
-    Delete: 'sysGroup:delete'
+    Delete: 'sysGroup:delete',
   },
   // 权限管理
   Permission: {
     Add: 'sysPerm:add',
     Edit: 'sysPerm:update',
-    Delete: 'sysPerm:delete'
+    Delete: 'sysPerm:delete',
   },
   // 数据过滤规则
   DataFilter: {
     Add: 'dataFilter:add',
     Edit: 'dataFilter:update',
     Delete: 'dataFilter:delete',
-    Detail: 'dataFilter:detail'
+    Detail: 'dataFilter:detail',
   },
   // 字典类型
   DictType: {
     Add: 'dictType:add',
     Edit: 'dictType:update',
-    Delete: 'dictType:delete'
+    Delete: 'dictType:delete',
   },
   // 字典数据
   DictData: {
     Add: 'dictData:add',
     Edit: 'dictData:update',
-    Delete: 'dictData:delete'
+    Delete: 'dictData:delete',
   },
   // 在线用户
   OnlineUser: {
     List: 'onlineUser:list',
-    Kickout: 'onlineUser:kickout'
+    Kickout: 'onlineUser:kickout',
   },
   // 系统配置
   Config: {
-    Update: 'sysConfig:update'
-  }
+    Update: 'sysConfig:update',
+  },
 } as const

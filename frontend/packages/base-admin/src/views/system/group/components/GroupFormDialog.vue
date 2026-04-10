@@ -7,13 +7,7 @@
     :lock-scroll="false"
     @closed="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="group-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="group-form">
       <el-form-item :label="t('group.parentGroup')" prop="groupParentId">
         <el-tree-select
           v-model="form.groupParentId"
@@ -48,7 +42,12 @@
       </el-form-item>
 
       <el-form-item :label="t('group.groupAddress')" prop="groupAddress">
-        <el-input v-model="form.groupAddress" type="textarea" :rows="2" :placeholder="t('common.pleaseInput')" />
+        <el-input
+          v-model="form.groupAddress"
+          type="textarea"
+          :rows="2"
+          :placeholder="t('common.pleaseInput')"
+        />
       </el-form-item>
     </el-form>
 
@@ -67,7 +66,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { addGroup, updateGroup, getGroupTree, type GroupInfo } from '@/api/group'
-import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSubmitGuard } from '@blink/components'
 
 interface Props {
   modelValue: boolean
@@ -86,7 +85,7 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
-const dialogTitle = computed(() => 
+const dialogTitle = computed(() =>
   props.type === 'add' ? t('group.addGroup') : t('group.editGroup')
 )
 
@@ -107,7 +106,11 @@ const form = reactive({
 
 const rules: FormRules = {
   groupParentId: [
-    { required: true, message: t('common.pleaseSelect') + t('group.parentGroup'), trigger: 'change' },
+    {
+      required: true,
+      message: t('common.pleaseSelect') + t('group.parentGroup'),
+      trigger: 'change',
+    },
   ],
   groupName: [
     { required: true, message: t('common.pleaseInput') + t('group.groupName'), trigger: 'blur' },

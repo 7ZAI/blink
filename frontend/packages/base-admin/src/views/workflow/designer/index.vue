@@ -19,7 +19,7 @@ import { ref } from 'vue'
 import LogicFlowDesigner from '@/components/LogicFlowDesigner/index.vue'
 
 defineOptions({
-  name: 'WorkflowDesigner'
+  name: 'WorkflowDesigner',
 })
 
 const designerRef = ref()

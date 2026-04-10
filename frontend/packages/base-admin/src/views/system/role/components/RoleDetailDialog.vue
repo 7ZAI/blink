@@ -42,7 +42,11 @@
             <el-tab-pane :label="t('role.apiPermission')" name="api">
               <el-table :data="apiPermissions" stripe border max-height="280">
                 <el-table-column prop="acName" :label="t('permission.acName')" min-width="120" />
-                <el-table-column prop="acIdentity" :label="t('permission.acIdentity')" min-width="140" />
+                <el-table-column
+                  prop="acIdentity"
+                  :label="t('permission.acIdentity')"
+                  min-width="140"
+                />
                 <el-table-column prop="url" label="URL" min-width="180" />
               </el-table>
               <el-empty v-if="!apiPermissions.length" :description="t('common.noData')" />
@@ -50,8 +54,16 @@
             <el-tab-pane :label="t('role.dataPermission')" name="data">
               <el-table :data="dataPermissions" stripe border max-height="280">
                 <el-table-column prop="acName" :label="t('permission.acName')" min-width="120" />
-                <el-table-column prop="acIdentity" :label="t('permission.acIdentity')" min-width="140" />
-                <el-table-column prop="dataFilterName" :label="t('permission.dataFilterId')" min-width="140" />
+                <el-table-column
+                  prop="acIdentity"
+                  :label="t('permission.acIdentity')"
+                  min-width="140"
+                />
+                <el-table-column
+                  prop="dataFilterName"
+                  :label="t('permission.dataFilterId')"
+                  min-width="140"
+                />
               </el-table>
               <el-empty v-if="!dataPermissions.length" :description="t('common.noData')" />
             </el-tab-pane>
@@ -59,10 +71,10 @@
         </el-tab-pane>
 
         <el-tab-pane :label="t('role.menuList')" name="menus">
-          <el-table 
-            :data="menuTreeData" 
-            stripe 
-            border 
+          <el-table
+            :data="menuTreeData"
+            stripe
+            border
             max-height="400"
             row-key="menuId"
             :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
@@ -74,7 +86,9 @@
               <template #default="{ row }">
                 <el-tag v-if="row.type === 1" type="info">{{ t('menu.typeDirectory') }}</el-tag>
                 <el-tag v-else-if="row.type === 2" type="primary">{{ t('menu.typeMenu') }}</el-tag>
-                <el-tag v-else-if="row.type === 3" type="warning">{{ t('menu.typeButton') }}</el-tag>
+                <el-tag v-else-if="row.type === 3" type="warning">
+                  {{ t('menu.typeButton') }}
+                </el-tag>
                 <el-tag v-else type="info">-</el-tag>
               </template>
             </el-table-column>
@@ -153,16 +167,16 @@ const dataPermissions = computed(() =>
 const menuTreeData = computed(() => {
   const menus = roleDetail.value?.menus || []
   if (!menus.length) return []
-  
+
   // 创建菜单映射
   const menuMap = new Map<number, MenuInfo>()
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     menuMap.set(menu.menuId, { ...menu, children: [] })
   })
-  
+
   // 构建树形结构
   const tree: MenuInfo[] = []
-  menuMap.forEach(menu => {
+  menuMap.forEach((menu) => {
     const parentId = menu.parentId
     if (!parentId || parentId === 0) {
       // 根节点
@@ -182,7 +196,7 @@ const menuTreeData = computed(() => {
       }
     }
   })
-  
+
   return tree
 })
 

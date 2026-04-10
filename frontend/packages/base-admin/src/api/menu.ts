@@ -108,15 +108,21 @@ export interface RoleInfo {
 }
 
 export const checkMenuRoleAssignment = (params: CheckMenuRoleParams): Promise<CheckMenuRoleRsp> => {
-  return request.post('/sysMenu/checkMenuRoleAssignment', { body: params }) as Promise<CheckMenuRoleRsp>
+  return request.post('/sysMenu/checkMenuRoleAssignment', {
+    body: params,
+  }) as Promise<CheckMenuRoleRsp>
 }
 
 /**
  * 获取接口权限列表（用于菜单关联选择）
  * 使用分页接口，只查询接口权限(acType=1)
  */
-export const getApiPermissions = (params?: QueryPermissionParams): Promise<QueryPermissionRsp<PermissionInfo>> => {
-  return request.post('/sysPermission/getSysPermissionList', { body: { acType: 1, ...params } }) as Promise<QueryPermissionRsp<PermissionInfo>>
+export const getApiPermissions = (
+  params?: QueryPermissionParams
+): Promise<QueryPermissionRsp<PermissionInfo>> => {
+  return request.post('/sysPermission/getSysPermissionList', {
+    body: { acType: 1, ...params },
+  }) as Promise<QueryPermissionRsp<PermissionInfo>>
 }
 
 export interface QueryPermissionParams {

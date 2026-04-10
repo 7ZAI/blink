@@ -60,12 +60,18 @@ export interface DeletePermissionParams {
   batchDelete: boolean
 }
 
-export const getPermissionList = (params?: QueryPermissionParams): Promise<QueryPermissionRsp<PermissionInfo>> => {
-  return request.post('/sysPermission/getSysPermissionList', { body: params || {} }) as Promise<QueryPermissionRsp<PermissionInfo>>
+export const getPermissionList = (
+  params?: QueryPermissionParams
+): Promise<QueryPermissionRsp<PermissionInfo>> => {
+  return request.post('/sysPermission/getSysPermissionList', { body: params || {} }) as Promise<
+    QueryPermissionRsp<PermissionInfo>
+  >
 }
 
 export const addPermission = (params: AddPermissionParams): Promise<PermissionInfo> => {
-  return request.post('/sysPermission/saveSysPermission', { body: params }) as Promise<PermissionInfo>
+  return request.post('/sysPermission/saveSysPermission', {
+    body: params,
+  }) as Promise<PermissionInfo>
 }
 
 export const updatePermission = (params: UpdatePermissionParams): Promise<void> => {
@@ -85,7 +91,7 @@ export interface MenuTreeRsp {
  * 获取菜单树（用于权限关联选择）
  */
 export const getMenuTreeForPermission = async (): Promise<MenuInfo[]> => {
-  const res = await request.post('/sysMenu/getSysMenuList', { body: {} }) as MenuTreeRsp
+  const res = (await request.post('/sysMenu/getSysMenuList', { body: {} })) as MenuTreeRsp
   return res.rows || []
 }
 

@@ -4,23 +4,38 @@
     <el-card class="search-card" shadow="never">
       <el-form :model="searchForm" inline class="search-form">
         <el-form-item :label="t('role.roleName')">
-          <el-input v-model.trim="searchForm.roleName" :placeholder="t('common.pleaseInput')" clearable />
+          <el-input
+            v-model.trim="searchForm.roleName"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+          />
         </el-form-item>
         <el-form-item :label="t('role.roleCode')">
-          <el-input v-model.trim="searchForm.roleCode" :placeholder="t('common.pleaseInput')" clearable />
+          <el-input
+            v-model.trim="searchForm.roleCode"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+          />
         </el-form-item>
         <el-form-item :label="t('common.status')">
-          <el-select v-model="searchForm.status" :placeholder="t('common.pleaseSelect')" clearable style="width: 120px">
+          <el-select
+            v-model="searchForm.status"
+            :placeholder="t('common.pleaseSelect')"
+            clearable
+            style="width: 120px"
+          >
             <el-option :label="t('role.statusEnable')" :value="0" />
             <el-option :label="t('role.statusDisable')" :value="1" />
           </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="info" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -32,10 +47,17 @@
         <div class="table-header">
           <div class="header-left">
             <AuthButton :perm="ButtonPerms.Role.Add" type="primary" @click="handleAdd">
-              <el-icon><Plus /></el-icon>{{ t('common.add') }}
+              <el-icon><Plus /></el-icon>
+              {{ t('common.add') }}
             </AuthButton>
-            <AuthButton v-if="selectedRoles.length > 0" :perm="ButtonPerms.Role.Delete" type="danger" @click="handleBatchDelete">
-              <el-icon><Delete /></el-icon>{{ t('common.batchDelete') }}({{ selectedRoles.length }})
+            <AuthButton
+              v-if="selectedRoles.length > 0"
+              :perm="ButtonPerms.Role.Delete"
+              type="danger"
+              @click="handleBatchDelete"
+            >
+              <el-icon><Delete /></el-icon>
+              {{ t('common.batchDelete') }}({{ selectedRoles.length }})
             </AuthButton>
           </div>
         </div>
@@ -51,7 +73,12 @@
           border
           @selection-change="handleSelectionChange"
         >
-          <el-table-column type="selection" width="55" align="center" :selectable="(row: RoleInfo) => row.roleId !== 1" />
+          <el-table-column
+            type="selection"
+            width="55"
+            align="center"
+            :selectable="(row: RoleInfo) => row.roleId !== 1"
+          />
           <el-table-column prop="roleId" label="ID" width="80" align="center" />
           <el-table-column prop="roleName" :label="t('role.roleName')" min-width="120" />
           <el-table-column prop="roleEnName" :label="t('role.roleEnName')" min-width="120" />
@@ -72,23 +99,69 @@
           <el-table-column :label="t('common.operation')" min-width="400" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton v-if="row.roleId !== 1" :perm="ButtonPerms.Role.Edit" type="primary" link size="small" @click="handleEdit(row)">
-                  <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                <AuthButton
+                  v-if="row.roleId !== 1"
+                  :perm="ButtonPerms.Role.Edit"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  <el-icon><Edit /></el-icon>
+                  {{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton v-if="row.roleId !== 1" :perm="ButtonPerms.Role.AssignPerm" type="warning" link size="small" @click="handleAssignPermission(row)">
-                  <el-icon><Key /></el-icon>{{ t('role.assignDataPermission') }}
+                <AuthButton
+                  v-if="row.roleId !== 1"
+                  :perm="ButtonPerms.Role.AssignPerm"
+                  type="warning"
+                  link
+                  size="small"
+                  @click="handleAssignPermission(row)"
+                >
+                  <el-icon><Key /></el-icon>
+                  {{ t('role.assignDataPermission') }}
                 </AuthButton>
-                <AuthButton v-if="row.roleId !== 1" :perm="ButtonPerms.Role.AssignMenu" type="success" link size="small" @click="handleAssignMenu(row)">
-                  <el-icon><Menu /></el-icon>{{ t('role.assignMenu') }}
+                <AuthButton
+                  v-if="row.roleId !== 1"
+                  :perm="ButtonPerms.Role.AssignMenu"
+                  type="success"
+                  link
+                  size="small"
+                  @click="handleAssignMenu(row)"
+                >
+                  <el-icon><Menu /></el-icon>
+                  {{ t('role.assignMenu') }}
                 </AuthButton>
-                <el-button v-if="row.roleId !== 1" type="primary" link size="small" @click="handleAssignUser(row)">
-                  <el-icon><User /></el-icon>{{ t('role.assignUser') }}
+                <el-button
+                  v-if="row.roleId !== 1"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleAssignUser(row)"
+                >
+                  <el-icon><User /></el-icon>
+                  {{ t('role.assignUser') }}
                 </el-button>
-                <AuthButton :perm="ButtonPerms.Role.Detail" type="info" link size="small" @click="handleDetail(row)">
-                  <el-icon><View /></el-icon>{{ t('common.detail') }}
+                <AuthButton
+                  :perm="ButtonPerms.Role.Detail"
+                  type="info"
+                  link
+                  size="small"
+                  @click="handleDetail(row)"
+                >
+                  <el-icon><View /></el-icon>
+                  {{ t('common.detail') }}
                 </AuthButton>
-                <AuthButton v-if="row.roleId !== 1" :perm="ButtonPerms.Role.Delete" type="danger" link size="small" @click="handleDelete(row)">
-                  <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                <AuthButton
+                  v-if="row.roleId !== 1"
+                  :perm="ButtonPerms.Role.Delete"
+                  type="danger"
+                  link
+                  size="small"
+                  @click="handleDelete(row)"
+                >
+                  <el-icon><Delete /></el-icon>
+                  {{ t('common.delete') }}
                 </AuthButton>
               </div>
             </template>
@@ -122,22 +195,11 @@
       @success="fetchRoleList"
     />
 
-    <AssignMenuDialog
-      v-model="menuDialogVisible"
-      :role="currentRole"
-      @success="fetchRoleList"
-    />
+    <AssignMenuDialog v-model="menuDialogVisible" :role="currentRole" @success="fetchRoleList" />
 
-    <AssignUserDialog
-      v-model="userDialogVisible"
-      :role="currentRole"
-      @success="fetchRoleList"
-    />
+    <AssignUserDialog v-model="userDialogVisible" :role="currentRole" @success="fetchRoleList" />
 
-    <RoleDetailDialog
-      v-model="detailDialogVisible"
-      :role="currentRole"
-    />
+    <RoleDetailDialog v-model="detailDialogVisible" :role="currentRole" />
   </div>
 </template>
 
@@ -234,7 +296,7 @@ const handleDelete = async (row: RoleInfo) => {
     })
     await deleteRole({
       deleteId: row.roleId,
-      batchDelete: false
+      batchDelete: false,
     })
     ElMessage.success(t('message.deleteSuccess'))
     fetchRoleList()
@@ -257,7 +319,7 @@ const handleBatchDelete = async () => {
       { type: 'warning' }
     )
     // 批量删除：发送 idList 进行一次性删除
-    const deleteIds = selectedRoles.value.map(row => row.roleId)
+    const deleteIds = selectedRoles.value.map((row) => row.roleId)
     await deleteRole({ idList: deleteIds, batchDelete: true })
     ElMessage.success(t('message.deleteSuccess'))
     selectedRoles.value = []

@@ -46,7 +46,7 @@ const tagType = computed(() => {
     success: 'success',
     warning: 'warning',
     danger: 'danger',
-    info: 'info'
+    info: 'info',
   }
 
   return typeMap[listClass] || 'info'
