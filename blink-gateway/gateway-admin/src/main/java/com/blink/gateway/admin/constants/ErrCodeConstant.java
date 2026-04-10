@@ -87,6 +87,16 @@ public interface ErrCodeConstant {
     String DELETE_ROUTE_FAILED = "GATE0007";
 
     /**
+     * 同步路由失败
+     */
+    String SYNC_ROUTE_FAILED = "GATE0030";
+
+    /**
+     * Nacos 路由未实现
+     */
+    String NACOS_ROUTE_NOT_IMPLEMENTED = "GATE0034";
+
+    /**
      * 线程中断
      */
     String THREAD_INTERRUPTED = "GATE0008";
