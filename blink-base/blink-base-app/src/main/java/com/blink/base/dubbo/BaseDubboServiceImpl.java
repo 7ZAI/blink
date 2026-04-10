@@ -56,7 +56,7 @@ import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 import static com.blink.base.constants.BaseErrCodeConstant.*;
-import static com.blink.base.constants.CommonConstans.*;
+import static com.blink.base.constants.CommonConstants.*;
 import static com.blink.framework.core.data.CoreConstant.IO_THREADPOOL;
 
 /**

@@ -5,7 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.base.constants.CommonConstans;
+import com.blink.base.constants.CommonConstants;
 import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.SysUserRsp;
 import com.blink.base.dto.rsp.UserPermissionRsp;
@@ -96,7 +96,7 @@ public class SysUserServiceImpl implements SysUserService {
         //loginName 不能重复
         Long existOne = sysUserMapper.selectCount(new LambdaQueryWrapper<SysUserDO>().eq(SysUserDO::getLoginName, sysUserDO.getLoginName()));
 
-        if (existOne > CommonConstans.LONG_ZERO) {
+        if (existOne > CommonConstants.LONG_ZERO) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.LOGIN_NAME_REPEAT);
         }
         //角色是否都存在
@@ -117,25 +117,25 @@ public class SysUserServiceImpl implements SysUserService {
             }
         }
         var config = new QueryOneSysConfigReq();
-        config.setConfigKey(CommonConstans.SysConfigKeys.USER_INIT_PASSWORD);
+        config.setConfigKey(CommonConstants.SysConfigKeys.USER_INIT_PASSWORD);
         // 从配置中获取默认密码
         SysConfigVO pswConf = Optional.ofNullable(sysConfigService.getOneConfigFromCacheOrDataBase(config)).orElseGet(SysConfigVO::new);
 
         // 如果配置中没有设置默认密码，使用系统默认值
-        String defaultPassword = (pswConf != null && !pswConf.getConfigValue().isEmpty()) ? pswConf.getConfigValue() : CommonConstans.DEFAULT_USER_PASSWORD;
+        String defaultPassword = (pswConf != null && !pswConf.getConfigValue().isEmpty()) ? pswConf.getConfigValue() : CommonConstants.DEFAULT_USER_PASSWORD;
 
         // 使用标准 BCrypt 加密密码（salt 已包含在 hash 结果中）
         String encodePassword = BCrypt.hashpw(defaultPassword, BCrypt.gensalt());
         sysUserDO.setPassword(encodePassword);
 
-        config.setConfigKey(CommonConstans.SysConfigKeys.USER_DEFAULT_AVATAR_STYLE);
+        config.setConfigKey(CommonConstants.SysConfigKeys.USER_DEFAULT_AVATAR_STYLE);
         SysConfigVO avatarConf = Optional.ofNullable(sysConfigService.getOneConfigFromCacheOrDataBase(config)).orElseGet(SysConfigVO::new);
 
         // 从配置中获取默认头像样式
-        String defaultAvatarStyle = (avatarConf != null && !avatarConf.getConfigValue().isEmpty()) ? avatarConf.getConfigValue() : CommonConstans.DEFAULT_USER_AVATAR;
+        String defaultAvatarStyle = (avatarConf != null && !avatarConf.getConfigValue().isEmpty()) ? avatarConf.getConfigValue() : CommonConstants.DEFAULT_USER_AVATAR;
 
         // 设置首次登录需要重置密码标识
-        sysUserDO.setPasswordReset(CommonConstans.SUPER_ADMIN_YES);
+        sysUserDO.setPasswordReset(CommonConstants.SUPER_ADMIN_YES);
 
         sysUserDO.setUpdateBy(saveParam.getLoginName());
         sysUserMapper.insert(sysUserDO);
@@ -182,7 +182,7 @@ public class SysUserServiceImpl implements SysUserService {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIST);
             }
 
-            List<SysUserDO> superAdminUser = existIds.stream().filter(u -> u.getSuperFlag().equals(CommonConstans.SUPER_ADMIN_ID)).toList();
+            List<SysUserDO> superAdminUser = existIds.stream().filter(u -> u.getSuperFlag().equals(CommonConstants.SUPER_ADMIN_ID)).toList();
             //包含超级管理员 无法删除
             if (!superAdminUser.isEmpty()) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.NOT_ALLOW_DELETE);
@@ -208,7 +208,7 @@ public class SysUserServiceImpl implements SysUserService {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIST);
             }
             //超级管理员 无法删除
-            if (user.getSuperFlag().equals(CommonConstans.SUPER_ADMIN_ID)) {
+            if (user.getSuperFlag().equals(CommonConstants.SUPER_ADMIN_ID)) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.NOT_ALLOW_DELETE);
             }
 
@@ -241,12 +241,12 @@ public class SysUserServiceImpl implements SysUserService {
         }
 
         // 如果修改的用户是超级管理员，校验当前登录用户是否为超级管理员
-        if (CommonConstans.SUPER_ADMIN_YES.equals(sysUserDO.getSuperFlag())) {
+        if (CommonConstants.SUPER_ADMIN_YES.equals(sysUserDO.getSuperFlag())) {
             String currentLoginName = BlinkRequestContextHolder.getLoginName();
             SysUserDO currentUser = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUserDO>()
                     .eq(SysUserDO::getLoginName, currentLoginName));
 
-            if (currentUser == null || !CommonConstans.SUPER_ADMIN_YES.equals(currentUser.getSuperFlag())) {
+            if (currentUser == null || !CommonConstants.SUPER_ADMIN_YES.equals(currentUser.getSuperFlag())) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.ONLY_SUPER_ADMIN_CAN_MODIFY);
             }
         }
@@ -350,7 +350,7 @@ public class SysUserServiceImpl implements SysUserService {
                 .eq(SysUserDO::getLoginName, currentLoginName));
 
         // 如果当前用户不是超级管理员，则排除超级管理员用户
-        if (currentUser == null || !CommonConstans.SUPER_ADMIN_YES.equals(currentUser.getSuperFlag())) {
+        if (currentUser == null || !CommonConstants.SUPER_ADMIN_YES.equals(currentUser.getSuperFlag())) {
             queryParam.setExcludeSuperAdmin(true);
         }
 
@@ -405,7 +405,7 @@ public class SysUserServiceImpl implements SysUserService {
         if (ObjectUtil.isEmpty(sysUserDO)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIST);
         }
-        if (sysUserDO.getSuperFlag().equals(CommonConstans.SUPER_ADMIN_ID)) {
+        if (sysUserDO.getSuperFlag().equals(CommonConstants.SUPER_ADMIN_ID)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.NOT_ALLOW_DELETE);
         }
         sysUserDO.setLocked(locked);
@@ -439,14 +439,14 @@ public class SysUserServiceImpl implements SysUserService {
         }
 
         // 检查是否包含超级管理员角色
-        if (CollUtil.isNotEmpty(roleIdList) && roleIdList.contains(CommonConstans.SUPER_ADMIN_ID)) {
+        if (CollUtil.isNotEmpty(roleIdList) && roleIdList.contains(CommonConstants.SUPER_ADMIN_ID)) {
             // 获取当前登录用户
             String currentLoginName = BlinkRequestContextHolder.getLoginName();
             SysUserDO currentUser = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUserDO>()
                     .eq(SysUserDO::getLoginName, currentLoginName));
             
             // 只有超级管理员才能分配超级管理员角色
-            if (currentUser == null || !CommonConstans.SUPER_ADMIN_YES.equals(currentUser.getSuperFlag())) {
+            if (currentUser == null || !CommonConstants.SUPER_ADMIN_YES.equals(currentUser.getSuperFlag())) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.ONLY_SUPER_ADMIN_CAN_ASSIGN);
             }
         }
@@ -506,7 +506,7 @@ public class SysUserServiceImpl implements SysUserService {
 
         // 更新用户密码
         currentUser.setPassword(newPasswordHash);
-        currentUser.setPasswordReset(CommonConstans.SUPER_ADMIN_NO);
+        currentUser.setPasswordReset(CommonConstants.SUPER_ADMIN_NO);
         currentUser.setUpdateBy(currentLoginName);
         sysUserMapper.updateById(currentUser);
     }
@@ -528,7 +528,7 @@ public class SysUserServiceImpl implements SysUserService {
         }
 
         // 超级管理员不允许被重置密码
-        if (CommonConstans.SUPER_ADMIN_YES.equals(user.getSuperFlag())) {
+        if (CommonConstants.SUPER_ADMIN_YES.equals(user.getSuperFlag())) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.SUPER_ADMIN_NOT_ALLOW_RESET);
         }
 
@@ -561,7 +561,7 @@ public class SysUserServiceImpl implements SysUserService {
         UserPermissionRsp rsp = new UserPermissionRsp();
 
         // 超级管理员拥有所有权限
-        if (CommonConstans.SUPER_ADMIN_YES.equals(user.getSuperFlag())) {
+        if (CommonConstants.SUPER_ADMIN_YES.equals(user.getSuperFlag())) {
             // 查询所有角色
             List<SysRoleDO> allRoles = roleMapper.selectList(
                     new LambdaQueryWrapper<SysRoleDO>().eq(SysRoleDO::getStatus, 0));

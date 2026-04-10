@@ -492,8 +492,8 @@ public class SysDataFilterServiceImpl implements SysDataFilterService {
                 }
                 case CREATOR_FILTER, DATE_RANGE_FILTER -> {
                     // 创建者过滤和日期范围过滤：需要配置字段名
-                    String fieldName = config.getString("fieldName");
-                    if (StrUtil.isBlank(fieldName)) {
+                    String field = config.getString("field");
+                    if (StrUtil.isBlank(field)) {
                         log.warn("[SysDataFilter] 规则未配置字段名 | ruleType: {}", ruleType);
                         BlinkException.throwBusinessException(BaseErrCodeConstant.DATA_SCOPE_RULE_CONFIG_EMPTY);
                     }

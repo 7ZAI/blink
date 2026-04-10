@@ -2,7 +2,7 @@ package com.blink.base.dto.req;
 
 import cn.hutool.core.util.StrUtil;
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.base.constants.CommonConstans;
+import com.blink.base.constants.CommonConstants;
 import com.blink.framework.validate.annotation.FieldConstraint;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
@@ -89,7 +89,7 @@ public class AddSysPermissionReq implements Serializable {
     @AssertTrue(message = BaseErrCodeConstant.PARAMETER_NOT_NULL)
     public boolean isApiTypeRequired() {
 
-        if(CommonConstans.PERMISSION_API_TYPE.equals(acType)){
+        if(CommonConstants.PERMISSION_API_TYPE.equals(acType)){
             return !StrUtil.isBlank(url);
         }
         return true;

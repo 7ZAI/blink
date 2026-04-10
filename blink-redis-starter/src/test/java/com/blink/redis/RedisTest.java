@@ -1,6 +1,6 @@
 package com.blink.redis;
 
-import com.blink.framework.common.data.DictCacheDO;
+
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.framework.redis.entity.MessageType;
 import com.blink.framework.redis.mq.RedisStreamProducer;
@@ -20,13 +20,13 @@ public class RedisTest {
     @Resource
     private RedisClient redisClient;
 
-    @Test
-    void testStream(){
-        DictCacheDO dictCacheDO = new DictCacheDO();
-        dictCacheDO.setDictName("das");
-        dictCacheDO.setDataPattern("353453");
-        StreamMessage<DictCacheDO> msg = StreamMessage.of("test", MessageType.EVENT, dictCacheDO);
-        RedisStreamProducer streamProducer = new RedisStreamProducer(redisClient);
+    // @Test
+    // void testStream(){
+    //     DictCacheDO dictCacheDO = new DictCacheDO();
+    //     dictCacheDO.setDictName("das");
+    //     dictCacheDO.setDataPattern("353453");
+    //     StreamMessage<DictCacheDO> msg = StreamMessage.of("test", MessageType.EVENT, dictCacheDO);
+    //     RedisStreamProducer streamProducer = new RedisStreamProducer(redisClient);
 
-    }
+    // }
 }

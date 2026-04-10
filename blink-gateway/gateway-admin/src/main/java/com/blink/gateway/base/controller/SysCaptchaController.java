@@ -54,6 +54,9 @@ public class SysCaptchaController {
     // 验证码验证状态缓存前缀
     private static final String CAPTCHA_VERIFIED_PREFIX = "captcha:verified:";
 
+    // anji-captcha Redis key 格式
+    private static final String REDIS_CAPTCHA_KEY = "RUNNING:CAPTCHA:%s";
+
     private static final String[] CAPTCHA_TYPES = {"clickWord", "blockPuzzle"};
     private static final Random RANDOM = new Random();
 
@@ -130,8 +133,41 @@ public class SysCaptchaController {
                 resultVO.setOriginalImageBase64(anjiCaptchaVO.getOriginalImageBase64());
                 resultVO.setJigsawImageBase64(anjiCaptchaVO.getJigsawImageBase64());
                 resultVO.setToken(anjiCaptchaVO.getToken());
-                resultVO.setPointJson(anjiCaptchaVO.getPointJson());
                 resultVO.setWordList(anjiCaptchaVO.getWordList());
+
+                // 滑块验证码：从 Redis 获取正确的 y 坐标并构造 pointJson 返回给前端
+                // anji-captcha 不返回 pointJson，需要手动从 Redis 获取
+                if ("blockPuzzle".equals(resultCaptchaType) && StrUtil.isNotBlank(anjiCaptchaVO.getToken())) {
+                    String pointKey = String.format(REDIS_CAPTCHA_KEY, anjiCaptchaVO.getToken());
+                    Object pointObj = redisClient.get(pointKey);
+                    String pointJsonFromRedis = pointObj != null ? pointObj.toString() : null;
+                    log.info("从 Redis 获取 point 信息: key={}, value={}", pointKey, pointJsonFromRedis);
+
+                    if (StrUtil.isNotBlank(pointJsonFromRedis)) {
+                        // 解析 Redis 中的 point 信息，提取 x 和 y 坐标
+                        // Redis 存储格式: {"secretKey":"xxx","x":123,"y":45}
+                        try {
+                            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                            @SuppressWarnings("unchecked")
+                            java.util.Map<String, Object> pointMap = mapper.readValue(pointJsonFromRedis, java.util.Map.class);
+                            Object xObj = pointMap.get("x");
+                            Object yObj = pointMap.get("y");
+                            Integer x = xObj != null ? ((Number) xObj).intValue() : null;
+                            Integer y = yObj != null ? ((Number) yObj).intValue() : null;
+
+                            if (x != null && y != null) {
+                                // 构造返回给前端的 pointJson（只包含 x 和 y，不包含 secretKey）
+                                String pointJsonForFrontend = String.format("{\"x\":%d,\"y\":%d}", x, y);
+                                resultVO.setPointJson(pointJsonForFrontend);
+                                log.info("构造 pointJson 返回给前端: {}", pointJsonForFrontend);
+                            }
+                        } catch (Exception e) {
+                            log.error("解析 Redis 中的 point 信息失败", e);
+                        }
+                    }
+                } else {
+                    resultVO.setPointJson(anjiCaptchaVO.getPointJson());
+                }
             } else {
                 BeanUtils.copyProperties(repData, resultVO);
             }

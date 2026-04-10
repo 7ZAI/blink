@@ -6,7 +6,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.base.constants.CommonConstans;
+import com.blink.base.constants.CommonConstants;
 import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.CheckMenuRoleRsp;
 import com.blink.base.dto.rsp.QueryShowMenuRsp;
@@ -146,7 +146,7 @@ public class SysMenuServiceImpl implements SysMenuService {
                     .in(SysMenuDO::getParentId, deleteParam.getIdList()));
 
             //存在子节点数据 无法删除
-            if (count.compareTo(CommonConstans.LONG_ZERO) > 0) {
+            if (count.compareTo(CommonConstants.LONG_ZERO) > 0) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_SON_DATA);
             }
 
@@ -192,7 +192,7 @@ public class SysMenuServiceImpl implements SysMenuService {
                     .eq(SysMenuDO::getParentId, deleteParam.getDeleteId()));
 
             //存在子节点数据 无法删除
-            if (count.compareTo(CommonConstans.LONG_ZERO) > 0) {
+            if (count.compareTo(CommonConstants.LONG_ZERO) > 0) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_SON_DATA);
             }
 
@@ -454,12 +454,12 @@ public class SysMenuServiceImpl implements SysMenuService {
 
         // 目录和页面菜单 (type=1 目录, type=2 页面)
         List<SysMenuVO> menus = menuVos.stream()
-                .filter(menu -> menu.getType().equals(CommonConstans.MENU_DIRECTORY)
-                        || menu.getType().equals(CommonConstans.MENU_PAGE))
+                .filter(menu -> menu.getType().equals(CommonConstants.MENU_DIRECTORY)
+                        || menu.getType().equals(CommonConstants.MENU_PAGE))
                 .toList();
         // 按钮/功能菜单 (type=3)
         List<SysMenuVO> functionMenus = menuVos.stream()
-                .filter(menu -> menu.getType().equals(CommonConstans.MENU_FUNCTION))
+                .filter(menu -> menu.getType().equals(CommonConstants.MENU_FUNCTION))
                 .toList();
 
         var queryShowMenuRspDTO = new QueryShowMenuRsp();
@@ -518,12 +518,12 @@ public class SysMenuServiceImpl implements SysMenuService {
 
         // 目录和页面菜单 (type=1 目录, type=2 页面)
         List<SysMenuVO> menus = menuVos.stream()
-                .filter(menu -> menu.getType().equals(CommonConstans.MENU_DIRECTORY) 
-                        || menu.getType().equals(CommonConstans.MENU_PAGE))
+                .filter(menu -> menu.getType().equals(CommonConstants.MENU_DIRECTORY) 
+                        || menu.getType().equals(CommonConstants.MENU_PAGE))
                 .toList();
         // 按钮/功能菜单 (type=3)
         List<SysMenuVO> functionMenus = menuVos.stream()
-                .filter(menu -> menu.getType().equals(CommonConstans.MENU_FUNCTION))
+                .filter(menu -> menu.getType().equals(CommonConstants.MENU_FUNCTION))
                 .toList();
 
         var queryShowMenuRspDTO = new QueryShowMenuRsp();

@@ -5,7 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.base.constants.CommonConstans;
+import com.blink.base.constants.CommonConstants;
 import com.blink.base.dto.req.*;
 import com.blink.base.entity.*;
 import com.blink.base.mapper.*;
@@ -81,14 +81,14 @@ public class SysRoleServiceImpl implements SysRoleService {
         // 角色代码不允许重复
         Long codeCount = sysRoleMapper.selectCount(new LambdaQueryWrapper<SysRoleDO>()
                 .eq(SysRoleDO::getRoleCode, sysRoleDO.getRoleCode()));
-        if (codeCount > CommonConstans.LONG_ZERO) {
+        if (codeCount > CommonConstants.LONG_ZERO) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.ROLE_ALREADY_EXIT);
         }
 
         // 角色名称不允许重复
         Long nameCount = sysRoleMapper.selectCount(new LambdaQueryWrapper<SysRoleDO>()
                 .eq(SysRoleDO::getRoleName, sysRoleDO.getRoleName()));
-        if (nameCount > CommonConstans.LONG_ZERO) {
+        if (nameCount > CommonConstants.LONG_ZERO) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.ROLE_NAME_ALREADY_EXIT);
         }
 
@@ -135,11 +135,11 @@ public class SysRoleServiceImpl implements SysRoleService {
 
         // 检查是否包含超级管理员角色
         if (Boolean.TRUE.equals(deleteParam.getBatchDelete())) {
-            if (deleteParam.getIdList().contains(CommonConstans.SUPER_ADMIN_ID)) {
+            if (deleteParam.getIdList().contains(CommonConstants.SUPER_ADMIN_ID)) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.NOT_ALLOW_DELETE);
             }
         } else {
-            if (deleteParam.getDeleteId().equals(CommonConstans.SUPER_ADMIN_ID)) {
+            if (deleteParam.getDeleteId().equals(CommonConstants.SUPER_ADMIN_ID)) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.NOT_ALLOW_DELETE);
             }
         }
@@ -149,7 +149,7 @@ public class SysRoleServiceImpl implements SysRoleService {
                     .in(SysUserRoleRelaDO::getRoleId, deleteParam.getIdList()));
 
             //存在关联数据 无法删除 只有未绑定任何用户的角色才能删除 或者将拥有角色的用户全部删除后 才能删除角色
-            if (count.compareTo(CommonConstans.LONG_ZERO) > 0) {
+            if (count.compareTo(CommonConstants.LONG_ZERO) > 0) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_RELA_DATA);
             }
 
@@ -165,7 +165,7 @@ public class SysRoleServiceImpl implements SysRoleService {
             Long count = userRoleRelaMapper.selectCount(new LambdaQueryWrapper<SysUserRoleRelaDO>()
                     .eq(SysUserRoleRelaDO::getRoleId, deleteParam.getDeleteId()));
             //存在关联数据 无法删除
-            if (count.compareTo(CommonConstans.LONG_ZERO) > 0) {
+            if (count.compareTo(CommonConstants.LONG_ZERO) > 0) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_RELA_DATA);
             }
             sysRoleMapper.deleteById(deleteParam.getDeleteId());
@@ -185,7 +185,7 @@ public class SysRoleServiceImpl implements SysRoleService {
     public SysRoleVO modifySysRole(UpdateSysRoleReq updateParam) throws BlinkException {
 
         // 检查是否为超级管理员角色
-        if (updateParam.getRoleId().equals(CommonConstans.SUPER_ADMIN_ID)) {
+        if (updateParam.getRoleId().equals(CommonConstants.SUPER_ADMIN_ID)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.SUPER_ADMIN_ROLE_NOT_ALLOW_UPDATE);
         }
 
@@ -200,7 +200,7 @@ public class SysRoleServiceImpl implements SysRoleService {
         Long nameCount = sysRoleMapper.selectCount(new LambdaQueryWrapper<SysRoleDO>()
                 .eq(SysRoleDO::getRoleName, updateParam.getRoleName())
                 .ne(SysRoleDO::getRoleId, updateParam.getRoleId()));
-        if (nameCount > CommonConstans.LONG_ZERO) {
+        if (nameCount > CommonConstants.LONG_ZERO) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.ROLE_NAME_ALREADY_EXIT);
         }
 
@@ -383,7 +383,7 @@ public class SysRoleServiceImpl implements SysRoleService {
         Integer roleId = assignParam.getRoleId();
 
         // 检查是否为超级管理员角色
-        if (roleId.equals(CommonConstans.SUPER_ADMIN_ID)) {
+        if (roleId.equals(CommonConstants.SUPER_ADMIN_ID)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.SUPER_ADMIN_ROLE_NOT_ALLOW_UPDATE);
         }
 
@@ -427,7 +427,7 @@ public class SysRoleServiceImpl implements SysRoleService {
         Integer roleId = assignParam.getRoleId();
 
         // 检查是否为超级管理员角色
-        if (roleId.equals(CommonConstans.SUPER_ADMIN_ID)) {
+        if (roleId.equals(CommonConstants.SUPER_ADMIN_ID)) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.SUPER_ADMIN_ROLE_NOT_ALLOW_UPDATE);
         }
 

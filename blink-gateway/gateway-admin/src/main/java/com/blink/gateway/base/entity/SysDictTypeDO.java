@@ -79,10 +79,4 @@ public class SysDictTypeDO implements Serializable {
      */
     @TableField("remark")
     private String remark;
-
-    /**
-     * 语言标识
-     */
-    @TableField("locale")
-    private String locale;
 }

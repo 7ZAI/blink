@@ -2,7 +2,7 @@ package com.blink.base.config;
 
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
-import com.blink.base.constants.CommonConstans;
+import com.blink.base.constants.CommonConstants;
 import com.blink.base.dto.req.QueryOneSysConfigReq;
 import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.base.entity.SysOperationLogDO;
@@ -127,10 +127,10 @@ public class LogFunctionConfiguration {
         // 先检查总开关
         // 这里简化处理，由切面先检查总开关再检查分开关
         if (LogType.LOGIN.getCode().equals(logType)) {
-            return CommonConstans.SysConfigKeys.LOG_ENABLE_LOGIN_LOG;
+            return CommonConstants.SysConfigKeys.LOG_ENABLE_LOGIN_LOG;
         } else {
             // OPERATION 和 SYSTEM 类型使用操作日志开关
-            return CommonConstans.SysConfigKeys.LOG_ENABLE_OPERATION_LOG;
+            return CommonConstants.SysConfigKeys.LOG_ENABLE_OPERATION_LOG;
         }
     }
 }

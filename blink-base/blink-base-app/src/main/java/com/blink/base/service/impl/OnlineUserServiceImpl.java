@@ -3,7 +3,7 @@ package com.blink.base.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.base.constants.RedisKeyConstans;
+import com.blink.base.constants.RedisKeyConstants;
 import com.blink.base.dto.req.KickoutUserReq;
 import com.blink.base.dto.req.QueryOnlineUserReq;
 import com.blink.base.dto.rsp.OnlineUserRsp;
@@ -48,8 +48,8 @@ public class OnlineUserServiceImpl implements OnlineUserService {
         // count=100 表示每次迭代返回约100个元素，不是限制总数
         // cursor.hasNext() 会持续迭代直到所有匹配的键都被扫描完
         // 注意：需要过滤掉 user:token:old: 前缀的 key，只扫描正常登录用户的 token
-        String pattern = RedisKeyConstans.USER_TOKEN + "*";
-        String oldTokenPrefix = RedisKeyConstans.USER_TOKEN_OLD;
+        String pattern = RedisKeyConstants.USER_TOKEN + "*";
+        String oldTokenPrefix = RedisKeyConstants.USER_TOKEN_OLD;
         Cursor<String> cursor = redisClient.scan(pattern, 100);
         
         try {
@@ -90,7 +90,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     public void kickoutUser(KickoutUserReq kickoutUserReq) throws BlinkException {
         String token = kickoutUserReq.getToken();
 
-        Object userInfoObj = redisClient.get(RedisKeyConstans.USER_TOKEN + token);
+        Object userInfoObj = redisClient.get(RedisKeyConstants.USER_TOKEN + token);
         if (userInfoObj == null) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.TOKEN_EXPIRED);
         }
@@ -99,11 +99,11 @@ public class OnlineUserServiceImpl implements OnlineUserService {
         Integer userId = userInfo.getUserId();
 
         // 删除 token
-        redisClient.delete(RedisKeyConstans.USER_TOKEN + token);
+        redisClient.delete(RedisKeyConstants.USER_TOKEN + token);
         // 从 ZSet 移除
-        redisClient.zRemove(RedisKeyConstans.USER_TOKENS + userId, token);
+        redisClient.zRemove(RedisKeyConstants.USER_TOKENS + userId, token);
         // 设置旧 token 标记（用于提示）
-        redisClient.setEx(RedisKeyConstans.USER_TOKEN_OLD + token, userId, 300L);
+        redisClient.setEx(RedisKeyConstants.USER_TOKEN_OLD + token, userId, 300L);
 
         log.info("[OnlineUser] 强制用户下线 | userId: {}, token: {}", userId, token);
     }
@@ -118,8 +118,8 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     public List<String> getOnlineUserTokensByUserIds(List<Integer> userIdList) {
         List<String> onlineTokens = new ArrayList<>();
 
-        String pattern = RedisKeyConstans.USER_TOKEN + "*";
-        String oldTokenPrefix = RedisKeyConstans.USER_TOKEN_OLD;
+        String pattern = RedisKeyConstants.USER_TOKEN + "*";
+        String oldTokenPrefix = RedisKeyConstants.USER_TOKEN_OLD;
         Cursor<String> cursor = redisClient.scan(pattern, 100);
 
         try {
@@ -158,16 +158,16 @@ public class OnlineUserServiceImpl implements OnlineUserService {
 
         for (Integer userId : userIdList) {
             // 获取该用户的所有 token
-            Set<Object> tokens = redisClient.zRange(RedisKeyConstans.USER_TOKENS + userId, 0, -1);
+            Set<Object> tokens = redisClient.zRange(RedisKeyConstants.USER_TOKENS + userId, 0, -1);
             if (CollUtil.isNotEmpty(tokens)) {
                 for (Object tokenObj : tokens) {
                     String token = String.valueOf(tokenObj);
-                    redisClient.delete(RedisKeyConstans.USER_TOKEN + token);
+                    redisClient.delete(RedisKeyConstants.USER_TOKEN + token);
                     log.info("[OnlineUser] 强制用户下线 | userId: {}, token: {}", userId, token);
                 }
             }
             // 删除整个 ZSet
-            redisClient.delete(RedisKeyConstans.USER_TOKENS + userId);
+            redisClient.delete(RedisKeyConstants.USER_TOKENS + userId);
         }
     }
 }

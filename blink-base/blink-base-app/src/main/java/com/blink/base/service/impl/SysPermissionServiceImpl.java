@@ -14,8 +14,8 @@ import com.blink.datasource.utils.PageUtils;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.CacheComponent;
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.base.constants.CommonConstans;
-import com.blink.base.constants.RedisKeyConstans;
+import com.blink.base.constants.CommonConstants;
+import com.blink.base.constants.RedisKeyConstants;
 import com.blink.base.dto.rsp.QueryPermissionIdentityRsp;
 import com.blink.base.dto.rsp.QuerySysPermissionRsp;
 import com.blink.base.entity.SysDataFilterDO;
@@ -88,7 +88,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         }
 
         // 接口权限类型需要检查URL是否重复
-        if (CommonConstans.PERMISSION_API_TYPE.equals(saveParam.getAcType())) {
+        if (CommonConstants.PERMISSION_API_TYPE.equals(saveParam.getAcType())) {
             if (StrUtil.isBlank(saveParam.getUrl())) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
             }
@@ -102,7 +102,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         }
 
         // 数据权限类型需要检查dataFilterId是否存在
-        if (CommonConstans.PERMISSION_DATA_TYPE.equals(saveParam.getAcType())) {
+        if (CommonConstants.PERMISSION_DATA_TYPE.equals(saveParam.getAcType())) {
             if (ObjectUtil.isNull(saveParam.getDataFilterId())) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
             }
@@ -121,7 +121,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
                 sysPermissionDO.getAcId(), sysPermissionDO.getAcIdentity(), sysPermissionDO.getAcType());
 
         // 处理关联菜单（仅接口权限）
-        if (CommonConstans.PERMISSION_API_TYPE.equals(saveParam.getAcType())
+        if (CommonConstants.PERMISSION_API_TYPE.equals(saveParam.getAcType())
                 && CollUtil.isNotEmpty(saveParam.getMenuIds())) {
             updateMenuPermissionRelation(sysPermissionDO.getAcId(), saveParam.getMenuIds());
         }
@@ -202,7 +202,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         }
 
         // 接口权限类型需要检查URL是否重复（排除自身）
-        if (CommonConstans.PERMISSION_API_TYPE.equals(updateParam.getAcType())) {
+        if (CommonConstants.PERMISSION_API_TYPE.equals(updateParam.getAcType())) {
             if (StrUtil.isBlank(updateParam.getUrl())) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
             }
@@ -216,7 +216,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         }
 
         // 数据权限类型需要检查dataFilterId是否存在
-        if (CommonConstans.PERMISSION_DATA_TYPE.equals(updateParam.getAcType())) {
+        if (CommonConstants.PERMISSION_DATA_TYPE.equals(updateParam.getAcType())) {
             if (ObjectUtil.isNull(updateParam.getDataFilterId())) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
             }
@@ -233,7 +233,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
                 sysPermissionDO.getAcId(), sysPermissionDO.getAcIdentity(), sysPermissionDO.getAcType());
 
         // 处理关联菜单（仅接口权限）
-        if (CommonConstans.PERMISSION_API_TYPE.equals(updateParam.getAcType())) {
+        if (CommonConstants.PERMISSION_API_TYPE.equals(updateParam.getAcType())) {
             updateMenuPermissionRelation(sysPermissionDO.getAcId(),
                 Optional.ofNullable(updateParam.getMenuIds()).orElse(Collections.emptyList()));
         }
@@ -276,10 +276,10 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         List<SysPermissionDO> permissions = new ArrayList<SysPermissionDO>();
         if (CollUtil.isNotEmpty(roleIds)) {
             //包含 超级管理员 查询所有
-            if (roleIds.contains(CommonConstans.SUPER_ADMIN_ID)) {
+            if (roleIds.contains(CommonConstants.SUPER_ADMIN_ID)) {
 
                 SysPermissionDO superAdmin = new SysPermissionDO();
-                superAdmin.setAcIdentity(CommonConstans.SUPER_ADMIN_PERMISSION);
+                superAdmin.setAcIdentity(CommonConstants.SUPER_ADMIN_PERMISSION);
                 permissions.add(superAdmin);
             } else {
                 permissions = sysPermissionMapper.findRolesPermissions(roleIds);
@@ -314,8 +314,8 @@ public class SysPermissionServiceImpl implements SysPermissionService {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.USER_NOT_EXIST);
             }
             //添加超级管理员权限
-            if (CommonConstans.SUPER_ADMIN_ID.equals(userDO.getSuperFlag())) {
-                permissions.add(CommonConstans.SUPER_ADMIN_PERMISSION);
+            if (CommonConstants.SUPER_ADMIN_ID.equals(userDO.getSuperFlag())) {
+                permissions.add(CommonConstants.SUPER_ADMIN_PERMISSION);
             }
 
             List<SysUserRoleRelaDO> roleRela = userRoleRelaMapper.selectList(new LambdaQueryWrapper<SysUserRoleRelaDO>()
@@ -338,7 +338,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
         //根据url查询
         if (Objects.isNull(userId) && StrUtil.isNotBlank(url)) {
             SysPermissionDO permission = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>().eq(SysPermissionDO::getUrl, url)
-                    .eq(SysPermissionDO::getAcType, CommonConstans.PERMISSION_API_TYPE));
+                    .eq(SysPermissionDO::getAcType, CommonConstants.PERMISSION_API_TYPE));
 
             if (Objects.nonNull(permission)) {
                 permissions.add(permission.getAcIdentity());
@@ -360,7 +360,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
     public GetAllApiPermissionsRsp getAllApiPermission(GetAllApiPermissionsReq body) throws BlinkException {
 
         List<SysPermissionDO> permissionList = sysPermissionMapper.selectList(new LambdaQueryWrapper<SysPermissionDO>()
-                .eq(SysPermissionDO::getAcType, CommonConstans.PERMISSION_API_TYPE));
+                .eq(SysPermissionDO::getAcType, CommonConstants.PERMISSION_API_TYPE));
         var rsp = new GetAllApiPermissionsRsp();
         List<SysPermissionVO> list = BeanUtil.copyToList(permissionList, SysPermissionVO.class);
         rsp.setPermissionList(list);
@@ -380,7 +380,7 @@ public class SysPermissionServiceImpl implements SysPermissionService {
 
         String url = queryParam.getUrl();
 
-        String acIdentity = (String) cacheComponent.getFromCacheOrDB(RedisKeyConstans.URL_PERMISSION + url, () -> {
+        String acIdentity = (String) cacheComponent.getFromCacheOrDB(RedisKeyConstants.URL_PERMISSION + url, () -> {
                     SysPermissionDO permissionDO = sysPermissionMapper.selectOne(new LambdaQueryWrapper<SysPermissionDO>().eq(SysPermissionDO::getUrl, url));
                     return Objects.isNull(permissionDO) ? "" : permissionDO.getAcIdentity();
                 }

@@ -1,6 +1,6 @@
 package com.blink.base.constants;
 
-public interface CommonConstans {
+public interface CommonConstants {
 
     //是否为叶子节点 0否 1是
     Integer IS_LEAF = 1;
@@ -136,141 +136,141 @@ public interface CommonConstans {
         /**
          * 登录验证码开关
          */
-        String LOGIN_CAPTCHA_ENABLED = RedisKeyConstans.BLINK_PREFIX + "base:login:captcha:enabled";
+        String LOGIN_CAPTCHA_ENABLED = RedisKeyConstants.BLINK_PREFIX + "base:login:captcha:enabled";
 
         /**
          * 密码最大重试次数
          */
-        String LOGIN_PASSWORD_MAX_RETRY = RedisKeyConstans.BLINK_PREFIX + "base:login:password:maxRetry";
+        String LOGIN_PASSWORD_MAX_RETRY = RedisKeyConstants.BLINK_PREFIX + "base:login:password:maxRetry";
 
         /**
          * 账户锁定时间(分钟)
          */
-        String LOGIN_PASSWORD_LOCK_TIME = RedisKeyConstans.BLINK_PREFIX + "base:login:password:lockTime";
+        String LOGIN_PASSWORD_LOCK_TIME = RedisKeyConstants.BLINK_PREFIX + "base:login:password:lockTime";
 
         /**
          * 会话超时时间(分钟)
          */
-        String SESSION_TIMEOUT = RedisKeyConstans.BLINK_PREFIX + "base:session:timeout";
+        String SESSION_TIMEOUT = RedisKeyConstants.BLINK_PREFIX + "base:session:timeout";
 
         /**
          * 密码最小长度
          */
-        String USER_PASSWORD_MIN_LENGTH = RedisKeyConstans.BLINK_PREFIX + "base:user:passwordMinLength";
+        String USER_PASSWORD_MIN_LENGTH = RedisKeyConstants.BLINK_PREFIX + "base:user:passwordMinLength";
 
         /**
          * 密码需包含数字
          */
-        String USER_PASSWORD_REQUIRE_NUMBER = RedisKeyConstans.BLINK_PREFIX + "base:user:passwordRequireNumber";
+        String USER_PASSWORD_REQUIRE_NUMBER = RedisKeyConstants.BLINK_PREFIX + "base:user:passwordRequireNumber";
 
         /**
          * 密码需包含大写字母
          */
-        String USER_PASSWORD_REQUIRE_UPPERCASE = RedisKeyConstans.BLINK_PREFIX + "base:passwordRequireUppercase";
+        String USER_PASSWORD_REQUIRE_UPPERCASE = RedisKeyConstants.BLINK_PREFIX + "base:passwordRequireUppercase";
 
         /**
          * 密码需包含小写字母
          */
-        String USER_PASSWORD_REQUIRE_LOWERCASE = RedisKeyConstans.BLINK_PREFIX + "base:user:passwordRequireLowercase";
+        String USER_PASSWORD_REQUIRE_LOWERCASE = RedisKeyConstants.BLINK_PREFIX + "base:user:passwordRequireLowercase";
 
         /**
          * 密码需包含特殊字符
          */
-        String USER_PASSWORD_REQUIRE_SPECIAL = RedisKeyConstans.BLINK_PREFIX + "base:user:passwordRequireSpecial";
+        String USER_PASSWORD_REQUIRE_SPECIAL = RedisKeyConstants.BLINK_PREFIX + "base:user:passwordRequireSpecial";
 
         /**
          * 站点名称
          */
-        String SITE_NAME = RedisKeyConstans.BLINK_PREFIX + "base:site:name";
+        String SITE_NAME = RedisKeyConstants.BLINK_PREFIX + "base:site:name";
 
         /**
          * 版权信息
          */
-        String SITE_COPYRIGHT = RedisKeyConstans.BLINK_PREFIX + "base:site:copyright";
+        String SITE_COPYRIGHT = RedisKeyConstants.BLINK_PREFIX + "base:site:copyright";
 
         /**
          * 分页大小
          */
-        String PAGE_SIZE = RedisKeyConstans.BLINK_PREFIX + "base:page:size";
+        String PAGE_SIZE = RedisKeyConstants.BLINK_PREFIX + "base:page:size";
 
         /**
          * 密码复杂度要求
          */
-        String PASSWORD_COMPLEXITY = RedisKeyConstans.BLINK_PREFIX + "base:password:complexity";
+        String PASSWORD_COMPLEXITY = RedisKeyConstants.BLINK_PREFIX + "base:password:complexity";
 
         /**
          * 允许上传的文件类型
          */
-        String ALLOWED_FILE_TYPES = RedisKeyConstans.BLINK_PREFIX + "base:allowed:file:types";
+        String ALLOWED_FILE_TYPES = RedisKeyConstants.BLINK_PREFIX + "base:allowed:file:types";
 
         /**
          * 系统标题
          */
-        String SYSTEM_TITLE = RedisKeyConstans.BLINK_PREFIX + "base:system:title";
+        String SYSTEM_TITLE = RedisKeyConstants.BLINK_PREFIX + "base:system:title";
 
         /**
          * 系统Logo
          */
-        String SYSTEM_LOGO = RedisKeyConstans.BLINK_PREFIX + "base:system:logo";
+        String SYSTEM_LOGO = RedisKeyConstants.BLINK_PREFIX + "base:system:logo";
 
         /**
          * 页脚信息
          */
-        String SYSTEM_FOOTER = RedisKeyConstans.BLINK_PREFIX + "base:system:footer";
+        String SYSTEM_FOOTER = RedisKeyConstants.BLINK_PREFIX + "base:system:footer";
 
         /**
          * 上传文件最大大小(MB)
          */
-        String UPLOAD_MAX_SIZE = RedisKeyConstans.BLINK_PREFIX + "base:upload:maxSize";
+        String UPLOAD_MAX_SIZE = RedisKeyConstants.BLINK_PREFIX + "base:upload:maxSize";
 
         /**
          * 允许上传的文件类型
          */
-        String UPLOAD_ALLOW_TYPES = RedisKeyConstans.BLINK_PREFIX + "base:upload:allowTypes";
+        String UPLOAD_ALLOW_TYPES = RedisKeyConstants.BLINK_PREFIX + "base:upload:allowTypes";
 
         /**
          * 用户默认头像
          */
-        String USER_DEFAULT_AVATAR = RedisKeyConstans.BLINK_PREFIX + "base:user:defaultAvatar";
+        String USER_DEFAULT_AVATAR = RedisKeyConstants.BLINK_PREFIX + "base:user:defaultAvatar";
 
         /**
          * 用户初始密码
          */
-        String USER_INIT_PASSWORD = RedisKeyConstans.BLINK_PREFIX + "base:user:initPassword";
+        String USER_INIT_PASSWORD = RedisKeyConstants.BLINK_PREFIX + "base:user:initPassword";
 
         /**
          * 用户默认头像样式(DiceBear)
          */
-        String USER_DEFAULT_AVATAR_STYLE = RedisKeyConstans.BLINK_PREFIX + "base:user:defaultAvatarStyle";
+        String USER_DEFAULT_AVATAR_STYLE = RedisKeyConstants.BLINK_PREFIX + "base:user:defaultAvatarStyle";
 
         /**
          * 最大并发会话数
          */
-        String SESSION_MAX_CONCURRENT = RedisKeyConstans.BLINK_PREFIX + "base:session:maxConcurrent";
+        String SESSION_MAX_CONCURRENT = RedisKeyConstants.BLINK_PREFIX + "base:session:maxConcurrent";
 
         /**
          * 踢出后登录
          */
-        String SESSION_KICKOUT_AFTER = RedisKeyConstans.BLINK_PREFIX + "base:session:kickoutAfter";
+        String SESSION_KICKOUT_AFTER = RedisKeyConstants.BLINK_PREFIX + "base:session:kickoutAfter";
 
         /**
          * 日志总开关
          */
-        String LOG_ENABLED = RedisKeyConstans.BLINK_PREFIX + "base:log:enabled";
+        String LOG_ENABLED = RedisKeyConstants.BLINK_PREFIX + "base:log:enabled";
 
         /**
          * 启用操作日志
          */
-        String LOG_ENABLE_OPERATION_LOG = RedisKeyConstans.BLINK_PREFIX + "base:log:enableOperationLog";
+        String LOG_ENABLE_OPERATION_LOG = RedisKeyConstants.BLINK_PREFIX + "base:log:enableOperationLog";
 
         /**
          * 启用登录日志
          */
-        String LOG_ENABLE_LOGIN_LOG = RedisKeyConstans.BLINK_PREFIX + "base:log:enableLoginLog";
+        String LOG_ENABLE_LOGIN_LOG = RedisKeyConstants.BLINK_PREFIX + "base:log:enableLoginLog";
 
         /**
          * 日志保留天数
          */
-        String LOG_RETENTION_DAYS = RedisKeyConstans.BLINK_PREFIX + "base:log:retentionDays";
+        String LOG_RETENTION_DAYS = RedisKeyConstants.BLINK_PREFIX + "base:log:retentionDays";
     }
 }

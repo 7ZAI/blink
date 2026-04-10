@@ -64,6 +64,11 @@ logging:
   file:
     path: ./blink-base/blink-base-app/logs
 
+# 验证码配置
+blink:
+  captcha:
+    type: clickWord                 # 验证码类型: clickWord(点选文字) / blockPuzzle(滑块拼图)
+
 # ==================== Flowable工作流引擎配置 ====================
 flowable:
   # 自动部署流程定义（开发环境开启，生产环境建议关闭）

@@ -15,6 +15,7 @@ import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -44,15 +45,21 @@ public class SysCaptchaController {
     @Resource
     private RedisClient redisClient;
 
+    /**
+     * 默认验证码类型，从配置文件读取
+     */
+    @Value("${blink.captcha.type:blockPuzzle}")
+    private String defaultCaptchaType;
+
     // 验证码验证状态缓存前缀
     private static final String CAPTCHA_VERIFIED_PREFIX = "captcha:verified:";
 
-    private static final String[] CAPTCHA_TYPES = {"blockPuzzle"};  // 暂时只使用滑块拼图，点选文字需要字体配置
+    private static final String[] CAPTCHA_TYPES = {"clickWord", "blockPuzzle"};
     private static final Random RANDOM = new Random();
 
     /**
      * 随机获取验证码类型
-     * @return blockPuzzle 或 clickWord
+     * @return clickWord 或 blockPuzzle
      */
     private String getRandomCaptchaType() {
         return CAPTCHA_TYPES[RANDOM.nextInt(CAPTCHA_TYPES.length)];
@@ -64,8 +71,8 @@ public class SysCaptchaController {
      * 支持两种类型：
      * - blockPuzzle: 滑块拼图验证码
      * - clickWord: 点选文字验证码
-     * 
-     * 如果前端不指定类型，则随机返回一种验证码
+     *
+     * 如果前端不指定类型，则使用配置文件中的默认类型
      * </p>
      *
      * @param reqDto 请求参数
@@ -76,11 +83,11 @@ public class SysCaptchaController {
     public ResponseDTO<CaptchaVO> get(@RequestBody @Valid RequestDTO<GetCaptchaReq> reqDto) {
         GetCaptchaReq req = reqDto.getBody();
 
-        // 如果前端未指定验证码类型，则随机选择一种
+        // 如果前端未指定验证码类型，则使用配置文件中的默认类型
         String captchaType = req.getCaptchaType();
-        if (captchaType == null || captchaType.isEmpty() || "default".equals(captchaType)) {
-            captchaType = getRandomCaptchaType();
-            log.info("Random captcha type selected: {}", captchaType);
+        if (StrUtil.isBlank(captchaType) || "default".equals(captchaType)) {
+            captchaType = defaultCaptchaType;
+            log.info("使用配置的默认验证码类型: {}", captchaType);
         }
 
         // 使用全限定名避免类名冲突
@@ -95,15 +102,15 @@ public class SysCaptchaController {
         if (responseModel.isSuccess()) {
             Object repData = responseModel.getRepData();
             log.info("Captcha get response data type: {}", repData.getClass().getName());
-            
+
             // 直接使用anji-captcha返回的VO
             if (repData instanceof com.anji.captcha.model.vo.CaptchaVO) {
                 com.anji.captcha.model.vo.CaptchaVO anjiCaptchaVO = (com.anji.captcha.model.vo.CaptchaVO) repData;
-                log.info("OriginalImageBase64 length: {}", 
+                log.info("OriginalImageBase64 length: {}",
                     anjiCaptchaVO.getOriginalImageBase64() != null ? anjiCaptchaVO.getOriginalImageBase64().length() : 0);
-                log.info("JigsawImageBase64 length: {}", 
+                log.info("JigsawImageBase64 length: {}",
                     anjiCaptchaVO.getJigsawImageBase64() != null ? anjiCaptchaVO.getJigsawImageBase64().length() : 0);
-                
+
                 // 手动转换字段
                 // anji-captcha使用token作为验证码ID
                 String captchaId = anjiCaptchaVO.getCaptchaId();
@@ -112,9 +119,14 @@ public class SysCaptchaController {
                 }
                 resultVO.setCaptchaId(captchaId);
                 log.info("CaptchaId set to: {}", captchaId);
-                
-                resultVO.setCaptchaType(anjiCaptchaVO.getCaptchaType());
-                log.info("CaptchaType set to: {}", anjiCaptchaVO.getCaptchaType());
+
+                // anji-captcha可能不返回captchaType，使用请求参数中的类型
+                String resultCaptchaType = anjiCaptchaVO.getCaptchaType();
+                if (StrUtil.isBlank(resultCaptchaType)) {
+                    resultCaptchaType = captchaType;
+                }
+                resultVO.setCaptchaType(resultCaptchaType);
+                log.info("CaptchaType set to: {}", resultCaptchaType);
                 resultVO.setOriginalImageBase64(anjiCaptchaVO.getOriginalImageBase64());
                 resultVO.setJigsawImageBase64(anjiCaptchaVO.getJigsawImageBase64());
                 resultVO.setToken(anjiCaptchaVO.getToken());
@@ -151,12 +163,12 @@ public class SysCaptchaController {
         captchaVO.setClientUid(req.getClientUid());
         captchaVO.setTs(req.getTs());
 
-        log.info("Captcha check request - token: {}, captchaType: {}, pointJson: {}", 
+        log.info("Captcha check request - token: {}, captchaType: {}, pointJson: {}",
             req.getCaptchaId(), req.getCaptchaType(), req.getPointJson());
 
         ResponseModel responseModel = captchaService.check(captchaVO);
-        
-        log.info("Captcha check response - success: {}, msg: {}", 
+
+        log.info("Captcha check response - success: {}, msg: {}",
             responseModel.isSuccess(), responseModel.getRepMsg());
 
         CaptchaCheckVO checkVO = new CaptchaCheckVO();

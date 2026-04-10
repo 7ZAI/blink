@@ -5,7 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.base.constants.CommonConstans;
+import com.blink.base.constants.CommonConstants;
 import com.blink.base.dto.req.AddSysGroupReq;
 import com.blink.base.dto.req.DeleteSysGroupReq;
 import com.blink.base.dto.req.QuerySysGroupReq;
@@ -72,8 +72,8 @@ public class SysGroupServiceImpl implements SysGroupService {
         }
 
         //父是叶子节点 则更新为否
-        if (CommonConstans.IS_LEAF.equals(parentGroup.getIsLeaf())) {
-            parentGroup.setIsLeaf(CommonConstans.NOT_LEAF);
+        if (CommonConstants.IS_LEAF.equals(parentGroup.getIsLeaf())) {
+            parentGroup.setIsLeaf(CommonConstants.NOT_LEAF);
             sysGroupMapper.updateById(parentGroup);
         }
 
@@ -109,7 +109,7 @@ public class SysGroupServiceImpl implements SysGroupService {
                     .in(SysUserGroupRelaDO::getGroupId, deleteParam.getIdList()));
 
             //存在关联数据 无法删除
-            if (count.compareTo(CommonConstans.LONG_ZERO) > 0) {
+            if (count.compareTo(CommonConstants.LONG_ZERO) > 0) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_RELA_DATA);
             }
 
@@ -117,7 +117,7 @@ public class SysGroupServiceImpl implements SysGroupService {
                     .in(SysGroupDO::getGroupParentId, deleteParam.getIdList()));
 
             //存在子节点数据 无法删除
-            if (count.compareTo(CommonConstans.LONG_ZERO) > 0) {
+            if (count.compareTo(CommonConstants.LONG_ZERO) > 0) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_SON_DATA);
             }
 
@@ -129,7 +129,7 @@ public class SysGroupServiceImpl implements SysGroupService {
                     .eq(SysUserGroupRelaDO::getGroupId, deleteParam.getDeleteId()));
 
             //存在关联数据 无法删除
-            if (count.compareTo(CommonConstans.LONG_ZERO) > 0) {
+            if (count.compareTo(CommonConstants.LONG_ZERO) > 0) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_RELA_DATA);
             }
 
@@ -137,7 +137,7 @@ public class SysGroupServiceImpl implements SysGroupService {
                     .eq(SysGroupDO::getGroupParentId, deleteParam.getDeleteId()));
 
             //存在子节点数据 无法删除
-            if (count.compareTo(CommonConstans.LONG_ZERO) > 0) {
+            if (count.compareTo(CommonConstants.LONG_ZERO) > 0) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.HAVE_SON_DATA);
             }
 
@@ -185,8 +185,8 @@ public class SysGroupServiceImpl implements SysGroupService {
         }
 
         //父是叶子节点 则更新为否
-        if (CommonConstans.IS_LEAF.equals(parentGroup.getIsLeaf())) {
-            parentGroup.setIsLeaf(CommonConstans.NOT_LEAF);
+        if (CommonConstants.IS_LEAF.equals(parentGroup.getIsLeaf())) {
+            parentGroup.setIsLeaf(CommonConstants.NOT_LEAF);
             sysGroupMapper.updateById(parentGroup);
         }
 

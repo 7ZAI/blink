@@ -3,8 +3,8 @@ package com.blink.base.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.blink.base.constants.CommonConstans;
-import com.blink.base.constants.RedisKeyConstans;
+import com.blink.base.constants.CommonConstants;
+import com.blink.base.constants.RedisKeyConstants;
 import com.blink.base.dto.rsp.ConfigGroupRsp;
 import com.blink.base.dto.req.AddSysConfigReq;
 import com.blink.base.dto.req.DeleteSysConfigReq;
@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 import static com.blink.base.constants.BaseErrCodeConstant.CONFIG_NAME_REPEAT;
 import static com.blink.base.constants.BaseErrCodeConstant.CONFIG_NOT_EXIST;
-import static com.blink.base.constants.RedisKeyConstans.BLINK_PREFIX;
+import static com.blink.base.constants.RedisKeyConstants.BLINK_PREFIX;
 
 /**
  * 参数配置表 服务实现类
@@ -139,7 +139,7 @@ public class SysConfigServiceImpl implements SysConfigService {
         //如果前端系统需要的配置项
         if (isSystemConfigChange(cacheKey)) {
             //删除redis中保存的系统配置项
-            redisClient.delete(RedisKeyConstans.SYSTEM_CONFIG);
+            redisClient.delete(RedisKeyConstants.SYSTEM_CONFIG);
         }
 
         // 延迟删除 延迟时间 > 请求时间 + redis 设置值的时间 也就是getOneConfig()接口花费时间
@@ -162,19 +162,19 @@ public class SysConfigServiceImpl implements SysConfigService {
      */
     private boolean isSystemConfigChange(String cacheKey) {
 
-        if (CommonConstans.SysConfigKeys.LOGIN_CAPTCHA_ENABLED.equals(cacheKey)) {
+        if (CommonConstants.SysConfigKeys.LOGIN_CAPTCHA_ENABLED.equals(cacheKey)) {
             return true;
         }
 
-        if (CommonConstans.SysConfigKeys.SYSTEM_TITLE.equals(cacheKey)) {
+        if (CommonConstants.SysConfigKeys.SYSTEM_TITLE.equals(cacheKey)) {
             return true;
         }
 
-        if (CommonConstans.SysConfigKeys.SYSTEM_LOGO.equals(cacheKey)) {
+        if (CommonConstants.SysConfigKeys.SYSTEM_LOGO.equals(cacheKey)) {
             return true;
         }
 
-        if (CommonConstans.SysConfigKeys.SYSTEM_FOOTER.equals(cacheKey)) {
+        if (CommonConstants.SysConfigKeys.SYSTEM_FOOTER.equals(cacheKey)) {
             return true;
         }
 
@@ -385,7 +385,7 @@ public class SysConfigServiceImpl implements SysConfigService {
 
         if(!configList.isEmpty()) {
             //删除redis中保存的系统配置项
-            redisClient.delete(RedisKeyConstans.SYSTEM_CONFIG);
+            redisClient.delete(RedisKeyConstants.SYSTEM_CONFIG);
         }
 
         log.info("[SysConfig] 批量更新参数配置成功 | count: {}, ids: {}", paramlist.size(), ids);

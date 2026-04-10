@@ -3,7 +3,7 @@ package com.blink.base.constants;
 /**
  * @author binblink
  */
-public interface RedisKeyConstans {
+public interface RedisKeyConstants {
 
 
     String BASE_APP = "base-app:";

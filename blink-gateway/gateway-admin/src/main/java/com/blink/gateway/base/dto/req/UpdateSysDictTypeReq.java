@@ -57,9 +57,4 @@ public class UpdateSysDictTypeReq implements Serializable {
      * 备注
      */
     private String remark;
-
-    /**
-     * 语言标识
-     */
-    private String locale;
 }

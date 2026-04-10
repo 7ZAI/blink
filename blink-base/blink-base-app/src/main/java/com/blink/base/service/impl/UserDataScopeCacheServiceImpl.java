@@ -5,8 +5,8 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.blink.base.constants.CommonConstans;
-import com.blink.base.constants.RedisKeyConstans;
+import com.blink.base.constants.CommonConstants;
+import com.blink.base.constants.RedisKeyConstants;
 import com.blink.base.entity.SysUserGroupRelaDO;
 import com.blink.base.mapper.SysGroupMapper;
 import com.blink.base.mapper.SysUserGroupRelaMapper;
@@ -65,7 +65,7 @@ public class UserDataScopeCacheServiceImpl implements UserDataScopeCacheService 
         // 优先通过 token 获取用户信息
         if (StrUtil.isNotBlank(token)) {
             userInfo = JacksonUtil.convert(
-                    redisClient.get(RedisKeyConstans.USER_TOKEN + token),
+                    redisClient.get(RedisKeyConstants.USER_TOKEN + token),
                     UserInfoRedisDO.class
             );
         }
@@ -84,7 +84,7 @@ public class UserDataScopeCacheServiceImpl implements UserDataScopeCacheService 
         BeanUtil.copyProperties(userInfo, dataScopeInfo);
 
         // 超级管理员不需要查询规则
-        if (CommonConstans.SUPER_ADMIN_YES.equals(userInfo.getSuperFlag())) {
+        if (CommonConstants.SUPER_ADMIN_YES.equals(userInfo.getSuperFlag())) {
             log.debug("[UserDataScopeCache] 超级管理员跳过规则查询 | userId: {}", userId);
             cacheDataScopeInfo(userId, dataScopeInfo);
             return dataScopeInfo;
@@ -112,7 +112,7 @@ public class UserDataScopeCacheServiceImpl implements UserDataScopeCacheService 
         }
 
         UserDataScopeInfo cached = JacksonUtil.convert(
-                redisClient.get(RedisKeyConstans.DATA_SCOPE_USER + userId),
+                redisClient.get(RedisKeyConstants.DATA_SCOPE_USER + userId),
                 UserDataScopeInfo.class
         );
 
@@ -126,7 +126,7 @@ public class UserDataScopeCacheServiceImpl implements UserDataScopeCacheService 
     @Override
     public void clearCache(Integer userId) {
         if (userId != null) {
-            redisClient.delete(RedisKeyConstans.DATA_SCOPE_USER + userId);
+            redisClient.delete(RedisKeyConstants.DATA_SCOPE_USER + userId);
             log.info("[UserDataScopeCache] 清除缓存 | userId: {}", userId);
         }
     }
@@ -142,7 +142,7 @@ public class UserDataScopeCacheServiceImpl implements UserDataScopeCacheService 
      */
     private void cacheDataScopeInfo(Integer userId, UserDataScopeInfo dataScopeInfo) {
         redisClient.setEx(
-                RedisKeyConstans.DATA_SCOPE_USER + userId,
+                RedisKeyConstants.DATA_SCOPE_USER + userId,
                 dataScopeInfo,
                 CACHE_EXPIRE_SECONDS
         );
@@ -182,8 +182,8 @@ public class UserDataScopeCacheServiceImpl implements UserDataScopeCacheService 
      * @return 用户信息，未找到返回 null
      */
     private UserInfoRedisDO findUserInfoByUserId(Integer userId) {
-        String pattern = RedisKeyConstans.USER_TOKEN + "*";
-        String oldTokenPrefix = RedisKeyConstans.USER_TOKEN_OLD;
+        String pattern = RedisKeyConstants.USER_TOKEN + "*";
+        String oldTokenPrefix = RedisKeyConstants.USER_TOKEN_OLD;
 
         try (Cursor<String> cursor = redisClient.scan(pattern, 100)) {
             while (cursor.hasNext()) {

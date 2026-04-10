@@ -1,7 +1,7 @@
 package com.blink.base.component;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.blink.base.constants.RedisKeyConstans;
+import com.blink.base.constants.RedisKeyConstants;
 import com.blink.base.dto.req.GetAllApiPermissionsReq;
 import com.blink.base.dto.rsp.GetAllApiPermissionsRsp;
 import com.blink.base.dto.vo.SysPermissionVO;
@@ -14,7 +14,6 @@ import com.blink.framework.common.constrant.RedisCacheKeyConstant;
 import com.blink.framework.common.data.FieldConstraintCacheDO;
 import com.blink.base.service.SysConfigService;
 import com.blink.base.service.SysPermissionService;
-import com.blink.framework.common.data.DictCacheDO;
 import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.framework.core.config.prop.BlinkWebAppConfigProperties;
 import com.blink.framework.core.data.CoreConstant;
@@ -32,7 +31,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.blink.base.constants.CommonConstans.GATEWAY_CONFIG_GROUP_ID;
+import static com.blink.base.constants.CommonConstants.GATEWAY_CONFIG_GROUP_ID;
 
 /**
  * 缓存数据预热组件
@@ -117,7 +116,7 @@ public class CachePreHeating  {
             return new HashMap<>();
         }
         return permissionList.stream()
-                .collect(Collectors.toMap(p -> RedisKeyConstans.URL_PERMISSION + p.getUrl(), SysPermissionVO::getAcIdentity));
+                .collect(Collectors.toMap(p -> RedisKeyConstants.URL_PERMISSION + p.getUrl(), SysPermissionVO::getAcIdentity));
     }
 
     /**
@@ -133,7 +132,7 @@ public class CachePreHeating  {
         for (SysConfigDO conf : gatewayConfigs) {
             SysConfigCacheDO obj = new SysConfigCacheDO();
             BeanUtil.copyProperties(conf, obj);
-            map.put(RedisKeyConstans.GATEWAY_CONFIG_PREFIX + obj.getConfigKey(), obj);
+            map.put(RedisKeyConstants.GATEWAY_CONFIG_PREFIX + obj.getConfigKey(), obj);
         }
         return map;
     }

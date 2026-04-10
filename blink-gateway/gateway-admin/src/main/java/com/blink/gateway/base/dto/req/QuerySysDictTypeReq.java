@@ -55,9 +55,4 @@ public class QuerySysDictTypeReq extends Page {
      * 更新时间
      */
     private LocalDateTime updateTime;
-
-    /**
-     * 语言标识
-     */
-    private String locale;
 }

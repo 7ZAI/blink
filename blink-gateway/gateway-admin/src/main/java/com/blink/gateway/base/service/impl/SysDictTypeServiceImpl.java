@@ -13,7 +13,6 @@ import com.blink.gateway.base.entity.SysDictTypeDO;
 import com.blink.gateway.base.mapper.SysDictTypeMapper;
 import com.blink.gateway.base.service.SysDictTypeService;
 import com.blink.datasource.utils.PageUtils;
-import com.blink.framework.common.context.BlinkRequestContextHolder;
 import com.blink.framework.common.exception.BlinkException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -48,19 +47,10 @@ public class SysDictTypeServiceImpl implements SysDictTypeService {
      */
     @Override
     public SysDictTypeVO saveSysDictType(AddSysDictTypeReq saveParam) throws BlinkException {
-        // 获取locale，优先使用传入值，否则从上下文获取
-        String locale = StrUtil.isNotBlank(saveParam.getLocale())
-                ? saveParam.getLocale()
-                : BlinkRequestContextHolder.getContext().getLanguage();
-        if (StrUtil.isBlank(locale)) {
-            locale = "zh_cn";
-        }
-
-        // 检查同一语言下字典类型编码是否重复
+        // 检查字典类型编码是否重复
         SysDictTypeDO existType = sysDictTypeMapper.selectOne(
                 new LambdaQueryWrapper<SysDictTypeDO>()
                         .eq(SysDictTypeDO::getDictType, saveParam.getDictType())
-                        .eq(SysDictTypeDO::getLocale, locale)
         );
 
         if (Objects.nonNull(existType)) {
@@ -70,11 +60,10 @@ public class SysDictTypeServiceImpl implements SysDictTypeService {
         // 转换并保存
         SysDictTypeDO sysDictTypeDO = new SysDictTypeDO();
         BeanUtil.copyProperties(saveParam, sysDictTypeDO);
-        sysDictTypeDO.setLocale(locale);
         sysDictTypeMapper.insert(sysDictTypeDO);
 
-        log.info("[SysDictType] 新增字典类型成功 | dictId: {}, dictType: {}, dictName: {}, locale: {}",
-                sysDictTypeDO.getDictId(), sysDictTypeDO.getDictType(), sysDictTypeDO.getDictName(), locale);
+        log.info("[SysDictType] 新增字典类型成功 | dictId: {}, dictType: {}, dictName: {}",
+                sysDictTypeDO.getDictId(), sysDictTypeDO.getDictType(), sysDictTypeDO.getDictName());
 
         // 返回保存后的 VO
         SysDictTypeVO vo = new SysDictTypeVO();
@@ -116,18 +105,12 @@ public class SysDictTypeServiceImpl implements SysDictTypeService {
             BlinkException.throwBusinessException(DICT_TYPE_NOT_EXIST);
         }
 
-        // 获取locale，优先使用传入值，否则使用原值
-        String locale = StrUtil.isNotBlank(updateParam.getLocale())
-                ? updateParam.getLocale()
-                : oldOne.getLocale();
-
-        // 如果修改了字典类型编码，检查同一语言下是否重复
+        // 如果修改了字典类型编码，检查是否重复
         if (StrUtil.isNotBlank(updateParam.getDictType())
                 && !updateParam.getDictType().equals(oldOne.getDictType())) {
             SysDictTypeDO existType = sysDictTypeMapper.selectOne(
                     new LambdaQueryWrapper<SysDictTypeDO>()
                             .eq(SysDictTypeDO::getDictType, updateParam.getDictType())
-                            .eq(SysDictTypeDO::getLocale, locale)
             );
             if (Objects.nonNull(existType)) {
                 BlinkException.throwBusinessException(DICT_TYPE_REPEAT);

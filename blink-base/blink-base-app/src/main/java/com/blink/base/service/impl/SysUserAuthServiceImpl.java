@@ -7,8 +7,8 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.blink.base.constants.BaseErrCodeConstant;
-import com.blink.base.constants.CommonConstans;
-import com.blink.base.constants.RedisKeyConstans;
+import com.blink.base.constants.CommonConstants;
+import com.blink.base.constants.RedisKeyConstants;
 import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.LoginConfigRsp;
 import com.blink.base.dto.vo.CaptchaVO;
@@ -111,7 +111,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         }
 
         // 用户锁定状态判断
-        if (!CommonConstans.USER_LOCKED_NOT.equals(loginUser.getLocked())) {
+        if (!CommonConstants.USER_LOCKED_NOT.equals(loginUser.getLocked())) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.USER_LOCKED);
         }
 
@@ -123,7 +123,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
             Integer locked = null;
             LocalDateTime lockTime = null;
             if (retry >= 3) {
-                locked = CommonConstans.USER_LOCKED_ERR_PSW;
+                locked = CommonConstants.USER_LOCKED_ERR_PSW;
                 lockTime = LocalDateTime.now();
             }
             // 使用独立事务更新错误次数，确保即使主事务回滚也能保存
@@ -161,7 +161,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         userMapper.updateById(loginUser);
 
         //检查是否需要重置密码(首次登录)
-        if (Objects.nonNull(loginUser.getPasswordReset()) && loginUser.getPasswordReset().equals(CommonConstans.SUPER_ADMIN_YES)) {
+        if (Objects.nonNull(loginUser.getPasswordReset()) && loginUser.getPasswordReset().equals(CommonConstants.SUPER_ADMIN_YES)) {
             result.setNeedResetPassword(true);
         } else {
             result.setNeedResetPassword(false);
@@ -182,7 +182,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
     @Override
     public void logout(SysLogoutReq logoutParam) throws BlinkException {
 
-        UserInfoRedisDO userInfo = JacksonUtil.convert(redisClient.get(RedisKeyConstans.USER_TOKEN + logoutParam.getToken()), UserInfoRedisDO.class);
+        UserInfoRedisDO userInfo = JacksonUtil.convert(redisClient.get(RedisKeyConstants.USER_TOKEN + logoutParam.getToken()), UserInfoRedisDO.class);
 
         if (Objects.isNull(userInfo)) {
             // 用户已登出
@@ -191,9 +191,9 @@ public class SysUserAuthServiceImpl implements UserAuthService {
 
         if (logoutParam.getToken().equals(userInfo.getToken()) && logoutParam.getUserId().equals(String.valueOf(userInfo.getUserId()))) {
             // 删除 token
-            redisClient.delete(RedisKeyConstans.USER_TOKEN + logoutParam.getToken());
+            redisClient.delete(RedisKeyConstants.USER_TOKEN + logoutParam.getToken());
             // 从 ZSet 中移除
-            redisClient.zRemove(RedisKeyConstans.USER_TOKENS + logoutParam.getUserId(), logoutParam.getToken());
+            redisClient.zRemove(RedisKeyConstants.USER_TOKENS + logoutParam.getUserId(), logoutParam.getToken());
             // 清除用户数据权限缓存
             userDataScopeCacheService.clearCache(Integer.valueOf(logoutParam.getUserId()));
             log.info("[Logout] 用户登出成功 | userId: {}, token: {}", logoutParam.getUserId(), logoutParam.getToken());
@@ -219,8 +219,8 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         try {
             String luaScript = loadLuaScript("lua/login_session.lua");
             List<String> keys = Arrays.asList(
-                RedisKeyConstans.USER_TOKENS + userId,
-                RedisKeyConstans.USER_TOKEN + newToken,
+                RedisKeyConstants.USER_TOKENS + userId,
+                RedisKeyConstants.USER_TOKEN + newToken,
                 newToken
             );
 
@@ -283,7 +283,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         long expireTime = 1800L;
         // 直接使用 redisClient.setEx，它会使用 GenericJackson2JsonRedisSerializer 序列化
         // 这样存储的数据包含 @class 类型信息，读取时能正确反序列化
-        redisClient.setEx(RedisKeyConstans.USER_TOKEN + token, userInfo, expireTime);
+        redisClient.setEx(RedisKeyConstants.USER_TOKEN + token, userInfo, expireTime);
         log.info("[Login] 降级存储会话成功 | token: {}", token);
     }
 
@@ -312,13 +312,13 @@ public class SysUserAuthServiceImpl implements UserAuthService {
     private int getMaxDevices() {
         try {
             Integer maxDevices = sysConfigService.getIntegerConfig(
-                CommonConstans.SysConfigKeys.SESSION_MAX_CONCURRENT,
-                CommonConstans.DEFAULT_MAX_DEVICES
+                CommonConstants.SysConfigKeys.SESSION_MAX_CONCURRENT,
+                CommonConstants.DEFAULT_MAX_DEVICES
             );
-            return maxDevices != null && maxDevices > 0 ? maxDevices : CommonConstans.DEFAULT_MAX_DEVICES;
+            return maxDevices != null && maxDevices > 0 ? maxDevices : CommonConstants.DEFAULT_MAX_DEVICES;
         } catch (Exception e) {
-            log.warn("[Login] 获取最大设备数配置失败，使用默认值: {}", CommonConstans.DEFAULT_MAX_DEVICES);
-            return CommonConstans.DEFAULT_MAX_DEVICES;
+            log.warn("[Login] 获取最大设备数配置失败，使用默认值: {}", CommonConstants.DEFAULT_MAX_DEVICES);
+            return CommonConstants.DEFAULT_MAX_DEVICES;
         }
     }
 
@@ -364,13 +364,13 @@ public class SysUserAuthServiceImpl implements UserAuthService {
 
         //超级管理员标志 1-是超级管理员
         boolean isSuperAdmin = Objects.nonNull(loginUser.getSuperFlag()) 
-                && CommonConstans.SUPER_ADMIN_ID.equals(loginUser.getSuperFlag());
+                && CommonConstants.SUPER_ADMIN_ID.equals(loginUser.getSuperFlag());
 
         if (isSuperAdmin) {
             //超级管理员返回所有菜单和超级管理员权限
             handleSuperAdminMenuAndPermissions(sysLoginRsp);
             //超级管理员角色标识
-            sysLoginRsp.setRoles(List.of(CommonConstans.SUPER_ADMIN_ROLE_CODE));
+            sysLoginRsp.setRoles(List.of(CommonConstants.SUPER_ADMIN_ROLE_CODE));
             //超级管理员角色ID为空
             sysLoginRsp.setRoleIds(Collections.emptyList());
         } else {
@@ -398,7 +398,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         }
 
         //超级管理员权限标识
-        sysLoginRsp.setPermissions(Set.of(CommonConstans.SUPER_ADMIN_PERMISSION));
+        sysLoginRsp.setPermissions(Set.of(CommonConstants.SUPER_ADMIN_PERMISSION));
     }
 
     /**
@@ -481,7 +481,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         }
         
         UserInfoRedisDO userInfoRedis = JacksonUtil.convert(
-            redisClient.get(RedisKeyConstans.USER_TOKEN + token), 
+            redisClient.get(RedisKeyConstants.USER_TOKEN + token), 
             UserInfoRedisDO.class
         );
         
@@ -508,7 +508,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
      */
     private void validateCaptcha(SysLoginReq loginParam) throws BlinkException {
         // 检查是否开启了登录验证码
-        Boolean captchaEnabled = sysConfigService.getBooleanConfig( CommonConstans.SysConfigKeys.LOGIN_CAPTCHA_ENABLED, true);
+        Boolean captchaEnabled = sysConfigService.getBooleanConfig( CommonConstants.SysConfigKeys.LOGIN_CAPTCHA_ENABLED, true);
 
         
         // 如果未开启验证码，直接返回
@@ -559,7 +559,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
     @Override
     public LoginConfigRsp getLoginConfig() throws BlinkException {
         // 尝试从缓存获取
-        Object cached = redisClient.get(RedisKeyConstans.SYSTEM_CONFIG);
+        Object cached = redisClient.get(RedisKeyConstants.SYSTEM_CONFIG);
         if (cached != null) {
             return JacksonUtil.convert(cached, LoginConfigRsp.class);
         }
@@ -569,22 +569,22 @@ public class SysUserAuthServiceImpl implements UserAuthService {
 
         // 登录验证码开关
         Boolean captchaEnabled = sysConfigService.getBooleanConfig(
-                CommonConstans.SysConfigKeys.LOGIN_CAPTCHA_ENABLED, true);
+                CommonConstants.SysConfigKeys.LOGIN_CAPTCHA_ENABLED, true);
         config.setCaptchaEnabled(captchaEnabled);
 
         var queryParam = new QueryOneSysConfigReq();
-        queryParam.setConfigKey(CommonConstans.SysConfigKeys.SYSTEM_TITLE.replaceAll(RedisKeyConstans.BLINK_PREFIX, ""));
+        queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_TITLE.replaceAll(RedisKeyConstants.BLINK_PREFIX, ""));
         // 系统标题
         SysConfigVO titleConfig = sysConfigService.getOneConfigFromCacheOrDataBase(queryParam);
 
         if (titleConfig != null && titleConfig.getConfigValue() != null) {
             config.setSystemTitle(titleConfig.getConfigValue());
         } else {
-            config.setSystemTitle(CommonConstans.DEFAULT_SYSTEM_TITLE);
+            config.setSystemTitle(CommonConstants.DEFAULT_SYSTEM_TITLE);
         }
 
 
-        queryParam.setConfigKey(CommonConstans.SysConfigKeys.SYSTEM_LOGO.replaceAll(RedisKeyConstans.BLINK_PREFIX, ""));
+        queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_LOGO.replaceAll(RedisKeyConstants.BLINK_PREFIX, ""));
 
         // 系统Logo
         SysConfigVO logoConfig = sysConfigService.getOneConfigFromCacheOrDataBase(queryParam);
@@ -592,31 +592,31 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         if (logoConfig != null && logoConfig.getConfigValue() != null) {
             config.setSystemLogo(logoConfig.getConfigValue());
         } else {
-            config.setSystemLogo(CommonConstans.DEFAULT_SYSTEM_LOGO);
+            config.setSystemLogo(CommonConstants.DEFAULT_SYSTEM_LOGO);
         }
 
-        queryParam.setConfigKey(CommonConstans.SysConfigKeys.SYSTEM_FOOTER.replaceAll(RedisKeyConstans.BLINK_PREFIX, ""));
+        queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_FOOTER.replaceAll(RedisKeyConstants.BLINK_PREFIX, ""));
 
         // 页脚信息
         SysConfigVO footerConfig = sysConfigService.getOneConfigFromCacheOrDataBase(queryParam );
         if (footerConfig != null && footerConfig.getConfigValue() != null) {
             config.setSystemFooter(footerConfig.getConfigValue());
         } else {
-            config.setSystemFooter(CommonConstans.DEFAULT_SYSTEM_FOOTER);
+            config.setSystemFooter(CommonConstants.DEFAULT_SYSTEM_FOOTER);
         }
 
-        queryParam.setConfigKey(CommonConstans.SysConfigKeys.USER_DEFAULT_AVATAR.replaceAll(RedisKeyConstans.BLINK_PREFIX, ""));
+        queryParam.setConfigKey(CommonConstants.SysConfigKeys.USER_DEFAULT_AVATAR.replaceAll(RedisKeyConstants.BLINK_PREFIX, ""));
 
         // 用户默认头像
         SysConfigVO avatarConfig = sysConfigService.getOneConfigFromCacheOrDataBase(queryParam);
         if (avatarConfig != null && avatarConfig.getConfigValue() != null) {
             config.setDefaultAvatar(avatarConfig.getConfigValue());
         } else {
-            config.setDefaultAvatar(CommonConstans.DEFAULT_USER_AVATAR);
+            config.setDefaultAvatar(CommonConstants.DEFAULT_USER_AVATAR);
         }
 
         // 缓存5分钟
-        redisClient.setEx(RedisKeyConstans.SYSTEM_CONFIG, config, 300L);
+        redisClient.setEx(RedisKeyConstants.SYSTEM_CONFIG, config, 300L);
 
         return config;
     }
@@ -641,7 +641,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         }
 
         UserInfoRedisDO userInfoRedis = JacksonUtil.convert(
-                redisClient.get(RedisKeyConstans.USER_TOKEN + token),
+                redisClient.get(RedisKeyConstants.USER_TOKEN + token),
                 UserInfoRedisDO.class
         );
 
@@ -657,7 +657,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         }
 
         // 验证用户是否需要重置密码
-        if (!CommonConstans.SUPER_ADMIN_YES.equals(currentUser.getPasswordReset())) {
+        if (!CommonConstants.SUPER_ADMIN_YES.equals(currentUser.getPasswordReset())) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PASSWORD_RESET_NOT_REQUIRED);
         }
 
@@ -666,7 +666,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
 
         // 更新用户密码和重置标识
         currentUser.setPassword(newPasswordHash);
-        currentUser.setPasswordReset(CommonConstans.SUPER_ADMIN_NO);
+        currentUser.setPasswordReset(CommonConstants.SUPER_ADMIN_NO);
         currentUser.setUpdateBy(userInfoRedis.getLoginName());
         userMapper.updateById(currentUser);
     }

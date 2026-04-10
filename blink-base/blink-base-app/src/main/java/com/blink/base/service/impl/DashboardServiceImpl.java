@@ -1,7 +1,7 @@
 package com.blink.base.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.blink.base.constants.RedisKeyConstans;
+import com.blink.base.constants.RedisKeyConstants;
 import com.blink.base.dto.rsp.DashboardRsp;
 import com.blink.base.entity.SysMenuDO;
 import com.blink.base.entity.SysRoleDO;
@@ -49,7 +49,7 @@ public class DashboardServiceImpl implements DashboardService {
         rsp.setTotalUsers(totalUsers.intValue());
 
         // 统计在线用户数（Redis token 数量）
-        String tokenPattern = RedisKeyConstans.USER_TOKEN + "*";
+        String tokenPattern = RedisKeyConstants.USER_TOKEN + "*";
         Long onlineUsers = redisClient.countByPrefix(tokenPattern);
         rsp.setOnlineUsers(onlineUsers.intValue());
 
