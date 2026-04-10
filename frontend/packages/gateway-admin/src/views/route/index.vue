@@ -4,7 +4,29 @@
     <!-- 搜索卡片 -->
     <el-card class="search-card shrink-0" shadow="never">
       <el-form :model="searchForm" inline class="search-form">
-        <el-form-item :label="t('route.routeGroup')">
+        <!-- 存储方式选择 -->
+        <el-form-item :label="t('route.storageMode')">
+          <el-select
+            v-model="searchForm.storageMode"
+            :placeholder="t('route.storageModePlaceholder')"
+            style="width: 160px"
+            @change="handleStorageModeChange"
+          >
+            <el-option value="redis">
+              <div class="storage-mode-option">
+                <span>{{ t('route.redisStorage') }}</span>
+              </div>
+            </el-option>
+            <el-option value="nacos">
+              <div class="storage-mode-option">
+                <span>{{ t('route.nacosStorage') }}</span>
+              </div>
+            </el-option>
+          </el-select>
+        </el-form-item>
+
+        <!-- Redis 模式：路由分组 -->
+        <el-form-item v-if="searchForm.storageMode === 'redis'" :label="t('route.routeGroup')">
           <el-input
             v-model.trim="searchForm.routesGroup"
             :placeholder="t('route.routeGroupPlaceholder')"
@@ -13,6 +35,27 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
+
+        <!-- Nacos 模式：Data ID 和 Group -->
+        <el-form-item v-if="searchForm.storageMode === 'nacos'" :label="t('route.nacosDataId')">
+          <el-input
+            v-model.trim="searchForm.nacosDataId"
+            :placeholder="t('route.nacosDataIdPlaceholder')"
+            clearable
+            style="width: 200px"
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+        <el-form-item v-if="searchForm.storageMode === 'nacos'" :label="t('route.nacosGroup')">
+          <el-input
+            v-model.trim="searchForm.nacosGroup"
+            :placeholder="t('route.nacosGroupPlaceholder')"
+            clearable
+            style="width: 150px"
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+
         <el-form-item>
           <el-button
             type="primary"
@@ -49,6 +92,14 @@
           >
             <el-icon><Refresh /></el-icon>
             {{ t('dashboard.refreshRoutes') }}
+          </AuthButton>
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.Route.Refresh)"
+            type="warning"
+            @click="handleSyncToInstances"
+          >
+            <el-icon><Connection /></el-icon>
+            {{ t('route.syncToInstances') }}
           </AuthButton>
         </div>
       </template>
@@ -402,6 +453,17 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 同步到实例弹窗 -->
+    <SyncInstanceDialog
+      v-model="syncDialogVisible"
+      :storage-mode="searchForm.storageMode"
+      :routes-group="searchForm.routesGroup"
+      :data-id="searchForm.nacosDataId"
+      :group="searchForm.nacosGroup"
+      :route-ids="selectedRouteIds"
+      @success="handleSyncSuccess"
+    />
   </div>
 </template>
 
@@ -409,6 +471,7 @@
 /**
  * 路由管理页面
  * 管理网关路由，包括创建、编辑、删除和刷新
+ * 支持运行时切换存储方式（Redis/Nacos）
  *
  * @author binblink
  * @since 2024-01-01
@@ -416,18 +479,23 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Edit, Delete, Connection } from '@element-plus/icons-vue'
 import {
   getRouteList,
   saveRoute,
   deleteRoute,
   refreshRoutes,
+  getNacosRouteList,
+  saveNacosRoute,
+  deleteNacosRoute,
   type RouteDefinition,
   type PredicateDefinition,
   type FilterDefinition,
   type RouteForm,
+  type SaveNacosRouteReq,
 } from '@/api/route'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
+import SyncInstanceDialog from './components/SyncInstanceDialog.vue'
 
 defineOptions({
   name: 'RouteManagement',
@@ -437,10 +505,20 @@ const { hasPermission: checkPermission } = usePermission()
 
 const { t } = useI18n()
 
+// 存储方式常量
+const STORAGE_MODE_KEY = 'route_storage_mode'
+
 // 搜索表单
 const searchForm = reactive({
+  storageMode: localStorage.getItem(STORAGE_MODE_KEY) || 'redis',
   routesGroup: '',
+  nacosDataId: t('route.nacosDataIdDefault'),
+  nacosGroup: t('route.nacosGroupDefault'),
 })
+
+// 同步弹窗
+const syncDialogVisible = ref(false)
+const selectedRouteIds = ref<string[]>([])
 
 // 分页
 const pagination = reactive({
@@ -539,13 +617,26 @@ watch(editMode, (mode) => {
 const loadData = async () => {
   loading.value = true
   try {
-    const res = await getRouteList({
-      routesGroup: searchForm.routesGroup,
-      pageNum: pagination.pageNum,
-      pageSize: pagination.pageSize,
-    })
-    tableData.value = res.routes || res.rows || []
-    pagination.total = res.total || 0
+    if (searchForm.storageMode === 'redis') {
+      // Redis 模式
+      const res = await getRouteList({
+        routesGroup: searchForm.routesGroup,
+        pageNum: pagination.pageNum,
+        pageSize: pagination.pageSize,
+      })
+      tableData.value = res.routes || res.rows || []
+      pagination.total = res.total || 0
+    } else {
+      // Nacos 模式
+      const res = await getNacosRouteList({
+        dataId: searchForm.nacosDataId,
+        group: searchForm.nacosGroup,
+        pageNum: pagination.pageNum,
+        pageSize: pagination.pageSize,
+      })
+      tableData.value = res.routes || res.rows || []
+      pagination.total = res.total || 0
+    }
   } catch (error) {
     console.error('[RouteManagement] Failed to load route list:', error)
     tableData.value = []
@@ -553,6 +644,22 @@ const loadData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+/**
+ * 处理存储方式切换
+ */
+const handleStorageModeChange = (mode: string) => {
+  // 保存到 localStorage
+  localStorage.setItem(STORAGE_MODE_KEY, mode)
+  // 清空搜索条件
+  searchForm.routesGroup = ''
+  searchForm.nacosDataId = t('route.nacosDataIdDefault')
+  searchForm.nacosGroup = t('route.nacosGroupDefault')
+  // 重置分页
+  pagination.pageNum = 1
+  // 加载新数据
+  loadData()
 }
 
 /**
@@ -567,7 +674,12 @@ const handleSearch = () => {
  * 处理重置搜索表单
  */
 const handleReset = () => {
-  searchForm.routesGroup = ''
+  if (searchForm.storageMode === 'redis') {
+    searchForm.routesGroup = ''
+  } else {
+    searchForm.nacosDataId = t('route.nacosDataIdDefault')
+    searchForm.nacosGroup = t('route.nacosGroupDefault')
+  }
   pagination.pageNum = 1
   loadData()
 }
@@ -599,7 +711,12 @@ const handleAdd = () => {
     filters: [],
     order: 0,
   })
-  formData.routesGroup = 'default'
+  // 根据当前存储方式设置默认值
+  if (searchForm.storageMode === 'redis') {
+    formData.routesGroup = searchForm.routesGroup || 'default'
+  } else {
+    formData.routesGroup = ''
+  }
   dialogVisible.value = true
 }
 
@@ -647,8 +764,20 @@ const handleSubmit = async () => {
         }
       }
 
-      formData.routes = [routeData]
-      await saveRoute(formData)
+      if (searchForm.storageMode === 'redis') {
+        // Redis 模式
+        formData.routes = [routeData]
+        await saveRoute(formData)
+      } else {
+        // Nacos 模式
+        const nacosReq: SaveNacosRouteReq = {
+          dataId: searchForm.nacosDataId,
+          group: searchForm.nacosGroup,
+          routes: [routeData],
+        }
+        await saveNacosRoute(nacosReq)
+      }
+
       ElMessage.success(t('message.success'))
       dialogVisible.value = false
       loadData()
@@ -674,10 +803,22 @@ const resetForm = () => {
 const handleDelete = async (row: RouteDefinition) => {
   try {
     await ElMessageBox.confirm(t('route.deleteConfirm'), t('message.tips'), { type: 'warning' })
-    await deleteRoute({
-      routesGroup: searchForm.routesGroup || 'default',
-      routeIds: [row.id],
-    })
+
+    if (searchForm.storageMode === 'redis') {
+      // Redis 模式
+      await deleteRoute({
+        routesGroup: searchForm.routesGroup || 'default',
+        routeIds: [row.id],
+      })
+    } else {
+      // Nacos 模式
+      await deleteNacosRoute({
+        dataId: searchForm.nacosDataId,
+        group: searchForm.nacosGroup,
+        routeIds: [row.id],
+      })
+    }
+
     ElMessage.success(t('message.deleteSuccess'))
     loadData()
   } catch {
@@ -695,6 +836,21 @@ const handleRefreshRoutes = async () => {
   } catch (error) {
     console.error('[RouteManagement] Failed to refresh routes:', error)
   }
+}
+
+/**
+ * 处理同步到实例
+ */
+const handleSyncToInstances = () => {
+  selectedRouteIds.value = tableData.value.map((r) => r.id)
+  syncDialogVisible.value = true
+}
+
+/**
+ * 同步成功回调
+ */
+const handleSyncSuccess = () => {
+  ElMessage.success(t('message.success'))
 }
 
 const addPredicate = () => {
@@ -739,6 +895,15 @@ onMounted(() => {
 
 <style scoped lang="scss">
 /* 路由管理页面 - 继承全局 table-page-container 样式 */
+
+.storage-mode-option {
+  display: flex;
+  flex-direction: column;
+  small {
+    color: #909399;
+    font-size: 12px;
+  }
+}
 
 .route-id {
   font-family: 'Monaco', 'Menlo', monospace;
