@@ -7,13 +7,7 @@
     :lock-scroll="false"
     @closed="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="dict-type-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dict-type-form">
       <el-form-item :label="t('dict.dictName')" prop="dictName">
         <el-input v-model.trim="form.dictName" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
@@ -23,12 +17,6 @@
           :placeholder="t('common.pleaseInput')"
           :disabled="props.type === 'edit'"
         />
-      </el-form-item>
-      <el-form-item :label="t('dict.locale')" prop="locale">
-        <el-select v-model="form.locale" :placeholder="t('common.pleaseSelect')" style="width: 100%">
-          <el-option :label="t('settings.chinese')" value="zh_cn" />
-          <el-option :label="t('settings.english')" value="en_us" />
-        </el-select>
       </el-form-item>
       <el-form-item :label="t('common.status')" prop="status">
         <el-radio-group v-model="form.status">
@@ -62,7 +50,6 @@ import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { addDictType, updateDictType, type DictTypeInfo } from '@/api/dict'
 import { useSubmitGuard } from '@/composables/useSubmitGuard'
-import { getCurrentLocale } from '@/locales'
 
 /**
  * 组件属性接口
@@ -96,7 +83,6 @@ const form = reactive({
   dictType: '',
   status: 0,
   remark: '',
-  locale: getCurrentLocale(),
 })
 
 const rules: FormRules = {
@@ -125,7 +111,6 @@ const handleSubmit = async () => {
           dictType: form.dictType,
           status: form.status,
           remark: form.remark || undefined,
-          locale: form.locale,
         })
         ElMessage.success(t('message.success'))
       } else {
@@ -135,7 +120,6 @@ const handleSubmit = async () => {
           dictType: form.dictType,
           status: form.status,
           remark: form.remark || undefined,
-          locale: form.locale,
         })
         ElMessage.success(t('message.success'))
       }
@@ -155,7 +139,6 @@ const handleClose = () => {
   form.dictType = ''
   form.status = 0
   form.remark = ''
-  form.locale = getCurrentLocale()
 }
 
 watch(
@@ -167,7 +150,6 @@ watch(
       form.dictType = props.data.dictType
       form.status = props.data.status || 0
       form.remark = props.data.remark || ''
-      form.locale = props.data.locale || getCurrentLocale()
     }
   }
 )

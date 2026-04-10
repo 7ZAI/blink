@@ -18,7 +18,7 @@ export const useSearch = () => {
     try {
       const [channelRes, routeRes] = await Promise.all([
         getChannelList({ pageNum: 1, pageSize: 100 }),
-        getRouteList({ pageNum: 1, pageSize: 100 })
+        getRouteList({ pageNum: 1, pageSize: 100 }),
       ])
       channels.value = (channelRes as any)?.rows || []
       routes.value = (routeRes as any)?.rows || []
@@ -34,7 +34,7 @@ export const useSearch = () => {
     const results: SearchResult[] = []
 
     // Search channels
-    channels.value.forEach(channel => {
+    channels.value.forEach((channel) => {
       const name = (channel.channelName || channel.channelId || '').toLowerCase()
       const id = (channel.channelId || '').toLowerCase()
       if (name.includes(query) || id.includes(query)) {
@@ -42,13 +42,13 @@ export const useSearch = () => {
           type: 'channel',
           id: channel.channelId,
           name: channel.channelName || channel.channelId,
-          path: `/channel`
+          path: `/channel`,
         })
       }
     })
 
     // Search routes
-    routes.value.forEach(route => {
+    routes.value.forEach((route) => {
       const name = (route.routeName || route.id || '').toLowerCase()
       const id = (route.id || '').toLowerCase()
       if (name.includes(query) || id.includes(query)) {
@@ -56,7 +56,7 @@ export const useSearch = () => {
           type: 'route',
           id: route.id,
           name: route.routeName || route.id,
-          path: `/route`
+          path: `/route`,
         })
       }
     })
@@ -67,6 +67,6 @@ export const useSearch = () => {
   return {
     searchQuery,
     searchResults,
-    loadSearchData
+    loadSearchData,
   }
 }

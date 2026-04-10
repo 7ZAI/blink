@@ -7,7 +7,7 @@ export interface ConfigItem {
   configKey: string
   configName: string
   configValue: string
-  configType: number  // 0-字符串 1-数字 2-布尔 3-JSON 4-数组
+  configType: number // 0-字符串 1-数字 2-布尔 3-JSON 4-数组
   groupId: number
   description: string
   readonly: number
@@ -40,7 +40,9 @@ export interface UpdateConfigParams {
  * @param groupKey 分组键名 (base, system, security, login, log)
  */
 export const getConfigsByGroupKey = (groupKey: string): Promise<ConfigGroup> => {
-  return request.post('/sysConfig/getConfigsByGroupKey', { body: { groupKey } }) as Promise<ConfigGroup>
+  return request.post('/sysConfig/getConfigsByGroupKey', {
+    body: { groupKey },
+  }) as Promise<ConfigGroup>
 }
 
 /**
@@ -62,11 +64,11 @@ export const updateConfig = (params: UpdateConfigParams): Promise<void> => {
 // ============== 网关配置 API ==============
 export interface GatewayConfig {
   instanceId?: string
-  signatureSwitch?: number  // 签名校验开关 0 开启 1关闭
-  replaySwitch?: number     // 防重放开关 0 开启 1关闭
+  signatureSwitch?: number // 签名校验开关 0 开启 1关闭
+  replaySwitch?: number // 防重放开关 0 开启 1关闭
   encryptionSwitch?: number // 加密开关 0 开启 1关闭
-  requestTimeout?: number   // 请求超时时间（毫秒）
-  rateLimitSwitch?: number  // 限流开关 0 开启 1关闭
+  requestTimeout?: number // 请求超时时间（毫秒）
+  rateLimitSwitch?: number // 限流开关 0 开启 1关闭
   rateLimitThreshold?: number // 限流阈值
 }
 
@@ -80,13 +82,13 @@ export interface UpdateGatewayConfigParams extends GatewayConfig {}
 
 // IP列表查询参数 - 与后端 QueryIpListReq 一致
 export interface QueryIpListParams {
-  listType?: string  // 列表类型：white-白名单 black-黑名单
+  listType?: string // 列表类型：white-白名单 black-黑名单
 }
 
 // IP列表更新参数 - 与后端 UpdateIpListReq 一致
 export interface UpdateIpListParams {
-  listType: string     // 列表类型：white-白名单 black-黑名单
-  ipList: string[]     // IP列表
+  listType: string // 列表类型：white-白名单 black-黑名单
+  ipList: string[] // IP列表
 }
 
 // 推送配置参数 - 与后端 PushConfigReq 一致
@@ -127,5 +129,5 @@ export const configApi = {
   updateGatewayConfig,
   getIpList,
   updateIpList,
-  syncConfig
+  syncConfig,
 }

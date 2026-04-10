@@ -41,17 +41,37 @@
           <el-tabs v-model="permissionSubTab" class="sub-tabs">
             <el-tab-pane :label="t('system.role.apiPermission')" name="api">
               <el-table :data="apiPermissions" stripe border max-height="280">
-                <el-table-column prop="acName" :label="t('system.permission.acName')" min-width="120" />
-                <el-table-column prop="acIdentity" :label="t('system.permission.acIdentity')" min-width="140" />
+                <el-table-column
+                  prop="acName"
+                  :label="t('system.permission.acName')"
+                  min-width="120"
+                />
+                <el-table-column
+                  prop="acIdentity"
+                  :label="t('system.permission.acIdentity')"
+                  min-width="140"
+                />
                 <el-table-column prop="url" label="URL" min-width="180" />
               </el-table>
               <el-empty v-if="!apiPermissions.length" :description="t('common.noData')" />
             </el-tab-pane>
             <el-tab-pane :label="t('system.role.dataPermission')" name="data">
               <el-table :data="dataPermissions" stripe border max-height="280">
-                <el-table-column prop="acName" :label="t('system.permission.acName')" min-width="120" />
-                <el-table-column prop="acIdentity" :label="t('system.permission.acIdentity')" min-width="140" />
-                <el-table-column prop="dataFilterName" :label="t('system.permission.dataFilterId')" min-width="140" />
+                <el-table-column
+                  prop="acName"
+                  :label="t('system.permission.acName')"
+                  min-width="120"
+                />
+                <el-table-column
+                  prop="acIdentity"
+                  :label="t('system.permission.acIdentity')"
+                  min-width="140"
+                />
+                <el-table-column
+                  prop="dataFilterName"
+                  :label="t('system.permission.dataFilterId')"
+                  min-width="140"
+                />
               </el-table>
               <el-empty v-if="!dataPermissions.length" :description="t('common.noData')" />
             </el-tab-pane>
@@ -59,32 +79,47 @@
         </el-tab-pane>
 
         <el-tab-pane :label="t('system.role.menuList')" name="menus">
-          <el-table
-            :data="menuTreeData"
-            stripe
-            border
-            max-height="400"
-            row-key="menuId"
-            :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-            default-expand-all
-          >
-            <el-table-column prop="menuName" :label="t('system.menu.menuName')" min-width="180" />
-            <el-table-column prop="url" label="URL" min-width="150" />
-            <el-table-column prop="type" :label="t('system.menu.type')" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag v-if="row.type === 1" type="info">{{ t('system.menu.typeDirectory') }}</el-tag>
-                <el-tag v-else-if="row.type === 2" type="primary">{{ t('system.menu.typeMenu') }}</el-tag>
-                <el-tag v-else-if="row.type === 3" type="warning">{{ t('system.menu.typeButton') }}</el-tag>
-                <el-tag v-else type="info">-</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" :label="t('common.status')" width="80" align="center">
-              <template #default="{ row }">
-                <el-tag v-if="row.status === 0" type="success">{{ t('common.show') }}</el-tag>
-                <el-tag v-else type="info">{{ t('common.hide') }}</el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
+          <div class="menu-table-wrapper">
+            <el-table
+              :data="menuTreeData"
+              stripe
+              border
+              height="100%"
+              row-key="menuId"
+              :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+              default-expand-all
+            >
+              <el-table-column prop="menuName" :label="t('system.menu.menuName')" min-width="180" />
+              <el-table-column prop="url" label="URL" min-width="150" />
+              <el-table-column
+                prop="type"
+                :label="t('system.menu.type')"
+                width="100"
+                align="center"
+              >
+                <template #default="{ row }">
+                  <el-tag v-if="row.type === 1" type="info" size="small">
+                    {{ t('system.menu.typeDirectory') }}
+                  </el-tag>
+                  <el-tag v-else-if="row.type === 2" type="primary" size="small">
+                    {{ t('system.menu.typeMenu') }}
+                  </el-tag>
+                  <el-tag v-else-if="row.type === 3" type="warning" size="small">
+                    {{ t('system.menu.typeButton') }}
+                  </el-tag>
+                  <el-tag v-else type="info" size="small">-</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="status" :label="t('common.status')" width="80" align="center">
+                <template #default="{ row }">
+                  <el-tag v-if="row.status === 0" type="success" size="small">
+                    {{ t('common.show') }}
+                  </el-tag>
+                  <el-tag v-else type="info" size="small">{{ t('common.hide') }}</el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
           <el-empty v-if="!roleDetail?.menus?.length" :description="t('common.noData')" />
         </el-tab-pane>
 
@@ -94,9 +129,16 @@
             <el-table-column prop="username" :label="t('system.user.username')" min-width="120" />
             <el-table-column prop="phone" :label="t('system.user.phone')" min-width="120" />
             <el-table-column prop="email" :label="t('system.user.email')" min-width="150" />
-            <el-table-column prop="locked" :label="t('system.user.locked')" width="80" align="center">
+            <el-table-column
+              prop="locked"
+              :label="t('system.user.locked')"
+              width="80"
+              align="center"
+            >
               <template #default="{ row }">
-                <el-tag v-if="row.locked === 0" type="success">{{ t('system.user.unlocked') }}</el-tag>
+                <el-tag v-if="row.locked === 0" type="success">
+                  {{ t('system.user.unlocked') }}
+                </el-tag>
                 <el-tag v-else type="danger">{{ t('system.user.locked') }}</el-tag>
               </template>
             </el-table-column>
@@ -156,13 +198,13 @@ const menuTreeData = computed(() => {
 
   // 创建菜单映射
   const menuMap = new Map<number, MenuInfo>()
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     menuMap.set(menu.menuId, { ...menu, children: [] })
   })
 
   // 构建树形结构
   const tree: MenuInfo[] = []
-  menuMap.forEach(menu => {
+  menuMap.forEach((menu) => {
     const parentId = menu.parentId
     if (!parentId || parentId === 0) {
       // 根节点
@@ -227,6 +269,11 @@ watch(
         font-size: 13px;
       }
     }
+  }
+
+  .menu-table-wrapper {
+    height: 350px;
+    overflow: hidden;
   }
 }
 </style>

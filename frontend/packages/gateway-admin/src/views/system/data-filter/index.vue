@@ -4,10 +4,21 @@
     <el-card class="search-card" shadow="never">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item :label="t('dataScope.filterName')">
-          <el-input v-model="searchForm.dataFilterName" :placeholder="t('common.pleaseInput')" clearable style="width: 140px" />
+          <el-input
+            v-model="searchForm.dataFilterName"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+            style="width: 140px"
+          />
         </el-form-item>
         <el-form-item :label="t('dataScope.entityClass')">
-          <el-select v-model="searchForm.entityClass" :placeholder="t('common.pleaseSelect')" clearable filterable style="width: 160px">
+          <el-select
+            v-model="searchForm.entityClass"
+            :placeholder="t('common.pleaseSelect')"
+            clearable
+            filterable
+            style="width: 160px"
+          >
             <el-option
               v-for="entity in entityList"
               :key="entity.entityClass"
@@ -17,7 +28,12 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="t('dataScope.ruleType')">
-          <el-select v-model="searchForm.ruleType" :placeholder="t('common.pleaseSelect')" clearable style="width: 120px">
+          <el-select
+            v-model="searchForm.ruleType"
+            :placeholder="t('common.pleaseSelect')"
+            clearable
+            style="width: 120px"
+          >
             <el-option
               v-for="option in ruleTypeOptions"
               :key="option.value"
@@ -27,17 +43,28 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="t('common.status')">
-          <el-select v-model="searchForm.status" :placeholder="t('common.pleaseSelect')" clearable style="width: 90px">
+          <el-select
+            v-model="searchForm.status"
+            :placeholder="t('common.pleaseSelect')"
+            clearable
+            style="width: 90px"
+          >
             <el-option :label="t('common.enabled')" :value="0" />
             <el-option :label="t('common.disabled')" :value="1" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+          <el-button
+            type="primary"
+            style="height: 28px; padding: 0 12px; font-size: 13px"
+            @click="handleSearch"
+          >
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -47,8 +74,13 @@
     <el-card class="table-card" shadow="never">
       <template #header>
         <div class="table-header">
-          <AuthButton :has-permission="() => checkPermission(ButtonPerms.DataFilter.Add)" type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>{{ t('common.add') }}
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.DataFilter.Add)"
+            type="primary"
+            @click="handleAdd"
+          >
+            <el-icon><Plus /></el-icon>
+            {{ t('common.add') }}
           </AuthButton>
         </div>
       </template>
@@ -56,7 +88,11 @@
       <div class="table-wrapper">
         <el-table :data="tableData" v-loading="loading" height="100%" stripe>
           <el-table-column prop="dataFilterId" label="ID" width="80" align="center" />
-          <el-table-column prop="dataFilterName" :label="t('dataScope.filterName')" min-width="120" />
+          <el-table-column
+            prop="dataFilterName"
+            :label="t('dataScope.filterName')"
+            min-width="120"
+          />
           <el-table-column prop="entityClass" :label="t('dataScope.entityClass')" min-width="150">
             <template #default="{ row }">
               <el-tooltip :content="row.entityClass" placement="top">
@@ -65,7 +101,12 @@
             </template>
           </el-table-column>
           <el-table-column prop="tableName" :label="t('dataScope.tableName')" min-width="120" />
-          <el-table-column prop="ruleType" :label="t('dataScope.ruleType')" width="140" align="center">
+          <el-table-column
+            prop="ruleType"
+            :label="t('dataScope.ruleType')"
+            width="140"
+            align="center"
+          >
             <template #default="{ row }">
               <el-tag>{{ t(`dataScope.${row.ruleType}`) }}</el-tag>
             </template>
@@ -82,19 +123,50 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="createBy" :label="t('common.createBy')" width="120" align="center" />
-          <el-table-column prop="createTime" :label="t('common.createTime')" width="180" align="center" />
+          <el-table-column
+            prop="createBy"
+            :label="t('common.createBy')"
+            width="120"
+            align="center"
+          />
+          <el-table-column
+            prop="createTime"
+            :label="t('common.createTime')"
+            width="180"
+            align="center"
+          />
           <el-table-column :label="t('common.operation')" width="220" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DataFilter.Detail)" type="primary" link size="small" @click="handleDetail(row)">
-                  <el-icon><View /></el-icon>{{ t('common.detail') }}
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.DataFilter.Detail)"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleDetail(row)"
+                >
+                  <el-icon><View /></el-icon>
+                  {{ t('common.detail') }}
                 </AuthButton>
-                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DataFilter.Edit)" type="primary" link size="small" @click="handleEdit(row)">
-                  <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.DataFilter.Edit)"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  <el-icon><Edit /></el-icon>
+                  {{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DataFilter.Delete)" type="danger" link size="small" @click="handleDelete(row)">
-                  <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.DataFilter.Delete)"
+                  type="danger"
+                  link
+                  size="small"
+                  @click="handleDelete(row)"
+                >
+                  <el-icon><Delete /></el-icon>
+                  {{ t('common.delete') }}
                 </AuthButton>
               </div>
             </template>
@@ -142,7 +214,7 @@ import {
   updateDataFilter,
   getEntityList,
   type DataFilterInfo,
-  type EntityInfo
+  type EntityInfo,
 } from '@/api/dataScope'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
 import DataFilterFormDialog from './components/DataFilterFormDialog.vue'
@@ -163,7 +235,7 @@ const searchForm = reactive({
   dataFilterName: '',
   entityClass: '',
   ruleType: '',
-  status: undefined as number | undefined
+  status: undefined as number | undefined,
 })
 
 const dialogVisible = ref(false)
@@ -175,11 +247,11 @@ const ruleTypeOptions = computed(() => [
   { value: 'CREATOR_FILTER', label: t('dataScope.creatorFilter') },
   { value: 'DATE_RANGE_FILTER', label: t('dataScope.dateRangeFilter') },
   { value: 'CUSTOM_SQL', label: t('dataScope.customSql') },
-  { value: 'RELATION_FILTER', label: t('dataScope.relationFilter') }
+  { value: 'RELATION_FILTER', label: t('dataScope.relationFilter') },
 ])
 
 const getEntityName = (entityClass: string) => {
-  const entity = entityList.value.find(e => e.entityClass === entityClass)
+  const entity = entityList.value.find((e) => e.entityClass === entityClass)
   if (entity?.entityName) {
     return entity.entityName
   }
@@ -261,7 +333,7 @@ const handleStatusChange = async (row: DataFilterInfo) => {
       dataFilterId: row.dataFilterId,
       dataFilterName: row.dataFilterName,
       ruleConfig: row.ruleConfig,
-      status: newStatus
+      status: newStatus,
     })
     ElMessage.success(t('message.success'))
     row.status = newStatus

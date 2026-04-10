@@ -7,13 +7,7 @@
     :lock-scroll="false"
     @closed="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="dict-data-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dict-data-form">
       <el-form-item :label="t('dict.dictLabel')" prop="dictLabel">
         <el-input v-model.trim="form.dictLabel" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
@@ -21,16 +15,29 @@
         <el-input v-model.trim="form.dictValue" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
       <el-form-item :label="t('dict.locale')" prop="locale">
-        <el-select v-model="form.locale" :placeholder="t('common.pleaseSelect')" style="width: 100%">
+        <el-select
+          v-model="form.locale"
+          :placeholder="t('common.pleaseSelect')"
+          style="width: 100%"
+        >
           <el-option :label="t('settings.chinese')" value="zh_cn" />
           <el-option :label="t('settings.english')" value="en_us" />
         </el-select>
       </el-form-item>
       <el-form-item :label="t('dict.dictSort')" prop="dictSort">
-        <el-input-number v-model="form.dictSort" :min="0" controls-position="right" style="width: 150px" />
+        <el-input-number
+          v-model="form.dictSort"
+          :min="0"
+          controls-position="right"
+          style="width: 150px"
+        />
       </el-form-item>
       <el-form-item :label="t('dict.listClass')" prop="listClass">
-        <el-select v-model="form.listClass" :placeholder="t('common.pleaseSelect')" style="width: 100%">
+        <el-select
+          v-model="form.listClass"
+          :placeholder="t('common.pleaseSelect')"
+          style="width: 100%"
+        >
           <el-option :label="t('dict.listClassDefault')" value="" />
           <el-option :label="t('dict.listClassPrimary')" value="primary" />
           <el-option :label="t('dict.listClassSuccess')" value="success" />

@@ -14,11 +14,17 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+          <el-button
+            type="primary"
+            style="height: 28px; padding: 0 12px; font-size: 13px"
+            @click="handleSearch"
+          >
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -28,24 +34,34 @@
     <el-card class="table-card flex-1 flex flex-col overflow-hidden" shadow="never">
       <template #header>
         <div class="table-header">
-          <AuthButton :has-permission="() => checkPermission(ButtonPerms.Route.Add)" type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>{{ t('route.addRoute') }}
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.Route.Add)"
+            type="primary"
+            @click="handleAdd"
+          >
+            <el-icon><Plus /></el-icon>
+            {{ t('route.addRoute') }}
           </AuthButton>
-          <AuthButton :has-permission="() => checkPermission(ButtonPerms.Route.Refresh)" type="success" @click="handleRefreshRoutes">
-            <el-icon><Refresh /></el-icon>{{ t('dashboard.refreshRoutes') }}
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.Route.Refresh)"
+            type="success"
+            @click="handleRefreshRoutes"
+          >
+            <el-icon><Refresh /></el-icon>
+            {{ t('dashboard.refreshRoutes') }}
           </AuthButton>
         </div>
       </template>
 
       <!-- 表格区域 -->
       <div class="table-wrapper">
-        <el-table
-          v-loading="loading"
-          :data="tableData"
-          height="100%"
-          stripe
-        >
-          <el-table-column prop="id" :label="t('route.routeId')" min-width="160" show-overflow-tooltip>
+        <el-table v-loading="loading" :data="tableData" height="100%" stripe>
+          <el-table-column
+            prop="id"
+            :label="t('route.routeId')"
+            min-width="160"
+            show-overflow-tooltip
+          >
             <template #default="{ row }">
               <span class="route-id">{{ row.id || '-' }}</span>
             </template>
@@ -97,11 +113,25 @@
           <el-table-column :label="t('common.operation')" width="180" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Route.Edit)" type="primary" link size="small" @click="handleEdit(row)">
-                  <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.Route.Edit)"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  <el-icon><Edit /></el-icon>
+                  {{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Route.Delete)" type="danger" link size="small" @click="handleDelete(row)">
-                  <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.Route.Delete)"
+                  type="danger"
+                  link
+                  size="small"
+                  @click="handleDelete(row)"
+                >
+                  <el-icon><Delete /></el-icon>
+                  {{ t('common.delete') }}
                 </AuthButton>
               </div>
             </template>
@@ -141,7 +171,10 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item :label="t('route.routeGroup')" prop="routesGroup">
-              <el-input v-model.trim="formData.routesGroup" :placeholder="t('route.routeGroupPlaceholder')" />
+              <el-input
+                v-model.trim="formData.routesGroup"
+                :placeholder="t('route.routeGroupPlaceholder')"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -154,7 +187,10 @@
         <el-row :gutter="20">
           <el-col :span="18">
             <el-form-item :label="t('route.uri')" prop="uri">
-              <el-input v-model="currentRoute.uri" placeholder="lb://service-name 或 https://example.com" />
+              <el-input
+                v-model="currentRoute.uri"
+                placeholder="lb://service-name 或 https://example.com"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="6">
@@ -177,16 +213,35 @@
           <!-- Predicates -->
           <el-form-item :label="t('route.predicates')">
             <div class="dynamic-section">
-              <div v-for="(predicate, index) in currentRoute.predicates" :key="index" class="dynamic-item">
-                <el-select v-model="predicate.name" placeholder="Type" style="width: 160px" @change="onPredicateChange(predicate)">
-                  <el-option v-for="p in predicateTypes" :key="p.value" :label="p.label" :value="p.value" />
+              <div
+                v-for="(predicate, index) in currentRoute.predicates"
+                :key="index"
+                class="dynamic-item"
+              >
+                <el-select
+                  v-model="predicate.name"
+                  placeholder="Type"
+                  style="width: 160px"
+                  @change="onPredicateChange(predicate)"
+                >
+                  <el-option
+                    v-for="p in predicateTypes"
+                    :key="p.value"
+                    :label="p.label"
+                    :value="p.value"
+                  />
                 </el-select>
                 <div class="args-input">
                   <template v-if="predicate.name === 'Path'">
                     <el-input v-model="predicate.args.pattern" placeholder="/api/**" />
                   </template>
                   <template v-else-if="predicate.name === 'Method'">
-                    <el-select v-model="predicate.args.methods" multiple placeholder="GET, POST" style="width: 100%">
+                    <el-select
+                      v-model="predicate.args.methods"
+                      multiple
+                      placeholder="GET, POST"
+                      style="width: 100%"
+                    >
                       <el-option label="GET" value="GET" />
                       <el-option label="POST" value="POST" />
                       <el-option label="PUT" value="PUT" />
@@ -195,12 +250,28 @@
                     </el-select>
                   </template>
                   <template v-else-if="predicate.name === 'Header'">
-                    <el-input v-model="predicate.args.header" placeholder="X-Request-Id" style="width: 150px" />
-                    <el-input v-model="predicate.args.regexp" placeholder="正则表达式" class="flex-1" />
+                    <el-input
+                      v-model="predicate.args.header"
+                      placeholder="X-Request-Id"
+                      style="width: 150px"
+                    />
+                    <el-input
+                      v-model="predicate.args.regexp"
+                      placeholder="正则表达式"
+                      class="flex-1"
+                    />
                   </template>
                   <template v-else-if="predicate.name === 'Query'">
-                    <el-input v-model="predicate.args.param" placeholder="参数名" style="width: 150px" />
-                    <el-input v-model="predicate.args.regexp" placeholder="正则表达式(可选)" class="flex-1" />
+                    <el-input
+                      v-model="predicate.args.param"
+                      placeholder="参数名"
+                      style="width: 150px"
+                    />
+                    <el-input
+                      v-model="predicate.args.regexp"
+                      placeholder="正则表达式(可选)"
+                      class="flex-1"
+                    />
                   </template>
                   <template v-else-if="predicate.name === 'Host'">
                     <el-input v-model="predicate.args.pattern" placeholder="**.example.com" />
@@ -211,36 +282,91 @@
                 </div>
                 <el-button type="danger" :icon="Delete" circle @click="removePredicate(index)" />
               </div>
-              <el-button type="primary" :icon="Plus" @click="addPredicate">{{ t('route.addPredicate') }}</el-button>
+              <el-button type="primary" :icon="Plus" @click="addPredicate">
+                {{ t('route.addPredicate') }}
+              </el-button>
             </div>
           </el-form-item>
 
           <!-- Filters -->
           <el-form-item :label="t('route.filters')">
             <div class="dynamic-section">
-              <div v-for="(filter, index) in currentRoute.filters" :key="index" class="dynamic-item">
-                <el-select v-model="filter.name" placeholder="Type" style="width: 180px" @change="onFilterChange(filter)">
-                  <el-option v-for="f in filterTypes" :key="f.value" :label="f.label" :value="f.value" />
+              <div
+                v-for="(filter, index) in currentRoute.filters"
+                :key="index"
+                class="dynamic-item"
+              >
+                <el-select
+                  v-model="filter.name"
+                  placeholder="Type"
+                  style="width: 180px"
+                  @change="onFilterChange(filter)"
+                >
+                  <el-option
+                    v-for="f in filterTypes"
+                    :key="f.value"
+                    :label="f.label"
+                    :value="f.value"
+                  />
                 </el-select>
                 <div class="args-input">
                   <template v-if="filter.name === 'StripPrefix'">
-                    <el-input-number v-model="filter.args.parts" :min="1" placeholder="路径前缀数量" style="width: 150px" />
+                    <el-input-number
+                      v-model="filter.args.parts"
+                      :min="1"
+                      placeholder="路径前缀数量"
+                      style="width: 150px"
+                    />
                   </template>
                   <template v-else-if="filter.name === 'AddRequestHeader'">
-                    <el-input v-model="filter.args.name" placeholder="Header Name" style="width: 150px" />
-                    <el-input v-model="filter.args.value" placeholder="Header Value" class="flex-1" />
+                    <el-input
+                      v-model="filter.args.name"
+                      placeholder="Header Name"
+                      style="width: 150px"
+                    />
+                    <el-input
+                      v-model="filter.args.value"
+                      placeholder="Header Value"
+                      class="flex-1"
+                    />
                   </template>
                   <template v-else-if="filter.name === 'AddRequestParameter'">
-                    <el-input v-model="filter.args.name" placeholder="Param Name" style="width: 150px" />
-                    <el-input v-model="filter.args.value" placeholder="Param Value" class="flex-1" />
+                    <el-input
+                      v-model="filter.args.name"
+                      placeholder="Param Name"
+                      style="width: 150px"
+                    />
+                    <el-input
+                      v-model="filter.args.value"
+                      placeholder="Param Value"
+                      class="flex-1"
+                    />
                   </template>
                   <template v-else-if="filter.name === 'RewritePath'">
-                    <el-input v-model="filter.args.regexp" placeholder="正则表达式" style="width: 200px" />
-                    <el-input v-model="filter.args.replacement" placeholder="替换路径" class="flex-1" />
+                    <el-input
+                      v-model="filter.args.regexp"
+                      placeholder="正则表达式"
+                      style="width: 200px"
+                    />
+                    <el-input
+                      v-model="filter.args.replacement"
+                      placeholder="替换路径"
+                      class="flex-1"
+                    />
                   </template>
                   <template v-else-if="filter.name === 'RequestRateLimiter'">
-                    <el-input-number v-model="filter.args.replenishRate" :min="1" placeholder="补充速率" style="width: 120px" />
-                    <el-input-number v-model="filter.args.burstCapacity" :min="1" placeholder="容量" style="width: 120px" />
+                    <el-input-number
+                      v-model="filter.args.replenishRate"
+                      :min="1"
+                      placeholder="补充速率"
+                      style="width: 120px"
+                    />
+                    <el-input-number
+                      v-model="filter.args.burstCapacity"
+                      :min="1"
+                      placeholder="容量"
+                      style="width: 120px"
+                    />
                   </template>
                   <template v-else>
                     <el-input v-model="filter.args.args" placeholder="参数值" class="flex-1" />
@@ -248,7 +374,9 @@
                 </div>
                 <el-button type="danger" :icon="Delete" circle @click="removeFilter(index)" />
               </div>
-              <el-button type="primary" :icon="Plus" @click="addFilter">{{ t('route.addFilter') }}</el-button>
+              <el-button type="primary" :icon="Plus" @click="addFilter">
+                {{ t('route.addFilter') }}
+              </el-button>
             </div>
           </el-form-item>
         </template>
@@ -269,7 +397,9 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
+        <el-button type="primary" :loading="submitting" @click="handleSubmit">
+          {{ t('common.confirm') }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -295,12 +425,12 @@ import {
   type RouteDefinition,
   type PredicateDefinition,
   type FilterDefinition,
-  type RouteForm
+  type RouteForm,
 } from '@/api/route'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
 
 defineOptions({
-  name: 'RouteManagement'
+  name: 'RouteManagement',
 })
 
 const { hasPermission: checkPermission } = usePermission()
@@ -309,14 +439,14 @@ const { t } = useI18n()
 
 // 搜索表单
 const searchForm = reactive({
-  routesGroup: ''
+  routesGroup: '',
 })
 
 // 分页
 const pagination = reactive({
   pageNum: 1,
   pageSize: 10,
-  total: 0
+  total: 0,
 })
 
 // 表格数据
@@ -333,7 +463,7 @@ const routeJson = ref('')
 
 const formData = reactive<RouteForm>({
   routesGroup: 'default',
-  routes: []
+  routes: [],
 })
 
 const currentRoute = reactive<RouteDefinition>({
@@ -341,18 +471,16 @@ const currentRoute = reactive<RouteDefinition>({
   uri: '',
   predicates: [],
   filters: [],
-  order: 0
+  order: 0,
 })
 
 const formRules = {
   routesGroup: [{ required: true, message: () => t('route.routeGroupRequired'), trigger: 'blur' }],
   routeId: [{ required: true, message: () => t('route.routeIdPlaceholder'), trigger: 'blur' }],
-  uri: [{ required: true, message: 'URI is required', trigger: 'blur' }]
+  uri: [{ required: true, message: 'URI is required', trigger: 'blur' }],
 }
 
-const dialogTitle = computed(() =>
-  isEdit.value ? t('route.editRoute') : t('route.addRoute')
-)
+const dialogTitle = computed(() => (isEdit.value ? t('route.editRoute') : t('route.addRoute')))
 
 // 断言类型选项
 const predicateTypes = [
@@ -365,7 +493,7 @@ const predicateTypes = [
   { label: 'After', value: 'After' },
   { label: 'Before', value: 'Before' },
   { label: 'Between', value: 'Between' },
-  { label: 'RemoteAddr', value: 'RemoteAddr' }
+  { label: 'RemoteAddr', value: 'RemoteAddr' },
 ]
 
 // 过滤器类型选项
@@ -379,7 +507,7 @@ const filterTypes = [
   { label: 'CircuitBreaker', value: 'CircuitBreaker' },
   { label: 'Retry', value: 'Retry' },
   { label: 'PrefixPath', value: 'PrefixPath' },
-  { label: 'SetPath', value: 'SetPath' }
+  { label: 'SetPath', value: 'SetPath' },
 ]
 
 // 格式化断言参数显示
@@ -414,7 +542,7 @@ const loadData = async () => {
     const res = await getRouteList({
       routesGroup: searchForm.routesGroup,
       pageNum: pagination.pageNum,
-      pageSize: pagination.pageSize
+      pageSize: pagination.pageSize,
     })
     tableData.value = res.routes || res.rows || []
     pagination.total = res.total || 0
@@ -469,7 +597,7 @@ const handleAdd = () => {
     uri: '',
     predicates: [{ name: 'Path', args: { pattern: '' } }],
     filters: [],
-    order: 0
+    order: 0,
   })
   formData.routesGroup = 'default'
   dialogVisible.value = true
@@ -545,14 +673,10 @@ const resetForm = () => {
  */
 const handleDelete = async (row: RouteDefinition) => {
   try {
-    await ElMessageBox.confirm(
-      t('route.deleteConfirm'),
-      t('message.tips'),
-      { type: 'warning' }
-    )
+    await ElMessageBox.confirm(t('route.deleteConfirm'), t('message.tips'), { type: 'warning' })
     await deleteRoute({
       routesGroup: searchForm.routesGroup || 'default',
-      routeIds: [row.id]
+      routeIds: [row.id],
     })
     ElMessage.success(t('message.deleteSuccess'))
     loadData()

@@ -7,13 +7,7 @@
     :lock-scroll="false"
     @closed="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="permission-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="permission-form">
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item :label="t('system.permission.acName')" prop="acName">
@@ -37,7 +31,12 @@
         </el-col>
         <el-col :span="12" v-if="props.acType === undefined">
           <el-form-item :label="t('system.permission.acType')" prop="acType">
-            <el-select v-model="form.acType" :placeholder="t('common.pleaseSelect')" style="width: 100%" @change="handleTypeChange">
+            <el-select
+              v-model="form.acType"
+              :placeholder="t('common.pleaseSelect')"
+              style="width: 100%"
+              @change="handleTypeChange"
+            >
               <el-option :label="t('system.permission.typeApi')" :value="1" />
               <el-option :label="t('system.permission.typeData')" :value="2" />
             </el-select>
@@ -55,7 +54,12 @@
         <el-tree-select
           v-model="form.menuIds"
           :data="menuTreeData"
-          :props="{ label: 'menuName', value: 'menuId', children: 'children', disabled: 'disabled' }"
+          :props="{
+            label: 'menuName',
+            value: 'menuId',
+            children: 'children',
+            disabled: 'disabled',
+          }"
           :placeholder="t('common.pleaseSelect')"
           multiple
           collapse-tags
@@ -70,7 +74,7 @@
 
       <!-- 数据过滤权限字段 - 表格单选 -->
       <div v-else-if="currentAcType === 2" class="data-filter-section">
-        <div class="section-title">{{ t('system.permission.dataFilterRule') }}</div>
+        <div class="section-title">{{ t('system.permission.selectDataFilterRule') }}</div>
         <el-form-item prop="dataFilterId" label-width="0">
           <el-table
             ref="tableRef"
@@ -85,15 +89,23 @@
           >
             <el-table-column width="50" align="center">
               <template #default="{ row }">
-                <el-radio
-                  :label="row.dataFilterId"
-                  v-model="form.dataFilterId"
-                  @click.stop
-                >&nbsp;</el-radio>
+                <el-radio :label="row.dataFilterId" v-model="form.dataFilterId" @click.stop>
+                  &nbsp;
+                </el-radio>
               </template>
             </el-table-column>
-            <el-table-column prop="dataFilterName" :label="t('dataScope.filterName')" min-width="140" show-overflow-tooltip />
-            <el-table-column prop="entityClass" :label="t('dataScope.entityClass')" min-width="180" show-overflow-tooltip />
+            <el-table-column
+              prop="dataFilterName"
+              :label="t('dataScope.filterName')"
+              min-width="140"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="entityClass"
+              :label="t('dataScope.entityClass')"
+              min-width="180"
+              show-overflow-tooltip
+            />
             <el-table-column prop="ruleType" :label="t('dataScope.ruleType')" min-width="100">
               <template #default="{ row }">
                 {{ getRuleTypeName(row.ruleType) }}
@@ -121,7 +133,13 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { addPermission, updatePermission, getMenuTreeForPermission, type PermissionInfo, type MenuInfo } from '@/api/permission'
+import {
+  addPermission,
+  updatePermission,
+  getMenuTreeForPermission,
+  type PermissionInfo,
+  type MenuInfo,
+} from '@/api/permission'
 import { getDataFilterList, type DataFilterInfo } from '@/api/dataScope'
 import { useSubmitGuard } from '@/composables/useSubmitGuard'
 
@@ -143,7 +161,9 @@ const visible = computed({
 })
 
 const dialogTitle = computed(() =>
-  props.type === 'add' ? t('system.permission.addPermission') : t('system.permission.editPermission')
+  props.type === 'add'
+    ? t('system.permission.addPermission')
+    : t('system.permission.editPermission')
 )
 
 const formRef = ref<FormInstance>()
@@ -170,10 +190,10 @@ const currentAcType = computed(() => props.acType ?? form.acType)
 // 规则类型翻译
 const getRuleTypeName = (ruleType: string): string => {
   const ruleTypeMap: Record<string, string> = {
-    'FIELD_FILTER': t('dataScope.FIELD_FILTER'),
-    'CREATOR_FILTER': t('dataScope.CREATOR_FILTER'),
-    'DATE_RANGE_FILTER': t('dataScope.DATE_RANGE_FILTER'),
-    'CUSTOM_SQL': t('dataScope.CUSTOM_SQL'),
+    FIELD_FILTER: t('dataScope.FIELD_FILTER'),
+    CREATOR_FILTER: t('dataScope.CREATOR_FILTER'),
+    DATE_RANGE_FILTER: t('dataScope.DATE_RANGE_FILTER'),
+    CUSTOM_SQL: t('dataScope.CUSTOM_SQL'),
   }
   return ruleTypeMap[ruleType] || ruleType
 }
@@ -187,22 +207,51 @@ const handleCurrentChange = (row: DataFilterInfo | null) => {
 
 const rules = computed<FormRules>(() => ({
   acName: [
-    { required: true, message: t('common.pleaseInput') + t('system.permission.acName'), trigger: 'blur' },
+    {
+      required: true,
+      message: t('common.pleaseInput') + t('system.permission.acName'),
+      trigger: 'blur',
+    },
   ],
   acIdentity: [
-    { required: true, message: t('common.pleaseInput') + t('system.permission.acIdentity'), trigger: 'blur' },
+    {
+      required: true,
+      message: t('common.pleaseInput') + t('system.permission.acIdentity'),
+      trigger: 'blur',
+    },
   ],
-  acType: props.acType === undefined ? [
-    { required: true, message: t('common.pleaseSelect') + t('system.permission.acType'), trigger: 'change' },
-  ] : [],
+  acType:
+    props.acType === undefined
+      ? [
+          {
+            required: true,
+            message: t('common.pleaseSelect') + t('system.permission.acType'),
+            trigger: 'change',
+          },
+        ]
+      : [],
   // 接口权限时，URL必填
-  url: currentAcType.value === 1 ? [
-    { required: true, message: t('common.pleaseInput') + t('system.permission.url'), trigger: 'blur' },
-  ] : [],
+  url:
+    currentAcType.value === 1
+      ? [
+          {
+            required: true,
+            message: t('common.pleaseInput') + t('system.permission.url'),
+            trigger: 'blur',
+          },
+        ]
+      : [],
   // 数据过滤权限时，dataFilterId 必填
-  dataFilterId: currentAcType.value === 2 ? [
-    { required: true, message: t('common.pleaseSelect') + t('system.permission.dataFilterId'), trigger: 'change' },
-  ] : [],
+  dataFilterId:
+    currentAcType.value === 2
+      ? [
+          {
+            required: true,
+            message: t('common.pleaseSelect') + t('system.permission.dataFilterId'),
+            trigger: 'change',
+          },
+        ]
+      : [],
 }))
 
 // 获取数据过滤器列表（只查询启用状态 status=0）
@@ -224,10 +273,10 @@ const fetchMenuTree = async () => {
     const res = await getMenuTreeForPermission()
     // 过滤并处理菜单树：只保留页面和按钮，目录设为禁用
     const processMenuTree = (menus: MenuInfo[]): MenuInfo[] => {
-      return menus.map(menu => ({
+      return menus.map((menu) => ({
         ...menu,
         disabled: menu.type === 1, // 目录不可选
-        children: menu.children ? processMenuTree(menu.children) : undefined
+        children: menu.children ? processMenuTree(menu.children) : undefined,
       }))
     }
     menuTreeData.value = processMenuTree(res || [])
@@ -267,7 +316,7 @@ const handleSubmit = async () => {
           acEnName: form.acEnName || undefined,
           acIdentity: acIdentity,
           acType: acType,
-          url: acType === 1 ? (form.url || undefined) : undefined,
+          url: acType === 1 ? form.url || undefined : undefined,
           dataFilterId: acType === 2 ? form.dataFilterId : undefined,
           menuIds: acType === 1 ? form.menuIds : undefined,
         })
@@ -279,7 +328,7 @@ const handleSubmit = async () => {
           acEnName: form.acEnName || undefined,
           acIdentity: acIdentity,
           acType: acType,
-          url: acType === 1 ? (form.url || undefined) : undefined,
+          url: acType === 1 ? form.url || undefined : undefined,
           dataFilterId: acType === 2 ? form.dataFilterId : undefined,
           menuIds: acType === 1 ? form.menuIds : undefined,
         })

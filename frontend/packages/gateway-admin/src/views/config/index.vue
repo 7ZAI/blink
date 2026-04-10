@@ -112,12 +112,19 @@
           <!-- 底部操作按钮 -->
           <div class="config-row action-row" v-if="hasChanges">
             <div class="col-name">
-              <span class="changes-count">{{ t('config.modifiedCount', { count: modifiedIds.length }) }}</span>
+              <span class="changes-count">
+                {{ t('config.modifiedCount', { count: modifiedIds.length }) }}
+              </span>
             </div>
             <div class="col-value">
               <div class="action-buttons">
                 <el-button @click="handleCancel">{{ t('common.cancel') }}</el-button>
-                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Config.Update)" type="primary" :loading="saving" @click="handleBatchSave">
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.Config.Update)"
+                  type="primary"
+                  :loading="saving"
+                  @click="handleBatchSave"
+                >
                   <el-icon><Check /></el-icon>
                   {{ t('common.save') }}
                 </AuthButton>
@@ -201,12 +208,12 @@ const groupKeyMapping: Record<string, string[]> = {
 }
 
 const currentGroupLabel = computed(() => {
-  const group = configGroups.value.find(g => g.key === activeGroup.value)
+  const group = configGroups.value.find((g) => g.key === activeGroup.value)
   return group?.label || ''
 })
 
 const currentGroupIcon = computed(() => {
-  const group = configGroups.value.find(g => g.key === activeGroup.value)
+  const group = configGroups.value.find((g) => g.key === activeGroup.value)
   return group?.icon || 'mdi:cog'
 })
 
@@ -216,17 +223,18 @@ const filteredConfigs = computed(() => {
 
   // 按前缀过滤
   if (prefixes.length > 0) {
-    configs = configs.filter(config =>
-      prefixes.some(prefix => config.configKey.startsWith(prefix))
+    configs = configs.filter((config) =>
+      prefixes.some((prefix) => config.configKey.startsWith(prefix))
     )
   }
 
   // 按搜索关键词过滤
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase()
-    configs = configs.filter(config =>
-      config.configName.toLowerCase().includes(keyword) ||
-      config.description.toLowerCase().includes(keyword)
+    configs = configs.filter(
+      (config) =>
+        config.configName.toLowerCase().includes(keyword) ||
+        config.description.toLowerCase().includes(keyword)
     )
   }
 
@@ -319,8 +327,8 @@ const handleBatchSave = async () => {
 
   saving.value = true
   try {
-    const configs = modifiedIds.value.map(id => {
-      const config = currentConfigs.value.find(c => c.id === id)
+    const configs = modifiedIds.value.map((id) => {
+      const config = currentConfigs.value.find((c) => c.id === id)
       let value = configStates.value[id]
       if (config?.configType === 2) {
         value = value ? 'true' : 'false'
@@ -330,7 +338,7 @@ const handleBatchSave = async () => {
       return {
         id,
         configKey: config!.configKey,
-        configValue: value
+        configValue: value,
       }
     })
 
@@ -650,7 +658,8 @@ onMounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

@@ -9,11 +9,7 @@
   >
     <div class="menu-tree">
       <div class="tree-header">
-        <el-checkbox
-          v-model="checkAll"
-          :indeterminate="isIndeterminate"
-          @change="handleCheckAll"
-        >
+        <el-checkbox v-model="checkAll" :indeterminate="isIndeterminate" @change="handleCheckAll">
           {{ t('common.selectAll') }}
         </el-checkbox>
         <div class="selected-count">
@@ -25,7 +21,7 @@
         ref="treeRef"
         v-loading="loading"
         :data="menuTree"
-        :props="{ label: 'menuName', children: 'children' }"
+        :props="treeProps"
         show-checkbox
         node-key="menuId"
         default-expand-all
@@ -45,45 +41,48 @@
 
     <template #footer>
       <el-button @click="emit('update:modelValue', false)">{{ t('common.cancel') }}</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
+      <el-button type="primary" :loading="isSubmitting" @click="handleSubmit">
+        {{ t('common.confirm') }}
+      </el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
-import type { ElTree } from 'element-plus'
-import { getMenuTree, type MenuVO } from '@/api/menu'
-import { assignMenus, getRoleDetail } from '@/api/role'
+import type { ElTree, CheckboxValueType } from 'element-plus'
+import { getMenuList, type MenuInfo } from '@/api/menu'
+import { assignMenus, getRoleDetail, type RoleInfo } from '@/api/role'
+import { useSubmitGuard } from '@/composables/useSubmitGuard'
 
-const props = defineProps<{
+interface Props {
   modelValue: boolean
-  roleId: number | null
-}>()
+  role: RoleInfo | null
+}
 
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'success': []
-}>()
+const props = defineProps<Props>()
+const emit = defineEmits(['update:modelValue', 'success'])
 
 const { t } = useI18n()
 
 const treeRef = ref<InstanceType<typeof ElTree>>()
 const loading = ref(false)
-const submitting = ref(false)
-const menuTree = ref<MenuVO[]>([])
+const { isSubmitting, submitGuard } = useSubmitGuard()
+const menuTree = ref<MenuInfo[]>([])
 const checkedMenuIds = ref<number[]>([])
 const checkAll = ref(false)
 const isIndeterminate = ref(false)
 
-/**
- * 获取所有菜单ID
- */
-const getAllMenuIds = (menus: MenuVO[]): number[] => {
+const treeProps = {
+  children: 'children',
+  label: 'menuName',
+}
+
+const getAllMenuIds = (menus: MenuInfo[]): number[] => {
   const ids: number[] = []
-  const traverse = (list: MenuVO[]) => {
+  const traverse = (list: MenuInfo[]) => {
     list.forEach((menu) => {
       ids.push(menu.menuId)
       if (menu.children?.length) {
@@ -95,58 +94,54 @@ const getAllMenuIds = (menus: MenuVO[]): number[] => {
   return ids
 }
 
-/**
- * 加载菜单树
- */
-const loadMenuTree = async () => {
+const fetchMenuTree = async () => {
   loading.value = true
   try {
-    const res = await getMenuTree()
-    menuTree.value = res || []
+    const res = await getMenuList()
+
+    // 后端返回的是 { rows: [...], total: ... } 结构
+    // rows 已经是树形结构
+    if (res?.rows) {
+      menuTree.value = res.rows
+    } else if (Array.isArray(res)) {
+      menuTree.value = res
+    } else {
+      menuTree.value = []
+    }
   } catch (error) {
-    console.error('[AssignMenu] Load menu tree error:', error)
     menuTree.value = []
   } finally {
     loading.value = false
   }
 }
 
-/**
- * 加载角色已分配的菜单
- */
-const loadRoleMenus = async () => {
-  if (!props.roleId) return
+const fetchRoleMenus = async () => {
+  if (!props.role?.roleId) return
 
   try {
-    const detail = await getRoleDetail(props.roleId)
+    const detail = await getRoleDetail(props.role.roleId)
     const assignedIds = (detail.menus || []).map((m) => m.menuId)
     checkedMenuIds.value = assignedIds
 
-    // 延迟设置选中状态，确保树已渲染
     setTimeout(() => {
       assignedIds.forEach((id) => {
         treeRef.value?.setChecked(id, true, false)
       })
       updateCheckAllStatus()
     }, 100)
-  } catch (error) {
-    console.error('[AssignMenu] Load role menus error:', error)
+  } catch {
+    // ignore
   }
 }
 
-/**
- * 处理节点选中
- */
 const handleCheck = () => {
   checkedMenuIds.value = treeRef.value?.getCheckedKeys() as number[]
   updateCheckAllStatus()
 }
 
-/**
- * 处理全选
- */
-const handleCheckAll = (val: boolean) => {
-  if (val) {
+const handleCheckAll = (val: CheckboxValueType) => {
+  const isChecked = Boolean(val)
+  if (isChecked) {
     const allIds = getAllMenuIds(menuTree.value)
     treeRef.value?.setCheckedKeys(allIds)
     checkedMenuIds.value = allIds
@@ -157,24 +152,18 @@ const handleCheckAll = (val: boolean) => {
   isIndeterminate.value = false
 }
 
-/**
- * 更新全选状态
- */
 const updateCheckAllStatus = () => {
   const allIds = getAllMenuIds(menuTree.value)
   const checkedCount = checkedMenuIds.value.length
-  checkAll.value = checkedCount === allIds.length && allIds.length > 0
+  checkAll.value = checkedCount === allIds.length
   isIndeterminate.value = checkedCount > 0 && checkedCount < allIds.length
 }
 
-/**
- * 提交分配
- */
 const handleSubmit = async () => {
-  if (!props.roleId) return
+  if (!props.role?.roleId) return
+  const role = props.role
 
-  try {
-    submitting.value = true
+  await submitGuard(async () => {
     // 获取选中的节点和半选中的父节点
     const checkedKeys = treeRef.value?.getCheckedKeys() as number[]
     const halfCheckedKeys = treeRef.value?.getHalfCheckedKeys() as number[]
@@ -183,17 +172,13 @@ const handleSubmit = async () => {
     const allMenuIds = [...new Set([...checkedKeys, ...halfCheckedKeys])]
 
     await assignMenus({
-      roleId: props.roleId,
+      roleId: role.roleId,
       menuIds: allMenuIds,
     })
-    ElMessage.success(t('common.success'))
+    ElMessage.success(t('message.success'))
     emit('update:modelValue', false)
     emit('success')
-  } catch (error) {
-    console.error('[AssignMenu] Submit error:', error)
-  } finally {
-    submitting.value = false
-  }
+  })
 }
 
 /**
@@ -206,12 +191,15 @@ const handleClose = () => {
   treeRef.value?.setCheckedKeys([])
 }
 
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    loadMenuTree()
-    loadRoleMenus()
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      fetchMenuTree()
+      fetchRoleMenus()
+    }
   }
-})
+)
 </script>
 
 <style scoped lang="scss">

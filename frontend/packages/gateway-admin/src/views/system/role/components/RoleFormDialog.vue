@@ -8,13 +8,7 @@
     @closed="handleClose"
   >
     <div v-loading="loading" class="role-form-container">
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="100px"
-        class="role-form"
-      >
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="role-form">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item :label="t('system.role.roleName')" prop="roleName">
@@ -28,7 +22,11 @@
           </el-col>
           <el-col :span="12">
             <el-form-item :label="t('system.role.roleCode')" prop="roleCode">
-              <el-input v-model.trim="form.roleCode" :placeholder="t('common.pleaseInput')" :disabled="props.type === 'edit'" />
+              <el-input
+                v-model.trim="form.roleCode"
+                :placeholder="t('common.pleaseInput')"
+                :disabled="props.type === 'edit'"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -49,17 +47,37 @@
             <el-tabs v-model="permissionSubTab" class="sub-tabs">
               <el-tab-pane :label="t('system.role.apiPermission')" name="api">
                 <el-table :data="apiPermissions" stripe border max-height="200">
-                  <el-table-column prop="acName" :label="t('system.permission.acName')" min-width="120" />
-                  <el-table-column prop="acIdentity" :label="t('system.permission.acIdentity')" min-width="140" />
+                  <el-table-column
+                    prop="acName"
+                    :label="t('system.permission.acName')"
+                    min-width="120"
+                  />
+                  <el-table-column
+                    prop="acIdentity"
+                    :label="t('system.permission.acIdentity')"
+                    min-width="140"
+                  />
                   <el-table-column prop="url" label="URL" min-width="180" />
                 </el-table>
                 <el-empty v-if="!apiPermissions.length" :description="t('common.noData')" />
               </el-tab-pane>
               <el-tab-pane :label="t('system.role.dataPermission')" name="data">
                 <el-table :data="dataPermissions" stripe border max-height="200">
-                  <el-table-column prop="acName" :label="t('system.permission.acName')" min-width="120" />
-                  <el-table-column prop="acIdentity" :label="t('system.permission.acIdentity')" min-width="140" />
-                  <el-table-column prop="dataFilterName" :label="t('system.permission.dataFilterId')" min-width="140" />
+                  <el-table-column
+                    prop="acName"
+                    :label="t('system.permission.acName')"
+                    min-width="120"
+                  />
+                  <el-table-column
+                    prop="acIdentity"
+                    :label="t('system.permission.acIdentity')"
+                    min-width="140"
+                  />
+                  <el-table-column
+                    prop="dataFilterName"
+                    :label="t('system.permission.dataFilterId')"
+                    min-width="140"
+                  />
                 </el-table>
                 <el-empty v-if="!dataPermissions.length" :description="t('common.noData')" />
               </el-tab-pane>
@@ -78,11 +96,22 @@
             >
               <el-table-column prop="menuName" :label="t('system.menu.menuName')" min-width="180" />
               <el-table-column prop="url" label="URL" min-width="150" />
-              <el-table-column prop="type" :label="t('system.menu.type')" width="100" align="center">
+              <el-table-column
+                prop="type"
+                :label="t('system.menu.type')"
+                width="100"
+                align="center"
+              >
                 <template #default="{ row }">
-                  <el-tag v-if="row.type === 1" type="info">{{ t('system.menu.typeDirectory') }}</el-tag>
-                  <el-tag v-else-if="row.type === 2" type="primary">{{ t('system.menu.typeMenu') }}</el-tag>
-                  <el-tag v-else-if="row.type === 3" type="warning">{{ t('system.menu.typeButton') }}</el-tag>
+                  <el-tag v-if="row.type === 1" type="info">
+                    {{ t('system.menu.typeDirectory') }}
+                  </el-tag>
+                  <el-tag v-else-if="row.type === 2" type="primary">
+                    {{ t('system.menu.typeMenu') }}
+                  </el-tag>
+                  <el-tag v-else-if="row.type === 3" type="warning">
+                    {{ t('system.menu.typeButton') }}
+                  </el-tag>
                   <el-tag v-else type="info">-</el-tag>
                 </template>
               </el-table-column>
@@ -98,13 +127,24 @@
 
           <el-tab-pane :label="t('system.role.userList')" name="users">
             <el-table :data="roleDetail?.users || []" stripe border max-height="200">
-              <el-table-column prop="loginName" :label="t('system.user.loginName')" min-width="120" />
+              <el-table-column
+                prop="loginName"
+                :label="t('system.user.loginName')"
+                min-width="120"
+              />
               <el-table-column prop="username" :label="t('system.user.username')" min-width="120" />
               <el-table-column prop="phone" :label="t('system.user.phone')" min-width="120" />
               <el-table-column prop="email" :label="t('system.user.email')" min-width="150" />
-              <el-table-column prop="locked" :label="t('system.user.locked')" width="80" align="center">
+              <el-table-column
+                prop="locked"
+                :label="t('system.user.locked')"
+                width="80"
+                align="center"
+              >
                 <template #default="{ row }">
-                  <el-tag v-if="row.locked === 0" type="success">{{ t('system.user.unlocked') }}</el-tag>
+                  <el-tag v-if="row.locked === 0" type="success">
+                    {{ t('system.user.unlocked') }}
+                  </el-tag>
                   <el-tag v-else type="danger">{{ t('system.user.locked') }}</el-tag>
                 </template>
               </el-table-column>
@@ -129,7 +169,14 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { addRole, updateRole, getRoleDetail, type RoleInfo, type RoleDetailRsp, type MenuInfo } from '@/api/role'
+import {
+  addRole,
+  updateRole,
+  getRoleDetail,
+  type RoleInfo,
+  type RoleDetailRsp,
+  type MenuInfo,
+} from '@/api/role'
 import { useSubmitGuard } from '@/composables/useSubmitGuard'
 
 interface Props {
@@ -171,13 +218,13 @@ const menuTreeData = computed(() => {
 
   // 创建菜单映射
   const menuMap = new Map<number, MenuInfo>()
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     menuMap.set(menu.menuId, { ...menu, children: [] })
   })
 
   // 构建树形结构
   const tree: MenuInfo[] = []
-  menuMap.forEach(menu => {
+  menuMap.forEach((menu) => {
     const parentId = menu.parentId
     if (!parentId || parentId === 0) {
       // 根节点
@@ -220,10 +267,18 @@ const form = reactive({
 
 const rules: FormRules = {
   roleName: [
-    { required: true, message: t('common.pleaseInput') + t('system.role.roleName'), trigger: 'blur' },
+    {
+      required: true,
+      message: t('common.pleaseInput') + t('system.role.roleName'),
+      trigger: 'blur',
+    },
   ],
   roleCode: [
-    { required: true, message: t('common.pleaseInput') + t('system.role.roleCode'), trigger: 'blur' },
+    {
+      required: true,
+      message: t('common.pleaseInput') + t('system.role.roleCode'),
+      trigger: 'blur',
+    },
   ],
 }
 

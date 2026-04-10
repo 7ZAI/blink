@@ -48,11 +48,11 @@ export function useDict(dictType: string, autoLoad: boolean = true): UseDictRetu
 
   // 转换为选项格式
   const options = computed<DictOption[]>(() => {
-    return dictData.value.map(item => ({
+    return dictData.value.map((item) => ({
       label: item.dictLabel,
       value: item.dictValue,
       listClass: item.listClass,
-      isDefault: item.isDefault
+      isDefault: item.isDefault,
     }))
   })
 
@@ -87,7 +87,7 @@ export function useDict(dictType: string, autoLoad: boolean = true): UseDictRetu
     getLabel,
     getValue,
     getListClass,
-    loading
+    loading,
   }
 }
 

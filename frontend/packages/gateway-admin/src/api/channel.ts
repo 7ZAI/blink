@@ -85,7 +85,12 @@ export interface IssueTokenResult {
 // Get Channel Secret Params
 export interface GetChannelSecretParams {
   channelId: string
-  secretField: 'appSecret' | 'systemPublickey' | 'systemPrivatekey' | 'channelPublickey' | 'channelPrivatekey'
+  secretField:
+    | 'appSecret'
+    | 'systemPublickey'
+    | 'systemPrivatekey'
+    | 'channelPublickey'
+    | 'channelPrivatekey'
 }
 
 // Channel Secret Result

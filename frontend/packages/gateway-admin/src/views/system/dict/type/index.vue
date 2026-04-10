@@ -3,23 +3,44 @@
     <el-card class="search-card" shadow="never">
       <el-form :model="searchForm" inline class="search-form">
         <el-form-item :label="t('dict.dictName')">
-          <el-input v-model.trim="searchForm.dictName" :placeholder="t('common.pleaseInput')" clearable style="width: 140px" />
+          <el-input
+            v-model.trim="searchForm.dictName"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+            style="width: 140px"
+          />
         </el-form-item>
         <el-form-item :label="t('dict.dictType')">
-          <el-input v-model.trim="searchForm.dictType" :placeholder="t('common.pleaseInput')" clearable style="width: 160px" />
+          <el-input
+            v-model.trim="searchForm.dictType"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+            style="width: 160px"
+          />
         </el-form-item>
         <el-form-item :label="t('common.status')">
-          <el-select v-model="searchForm.status" :placeholder="t('common.pleaseSelect')" clearable style="width: 100px">
+          <el-select
+            v-model="searchForm.status"
+            :placeholder="t('common.pleaseSelect')"
+            clearable
+            style="width: 100px"
+          >
             <el-option :label="t('dict.statusEnable')" :value="0" />
             <el-option :label="t('dict.statusDisable')" :value="1" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+          <el-button
+            type="primary"
+            style="height: 28px; padding: 0 12px; font-size: 13px"
+            @click="handleSearch"
+          >
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -28,8 +49,13 @@
     <el-card class="table-card" shadow="never">
       <template #header>
         <div class="table-header">
-          <AuthButton :has-permission="() => checkPermission(ButtonPerms.DictType.Add)" type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>{{ t('common.add') }}
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.DictType.Add)"
+            type="primary"
+            @click="handleAdd"
+          >
+            <el-icon><Plus /></el-icon>
+            {{ t('common.add') }}
           </AuthButton>
         </div>
       </template>
@@ -51,21 +77,44 @@
           </el-table-column>
           <el-table-column prop="locale" :label="t('dict.locale')" width="100" align="center">
             <template #default="{ row }">
-              <el-tag v-if="row.locale === 'zh_cn'" type="primary">{{ t('settings.chinese') }}</el-tag>
-              <el-tag v-else-if="row.locale === 'en_us'" type="success">{{ t('settings.english') }}</el-tag>
+              <el-tag v-if="row.locale === 'zh_cn'" type="primary">
+                {{ t('settings.chinese') }}
+              </el-tag>
+              <el-tag v-else-if="row.locale === 'en_us'" type="success">
+                {{ t('settings.english') }}
+              </el-tag>
               <span v-else>{{ row.locale }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="createTime" :label="t('common.createTime')" min-width="160" />
-          <el-table-column prop="remark" :label="t('common.remark')" min-width="140" show-overflow-tooltip />
+          <el-table-column
+            prop="remark"
+            :label="t('common.remark')"
+            min-width="140"
+            show-overflow-tooltip
+          />
           <el-table-column :label="t('common.operation')" min-width="180" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
-                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DictType.Edit)" type="primary" link size="small" @click="handleEdit(row)">
-                  <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.DictType.Edit)"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  <el-icon><Edit /></el-icon>
+                  {{ t('common.edit') }}
                 </AuthButton>
-                <AuthButton :has-permission="() => checkPermission(ButtonPerms.DictType.Delete)" type="danger" link size="small" @click="handleDelete(row)">
-                  <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.DictType.Delete)"
+                  type="danger"
+                  link
+                  size="small"
+                  @click="handleDelete(row)"
+                >
+                  <el-icon><Delete /></el-icon>
+                  {{ t('common.delete') }}
                 </AuthButton>
               </div>
             </template>

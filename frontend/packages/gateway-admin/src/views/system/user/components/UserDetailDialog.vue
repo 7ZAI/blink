@@ -27,7 +27,9 @@
           {{ userDetail?.email || '-' }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('system.user.locked')">
-          <el-tag v-if="userDetail?.locked === 0" type="success">{{ t('system.user.unlocked') }}</el-tag>
+          <el-tag v-if="userDetail?.locked === 0" type="success">
+            {{ t('system.user.unlocked') }}
+          </el-tag>
           <el-tag v-else type="danger">{{ t('system.user.locked') }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item :label="t('system.user.lastLoginTime')">
@@ -43,15 +45,24 @@
     </div>
 
     <template #footer>
+      <el-button type="primary" @click="handleViewPermission">
+        <el-icon><View /></el-icon>
+        {{ t('system.user.viewRolePermission') }}
+      </el-button>
       <el-button @click="visible = false">{{ t('common.close') }}</el-button>
     </template>
   </el-dialog>
+
+  <!-- 用户权限弹窗 -->
+  <UserPermissionDialog v-model="permissionVisible" :user-id="userId" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { View } from '@element-plus/icons-vue'
 import { getUserDetail, type UserDetail } from '@/api/user'
+import UserPermissionDialog from './UserPermissionDialog.vue'
 
 interface Props {
   modelValue: boolean
@@ -70,6 +81,9 @@ const visible = computed({
 
 const loading = ref(false)
 const userDetail = ref<UserDetail | null>(null)
+const permissionVisible = ref(false)
+
+const userId = computed(() => userDetail.value?.userId || null)
 
 const fetchUserDetail = async () => {
   if (!props.loginName) return
@@ -84,6 +98,10 @@ const fetchUserDetail = async () => {
 
 const handleClose = () => {
   userDetail.value = null
+}
+
+const handleViewPermission = () => {
+  permissionVisible.value = true
 }
 
 watch(

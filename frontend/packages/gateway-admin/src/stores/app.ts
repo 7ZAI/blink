@@ -5,7 +5,7 @@ const SIDEBAR_COLLAPSED_KEY = 'sidebarCollapsed'
 export const useAppStore = defineStore('app', {
   state: () => ({
     sidebarCollapsed: localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true',
-    language: localStorage.getItem('language') || 'zh-cn'
+    language: localStorage.getItem('language') || 'zh-cn',
   }),
   actions: {
     toggleSidebar() {
@@ -15,6 +15,6 @@ export const useAppStore = defineStore('app', {
     setLanguage(lang: string) {
       this.language = lang
       localStorage.setItem('language', lang)
-    }
-  }
+    },
+  },
 })

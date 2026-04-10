@@ -25,17 +25,21 @@
         <UserDropdown
           :user-info="userInfoComputed"
           :show-theme-settings="true"
+          :avatar-resolver="avatarResolver"
           @command="handleUserCommand"
         >
           <template #menu>
             <el-dropdown-item command="profile">
-              <el-icon><User /></el-icon>{{ t('header.profile') }}
+              <el-icon><User /></el-icon>
+              {{ t('header.profile') }}
             </el-dropdown-item>
             <el-dropdown-item command="themeSettings">
-              <el-icon><Setting /></el-icon>{{ t('header.themeSettings') }}
+              <el-icon><Setting /></el-icon>
+              {{ t('header.themeSettings') }}
             </el-dropdown-item>
             <el-dropdown-item divided command="logout">
-              <el-icon><SwitchButton /></el-icon>{{ t('header.logout') }}
+              <el-icon><SwitchButton /></el-icon>
+              {{ t('header.logout') }}
             </el-dropdown-item>
           </template>
         </UserDropdown>
@@ -105,6 +109,7 @@ import { useUserStore } from '@/stores/user'
 import { useTabsStore } from '@/stores/tabs'
 import { useNotificationStore } from '@/stores/notification'
 import type { MenuVO } from '@/api/auth'
+import { getLocalAvatarUrl } from '@/utils/avatar'
 
 defineOptions({ name: 'MainLayout' })
 
@@ -190,6 +195,11 @@ const userInfoComputed = computed(() => {
   }
 })
 
+// 头像解析函数
+const avatarResolver = (user: { avatar?: string }) => {
+  return getLocalAvatarUrl(user.avatar)
+}
+
 // 转换 TabItem 格式
 const convertTabItem = (tab: any): TabItem => {
   return {
@@ -226,15 +236,11 @@ const handleUserCommand = async (command: string) => {
       break
     case 'logout':
       try {
-        await ElMessageBox.confirm(
-          t('header.logoutConfirm'),
-          t('header.logoutDialogTitle'),
-          {
-            confirmButtonText: t('header.confirm'),
-            cancelButtonText: t('header.cancel'),
-            type: 'warning'
-          }
-        )
+        await ElMessageBox.confirm(t('header.logoutConfirm'), t('header.logoutDialogTitle'), {
+          confirmButtonText: t('header.confirm'),
+          cancelButtonText: t('header.cancel'),
+          type: 'warning',
+        })
         await userStore.logout()
         ElMessage.success(t('header.logoutSuccess'))
         router.push('/login')
@@ -261,7 +267,12 @@ const handleColorChange = (colors: ThemeColors) => {
 }
 
 // 字体变更
-const handleFontChange = (font: { family: string; baseSize: number; largeSize: number; smallSize: number }) => {
+const handleFontChange = (font: {
+  family: string
+  baseSize: number
+  largeSize: number
+  smallSize: number
+}) => {
   themeStore.setFont(font)
 }
 

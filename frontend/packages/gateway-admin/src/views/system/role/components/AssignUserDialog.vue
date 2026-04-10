@@ -28,10 +28,12 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -90,7 +92,12 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="isSubmitting" :disabled="selectedUsers.length === 0" @click="handleSubmit">
+        <el-button
+          type="primary"
+          :loading="isSubmitting"
+          :disabled="selectedUsers.length === 0"
+          @click="handleSubmit"
+        >
           {{ t('common.confirm') }}
         </el-button>
       </div>
@@ -108,7 +115,12 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh } from '@element-plus/icons-vue'
 import { getUserList, type UserInfo } from '@/api/user'
-import { assignRoleToUsers, getRoleDetail, type RoleInfo, type UserInfo as RoleUserInfo } from '@/api/role'
+import {
+  assignRoleToUsers,
+  getRoleDetail,
+  type RoleInfo,
+  type UserInfo as RoleUserInfo,
+} from '@/api/role'
 import { useSubmitGuard } from '@/composables/useSubmitGuard'
 
 interface Props {
@@ -153,7 +165,7 @@ const fetchAssignedUsers = async () => {
   try {
     const detail = await getRoleDetail(props.role.roleId)
     const users = detail.users || []
-    assignedUserIds.value = new Set(users.map(u => u.userId))
+    assignedUserIds.value = new Set(users.map((u) => u.userId))
     // 初始化已选用户列表
     selectedUsers.value = [...users]
   } catch {
@@ -214,10 +226,10 @@ const handleReset = () => {
 
 const handleSelectionChange = (selection: UserInfo[]) => {
   // 合并新选择的用户，保留之前选择的其他页的用户
-  const currentPageIds = new Set(userList.value.map(u => u.userId))
-  const otherPageSelected = selectedUsers.value.filter(u => !currentPageIds.has(u.userId))
+  const currentPageIds = new Set(userList.value.map((u) => u.userId))
+  const otherPageSelected = selectedUsers.value.filter((u) => !currentPageIds.has(u.userId))
   // 转换为 RoleUserInfo 格式（只保留需要的字段）
-  const convertedSelection = selection.map(u => ({
+  const convertedSelection = selection.map((u) => ({
     userId: u.userId,
     loginName: u.loginName,
     username: u.username,
@@ -231,7 +243,7 @@ const handleSelectionChange = (selection: UserInfo[]) => {
 }
 
 const handleRemoveUser = (user: RoleUserInfo) => {
-  selectedUsers.value = selectedUsers.value.filter(u => u.userId !== user.userId)
+  selectedUsers.value = selectedUsers.value.filter((u) => u.userId !== user.userId)
   // 同步取消表格选中状态
   tableRef.value?.toggleRowSelection(user, false)
 }
@@ -243,7 +255,7 @@ const handleSubmit = async () => {
   await submitGuard(async () => {
     await assignRoleToUsers({
       roleId: role.roleId,
-      userIds: selectedUsers.value.map(u => u.userId),
+      userIds: selectedUsers.value.map((u) => u.userId),
     })
     ElMessage.success(t('message.operationSuccess'))
     visible.value = false
@@ -260,11 +272,14 @@ const handleClose = () => {
   tableRef.value?.clearSelection()
 }
 
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    initData()
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      initData()
+    }
   }
-})
+)
 </script>
 
 <style scoped lang="scss">

@@ -1,16 +1,16 @@
 <template>
   <el-dialog
-    :model-value="modelValue"
     :title="dialogTitle"
+    v-model="visible"
     width="600px"
     :close-on-click-modal="false"
-    @update:model-value="emit('update:modelValue', $event)"
-    @close="resetForm"
+    :lock-scroll="false"
+    @closed="handleClose"
   >
-    <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="menu-form">
       <el-form-item :label="t('menu.parentMenu')" prop="parentId">
         <el-tree-select
-          v-model="formData.parentId"
+          v-model="form.parentId"
           :data="menuTreeData"
           :props="{ label: 'menuName', value: 'menuId', children: 'children' }"
           :placeholder="t('common.pleaseSelect')"
@@ -22,259 +22,370 @@
       </el-form-item>
 
       <el-form-item :label="t('menu.menuName')" prop="menuName">
-        <el-input v-model="formData.menuName" :placeholder="t('common.pleaseInput') + t('menu.menuName')" />
+        <el-input v-model.trim="form.menuName" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
+
       <el-form-item :label="t('menu.menuEnName')" prop="menuEnName">
-        <el-input v-model="formData.menuEnName" :placeholder="t('common.pleaseInput') + t('menu.menuEnName')" />
+        <el-input v-model.trim="form.menuEnName" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
+
       <el-form-item :label="t('menu.type')" prop="type">
-        <el-radio-group v-model="formData.type">
-          <el-radio :label="1">{{ t('menu.typeDirectory') }}</el-radio>
-          <el-radio :label="2">{{ t('menu.typeMenu') }}</el-radio>
-          <el-radio :label="3">{{ t('menu.typeButton') }}</el-radio>
+        <el-radio-group v-model="form.type">
+          <el-radio :value="1">{{ t('menu.typeDirectory') }}</el-radio>
+          <el-radio :value="2">{{ t('menu.typeMenu') }}</el-radio>
+          <el-radio :value="3">{{ t('menu.typeButton') }}</el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item v-if="formData.type !== 3" :label="t('menu.icon')" prop="icon">
+
+      <el-form-item v-if="form.type !== 3" :label="t('menu.icon')" prop="icon">
         <div class="icon-input-wrapper">
           <IconSelector
-            v-model="formData.icon"
-            :placeholder="t('iconSelector.placeholder')"
-            :groups="menuIconGroups"
-            :default-tab="'navigation'"
-            :popover-width="520"
+            v-model="form.icon"
+            :placeholder="t('menu.selectIcon')"
             class="icon-selector"
           />
           <el-button
-            v-if="formData.icon"
+            v-if="form.icon"
             type="danger"
             link
             size="small"
             class="clear-btn"
-            @click="formData.icon = ''"
+            @click="form.icon = ''"
           >
             <el-icon><Close /></el-icon>
           </el-button>
         </div>
       </el-form-item>
-      <el-form-item v-if="formData.type !== 3" :label="t('menu.url')" prop="url">
-        <el-input v-model="formData.url" placeholder="/system/user" />
+
+      <el-form-item v-if="form.type !== 3" :label="t('menu.url')" prop="url">
+        <el-input v-model.trim="form.url" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
-      <el-form-item v-if="formData.type === 2" :label="t('menu.componentPath')" prop="componentPath">
-        <el-input v-model="formData.componentPath" placeholder="system/user/index" />
+
+      <el-form-item v-if="form.type === 2" :label="t('menu.componentPath')" prop="componentPath">
+        <el-input v-model.trim="form.componentPath" :placeholder="t('common.pleaseInput')" />
       </el-form-item>
-      <el-form-item v-if="formData.type === 3" :label="t('menu.permIdentity')" prop="permIdentity">
-        <el-input v-model="formData.permIdentity" placeholder="system:user:add" />
-      </el-form-item>
+
       <el-form-item :label="t('menu.orderNumber')" prop="orderNumber">
-        <el-input-number v-model="formData.orderNumber" :min="0" />
+        <el-input-number v-model="form.orderNumber" :min="0" :max="999" />
       </el-form-item>
-      <el-form-item :label="t('common.status')">
-        <el-radio-group v-model="formData.status">
-          <el-radio :label="0">{{ t('menu.statusShow') }}</el-radio>
-          <el-radio :label="1">{{ t('menu.statusHide') }}</el-radio>
+
+      <el-form-item :label="t('common.status')" prop="status">
+        <el-radio-group v-model="form.status">
+          <el-radio :value="0">{{ t('menu.statusShow') }}</el-radio>
+          <el-radio :value="1">{{ t('menu.statusHide') }}</el-radio>
         </el-radio-group>
       </el-form-item>
+
+      <!-- 关联权限选择器（仅页面和按钮显示） -->
+      <el-form-item v-if="form.type === 2 || form.type === 3" :label="t('menu.relatedPermission')">
+        <div class="permission-select-wrapper">
+          <el-input
+            :model-value="selectedPermDisplay"
+            :placeholder="t('common.pleaseSelect')"
+            readonly
+            style="flex: 1"
+          />
+          <el-button type="primary" @click="openPermDialog">
+            {{ t('common.select') }}
+          </el-button>
+          <el-button v-if="form.permId" type="danger" link @click="clearPermSelection">
+            {{ t('common.clear') }}
+          </el-button>
+        </div>
+      </el-form-item>
     </el-form>
+
     <template #footer>
-      <el-button @click="emit('update:modelValue', false)">{{ t('common.cancel') }}</el-button>
-      <el-button type="primary" :loading="submitting" @click="handleSubmit">{{ t('common.confirm') }}</el-button>
+      <el-button @click="visible = false">{{ t('common.cancel') }}</el-button>
+      <el-button type="primary" :loading="isSubmitting" @click="handleSubmit">
+        {{ t('common.confirm') }}
+      </el-button>
     </template>
+
+    <!-- 权限选择弹窗 -->
+    <PermissionSelectDialog
+      v-model="permDialogVisible"
+      :selected-id="form.permId"
+      @confirm="handlePermConfirm"
+    />
   </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Close } from '@element-plus/icons-vue'
-import { getMenuList, addMenu, updateMenu, type MenuInfo } from '@/api/menu'
-import { IconSelector, createMenuIconGroups, type IconGroup } from '@blink/components'
+import type { FormInstance, FormRules } from 'element-plus'
+import {
+  addMenu,
+  updateMenu,
+  getMenuList,
+  checkMenuRoleAssignment,
+  type MenuInfo,
+  type PermissionInfo,
+} from '@/api/menu'
+import { IconSelector } from '@blink/components'
+import PermissionSelectDialog from './PermissionSelectDialog.vue'
+import { useSubmitGuard } from '@/composables/useSubmitGuard'
 
-const props = defineProps<{
+interface Props {
   modelValue: boolean
   type: 'add' | 'edit'
   data: MenuInfo | null
   parentMenu: MenuInfo | null
-}>()
+}
 
-const emit = defineEmits<{
-  'update:modelValue': [value: boolean]
-  'success': [parentId?: number]
-}>()
+const props = defineProps<Props>()
+const emit = defineEmits(['update:modelValue', 'success'])
 
 const { t } = useI18n()
 
-const formRef = ref()
-const submitting = ref(false)
-const menuTreeData = ref<MenuInfo[]>([])
+const visible = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val),
+})
 
-const formData = reactive({
+const dialogTitle = computed(() => (props.type === 'add' ? t('menu.addMenu') : t('menu.editMenu')))
+
+const formRef = ref<FormInstance>()
+const { isSubmitting, submitGuard } = useSubmitGuard()
+const menuTreeData = ref<MenuInfo[]>([])
+const permDialogVisible = ref(false)
+const selectedPerm = ref<PermissionInfo | null>(null)
+
+const form = reactive({
   menuId: undefined as number | undefined,
   menuName: '',
   menuEnName: '',
-  parentId: 0,
-  type: 2,
+  type: 1,
   icon: '',
   url: '',
   componentPath: '',
-  permIdentity: '',
   orderNumber: 0,
-  status: 0
+  status: 0,
+  parentId: undefined as number | undefined,
+  permId: undefined as number | undefined,
 })
 
-const dialogTitle = computed(() =>
-  props.type === 'add' ? t('menu.addChild') : t('common.edit')
-)
+// 已选权限显示文本
+const selectedPermDisplay = computed(() => {
+  if (selectedPerm.value) {
+    return `${selectedPerm.value.acIdentity} - ${selectedPerm.value.acName}`
+  }
+  return ''
+})
 
-// 使用预设的菜单图标分组
-const menuIconGroups = createMenuIconGroups()
-
-const formRules = {
-  menuName: [{ required: true, message: t('common.pleaseInput') + t('menu.menuName'), trigger: 'blur' }],
-  type: [{ required: true, message: t('common.pleaseSelect') + t('menu.type'), trigger: 'change' }]
+const rules: FormRules = {
+  menuName: [
+    { required: true, message: t('common.pleaseInput') + t('menu.menuName'), trigger: 'blur' },
+  ],
+  type: [{ required: true, message: t('common.pleaseSelect') + t('menu.type'), trigger: 'change' }],
+  url: [
+    {
+      validator: (rule, value, callback) => {
+        // 目录和页面菜单URL必填
+        if ((form.type === 1 || form.type === 2) && !value?.trim()) {
+          callback(new Error(t('common.pleaseInput') + t('menu.url')))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
+  componentPath: [
+    {
+      validator: (rule, value, callback) => {
+        // 页面菜单组件路径必填
+        if (form.type === 2 && !value?.trim()) {
+          callback(new Error(t('common.pleaseInput') + t('menu.componentPath')))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur',
+    },
+  ],
 }
 
-// 获取菜单树数据
 const fetchMenuTree = async () => {
-  try {
-    const res = await getMenuList()
-    const menuList = res?.rows || []
-    // 添加根目录选项
-    menuTreeData.value = [{ menuId: 0, menuName: t('menu.rootMenu'), children: menuList }] as Partial<MenuInfo>[] as MenuInfo[]
-  } catch (error) {
-    console.error('Fetch menu tree error:', error)
-    menuTreeData.value = [{ menuId: 0, menuName: t('menu.rootMenu'), children: [] }] as Partial<MenuInfo>[] as MenuInfo[]
+  const res = await getMenuList()
+  // API 返回的是 { rows: [...] } 结构
+  const menuList = res?.rows || []
+  menuTreeData.value = [
+    { menuId: 0, menuName: t('menu.rootMenu'), children: menuList },
+  ] as MenuInfo[]
+}
+
+// 打开权限选择弹窗
+const openPermDialog = () => {
+  permDialogVisible.value = true
+}
+
+// 权限选择确认
+const handlePermConfirm = (perm: PermissionInfo | null) => {
+  if (perm) {
+    selectedPerm.value = perm
+    form.permId = perm.acId
   }
 }
 
-const findMenuById = (menus: MenuInfo[], menuId: number): MenuInfo | null => {
-  for (const menu of menus) {
-    if (menu.menuId === menuId) return menu
-    if (menu.children) {
-      const found = findMenuById(menu.children, menuId)
-      if (found) return found
-    }
-  }
-  return null
-}
-
-const loadMenuDetail = async () => {
-  if (props.data?.menuId) {
-    try {
-      const res = await getMenuList()
-      const menu = findMenuById(res.rows || [], props.data.menuId)
-      if (menu) {
-        formData.menuId = menu.menuId
-        formData.menuName = menu.menuName
-        formData.menuEnName = menu.menuEnName || ''
-        formData.parentId = menu.parentId || 0
-        formData.type = menu.type
-        formData.url = menu.url || ''
-        formData.componentPath = menu.componentPath || ''
-        formData.permIdentity = menu.permIdentity || ''
-        formData.icon = menu.icon || ''
-        formData.orderNumber = menu.orderNumber || 0
-        formData.status = menu.status
-      }
-    } catch (error) {
-      console.error('Load menu detail error:', error)
-    }
-  }
-}
-
-const resetForm = () => {
-  formRef.value?.resetFields()
-  formData.menuId = undefined
-  formData.menuName = ''
-  formData.menuEnName = ''
-  formData.parentId = 0
-  formData.type = 2
-  formData.url = ''
-  formData.componentPath = ''
-  formData.permIdentity = ''
-  formData.icon = ''
-  formData.orderNumber = 0
-  formData.status = 0
+// 清除权限选择
+const clearPermSelection = () => {
+  selectedPerm.value = null
+  form.permId = undefined
 }
 
 const handleSubmit = async () => {
-  try {
-    await formRef.value.validate()
-    submitting.value = true
+  if (!formRef.value) return
 
-    // 记录父菜单ID，用于刷新后展开
-    const savedParentId = formData.parentId || 0
+  await formRef.value.validate(async (valid) => {
+    if (!valid) return
 
-    if (props.type === 'add') {
-      await addMenu({
-        menuName: formData.menuName,
-        menuEnName: formData.menuEnName || undefined,
-        parentId: formData.parentId || 0,
-        type: formData.type,
-        url: formData.url || undefined,
-        componentPath: formData.componentPath || undefined,
-        permIdentity: formData.permIdentity || undefined,
-        icon: formData.icon || undefined,
-        orderNumber: formData.orderNumber,
-        status: formData.status
-      })
-    } else if (formData.menuId) {
-      await updateMenu({
-        menuId: formData.menuId,
-        menuName: formData.menuName,
-        menuEnName: formData.menuEnName || undefined,
-        parentId: formData.parentId,
-        type: formData.type,
-        url: formData.url || undefined,
-        componentPath: formData.componentPath || undefined,
-        permIdentity: formData.permIdentity || undefined,
-        icon: formData.icon || undefined,
-        orderNumber: formData.orderNumber,
-        status: formData.status
-      })
-    }
+    await submitGuard(async () => {
+      if (props.type === 'add') {
+        await addMenu({
+          menuName: form.menuName,
+          menuEnName: form.menuEnName || undefined,
+          type: form.type,
+          icon: form.icon || undefined,
+          url: form.url || undefined,
+          componentPath: form.componentPath || undefined,
+          orderNumber: form.orderNumber,
+          status: form.status,
+          parentId: form.parentId || 0,
+          permId: form.type === 2 || form.type === 3 ? form.permId : undefined,
+        })
+        ElMessage.success(t('message.success'))
+      } else {
+        // 编辑模式：检查权限是否变更
+        const effectivePermId = form.type === 2 || form.type === 3 ? form.permId : undefined
+        const originalPermId = props.data?.permId
 
-    ElMessage.success(t('common.success'))
-    emit('update:modelValue', false)
-    emit('success', savedParentId)
-  } catch (error) {
-    console.error('Submit error:', error)
-  } finally {
-    submitting.value = false
-  }
+        // 如果权限发生变更，先检查菜单是否已分配给角色
+        if (effectivePermId !== originalPermId) {
+          const checkResult = await checkMenuRoleAssignment({
+            menuId: form.menuId!,
+            newPermId: effectivePermId,
+          })
+
+          if (checkResult.assigned && checkResult.roles && checkResult.roles.length > 0) {
+            const roleNames = checkResult.roles.map((r) => r.roleName).join('、')
+            const confirmMsg = t('menu.permChangeConfirmWithRoles', { roles: roleNames })
+
+            try {
+              await ElMessageBox.confirm(confirmMsg, t('message.tips'), {
+                type: 'warning',
+                confirmButtonText: t('common.confirm'),
+                cancelButtonText: t('common.cancel'),
+              })
+            } catch {
+              // 用户取消操作
+              return
+            }
+          }
+        }
+
+        await updateMenu({
+          menuId: form.menuId!,
+          menuName: form.menuName,
+          menuEnName: form.menuEnName || undefined,
+          type: form.type,
+          icon: form.icon || undefined,
+          url: form.url || undefined,
+          componentPath: form.componentPath || undefined,
+          orderNumber: form.orderNumber,
+          status: form.status,
+          parentId: form.parentId,
+          permId: effectivePermId,
+        })
+        ElMessage.success(t('message.success'))
+      }
+      visible.value = false
+      emit('success')
+    })
+  })
 }
 
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    fetchMenuTree()
-    if (props.type === 'edit' && props.data) {
-      loadMenuDetail()
-    } else if (props.type === 'add') {
-      resetForm()
-      // 如果有父菜单，设置 parentId
-      if (props.parentMenu) {
-        formData.parentId = props.parentMenu.menuId
-        // 根据父菜单类型设置默认类型
-        formData.type = props.parentMenu.type === 1 ? 2 : 3
+const handleClose = () => {
+  formRef.value?.resetFields()
+  form.menuId = undefined
+  form.menuName = ''
+  form.menuEnName = ''
+  form.type = 1
+  form.icon = ''
+  form.url = ''
+  form.componentPath = ''
+  form.orderNumber = 0
+  form.status = 0
+  form.parentId = undefined
+  form.permId = undefined
+  selectedPerm.value = null
+}
+
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      fetchMenuTree()
+      if (props.type === 'edit' && props.data) {
+        form.menuId = props.data.menuId
+        form.menuName = props.data.menuName
+        form.menuEnName = props.data.menuEnName || ''
+        form.type = props.data.type
+        form.icon = props.data.icon || ''
+        form.url = props.data.url || ''
+        form.componentPath = props.data.componentPath || ''
+        form.orderNumber = props.data.orderNumber || 0
+        form.status = props.data.status || 0
+        form.parentId = props.data.parentId || undefined
+        form.permId = props.data.permId || undefined
+        // 回显关联权限信息
+        if (props.data.permId && props.data.permIdentity && props.data.permName) {
+          selectedPerm.value = {
+            acId: props.data.permId,
+            acIdentity: props.data.permIdentity,
+            acName: props.data.permName,
+            acType: 1,
+            url: '',
+          }
+        } else {
+          selectedPerm.value = null
+        }
+      } else if (props.type === 'add' && props.parentMenu) {
+        form.parentId = props.parentMenu.menuId
+        form.type = props.parentMenu.type === 1 ? 2 : 3
       }
     }
   }
-})
+)
 </script>
 
 <style scoped lang="scss">
-.icon-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
+.menu-form {
+  padding: 20px 20px 0;
 
-  .icon-selector {
-    flex: 1;
+  .icon-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+
+    .icon-selector {
+      flex: 1;
+    }
+
+    .clear-btn {
+      flex-shrink: 0;
+    }
   }
 
-  .clear-btn {
-    flex-shrink: 0;
+  .permission-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
   }
 }
 </style>

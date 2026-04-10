@@ -14,7 +14,6 @@ export interface DictTypeInfo {
   updateBy: string
   updateTime: string
   remark: string
-  locale: string
 }
 
 /**
@@ -47,7 +46,6 @@ export interface QueryDictTypeParams {
   dictName?: string
   dictType?: string
   status?: number
-  locale?: string
 }
 
 /**
@@ -70,7 +68,6 @@ export interface AddDictTypeParams {
   dictType: string
   status: number
   remark?: string
-  locale?: string
 }
 
 /**
@@ -82,7 +79,6 @@ export interface UpdateDictTypeParams {
   dictType?: string
   status?: number
   remark?: string
-  locale?: string
 }
 
 /**
@@ -164,7 +160,9 @@ export interface QueryDictDataRsp {
  * @returns 字典类型列表
  */
 export const getDictTypeList = (params?: QueryDictTypeParams): Promise<QueryDictTypeRsp> => {
-  return request.post('/sysDictType/getSysDictTypeList', { body: params || {} }) as Promise<QueryDictTypeRsp>
+  return request.post('/sysDictType/getSysDictTypeList', {
+    body: params || {},
+  }) as Promise<QueryDictTypeRsp>
 }
 
 /**
@@ -199,7 +197,9 @@ export const deleteDictType = (params: DeleteDictTypeParams): Promise<void> => {
  * @returns 字典数据列表
  */
 export const getDictDataList = (params?: QueryDictDataParams): Promise<QueryDictDataRsp> => {
-  return request.post('/sysDictData/getSysDictDataList', { body: params || {} }) as Promise<QueryDictDataRsp>
+  return request.post('/sysDictData/getSysDictDataList', {
+    body: params || {},
+  }) as Promise<QueryDictDataRsp>
 }
 
 /**
@@ -208,7 +208,9 @@ export const getDictDataList = (params?: QueryDictDataParams): Promise<QueryDict
  * @returns 字典数据列表
  */
 export const getDictDataByType = (dictType: string): Promise<DictDataInfo[]> => {
-  return request.post('/sysDictData/getDictDataByType', { body: { dictType } }) as Promise<DictDataInfo[]>
+  return request.post('/sysDictData/getDictDataByType', { body: { dictType } }) as Promise<
+    DictDataInfo[]
+  >
 }
 
 /**
@@ -267,5 +269,7 @@ export interface DictDataMapRsp {
  * @returns 字典数据Map
  */
 export const getDictDataByTypes = (params: GetDictDataByTypesParams): Promise<DictDataMapRsp> => {
-  return request.post('/sysDictData/getDictDataByTypes', { body: params }) as Promise<DictDataMapRsp>
+  return request.post('/sysDictData/getDictDataByTypes', {
+    body: params,
+  }) as Promise<DictDataMapRsp>
 }

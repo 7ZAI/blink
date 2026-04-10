@@ -142,3 +142,50 @@ export interface ResetPasswordParams {
 export const resetPassword = (params: ResetPasswordParams): Promise<void> => {
   return request.post('/sysUser/resetPassword', { body: params }) as Promise<void>
 }
+
+// 用户权限信息
+export interface UserPermissionRsp {
+  roles: RoleInfo[]
+  menus: MenuInfo[]
+  permissions: PermissionInfo[]
+}
+
+export interface RoleInfo {
+  roleId: number
+  roleName: string
+  roleEnName: string
+  roleCode: string
+  status: number
+}
+
+export interface MenuInfo {
+  menuId: number
+  menuName: string
+  menuEnName: string
+  type: number
+  icon: string
+  url: string
+  orderNumber: number
+  status: number
+  parentId: number
+  menuLevel: number
+  componentPath: string
+  hasChildren: boolean
+  children?: MenuInfo[]
+}
+
+export interface PermissionInfo {
+  acId: number
+  acName: string
+  acEnName: string
+  acIdentity: string
+  acType: number
+  icon: string
+  url: string
+}
+
+export const getUserPermissions = (userId: number): Promise<UserPermissionRsp> => {
+  return request.post('/sysUser/getUserPermissions', {
+    body: { userId },
+  }) as Promise<UserPermissionRsp>
+}

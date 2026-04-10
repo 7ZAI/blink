@@ -12,8 +12,8 @@ const request: AxiosInstance = axios.create({
   baseURL: '/gateway-admin',
   timeout: 30000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 })
 
 // Request interceptor
@@ -110,6 +110,10 @@ export default request
  * @param data Request body
  * @param config Axios config
  */
-export const createRequest = <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> => {
+export const createRequest = <T = any>(
+  url: string,
+  data?: any,
+  config?: AxiosRequestConfig
+): Promise<T> => {
   return request.post(url, { body: data }, config)
 }

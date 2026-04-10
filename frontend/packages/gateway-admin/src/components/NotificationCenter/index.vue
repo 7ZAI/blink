@@ -8,7 +8,13 @@
       <el-dropdown-menu class="notification-dropdown">
         <div class="notification-header">
           <span class="title">{{ t('common.notifications') }}</span>
-          <el-button v-if="notifications.length > 0" type="primary" link size="small" @click="markAllAsRead">
+          <el-button
+            v-if="notifications.length > 0"
+            type="primary"
+            link
+            size="small"
+            @click="markAllAsRead"
+          >
             {{ t('common.markAllRead') }}
           </el-button>
         </div>
@@ -47,7 +53,13 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Bell, InfoFilled, WarningFilled, CircleCloseFilled, CircleCheckFilled } from '@element-plus/icons-vue'
+import {
+  Bell,
+  InfoFilled,
+  WarningFilled,
+  CircleCloseFilled,
+  CircleCheckFilled,
+} from '@element-plus/icons-vue'
 import { useNotificationStore, type NotificationStoreItem } from '@/stores/notification'
 
 defineOptions({ name: 'NotificationCenter' })
@@ -79,7 +91,7 @@ const getIcon = (severity: NotificationStoreItem['severity']) => {
     info: InfoFilled,
     warning: WarningFilled,
     error: CircleCloseFilled,
-    success: CircleCheckFilled
+    success: CircleCheckFilled,
   }
   return icons[severity.toLowerCase()] || InfoFilled
 }
@@ -144,7 +156,8 @@ const formatTime = (time: string) => {
 }
 
 @keyframes badge-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
   }
   50% {

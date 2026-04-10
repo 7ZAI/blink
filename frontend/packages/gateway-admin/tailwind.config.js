@@ -2,10 +2,10 @@
 export default {
   // 扫描的文件路径
   content: [
-    "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
+    './index.html',
+    './src/**/*.{vue,js,ts,jsx,tsx}',
     // 扫描 @blink/components 组件库 - 使用精确路径避免匹配过多文件
-    "../components/src/**/*.{vue,js,ts}",
+    '../components/src/**/*.{vue,js,ts}',
   ],
   // 使用 class 模式控制暗黑模式
   darkMode: 'class',
@@ -63,38 +63,38 @@ export default {
       },
       // 字体大小配置
       fontSize: {
-        'xs': 'var(--font-size-small)',
-        'base': 'var(--font-size-base)',
-        'lg': 'var(--font-size-large)',
-        'xl': 'var(--font-size-extra-large)',
+        xs: 'var(--font-size-small)',
+        base: 'var(--font-size-base)',
+        lg: 'var(--font-size-large)',
+        xl: 'var(--font-size-extra-large)',
         '2xl': 'var(--font-size-title)',
       },
       // 间距配置
       spacing: {
-        '18': '4.5rem',
-        '22': '5.5rem',
+        18: '4.5rem',
+        22: '5.5rem',
       },
       // 圆角配置
       borderRadius: {
-        'sm': '4px',
-        'DEFAULT': '6px',
-        'md': '8px',
-        'lg': '12px',
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '8px',
+        lg: '12px',
       },
       // 阴影配置
       boxShadow: {
-        'card': 'var(--card-shadow)',
-        'header': 'var(--header-shadow)',
+        card: 'var(--card-shadow)',
+        header: 'var(--header-shadow)',
       },
       // 过渡动画
       transitionDuration: {
-        'DEFAULT': '300ms',
+        DEFAULT: '300ms',
       },
       // z-index 配置
       zIndex: {
-        '60': '60',
-        '70': '70',
-        '80': '80',
+        60: '60',
+        70: '70',
+        80: '80',
       },
     },
   },

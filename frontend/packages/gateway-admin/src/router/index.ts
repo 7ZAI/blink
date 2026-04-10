@@ -151,8 +151,12 @@ const showRouteLoadingBar = () => {
   }
 
   // 模拟进度
-  setTimeout(() => { bar.style.width = '30%' }, 100)
-  setTimeout(() => { bar.style.width = '60%' }, 300)
+  setTimeout(() => {
+    bar.style.width = '30%'
+  }, 100)
+  setTimeout(() => {
+    bar.style.width = '60%'
+  }, 300)
 
   return bar
 }
@@ -161,7 +165,7 @@ const showRouteLoadingBar = () => {
 const hideRouteLoadingBar = () => {
   const bar = document.querySelector('.route-loading-bar')
   if (bar) {
-    (bar as HTMLDivElement).style.width = '100%'
+    ;(bar as HTMLDivElement).style.width = '100%'
     setTimeout(() => {
       bar.classList.add('complete')
       setTimeout(() => bar.remove(), 300)
@@ -170,7 +174,9 @@ const hideRouteLoadingBar = () => {
 }
 
 // 获取加载文字（根据当前语言设置）
-const getLoadingText = (key: 'loadingData' | 'initializing' | 'pleaseWait' = 'loadingData'): string => {
+const getLoadingText = (
+  key: 'loadingData' | 'initializing' | 'pleaseWait' = 'loadingData'
+): string => {
   const lang = localStorage.getItem('language') || 'zh-cn'
   const texts: Record<string, Record<string, string>> = {
     'zh-cn': {
@@ -182,7 +188,7 @@ const getLoadingText = (key: 'loadingData' | 'initializing' | 'pleaseWait' = 'lo
       loadingData: 'Loading data...',
       initializing: 'Initializing...',
       pleaseWait: 'Please wait',
-    }
+    },
   }
   return texts[lang]?.[key] || texts['zh-cn'][key] || '正在加载数据...'
 }
@@ -233,7 +239,7 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'Login',
     component: () => import('@/views/login/index.vue'),
-    meta: { public: true, title: 'login.title' }
+    meta: { public: true, title: 'login.title' },
   },
   {
     path: '/',
@@ -244,37 +250,37 @@ const routes: RouteRecordRaw[] = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('@/views/dashboard/index.vue'),
-        meta: { title: 'dashboard.title' }
+        meta: { title: 'dashboard.title' },
       },
       {
         path: 'channel',
         name: 'Channel',
         component: () => import('@/views/channel/index.vue'),
-        meta: { title: 'channel.title' }
+        meta: { title: 'channel.title' },
       },
       {
         path: 'route',
         name: 'Route',
         component: () => import('@/views/route/index.vue'),
-        meta: { title: 'route.title' }
+        meta: { title: 'route.title' },
       },
       {
         path: 'config',
         name: 'Config',
         component: () => import('@/views/config/index.vue'),
-        meta: { title: 'config.title' }
+        meta: { title: 'config.title' },
       },
       {
         path: 'monitor',
         name: 'Monitor',
         component: () => import('@/views/monitor/index.vue'),
-        meta: { title: 'monitor.title' }
+        meta: { title: 'monitor.title' },
       },
       {
         path: 'dataSync',
         name: 'DataSync',
         component: () => import('@/views/dataSync/index.vue'),
-        meta: { title: 'dataSync.title' }
+        meta: { title: 'dataSync.title' },
       },
       {
         path: 'system',
@@ -285,31 +291,61 @@ const routes: RouteRecordRaw[] = [
             path: 'user',
             name: 'SystemUser',
             component: () => import('@/views/system/user/index.vue'),
-            meta: { title: 'system.user.title' }
+            meta: { title: 'system.user.title' },
           },
           {
             path: 'role',
             name: 'SystemRole',
             component: () => import('@/views/system/role/index.vue'),
-            meta: { title: 'system.role.title' }
+            meta: { title: 'system.role.title' },
           },
           {
             path: 'menu',
             name: 'SystemMenu',
             component: () => import('@/views/system/menu/index.vue'),
-            meta: { title: 'system.menu.title' }
+            meta: { title: 'system.menu.title' },
           },
           {
             path: 'permission',
-            name: 'SystemPermission',
-            component: () => import('@/views/system/permission/index.vue'),
-            meta: { title: 'system.permission.title' }
+            name: 'SystemPermissionDir',
+            component: () => import('@/views/system/permission/layout.vue'),
+            meta: { title: 'system.permission.title' },
+            redirect: '/system/permission/api-permission',
+            children: [
+              {
+                path: 'api-permission',
+                name: 'SystemApiPermission',
+                component: () => import('@/views/system/permission/index.vue'),
+                meta: { title: 'system.permission.apiPermission', acType: 1 },
+              },
+              {
+                path: 'data-permission',
+                name: 'SystemDataPermissionDir',
+                component: () => import('@/views/system/data-permission/layout.vue'),
+                meta: { title: 'system.permission.dataPermission' },
+                redirect: '/system/permission/data-permission/list',
+                children: [
+                  {
+                    path: 'list',
+                    name: 'SystemDataPermissionList',
+                    component: () => import('@/views/system/permission/index.vue'),
+                    meta: { title: 'system.permission.dataPermissionList', acType: 2 },
+                  },
+                  {
+                    path: 'rule',
+                    name: 'SystemDataFilterRule',
+                    component: () => import('@/views/system/data-filter/index.vue'),
+                    meta: { title: 'system.permission.dataFilterRule' },
+                  },
+                ],
+              },
+            ],
           },
           {
             path: 'operation-log',
             name: 'SystemOperationLog',
             component: () => import('@/views/system/operation-log/index.vue'),
-            meta: { title: 'system.operationLog.title' }
+            meta: { title: 'system.operationLog.title' },
           },
           {
             path: 'dict',
@@ -320,65 +356,59 @@ const routes: RouteRecordRaw[] = [
                 path: 'type',
                 name: 'SystemDictType',
                 component: () => import('@/views/system/dict/type/index.vue'),
-                meta: { title: 'system.dict.typeTitle' }
+                meta: { title: 'system.dict.typeTitle' },
               },
               {
                 path: 'data',
                 name: 'SystemDictData',
                 component: () => import('@/views/system/dict/data/index.vue'),
-                meta: { title: 'system.dict.dataTitle' }
-              }
-            ]
-          },
-          {
-            path: 'data-filter',
-            name: 'SystemDataFilter',
-            component: () => import('@/views/system/data-filter/index.vue'),
-            meta: { title: 'dataScope.title' }
+                meta: { title: 'system.dict.dataTitle' },
+              },
+            ],
           },
           {
             path: 'config',
             name: 'SystemConfig',
             component: () => import('@/views/system/config/index.vue'),
-            meta: { title: 'systemConfig.title' }
-          }
-        ]
+            meta: { title: 'systemConfig.title' },
+          },
+        ],
       },
       {
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/settings/index.vue'),
-        meta: { title: 'settings.title' }
-      }
-    ]
+        meta: { title: 'settings.title' },
+      },
+    ],
   },
   {
     path: '/404',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),
-    meta: { public: true }
+    meta: { public: true },
   },
   {
     path: '/500',
     name: 'ServerError',
     component: () => import('@/views/error/500.vue'),
-    meta: { public: true }
+    meta: { public: true },
   },
   {
     path: '/redirect/:path(.*)',
     name: 'Redirect',
     component: () => import('@/views/error/redirect.vue'),
-    meta: { hidden: true }
+    meta: { hidden: true },
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/404'
-  }
+    redirect: '/404',
+  },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
 })
 
 // 路由守卫 - 认证检查与菜单加载
@@ -404,7 +434,13 @@ router.beforeEach(async (to, _from, next) => {
   const dictStore = useDictStore()
 
   // 常用字典类型列表
-  const commonDictTypes = ['sys_normal_status', 'sys_sex', 'sys_menu_type', 'sys_show_status', 'sys_yes_no']
+  const commonDictTypes = [
+    'sys_normal_status',
+    'sys_sex',
+    'sys_menu_type',
+    'sys_show_status',
+    'sys_yes_no',
+  ]
 
   // 只有当 userInfo 为空时才需要重新获取用户信息
   // 登录成功后 userInfo 会被设置，无需再次获取

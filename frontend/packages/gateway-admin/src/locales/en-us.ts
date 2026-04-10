@@ -12,6 +12,7 @@ export default {
     close: 'Close',
     yes: 'Yes',
     no: 'No',
+    createBy: 'Created By',
     success: 'Success',
     failed: 'Failed',
     loading: 'Loading...',
@@ -32,6 +33,8 @@ export default {
     required: ' is required',
     pleaseInput: 'Please input ',
     pleaseSelect: 'Please select ',
+    select: 'Select',
+    clear: 'Clear',
     fullscreen: 'Fullscreen',
     exitFullscreen: 'Exit Fullscreen',
     darkMode: 'Dark Mode',
@@ -63,6 +66,7 @@ export default {
     lock: 'Lock',
     unlock: 'Unlock',
     show: 'Show',
+    to: 'to',
     hide: 'Hide',
     selectAll: 'Select All',
   },
@@ -83,7 +87,7 @@ export default {
   },
   sidebar: {
     collapse: 'Collapse sidebar',
-    expand: 'Expand sidebar'
+    expand: 'Expand sidebar',
   },
   pagination: {
     total: 'Total {total} items',
@@ -129,6 +133,7 @@ export default {
     typeMenu: 'Menu',
     typeButton: 'Button',
     icon: 'Icon',
+    selectIcon: 'Select Icon',
     url: 'Route Path',
     componentPath: 'Component Path',
     permName: 'Permission Name',
@@ -139,9 +144,30 @@ export default {
     createTime: 'Create Time',
     updateTime: 'Update Time',
     deleteConfirm: 'Are you sure to delete this menu?',
-    deleteConfirmWithRoles: 'This menu is assigned to roles: {roles}. Deleting will remove menu permission from these roles. Are you sure?',
+    deleteConfirmWithRoles:
+      'This menu is assigned to roles: {roles}. Deleting will remove menu permission from these roles. Are you sure?',
     parentMenu: 'Parent Menu',
     rootMenu: 'Root',
+    relatedPermission: 'Related Permission',
+    selectPermission: 'Select Permission',
+    permChangeConfirmWithRoles:
+      'This menu is assigned to roles [{roles}]. Changing permission will update role-permission associations. Are you sure?',
+    addMenu: 'Add Menu',
+    editMenu: 'Edit Menu',
+  },
+  permission: {
+    title: 'Permission Management',
+    acName: 'Permission Name',
+    acEnName: 'Permission English Name',
+    acIdentity: 'Permission Identity',
+    acType: 'Permission Type',
+    acTypeApi: 'API Permission',
+    acTypeData: 'Data Permission',
+    typeApi: 'API Permission',
+    typeData: 'Data Permission',
+    url: 'Permission URL',
+    createTime: 'Create Time',
+    createBy: 'Created By',
   },
   dashboard: {
     title: 'Dashboard',
@@ -166,7 +192,7 @@ export default {
     clearCache: 'Clear Cache',
     recentActivity: 'Recent Activity',
     noActivity: 'No recent activity',
-    activityNote: 'Activity log feature coming soon'
+    activityNote: 'Activity log feature coming soon',
   },
   channel: {
     title: 'Channel Management',
@@ -214,8 +240,10 @@ export default {
     syncAllConfirm: 'Are you sure to sync all channels to gateway?',
     selectChannelToSync: 'Please select channels to sync',
     selectedCount: '{count} channels selected',
-    encryptionEnableConfirm: 'After enabling encryption, requests from this channel will be encrypted/decrypted. Enable encryption?',
-    encryptionDisableConfirm: 'After disabling encryption, requests from this channel will no longer be encrypted/decrypted. Disable encryption?',
+    encryptionEnableConfirm:
+      'After enabling encryption, requests from this channel will be encrypted/decrypted. Enable encryption?',
+    encryptionDisableConfirm:
+      'After disabling encryption, requests from this channel will no longer be encrypted/decrypted. Disable encryption?',
   },
   route: {
     title: 'Route Management',
@@ -380,7 +408,7 @@ export default {
     '404Desc': 'Sorry, the page you visited does not exist',
     '500Message': 'Server Error',
     '500Desc': 'Sorry, something went wrong with the server',
-    backToDashboard: 'Back to Dashboard'
+    backToDashboard: 'Back to Dashboard',
   },
   header: {
     profile: 'Profile',
@@ -405,7 +433,7 @@ export default {
     closeOthers: 'Close Others',
     closeLeft: 'Close Left',
     closeRight: 'Close Right',
-    closeAll: 'Close All'
+    closeAll: 'Close All',
   },
   system: {
     title: 'System',
@@ -451,7 +479,7 @@ export default {
       batchDeleteConfirm: 'Are you sure you want to delete {count} selected users?',
       lockConfirm: 'Are you sure you want to {action} user {name}?',
       unlockConfirm: 'Are you sure you want to unlock this user?',
-      resetPasswordConfirm: 'Are you sure you want to reset this user\'s password?',
+      resetPasswordConfirm: "Are you sure you want to reset this user's password?",
       passwordResetSuccess: 'Password has been reset to default',
       unlockSuccess: 'User has been unlocked',
       lockSuccess: 'User has been locked',
@@ -471,6 +499,9 @@ export default {
       onlySuperAdminCanAssign: 'Only super admin can assign super admin role',
       permissionList: 'Permission List',
       remark: 'Remark',
+      viewRolePermission: 'View Role Permission',
+      menus: 'Menus',
+      permissions: 'Permissions',
     },
     role: {
       title: 'Role Management',
@@ -511,6 +542,10 @@ export default {
       menuName: 'Menu Name',
       menuEnName: 'English Name',
       menuType: 'Type',
+      type: 'Type',
+      typeDirectory: 'Directory',
+      typeMenu: 'Menu',
+      typeButton: 'Button',
       menuTypeDir: 'Directory',
       menuTypeMenu: 'Menu',
       menuTypeButton: 'Button',
@@ -528,10 +563,14 @@ export default {
       deleteConfirm: 'Are you sure you want to delete this menu?',
       addRootMenu: 'Add Root Menu',
       addChildMenu: 'Add Child Menu',
-      selectParent: 'Please select parent menu'
+      selectParent: 'Please select parent menu',
     },
     permission: {
       title: 'Permission Management',
+      apiPermission: 'API Permission',
+      dataPermission: 'Data Permission',
+      dataPermissionList: 'Data Permission List',
+      dataFilterRule: 'Filter Rule',
       acName: 'Permission Name',
       acEnName: 'English Name',
       acIdentity: 'Permission Identity',
@@ -544,7 +583,7 @@ export default {
       typeButton: 'Button Permission',
       url: 'Permission URL',
       dataFilterId: 'Data Filter Rule',
-      dataFilterRule: 'Select Data Filter Rule',
+      selectDataFilterRule: 'Select Data Filter Rule',
       createTime: 'Create Time',
       createBy: 'Created By',
       addPermission: 'Add Permission',
@@ -713,34 +752,107 @@ export default {
     editDictData: 'Edit Dict Data',
     deleteTypeConfirm: 'Are you sure to delete this dict type?',
     deleteDataConfirm: 'Are you sure to delete this dict data?',
-    dictTypeFormat: 'Dict type can only contain lowercase letters, numbers and underscores, and must start with a letter',
+    dictTypeFormat:
+      'Dict type can only contain lowercase letters, numbers and underscores, and must start with a letter',
     dataItems: 'data items',
   },
   dataScope: {
-    title: 'Data Filter Rules',
+    // Page title
+    title: 'Filter Rules',
+    list: 'Filter Rules List',
+    addTitle: 'Add Filter Rule',
+    editTitle: 'Edit Filter Rule',
+
+    // Basic fields
     filterName: 'Rule Name',
     filterEnName: 'Rule English Name',
-    entityClass: 'Entity Class',
+    entityClass: 'Filter Object',
     tableName: 'Table Name',
     ruleType: 'Rule Type',
     ruleConfig: 'Rule Config',
-    ruleConfigPlaceholder: 'Please enter rule config JSON',
     status: 'Status',
     remark: 'Remark',
+    basicInfo: 'Basic Info',
+    refreshCache: 'Refresh Cache',
+    refreshCacheSuccess: 'Cache refreshed successfully',
+
+    // Rule types
     fieldFilter: 'Field Filter',
-    creatorFilter: 'Creator Filter',
+    creatorFilter: 'User Filter',
     dateRangeFilter: 'Date Range Filter',
     customSql: 'Custom SQL',
-    relationFilter: 'Relation Filter',
-    addTitle: 'Add Data Filter Rule',
-    editTitle: 'Edit Data Filter Rule',
-    detailTitle: 'Data Filter Rule Detail',
-    deleteConfirm: 'Are you sure to delete this data filter rule?',
-    nameRequired: 'Rule name is required',
-    entityRequired: 'Please select entity class',
+
+    // Field filter config
+    excludeMode: 'Exclude Mode',
+    includeMode: 'Include Mode',
+    availableFields: 'Available Fields',
+    selectedFields: 'Selected Fields',
+    noFieldsSelected: 'Please select fields',
+    matchMode: 'Match Mode',
+
+    // Creator filter config
+    matchField: 'Match Field',
+    matchType: 'Match Type',
+    currentUser: 'Current User',
+    specifiedUser: 'Specified User',
+    roleUser: 'Users with Specified Role',
+    selectUser: 'Select User',
+    selectRole: 'Select Role',
+
+    // Date range config
+    rangeType: 'Range Type',
+    relativeTime: 'Relative Time',
+    absoluteTime: 'Absolute Time',
+    timeValue: 'Time Value',
+    timeUnit: 'Unit',
+    day: 'Day',
+    week: 'Week',
+    month: 'Month',
+    year: 'Year',
+    startTime: 'Start Time',
+    endTime: 'End Time',
+    noTimeField: 'Filter object does not support date range filtering',
+    noUserIdField: 'Filter object does not support user filtering',
+
+    // Custom SQL config
+    sqlFragment: 'SQL Fragment',
+    securityWarning:
+      'SQL fragment will be directly concatenated to WHERE clause, please ensure security',
+    commonTemplates: 'Common Templates',
+    last7Days: 'Last 7 Days',
+    thisMonth: 'This Month',
+    statusEnabled: 'Status Enabled',
+
+    // Operations
+    deleteConfirm: 'Are you sure to delete this filter rule?',
+
+    // Validation
+    nameRequired: 'Please enter rule name',
+    nameMaxLength: 'Max {max} characters',
+    entityRequired: 'Please select filter object',
     ruleTypeRequired: 'Please select rule type',
-    ruleConfigRequired: 'Rule config is required',
+    ruleConfigRequired: 'Please configure rule',
     loadDetailFailed: 'Failed to load detail',
+
+    // Rule type enum values
+    FIELD_FILTER: 'Field Filter',
+    CREATOR_FILTER: 'User Filter',
+    DATE_RANGE_FILTER: 'Date Range Filter',
+    CUSTOM_SQL: 'Custom SQL',
+    RELATION_FILTER: 'Relation Filter',
+
+    // Relation filter config
+    relationFilter: 'Relation Filter',
+    relationName: 'Relation Name',
+    noRelationSupport: 'This filter object does not support relation filtering',
+    selectMatchValues: 'Select Match Values',
+    selectedUsers: 'Selected Users',
+
+    // Match types
+    MATCH_CURRENT_USER: 'Current User',
+    MATCH_CURRENT_ROLE: 'Current User Roles',
+    MATCH_USER_LIST: 'Specified Users',
+    MATCH_ROLE_LIST: 'Users with Specified Role',
   },
   systemConfig: {
     title: 'System Config',

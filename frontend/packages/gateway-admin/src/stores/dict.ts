@@ -25,7 +25,7 @@ export const useDictStore = defineStore('dict', () => {
    */
   const loadDictData = async (dictTypes: string[]) => {
     // 过滤出未加载的类型
-    const typesToLoad = dictTypes.filter(type => !loadedTypes.value.has(type))
+    const typesToLoad = dictTypes.filter((type) => !loadedTypes.value.has(type))
 
     if (typesToLoad.length === 0) {
       return
@@ -40,7 +40,7 @@ export const useDictStore = defineStore('dict', () => {
         Object.assign(dictDataMap.value, response.dictDataMap)
 
         // 标记为已加载
-        typesToLoad.forEach(type => loadedTypes.value.add(type))
+        typesToLoad.forEach((type) => loadedTypes.value.add(type))
       }
     } catch (error) {
       console.error('[DictStore] 加载字典数据失败:', error)
@@ -68,7 +68,7 @@ export const useDictStore = defineStore('dict', () => {
     const items = dictDataMap.value[dictType]
     if (!items) return String(value)
 
-    const item = items.find(item => item.dictValue === String(value))
+    const item = items.find((item) => item.dictValue === String(value))
     return item?.dictLabel || String(value)
   }
 
@@ -82,7 +82,7 @@ export const useDictStore = defineStore('dict', () => {
     const items = dictDataMap.value[dictType]
     if (!items) return ''
 
-    const item = items.find(item => item.dictLabel === label)
+    const item = items.find((item) => item.dictLabel === label)
     return item?.dictValue || ''
   }
 
@@ -96,7 +96,7 @@ export const useDictStore = defineStore('dict', () => {
     const items = dictDataMap.value[dictType]
     if (!items) return ''
 
-    const item = items.find(item => item.dictValue === String(value))
+    const item = items.find((item) => item.dictValue === String(value))
     return item?.listClass || ''
   }
 
@@ -114,7 +114,7 @@ export const useDictStore = defineStore('dict', () => {
    */
   const refreshDictData = async (dictTypes: string[]) => {
     // 从已加载集合中移除
-    dictTypes.forEach(type => loadedTypes.value.delete(type))
+    dictTypes.forEach((type) => loadedTypes.value.delete(type))
 
     // 重新加载
     await loadDictData(dictTypes)
@@ -129,6 +129,6 @@ export const useDictStore = defineStore('dict', () => {
     getValueByLabel,
     getListClass,
     clearCache,
-    refreshDictData
+    refreshDictData,
   }
 })

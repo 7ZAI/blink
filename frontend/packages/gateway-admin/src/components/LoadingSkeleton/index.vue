@@ -47,7 +47,7 @@ interface Props {
 
 withDefaults(defineProps<Props>(), {
   type: 'text',
-  rows: 3
+  rows: 3,
 })
 </script>
 
@@ -72,8 +72,12 @@ withDefaults(defineProps<Props>(), {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 // Text skeleton

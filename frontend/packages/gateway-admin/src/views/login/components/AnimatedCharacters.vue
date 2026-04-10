@@ -1,11 +1,7 @@
 <template>
   <div class="animated-characters" ref="containerRef">
     <!-- Purple tall rectangle character - Back layer -->
-    <div
-      ref="purpleRef"
-      class="character character-purple"
-      :style="purpleStyle"
-    >
+    <div ref="purpleRef" class="character character-purple" :style="purpleStyle">
       <!-- Eyes -->
       <div class="eyes" :style="purpleEyesStyle">
         <EyeBall
@@ -32,11 +28,7 @@
     </div>
 
     <!-- Black tall rectangle character - Middle layer -->
-    <div
-      ref="blackRef"
-      class="character character-black"
-      :style="blackStyle"
-    >
+    <div ref="blackRef" class="character character-black" :style="blackStyle">
       <!-- Eyes -->
       <div class="eyes" :style="blackEyesStyle">
         <EyeBall
@@ -63,11 +55,7 @@
     </div>
 
     <!-- Orange semi-circle character - Front left -->
-    <div
-      ref="orangeRef"
-      class="character character-orange"
-      :style="orangeStyle"
-    >
+    <div ref="orangeRef" class="character character-orange" :style="orangeStyle">
       <!-- Eyes - just pupils, no white -->
       <div class="eyes" :style="orangeEyesStyle">
         <Pupil
@@ -88,11 +76,7 @@
     </div>
 
     <!-- Yellow tall rectangle character - Front right -->
-    <div
-      ref="yellowRef"
-      class="character character-yellow"
-      :style="yellowStyle"
-    >
+    <div ref="yellowRef" class="character character-yellow" :style="yellowStyle">
       <!-- Eyes - just pupils, no white -->
       <div class="eyes" :style="yellowEyesStyle">
         <Pupil
@@ -130,7 +114,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   isTyping: false,
   showPassword: false,
-  passwordLength: 0
+  passwordLength: 0,
 })
 
 // Mouse position
@@ -188,17 +172,25 @@ const isShowingPassword = computed(() => props.passwordLength > 0 && props.showP
 
 // Purple character styles
 const purpleStyle = computed(() => ({
-  height: (props.isTyping || isHidingPassword.value) ? '440px' : '400px',
+  height: props.isTyping || isHidingPassword.value ? '440px' : '400px',
   transform: isShowingPassword.value
     ? 'skewX(0deg)'
-    : (props.isTyping || isHidingPassword.value)
+    : props.isTyping || isHidingPassword.value
       ? `skewX(${(purplePos.value.bodySkew || 0) - 12}deg) translateX(40px)`
-      : `skewX(${purplePos.value.bodySkew || 0}deg)`
+      : `skewX(${purplePos.value.bodySkew || 0}deg)`,
 }))
 
 const purpleEyesStyle = computed(() => ({
-  left: isShowingPassword.value ? '20px' : isLookingAtEachOther.value ? '55px' : `${45 + purplePos.value.faceX}px`,
-  top: isShowingPassword.value ? '35px' : isLookingAtEachOther.value ? '65px' : `${40 + purplePos.value.faceY}px`
+  left: isShowingPassword.value
+    ? '20px'
+    : isLookingAtEachOther.value
+      ? '55px'
+      : `${45 + purplePos.value.faceX}px`,
+  top: isShowingPassword.value
+    ? '35px'
+    : isLookingAtEachOther.value
+      ? '65px'
+      : `${40 + purplePos.value.faceY}px`,
 }))
 
 const purpleForceLookX = computed(() => {
@@ -219,14 +211,22 @@ const blackStyle = computed(() => ({
     ? 'skewX(0deg)'
     : isLookingAtEachOther.value
       ? `skewX(${(blackPos.value.bodySkew || 0) * 1.5 + 10}deg) translateX(20px)`
-      : (props.isTyping || isHidingPassword.value)
+      : props.isTyping || isHidingPassword.value
         ? `skewX(${(blackPos.value.bodySkew || 0) * 1.5}deg)`
-        : `skewX(${blackPos.value.bodySkew || 0}deg)`
+        : `skewX(${blackPos.value.bodySkew || 0}deg)`,
 }))
 
 const blackEyesStyle = computed(() => ({
-  left: isShowingPassword.value ? '10px' : isLookingAtEachOther.value ? '32px' : `${26 + blackPos.value.faceX}px`,
-  top: isShowingPassword.value ? '28px' : isLookingAtEachOther.value ? '12px' : `${32 + blackPos.value.faceY}px`
+  left: isShowingPassword.value
+    ? '10px'
+    : isLookingAtEachOther.value
+      ? '32px'
+      : `${26 + blackPos.value.faceX}px`,
+  top: isShowingPassword.value
+    ? '28px'
+    : isLookingAtEachOther.value
+      ? '12px'
+      : `${32 + blackPos.value.faceY}px`,
 }))
 
 const blackForceLookX = computed(() => {
@@ -243,34 +243,34 @@ const blackForceLookY = computed(() => {
 
 // Orange character styles
 const orangeStyle = computed(() => ({
-  transform: isShowingPassword.value ? 'skewX(0deg)' : `skewX(${orangePos.value.bodySkew || 0}deg)`
+  transform: isShowingPassword.value ? 'skewX(0deg)' : `skewX(${orangePos.value.bodySkew || 0}deg)`,
 }))
 
 const orangeEyesStyle = computed(() => ({
   left: isShowingPassword.value ? '50px' : `${82 + (orangePos.value.faceX || 0)}px`,
-  top: isShowingPassword.value ? '85px' : `${90 + (orangePos.value.faceY || 0)}px`
+  top: isShowingPassword.value ? '85px' : `${90 + (orangePos.value.faceY || 0)}px`,
 }))
 
-const orangeForceLookX = computed(() => isShowingPassword.value ? -5 : undefined)
-const orangeForceLookY = computed(() => isShowingPassword.value ? -4 : undefined)
+const orangeForceLookX = computed(() => (isShowingPassword.value ? -5 : undefined))
+const orangeForceLookY = computed(() => (isShowingPassword.value ? -4 : undefined))
 
 // Yellow character styles
 const yellowStyle = computed(() => ({
-  transform: isShowingPassword.value ? 'skewX(0deg)' : `skewX(${yellowPos.value.bodySkew || 0}deg)`
+  transform: isShowingPassword.value ? 'skewX(0deg)' : `skewX(${yellowPos.value.bodySkew || 0}deg)`,
 }))
 
 const yellowEyesStyle = computed(() => ({
   left: isShowingPassword.value ? '20px' : `${52 + (yellowPos.value.faceX || 0)}px`,
-  top: isShowingPassword.value ? '35px' : `${40 + (yellowPos.value.faceY || 0)}px`
+  top: isShowingPassword.value ? '35px' : `${40 + (yellowPos.value.faceY || 0)}px`,
 }))
 
 const yellowMouthStyle = computed(() => ({
   left: isShowingPassword.value ? '10px' : `${40 + (yellowPos.value.faceX || 0)}px`,
-  top: isShowingPassword.value ? '88px' : `${88 + (yellowPos.value.faceY || 0)}px`
+  top: isShowingPassword.value ? '88px' : `${88 + (yellowPos.value.faceY || 0)}px`,
 }))
 
-const yellowForceLookX = computed(() => isShowingPassword.value ? -5 : undefined)
-const yellowForceLookY = computed(() => isShowingPassword.value ? -4 : undefined)
+const yellowForceLookX = computed(() => (isShowingPassword.value ? -5 : undefined))
+const yellowForceLookY = computed(() => (isShowingPassword.value ? -4 : undefined))
 
 // Blinking effect for purple character
 let purpleBlinkTimeout: ReturnType<typeof setTimeout> | null = null
@@ -299,38 +299,47 @@ const scheduleBlackBlink = () => {
 }
 
 // Looking at each other animation when typing starts
-watch(() => props.isTyping, (newVal) => {
-  if (newVal) {
-    isLookingAtEachOther.value = true
-    setTimeout(() => {
+watch(
+  () => props.isTyping,
+  (newVal) => {
+    if (newVal) {
+      isLookingAtEachOther.value = true
+      setTimeout(() => {
+        isLookingAtEachOther.value = false
+      }, 800)
+    } else {
       isLookingAtEachOther.value = false
-    }, 800)
-  } else {
-    isLookingAtEachOther.value = false
+    }
   }
-})
+)
 
 // Purple sneaky peeking animation when password is visible
 let purplePeekTimeout: ReturnType<typeof setTimeout> | null = null
-watch([() => props.passwordLength, () => props.showPassword, isPurplePeeking], ([newLength, newShow, newPeeking]) => {
-  if (newLength > 0 && newShow && !newPeeking) {
-    const schedulePeek = () => {
-      purplePeekTimeout = setTimeout(() => {
-        isPurplePeeking.value = true
-        setTimeout(() => {
-          isPurplePeeking.value = false
-        }, 800)
-      }, Math.random() * 3000 + 2000)
-    }
-    schedulePeek()
-  } else if (!newShow) {
-    isPurplePeeking.value = false
-    if (purplePeekTimeout) {
-      clearTimeout(purplePeekTimeout)
-      purplePeekTimeout = null
+watch(
+  [() => props.passwordLength, () => props.showPassword, isPurplePeeking],
+  ([newLength, newShow, newPeeking]) => {
+    if (newLength > 0 && newShow && !newPeeking) {
+      const schedulePeek = () => {
+        purplePeekTimeout = setTimeout(
+          () => {
+            isPurplePeeking.value = true
+            setTimeout(() => {
+              isPurplePeeking.value = false
+            }, 800)
+          },
+          Math.random() * 3000 + 2000
+        )
+      }
+      schedulePeek()
+    } else if (!newShow) {
+      isPurplePeeking.value = false
+      if (purplePeekTimeout) {
+        clearTimeout(purplePeekTimeout)
+        purplePeekTimeout = null
+      }
     }
   }
-})
+)
 
 onMounted(() => {
   window.addEventListener('mousemove', handleMouseMove)
@@ -364,7 +373,7 @@ onUnmounted(() => {
   left: 70px;
   width: 180px;
   height: 400px;
-  background-color: #6C3FF5;
+  background-color: #6c3ff5;
   border-radius: 10px 10px 0 0;
   z-index: 1;
 }
@@ -373,7 +382,7 @@ onUnmounted(() => {
   left: 240px;
   width: 120px;
   height: 310px;
-  background-color: #2D2D2D;
+  background-color: #2d2d2d;
   border-radius: 8px 8px 0 0;
   z-index: 2;
 }
@@ -382,7 +391,7 @@ onUnmounted(() => {
   left: 0;
   width: 240px;
   height: 200px;
-  background-color: #FF9B6B;
+  background-color: #ff9b6b;
   border-radius: 120px 120px 0 0;
   z-index: 3;
 }
@@ -391,7 +400,7 @@ onUnmounted(() => {
   left: 310px;
   width: 140px;
   height: 230px;
-  background-color: #E8D754;
+  background-color: #e8d754;
   border-radius: 70px 70px 0 0;
   z-index: 4;
 }
@@ -423,7 +432,7 @@ onUnmounted(() => {
   position: absolute;
   width: 80px;
   height: 4px;
-  background-color: #2D2D2D;
+  background-color: #2d2d2d;
   border-radius: 999px;
   transition: all 0.2s ease-out;
 }

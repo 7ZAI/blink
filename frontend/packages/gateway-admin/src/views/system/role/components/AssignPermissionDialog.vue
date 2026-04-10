@@ -42,15 +42,28 @@
             @selection-change="handleApiSelectionChange"
           >
             <el-table-column type="selection" width="50" align="center" :reserve-selection="true" />
-            <el-table-column prop="acName" :label="t('system.permission.acName')" min-width="120" show-overflow-tooltip />
-            <el-table-column prop="acIdentity" :label="t('system.permission.acIdentity')" min-width="180" show-overflow-tooltip>
+            <el-table-column
+              prop="acName"
+              :label="t('system.permission.acName')"
+              min-width="120"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="acIdentity"
+              :label="t('system.permission.acIdentity')"
+              min-width="180"
+              show-overflow-tooltip
+            >
               <template #default="{ row }">
                 <el-tag type="info" size="small">{{ row.acIdentity }}</el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="url" label="URL" min-width="180" show-overflow-tooltip />
           </el-table>
-          <el-empty v-if="!filteredApiPermissions.length && !loading" :description="t('common.noData')" />
+          <el-empty
+            v-if="!filteredApiPermissions.length && !loading"
+            :description="t('common.noData')"
+          />
         </el-tab-pane>
 
         <!-- 数据权限 -->
@@ -66,15 +79,33 @@
             @selection-change="handleDataSelectionChange"
           >
             <el-table-column type="selection" width="50" align="center" :reserve-selection="true" />
-            <el-table-column prop="acName" :label="t('system.permission.acName')" min-width="120" show-overflow-tooltip />
-            <el-table-column prop="acIdentity" :label="t('system.permission.acIdentity')" min-width="180" show-overflow-tooltip>
+            <el-table-column
+              prop="acName"
+              :label="t('system.permission.acName')"
+              min-width="120"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="acIdentity"
+              :label="t('system.permission.acIdentity')"
+              min-width="180"
+              show-overflow-tooltip
+            >
               <template #default="{ row }">
                 <el-tag type="info" size="small">{{ row.acIdentity }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="dataFilterName" :label="t('system.permission.dataFilterId')" min-width="140" show-overflow-tooltip />
+            <el-table-column
+              prop="dataFilterName"
+              :label="t('system.permission.dataFilterId')"
+              min-width="140"
+              show-overflow-tooltip
+            />
           </el-table>
-          <el-empty v-if="!filteredDataPermissions.length && !loading" :description="t('common.noData')" />
+          <el-empty
+            v-if="!filteredDataPermissions.length && !loading"
+            :description="t('common.noData')"
+          />
         </el-tab-pane>
       </el-tabs>
     </div>
@@ -121,14 +152,10 @@ const allPermissions = ref<PermissionInfo[]>([])
 const assignedPermissionIds = ref<Set<number>>(new Set())
 
 // 接口权限（ac_type=1）
-const apiPermissions = computed(() =>
-  allPermissions.value.filter((p) => p.acType === 1)
-)
+const apiPermissions = computed(() => allPermissions.value.filter((p) => p.acType === 1))
 
 // 数据权限（ac_type=2）
-const dataPermissions = computed(() =>
-  allPermissions.value.filter((p) => p.acType === 2)
-)
+const dataPermissions = computed(() => allPermissions.value.filter((p) => p.acType === 2))
 
 // 筛选后的接口权限
 const filteredApiPermissions = computed(() => {

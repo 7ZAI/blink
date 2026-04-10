@@ -9,7 +9,7 @@ export interface MonitorQuery {
 
 // 查询统计数据请求参数
 export interface StatisticsQuery {
-  timeRange?: string  // 时间范围（可选）
+  timeRange?: string // 时间范围（可选）
 }
 
 // 实例信息
@@ -19,9 +19,9 @@ export interface InstanceInfo {
   host: string
   port: number
   uri: string
-  status: number  // 0-在线，1-离线，2-下线
+  status: number // 0-在线，1-离线，2-下线
   statusDesc: string
-  healthy: boolean  // 健康状态
+  healthy: boolean // 健康状态
   onlineTime?: string
   offlineTime?: string
   lastHeartbeat?: string
@@ -110,5 +110,5 @@ export const monitorApi = {
   getInstanceList,
   getInstanceDetail,
   offlineInstance,
-  onlineInstance
+  onlineInstance,
 }

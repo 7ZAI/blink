@@ -1,14 +1,6 @@
 <template>
-  <div
-    ref="eyeRef"
-    class="eyeball"
-    :style="eyeStyle"
-  >
-    <div
-      v-if="!isBlinking"
-      class="pupil"
-      :style="pupilStyle"
-    />
+  <div ref="eyeRef" class="eyeball" :style="eyeStyle">
+    <div v-if="!isBlinking" class="pupil" :style="pupilStyle" />
   </div>
 </template>
 
@@ -32,7 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
   maxDistance: 10,
   eyeColor: 'white',
   pupilColor: 'black',
-  isBlinking: false
+  isBlinking: false,
 })
 
 const mouseX = ref(0)
@@ -70,7 +62,7 @@ const pupilPosition = computed(() => {
 const eyeStyle = computed(() => ({
   width: `${props.size}px`,
   height: props.isBlinking ? '2px' : `${props.size}px`,
-  backgroundColor: props.eyeColor
+  backgroundColor: props.eyeColor,
 }))
 
 const pupilStyle = computed(() => ({
@@ -78,7 +70,7 @@ const pupilStyle = computed(() => ({
   height: `${props.pupilSize}px`,
   backgroundColor: props.pupilColor,
   transform: `translate(${pupilPosition.value.x}px, ${pupilPosition.value.y}px)`,
-  transition: 'transform 0.1s ease-out'
+  transition: 'transform 0.1s ease-out',
 }))
 
 onMounted(() => {

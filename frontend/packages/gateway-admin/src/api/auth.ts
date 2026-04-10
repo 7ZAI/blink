@@ -92,7 +92,10 @@ export const getUserInfo = (): Promise<LoginRsp> => {
 /**
  * 修改密码
  */
-export const modifyPassword = (params: { oldPassword: string; newPassword: string }): Promise<void> => {
+export const modifyPassword = (params: {
+  oldPassword: string
+  newPassword: string
+}): Promise<void> => {
   return request.post('/auth/modifyPassword', { body: params })
 }
 

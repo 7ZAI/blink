@@ -52,7 +52,7 @@ export const getUnreadCount = (): Promise<UnreadCountRsp> => {
  */
 export const markRead = (notificationId: number): Promise<void> => {
   return request.post('/notification/markRead', {
-    body: { notificationId }
+    body: { notificationId },
   })
 }
 
@@ -66,7 +66,9 @@ export const markAllRead = (): Promise<void> => {
 /**
  * Get notification history
  */
-export const getNotificationHistory = (params: QueryHistoryParams): Promise<{ rows: NotificationItem[], total: number }> => {
+export const getNotificationHistory = (
+  params: QueryHistoryParams
+): Promise<{ rows: NotificationItem[]; total: number }> => {
   return request.post('/notification/history', { body: params })
 }
 
@@ -76,5 +78,5 @@ export const notificationApi = {
   getUnreadCount,
   markRead,
   markAllRead,
-  getHistory: getNotificationHistory
+  getHistory: getNotificationHistory,
 }

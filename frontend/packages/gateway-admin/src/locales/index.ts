@@ -4,14 +4,14 @@ import enUS from './en-us'
 
 const messages = {
   'zh-cn': zhCN,
-  'en-us': enUS
+  'en-us': enUS,
 }
 
 const i18n = createI18n({
   legacy: false,
   locale: localStorage.getItem('language') || 'zh-cn',
   fallbackLocale: 'zh-cn',
-  messages
+  messages,
 })
 
 export default i18n

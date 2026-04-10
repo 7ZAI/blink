@@ -33,7 +33,7 @@ const label = computed(() => {
 })
 
 // 将listClass映射为el-tag的type
-const tagType = computed(() => {
+const tagType = computed((): 'primary' | 'success' | 'warning' | 'info' | 'danger' => {
   if (props.value === undefined || props.value === null) {
     return 'info'
   }
@@ -41,12 +41,12 @@ const tagType = computed(() => {
   const listClass = getListClass(props.value)
 
   // 映射关系：primary -> primary, success -> success, warning -> warning, danger -> danger, info -> info
-  const typeMap: Record<string, string> = {
+  const typeMap: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
     primary: 'primary',
     success: 'success',
     warning: 'warning',
     danger: 'danger',
-    info: 'info'
+    info: 'info',
   }
 
   return typeMap[listClass] || 'info'

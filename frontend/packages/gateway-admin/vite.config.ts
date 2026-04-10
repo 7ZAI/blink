@@ -11,20 +11,20 @@ export default defineConfig(({ mode }) => {
     plugins: [vue()],
     resolve: {
       alias: {
-        '@': resolve(__dirname, 'src')
-      }
+        '@': resolve(__dirname, 'src'),
+      },
     },
     server: {
       port: port,
       proxy: {
         '/gateway-admin': {
           target: proxyTarget,
-          changeOrigin: true
+          changeOrigin: true,
         },
         '/notification': {
           target: proxyTarget,
-          changeOrigin: true
-        }
+          changeOrigin: true,
+        },
       },
       // 预热常用文件，加快首次访问速度
       warmup: {
@@ -36,18 +36,14 @@ export default defineConfig(({ mode }) => {
           './src/views/login/index.vue',
         ],
       },
-      // 文件系统缓存
-      fs: {
-        cachedChecks: true,
-      },
     },
     css: {
       preprocessorOptions: {
         scss: {
           api: 'modern-compiler',
-          additionalData: `@use "@/styles/variables.scss" as *;`
-        }
-      }
+          additionalData: `@use "@/styles/variables.scss" as *;`,
+        },
+      },
     },
     // 性能优化配置
     build: {
@@ -61,11 +57,11 @@ export default defineConfig(({ mode }) => {
             // Element Plus UI库
             'element-plus': ['element-plus', '@element-plus/icons-vue'],
             // 国际化
-            'i18n': ['vue-i18n'],
+            i18n: ['vue-i18n'],
             // 图表和可视化
-            'visualization': ['echarts', 'vue-echarts'],
+            visualization: ['echarts', 'vue-echarts'],
             // 工具库
-            'utils': ['axios', '@iconify/vue', '@vueuse/core'],
+            utils: ['axios', '@iconify/vue', '@vueuse/core'],
           },
           // 文件命名
           chunkFileNames: 'assets/js/[name]-[hash].js',

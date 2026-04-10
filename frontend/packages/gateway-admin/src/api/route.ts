@@ -84,5 +84,5 @@ export const routeApi = {
   getList: getRouteList,
   save: saveRoute,
   delete: deleteRoute,
-  refresh: refreshRoutes
+  refresh: refreshRoutes,
 }

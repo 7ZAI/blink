@@ -43,7 +43,7 @@ export const useNotificationStore = defineStore('notification', () => {
         console.error('SSE error:', error)
       },
       maxRetries: 10,
-      retryDelay: 1000
+      retryDelay: 1000,
     })
 
     sseStatus.value = 'connecting'
@@ -60,11 +60,11 @@ export const useNotificationStore = defineStore('notification', () => {
 
   const handleSseMessage = (msg: NotificationItem) => {
     // 检查是否已存在（按notificationId去重）
-    const existing = notifications.value.find(n => n.notificationId === msg.notificationId)
+    const existing = notifications.value.find((n) => n.notificationId === msg.notificationId)
     if (!existing) {
       notifications.value.unshift({
         ...msg,
-        read: false
+        read: false,
       })
       unreadCount.value++
     }
@@ -75,7 +75,7 @@ export const useNotificationStore = defineStore('notification', () => {
         type: msg.severity === 'ERROR' ? 'error' : 'warning',
         message: msg.title,
         duration: 3000,
-        showClose: true
+        showClose: true,
       })
     }
   }
@@ -86,11 +86,11 @@ export const useNotificationStore = defineStore('notification', () => {
       if (rsp.notifications) {
         // 只添加不在列表中的消息
         for (const msg of rsp.notifications) {
-          const existing = notifications.value.find(n => n.notificationId === msg.notificationId)
+          const existing = notifications.value.find((n) => n.notificationId === msg.notificationId)
           if (!existing) {
             notifications.value.push({
               ...msg,
-              read: msg.read ?? false
+              read: msg.read ?? false,
             })
           }
         }
@@ -113,7 +113,7 @@ export const useNotificationStore = defineStore('notification', () => {
   const markAsRead = async (notificationId: number) => {
     try {
       await notificationApi.markRead(notificationId)
-      const notification = notifications.value.find(n => n.notificationId === notificationId)
+      const notification = notifications.value.find((n) => n.notificationId === notificationId)
       if (notification && !notification.read) {
         notification.read = true
         unreadCount.value = Math.max(0, unreadCount.value - 1)
@@ -126,7 +126,7 @@ export const useNotificationStore = defineStore('notification', () => {
   const markAllAsRead = async () => {
     try {
       await notificationApi.markAllRead()
-      notifications.value.forEach(n => {
+      notifications.value.forEach((n) => {
         n.read = true
       })
       unreadCount.value = 0
@@ -151,6 +151,6 @@ export const useNotificationStore = defineStore('notification', () => {
     fetchUnreadCount,
     markAsRead,
     markAllAsRead,
-    clearNotifications
+    clearNotifications,
   }
 })

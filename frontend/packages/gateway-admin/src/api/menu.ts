@@ -46,7 +46,6 @@ export interface AddMenuParams {
   parentId?: number
   componentPath?: string
   permId?: number
-  permIdentity?: string
 }
 
 export interface UpdateMenuParams {
@@ -61,7 +60,6 @@ export interface UpdateMenuParams {
   parentId?: number
   componentPath?: string
   permId?: number
-  permIdentity?: string
 }
 
 export interface DeleteMenuParams {
@@ -110,37 +108,21 @@ export interface RoleInfo {
 }
 
 export const checkMenuRoleAssignment = (params: CheckMenuRoleParams): Promise<CheckMenuRoleRsp> => {
-  return request.post('/sysMenu/checkMenuRoleAssignment', { body: params }) as Promise<CheckMenuRoleRsp>
+  return request.post('/sysMenu/checkMenuRoleAssignment', {
+    body: params,
+  }) as Promise<CheckMenuRoleRsp>
 }
 
 /**
  * 获取接口权限列表（用于菜单关联选择）
  * 使用分页接口，只查询接口权限(acType=1)
  */
-export const getApiPermissions = (params?: QueryPermissionParams): Promise<QueryPermissionRsp<PermissionInfo>> => {
-  return request.post('/sysPermission/getSysPermissionList', { body: { acType: 1, ...params } }) as Promise<QueryPermissionRsp<PermissionInfo>>
-}
-
-/**
- * 获取菜单树（用于角色分配菜单）
- * 使用 getSysMenuList 接口，返回的数据已经是树形结构
- */
-export interface MenuVO {
-  menuId: number
-  menuName: string
-  menuEnName: string
-  type: number
-  icon: string
-  url: string
-  orderNumber: number
-  status: number
-  parentId: number
-  children?: MenuVO[]
-}
-
-export const getMenuTree = async (): Promise<MenuVO[]> => {
-  const res = await getMenuList()
-  return res.rows || []
+export const getApiPermissions = (
+  params?: QueryPermissionParams
+): Promise<QueryPermissionRsp<PermissionInfo>> => {
+  return request.post('/sysPermission/getSysPermissionList', {
+    body: { acType: 1, ...params },
+  }) as Promise<QueryPermissionRsp<PermissionInfo>>
 }
 
 export interface QueryPermissionParams {

@@ -46,7 +46,9 @@
             :pager-count="5"
             small
           />
-          <span class="page-info">{{ t('pagination.total') }} {{ avatarStyles.length }} {{ t('avatar.styles') }}</span>
+          <span class="page-info">
+            {{ t('pagination.total') }} {{ avatarStyles.length }} {{ t('avatar.styles') }}
+          </span>
         </div>
       </div>
 
@@ -105,11 +107,15 @@ const previewAvatarUrl = computed(() => {
   return getAvatarUrl(selectedAvatar.value)
 })
 
-watch(() => props.modelValue, (val) => {
-  if (val) {
-    selectedAvatar.value = val
-  }
-}, { immediate: true })
+watch(
+  () => props.modelValue,
+  (val) => {
+    if (val) {
+      selectedAvatar.value = val
+    }
+  },
+  { immediate: true }
+)
 
 const handleAvatarSelect = (avatarName: string) => {
   selectedAvatar.value = avatarName

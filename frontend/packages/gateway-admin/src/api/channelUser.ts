@@ -62,7 +62,9 @@ export interface UserPermissionDetail {
 }
 
 // Get simple user list
-export const getSimpleUserList = (params: QuerySimpleUserParams): Promise<PageResult<SimpleUserInfo>> => {
+export const getSimpleUserList = (
+  params: QuerySimpleUserParams
+): Promise<PageResult<SimpleUserInfo>> => {
   return request.post('/channelUser/getSimpleUserList', { body: params })
 }
 

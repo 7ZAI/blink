@@ -5,13 +5,28 @@
     <el-card class="search-card shrink-0" shadow="never">
       <el-form :model="searchForm" inline class="search-form">
         <el-form-item :label="t('system.user.loginName')">
-          <el-input v-model.trim="searchForm.loginName" :placeholder="t('common.pleaseInput') + t('system.user.loginName')" clearable style="width: 140px" />
+          <el-input
+            v-model.trim="searchForm.loginName"
+            :placeholder="t('common.pleaseInput') + t('system.user.loginName')"
+            clearable
+            style="width: 140px"
+          />
         </el-form-item>
         <el-form-item :label="t('system.user.username')">
-          <el-input v-model.trim="searchForm.username" :placeholder="t('common.pleaseInput') + t('system.user.username')" clearable style="width: 140px" />
+          <el-input
+            v-model.trim="searchForm.username"
+            :placeholder="t('common.pleaseInput') + t('system.user.username')"
+            clearable
+            style="width: 140px"
+          />
         </el-form-item>
         <el-form-item :label="t('system.user.sex')">
-          <el-select v-model="searchForm.sex" :placeholder="t('common.pleaseSelect')" clearable style="width: 100px">
+          <el-select
+            v-model="searchForm.sex"
+            :placeholder="t('common.pleaseSelect')"
+            clearable
+            style="width: 100px"
+          >
             <el-option :label="t('system.user.male')" :value="1" />
             <el-option :label="t('system.user.female')" :value="2" />
             <el-option :label="t('system.user.unknown')" :value="3" />
@@ -30,11 +45,17 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+          <el-button
+            type="primary"
+            style="height: 28px; padding: 0 12px; font-size: 13px"
+            @click="handleSearch"
+          >
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -44,17 +65,40 @@
     <el-card class="table-card flex-1 flex flex-col overflow-hidden" shadow="never">
       <template #header>
         <div class="table-header">
-          <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Add)" type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>{{ t('common.add') }}
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.User.Add)"
+            type="primary"
+            @click="handleAdd"
+          >
+            <el-icon><Plus /></el-icon>
+            {{ t('common.add') }}
           </AuthButton>
-          <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.AssignRole)" type="primary" :disabled="selectedRows.length === 0" @click="handleAssignRole">
-            <el-icon><UserFilled /></el-icon>{{ t('system.user.assignRole') }}
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.User.AssignRole)"
+            type="primary"
+            :disabled="selectedRows.length === 0"
+            @click="handleAssignRole"
+          >
+            <el-icon><UserFilled /></el-icon>
+            {{ t('system.user.assignRole') }}
           </AuthButton>
-          <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.ResetPwd)" type="warning" :disabled="selectedRows.length !== 1" @click="handleResetPasswordBatch">
-            <el-icon><Key /></el-icon>{{ t('system.user.resetPassword') }}
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.User.ResetPwd)"
+            type="warning"
+            :disabled="selectedRows.length !== 1"
+            @click="handleResetPasswordBatch"
+          >
+            <el-icon><Key /></el-icon>
+            {{ t('system.user.resetPassword') }}
           </AuthButton>
-          <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Delete)" type="danger" :disabled="selectedRows.length === 0" @click="handleBatchDelete">
-            <el-icon><Delete /></el-icon>{{ t('common.batchDelete') }}
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.User.Delete)"
+            type="danger"
+            :disabled="selectedRows.length === 0"
+            @click="handleBatchDelete"
+          >
+            <el-icon><Delete /></el-icon>
+            {{ t('common.batchDelete') }}
           </AuthButton>
         </div>
       </template>
@@ -94,7 +138,12 @@
               {{ row.phone || '-' }}
             </template>
           </el-table-column>
-          <el-table-column prop="email" :label="t('system.user.email')" min-width="150" show-overflow-tooltip>
+          <el-table-column
+            prop="email"
+            :label="t('system.user.email')"
+            min-width="150"
+            show-overflow-tooltip
+          >
             <template #default="{ row }">
               {{ row.email || '-' }}
             </template>
@@ -102,11 +151,17 @@
           <el-table-column prop="locked" :label="t('system.user.status')" width="100">
             <template #default="{ row }">
               <el-tag v-if="row.locked === 0" type="success">{{ t('system.user.normal') }}</el-tag>
-              <el-tag v-else-if="row.locked === 1" type="danger">{{ t('system.user.adminLocked') }}</el-tag>
+              <el-tag v-else-if="row.locked === 1" type="danger">
+                {{ t('system.user.adminLocked') }}
+              </el-tag>
               <el-tag v-else type="warning">{{ t('system.user.passwordLocked') }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="lastLoginTime" :label="t('system.user.lastLoginTime')" min-width="160">
+          <el-table-column
+            prop="lastLoginTime"
+            :label="t('system.user.lastLoginTime')"
+            min-width="160"
+          >
             <template #default="{ row }">
               {{ row.lastLoginTime || '-' }}
             </template>
@@ -119,13 +174,29 @@
           <el-table-column :label="t('common.operation')" width="300" fixed="right">
             <template #default="{ row }">
               <!-- 非超级管理员看不到超级管理员的操作按钮 -->
-              <template v-if="userStore.isSuperAdmin || (row.superFlag !== 1 && row.superFlag !== '1')">
+              <template
+                v-if="userStore.isSuperAdmin || (row.superFlag !== 1 && row.superFlag !== '1')"
+              >
                 <div class="operation-buttons">
-                  <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Edit)" type="primary" link size="small" @click="handleEdit(row)">
-                    <el-icon><Edit /></el-icon>{{ t('common.edit') }}
+                  <AuthButton
+                    :has-permission="() => checkPermission(ButtonPerms.User.Edit)"
+                    type="primary"
+                    link
+                    size="small"
+                    @click="handleEdit(row)"
+                  >
+                    <el-icon><Edit /></el-icon>
+                    {{ t('common.edit') }}
                   </AuthButton>
-                  <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Detail)" type="info" link size="small" @click="handleDetail(row)">
-                    <el-icon><View /></el-icon>{{ t('common.detail') }}
+                  <AuthButton
+                    :has-permission="() => checkPermission(ButtonPerms.User.Detail)"
+                    type="info"
+                    link
+                    size="small"
+                    @click="handleDetail(row)"
+                  >
+                    <el-icon><View /></el-icon>
+                    {{ t('common.detail') }}
                   </AuthButton>
                   <AuthButton
                     v-if="row.locked === 0"
@@ -135,7 +206,8 @@
                     size="small"
                     @click="handleLock(row, 1)"
                   >
-                    <el-icon><Lock /></el-icon>{{ t('common.lock') }}
+                    <el-icon><Lock /></el-icon>
+                    {{ t('common.lock') }}
                   </AuthButton>
                   <AuthButton
                     v-else
@@ -145,10 +217,18 @@
                     size="small"
                     @click="handleLock(row, 0)"
                   >
-                    <el-icon><Unlock /></el-icon>{{ t('common.unlock') }}
+                    <el-icon><Unlock /></el-icon>
+                    {{ t('common.unlock') }}
                   </AuthButton>
-                  <AuthButton :has-permission="() => checkPermission(ButtonPerms.User.Delete)" type="danger" link size="small" @click="handleDelete(row)">
-                    <el-icon><Delete /></el-icon>{{ t('common.delete') }}
+                  <AuthButton
+                    :has-permission="() => checkPermission(ButtonPerms.User.Delete)"
+                    type="danger"
+                    link
+                    size="small"
+                    @click="handleDelete(row)"
+                  >
+                    <el-icon><Delete /></el-icon>
+                    {{ t('common.delete') }}
                   </AuthButton>
                 </div>
               </template>
@@ -184,16 +264,9 @@
       @success="handleSearch"
     />
 
-    <UserDetailDialog
-      v-model="detailVisible"
-      :login-name="currentLoginName"
-    />
+    <UserDetailDialog v-model="detailVisible" :login-name="currentLoginName" />
 
-    <AssignRoleDialog
-      v-model="assignRoleVisible"
-      :users="selectedRows"
-      @success="fetchUserList"
-    />
+    <AssignRoleDialog v-model="assignRoleVisible" :users="selectedRows" @success="fetchUserList" />
 
     <el-dialog
       v-model="resetPasswordVisible"
@@ -231,7 +304,11 @@
       </el-form>
       <template #footer>
         <el-button @click="resetPasswordVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="resetPasswordSubmitting" @click="handleResetPasswordSubmit">
+        <el-button
+          type="primary"
+          :loading="resetPasswordSubmitting"
+          @click="handleResetPasswordSubmit"
+        >
           {{ t('common.confirm') }}
         </el-button>
       </template>
@@ -255,7 +332,14 @@ import {
   UserFilled,
   Key,
 } from '@element-plus/icons-vue'
-import { getUserList, deleteUser, lockUser, resetPassword, type UserInfo, type QueryUserParams } from '@/api/user'
+import {
+  getUserList,
+  deleteUser,
+  lockUser,
+  resetPassword,
+  type UserInfo,
+  type QueryUserParams,
+} from '@/api/user'
 import { useUserStore } from '@/stores/user'
 import { useTransition } from '@/composables/useDataTransition'
 import { useSubmitGuard } from '@/composables/useSubmitGuard'
@@ -309,10 +393,14 @@ const resetPasswordForm = reactive({
   userId: 0,
   loginName: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
-const validateResetConfirmPassword = (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+const validateResetConfirmPassword = (
+  _rule: unknown,
+  value: string,
+  callback: (error?: Error) => void
+) => {
   if (value === '') {
     callback(new Error(t('validation.required', { field: t('system.user.confirmPassword') })))
   } else if (value !== resetPasswordForm.newPassword) {
@@ -324,12 +412,14 @@ const validateResetConfirmPassword = (_rule: unknown, value: string, callback: (
 
 const resetPasswordRules = reactive<FormRules>({
   newPassword: [
-    { required: true, message: t('common.pleaseInput') + t('system.user.newPassword'), trigger: 'blur' },
-    { min: 6, max: 20, message: t('validation.passwordLength'), trigger: 'blur' }
+    {
+      required: true,
+      message: t('common.pleaseInput') + t('system.user.newPassword'),
+      trigger: 'blur',
+    },
+    { min: 6, max: 20, message: t('validation.passwordLength'), trigger: 'blur' },
   ],
-  confirmPassword: [
-    { required: true, validator: validateResetConfirmPassword, trigger: 'blur' }
-  ]
+  confirmPassword: [{ required: true, validator: validateResetConfirmPassword, trigger: 'blur' }],
 })
 
 const handleDateChange = (val: [string, string] | null) => {
@@ -507,7 +597,7 @@ const handleResetPasswordSubmit = async () => {
     try {
       await resetPassword({
         userId: resetPasswordForm.userId,
-        newPassword: resetPasswordForm.newPassword
+        newPassword: resetPasswordForm.newPassword,
       })
       ElMessage.success(t('message.passwordResetSuccess'))
       resetPasswordVisible.value = false

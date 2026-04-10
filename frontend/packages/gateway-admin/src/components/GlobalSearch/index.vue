@@ -42,7 +42,8 @@
 
     <template #footer>
       <span class="shortcut-hint">
-        <kbd>ESC</kbd> {{ t('common.toClose') }}
+        <kbd>ESC</kbd>
+        {{ t('common.toClose') }}
       </span>
     </template>
   </el-dialog>

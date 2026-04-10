@@ -4,7 +4,9 @@
  */
 
 // 使用 Vite 的 import.meta.glob 导入所有头像 SVG 文件
-const avatarModules = import.meta.glob<{ default: string }>('@/assets/avatar/*.svg', { eager: true })
+const avatarModules = import.meta.glob<{ default: string }>('@/assets/avatar/*.svg', {
+  eager: true,
+})
 
 /**
  * 头像样式列表
@@ -75,7 +77,7 @@ export const AVATAR_STYLES = [
   { value: 'thumbs-2', label: 'Thumbs 2' },
 ] as const
 
-export type AvatarStyle = typeof AVATAR_STYLES[number]['value']
+export type AvatarStyle = (typeof AVATAR_STYLES)[number]['value']
 
 /**
  * 头像 URL 缓存映射
@@ -139,5 +141,5 @@ export const getAvatarUrl = (
  * @returns 头像名称数组
  */
 export const getAvailableAvatars = (): string[] => {
-  return AVATAR_STYLES.map(style => style.value)
+  return AVATAR_STYLES.map((style) => style.value)
 }

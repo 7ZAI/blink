@@ -5,6 +5,6 @@ export const useFullscreen = () => {
 
   return {
     isFullscreen,
-    toggleFullscreen: toggle
+    toggleFullscreen: toggle,
   }
 }

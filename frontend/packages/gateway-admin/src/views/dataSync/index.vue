@@ -7,13 +7,16 @@
       </template>
       <div class="sync-buttons">
         <el-button type="primary" :loading="syncing" @click="handleSync('channel')">
-          <el-icon><Refresh /></el-icon>{{ t('dataSync.channelSync') }}
+          <el-icon><Refresh /></el-icon>
+          {{ t('dataSync.channelSync') }}
         </el-button>
         <el-button type="primary" :loading="syncing" @click="handleSync('route')">
-          <el-icon><Refresh /></el-icon>{{ t('dataSync.routeSync') }}
+          <el-icon><Refresh /></el-icon>
+          {{ t('dataSync.routeSync') }}
         </el-button>
         <el-button type="primary" :loading="syncing" @click="handleSync('config')">
-          <el-icon><Refresh /></el-icon>{{ t('dataSync.configSync') }}
+          <el-icon><Refresh /></el-icon>
+          {{ t('dataSync.configSync') }}
         </el-button>
       </div>
     </el-card>
@@ -30,7 +33,8 @@
               <el-option :label="t('dataSync.config')" value="config" />
             </el-select>
             <el-button type="primary" :loading="checking" @click="handleCheck">
-              <el-icon><Search /></el-icon>{{ t('dataSync.startCheck') }}
+              <el-icon><Search /></el-icon>
+              {{ t('dataSync.startCheck') }}
             </el-button>
           </div>
         </div>
@@ -113,9 +117,7 @@
           </template>
         </el-table-column>
         <el-table-column :label="t('dataSync.instanceCount')" width="120">
-          <template #default="{ row }">
-            {{ row.successCount }} / {{ row.instanceCount }}
-          </template>
+          <template #default="{ row }">{{ row.successCount }} / {{ row.instanceCount }}</template>
         </el-table-column>
       </el-table>
     </el-card>
@@ -133,11 +135,11 @@ import {
   getSyncLogs,
   type CacheCheckRsp,
   type SyncLogItem,
-  type InstanceCacheStatus
+  type InstanceCacheStatus,
 } from '@/api/dataSync'
 
 defineOptions({
-  name: 'DataSync'
+  name: 'DataSync',
 })
 
 const { t } = useI18n()
@@ -227,14 +229,14 @@ const handleSyncSelected = async () => {
  * 表格选择变更
  */
 const handleSelectionChange = (selection: { key: string }[]) => {
-  selectedKeys.value = selection.map(item => item.key)
+  selectedKeys.value = selection.map((item) => item.key)
 }
 
 /**
  * 获取实例中某项的状态
  */
 const getInstanceItemStatus = (instance: InstanceCacheStatus, key: string): string => {
-  const item = instance.items.find(i => i.key === key)
+  const item = instance.items.find((i) => i.key === key)
   return item?.status || 'MISSING'
 }
 

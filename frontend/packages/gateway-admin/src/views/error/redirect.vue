@@ -14,7 +14,7 @@ onBeforeMount(() => {
   const { path } = params
   router.replace({
     path: '/' + (Array.isArray(path) ? path.join('/') : path),
-    query
+    query,
   })
 })
 </script>

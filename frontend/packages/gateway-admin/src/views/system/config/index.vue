@@ -105,11 +105,7 @@
                     style="width: 160px"
                     @input="markAsModified(config.id)"
                   />
-                  <el-popover
-                    placement="right"
-                    :width="280"
-                    trigger="hover"
-                  >
+                  <el-popover placement="right" :width="280" trigger="hover">
                     <template #reference>
                       <div class="logo-preview-btn">
                         <el-icon><View /></el-icon>
@@ -118,7 +114,10 @@
                     </template>
                     <div class="logo-preview-popover">
                       <div class="preview-title">{{ t('config.logoPreview') }}</div>
-                      <div class="logo-preview-content" v-html="configStates[config.id] || ''"></div>
+                      <div
+                        class="logo-preview-content"
+                        v-html="configStates[config.id] || ''"
+                      ></div>
                     </div>
                   </el-popover>
                 </div>
@@ -150,12 +149,19 @@
           <!-- 底部操作按钮 -->
           <div class="config-row action-row" v-if="hasChanges">
             <div class="col-name">
-              <span class="changes-count">{{ t('config.modifiedCount', { count: modifiedIds.length }) }}</span>
+              <span class="changes-count">
+                {{ t('config.modifiedCount', { count: modifiedIds.length }) }}
+              </span>
             </div>
             <div class="col-value">
               <div class="action-buttons">
                 <el-button @click="handleCancel">{{ t('common.cancel') }}</el-button>
-                <AuthButton :has-permission="() => checkPermission(ButtonPerms.Config.Update)" type="primary" :loading="saving" @click="handleBatchSave">
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.Config.Update)"
+                  type="primary"
+                  :loading="saving"
+                  @click="handleBatchSave"
+                >
                   <el-icon><Check /></el-icon>
                   {{ t('common.save') }}
                 </AuthButton>
@@ -233,12 +239,12 @@ const configGroups = computed(() => [
 ])
 
 const currentGroupLabel = computed(() => {
-  const group = configGroups.value.find(g => g.key === activeGroup.value)
+  const group = configGroups.value.find((g) => g.key === activeGroup.value)
   return group?.label || ''
 })
 
 const currentGroupIcon = computed(() => {
-  const group = configGroups.value.find(g => g.key === activeGroup.value)
+  const group = configGroups.value.find((g) => g.key === activeGroup.value)
   return group?.icon || 'mdi:cog'
 })
 
@@ -247,9 +253,10 @@ const filteredConfigs = computed(() => {
     return currentConfigs.value
   }
   const keyword = searchKeyword.value.toLowerCase()
-  return currentConfigs.value.filter(config =>
-    config.configName.toLowerCase().includes(keyword) ||
-    config.description.toLowerCase().includes(keyword)
+  return currentConfigs.value.filter(
+    (config) =>
+      config.configName.toLowerCase().includes(keyword) ||
+      config.description.toLowerCase().includes(keyword)
   )
 })
 
@@ -354,8 +361,8 @@ const handleBatchSave = async () => {
 
   saving.value = true
   try {
-    const configs = modifiedIds.value.map(id => {
-      const config = currentConfigs.value.find(c => c.id === id)
+    const configs = modifiedIds.value.map((id) => {
+      const config = currentConfigs.value.find((c) => c.id === id)
       let value = configStates.value[id]
       if (config?.configType === 2) {
         value = value ? 'true' : 'false'
@@ -365,7 +372,7 @@ const handleBatchSave = async () => {
       return {
         id,
         configKey: config!.configKey,
-        configValue: value
+        configValue: value,
       }
     })
 
@@ -742,7 +749,8 @@ onMounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

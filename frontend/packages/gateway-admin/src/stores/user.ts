@@ -6,7 +6,7 @@ import {
   getUserInfo,
   type LoginRsp,
   type MenuVO,
-  type UserInfoVO
+  type UserInfoVO,
 } from '@/api/auth'
 import type { CaptchaVO } from '@/types'
 import { useTabsStore } from './tabs'
@@ -18,11 +18,11 @@ function buildMenuTree(menus: MenuVO[]): MenuVO[] {
   const menuMap = new Map<number, MenuVO>()
   const rootMenus: MenuVO[] = []
 
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     menuMap.set(menu.menuId, { ...menu, children: [] })
   })
 
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     const currentMenu = menuMap.get(menu.menuId)!
     if (!menu.parentId || menu.parentId === 0) {
       rootMenus.push(currentMenu)
@@ -40,7 +40,7 @@ function buildMenuTree(menus: MenuVO[]): MenuVO[] {
   const sortMenus = (menus: MenuVO[]): MenuVO[] => {
     return menus
       .sort((a, b) => (a.orderNumber || 0) - (b.orderNumber || 0))
-      .map(menu => {
+      .map((menu) => {
         if (menu.children && menu.children.length > 0) {
           menu.children = sortMenus(menu.children)
         }
@@ -66,9 +66,11 @@ export const useUserStore = defineStore('user', () => {
   const isLoggedIn = computed(() => !!token.value)
   const menuTree = computed(() => buildMenuTree(menus.value))
   const isSuperAdmin = computed(() => {
-    return roles.value.includes('superAdmin') ||
-           userInfo.value?.superFlag === 1 ||
-           String(userInfo.value?.superFlag) === '1'
+    return (
+      roles.value.includes('superAdmin') ||
+      userInfo.value?.superFlag === 1 ||
+      String(userInfo.value?.superFlag) === '1'
+    )
   })
 
   /**
@@ -81,7 +83,11 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 用户登录
    */
-  const login = async (loginName: string, password: string, rememberMe: boolean): Promise<LoginRsp> => {
+  const login = async (
+    loginName: string,
+    password: string,
+    rememberMe: boolean
+  ): Promise<LoginRsp> => {
     // 构建登录请求参数，包含验证码信息
     const loginReq = {
       loginName,

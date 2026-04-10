@@ -129,8 +129,12 @@ export interface UpdateDataFilterParams {
 /**
  * 分页查询数据过滤规则列表
  */
-export const getDataFilterList = (params: QueryDataFilterParams): Promise<PageResult<DataFilterInfo>> => {
-  return request.post('/sysDataFilter/queryDataFilterList', { body: params }) as Promise<PageResult<DataFilterInfo>>
+export const getDataFilterList = (
+  params: QueryDataFilterParams
+): Promise<PageResult<DataFilterInfo>> => {
+  return request.post('/sysDataFilter/queryDataFilterList', { body: params }) as Promise<
+    PageResult<DataFilterInfo>
+  >
 }
 
 /**
@@ -151,21 +155,25 @@ export const updateDataFilter = (params: UpdateDataFilterParams): Promise<void> 
  * 删除数据过滤规则
  */
 export const deleteDataFilter = (dataFilterId: number): Promise<void> => {
-  return request.post('/sysDataFilter/deleteDataFilter', { body: { dataFilterId } }) as Promise<void>
+  return request.post('/sysDataFilter/deleteDataFilter', {
+    body: { dataFilterId },
+  }) as Promise<void>
 }
 
 /**
  * 获取规则详情
  */
 export const getDataFilterDetail = (dataFilterId: number): Promise<DataFilterInfo> => {
-  return request.post('/sysDataFilter/getDataFilterDetail', { body: { dataFilterId } }) as Promise<DataFilterInfo>
+  return request.post('/sysDataFilter/getDataFilterDetail', {
+    body: { dataFilterId },
+  }) as Promise<DataFilterInfo>
 }
 
 /**
  * 获取已注册实体列表
  */
 export const getEntityList = (): Promise<EntityInfo[]> => {
-  return request.post('/sysDataFilter/getEntityList', {}).then(res => {
+  return request.post('/sysDataFilter/getEntityList', {}).then((res) => {
     return (res as unknown as EntityListRsp).entities || []
   })
 }
@@ -174,7 +182,9 @@ export const getEntityList = (): Promise<EntityInfo[]> => {
  * 获取实体字段列表
  */
 export const getEntityFields = (entityClass: string): Promise<EntityFieldsRsp> => {
-  return request.post('/sysDataFilter/getEntityFields', { body: { entityClass } }) as Promise<EntityFieldsRsp>
+  return request.post('/sysDataFilter/getEntityFields', {
+    body: { entityClass },
+  }) as Promise<EntityFieldsRsp>
 }
 
 /**
@@ -189,5 +199,7 @@ export const refreshCache = (): Promise<void> => {
  * 根据过滤对象和关联关系返回可用的匹配类型
  */
 export const getMatchTypes = (tableName: string, relationName: string): Promise<MatchTypesRsp> => {
-  return request.post('/sysDataFilter/getMatchTypes', { body: { tableName, relationName } }) as Promise<MatchTypesRsp>
+  return request.post('/sysDataFilter/getMatchTypes', {
+    body: { tableName, relationName },
+  }) as Promise<MatchTypesRsp>
 }

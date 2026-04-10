@@ -37,7 +37,10 @@
               <el-icon><Timer /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ statistics.avgResponseTime || 0 }}<span class="stat-unit">ms</span></div>
+              <div class="stat-value">
+                {{ statistics.avgResponseTime || 0 }}
+                <span class="stat-unit">ms</span>
+              </div>
               <div class="stat-label">{{ t('dashboard.avgResponseTime') }}</div>
             </div>
           </div>
@@ -84,7 +87,11 @@
         <span>{{ t('dashboard.quickActions') }}</span>
       </template>
       <div class="quick-actions">
-        <el-button type="primary" :loading="actionsLoading.refreshRoutes" @click="handleRefreshRoutes">
+        <el-button
+          type="primary"
+          :loading="actionsLoading.refreshRoutes"
+          @click="handleRefreshRoutes"
+        >
           <el-icon><Refresh /></el-icon>
           {{ t('dashboard.refreshRoutes') }}
         </el-button>
@@ -156,7 +163,8 @@
         <div class="card-header">
           <span>{{ t('dashboard.instanceList') }}</span>
           <el-button type="primary" @click="loadData">
-            <el-icon><Refresh /></el-icon>{{ t('common.refresh') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.refresh') }}
           </el-button>
         </div>
       </template>
@@ -186,7 +194,12 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, PieChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
-import { getGatewayInstances, getStatistics, type InstanceInfo, type StatisticsInfo } from '@/api/monitor'
+import {
+  getGatewayInstances,
+  getStatistics,
+  type InstanceInfo,
+  type StatisticsInfo,
+} from '@/api/monitor'
 import { refreshRoutes } from '@/api/route'
 import { syncConfig } from '@/api/config'
 
@@ -201,7 +214,7 @@ const loading = ref(false)
 const actionsLoading = reactive({
   refreshRoutes: false,
   syncConfig: false,
-  clearCache: false
+  clearCache: false,
 })
 
 const statistics = reactive<StatisticsInfo>({
@@ -210,7 +223,7 @@ const statistics = reactive<StatisticsInfo>({
   totalRequests: 0,
   successRequests: 0,
   failedRequests: 0,
-  avgResponseTime: 0
+  avgResponseTime: 0,
 })
 
 const instances = ref<InstanceInfo[]>([])
@@ -247,64 +260,66 @@ const lineChartOption = computed(() => ({
   tooltip: {
     trigger: 'axis',
     axisPointer: {
-      type: 'line'
+      type: 'line',
     },
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderColor: 'var(--border-color-base)',
-    borderWidth: 1
+    borderWidth: 1,
   },
   grid: {
     left: '3%',
     right: '4%',
     bottom: '3%',
-    containLabel: true
+    containLabel: true,
   },
   xAxis: {
     type: 'category',
     boundaryGap: false,
-    data: trafficHistory.value.map(d => d.time),
+    data: trafficHistory.value.map((d) => d.time),
     axisLine: {
       lineStyle: {
-        color: 'var(--neutral-300)'
-      }
+        color: 'var(--neutral-300)',
+      },
     },
     axisLabel: {
-      color: 'var(--text-color-secondary)'
-    }
+      color: 'var(--text-color-secondary)',
+    },
   },
   yAxis: {
     type: 'value',
     minInterval: 1,
     axisLine: {
-      show: false
+      show: false,
     },
     axisLabel: {
-      color: 'var(--text-color-secondary)'
+      color: 'var(--text-color-secondary)',
     },
     splitLine: {
       lineStyle: {
-        color: 'var(--neutral-200)'
-      }
-    }
+        color: 'var(--neutral-200)',
+      },
+    },
   },
-  series: [{
-    data: trafficHistory.value.map(d => d.count),
-    type: 'line',
-    smooth: true,
-    areaStyle: {
-      opacity: 0.15,
-      color: '#3b82f6'
+  series: [
+    {
+      data: trafficHistory.value.map((d) => d.count),
+      type: 'line',
+      smooth: true,
+      areaStyle: {
+        opacity: 0.15,
+        color: '#3b82f6',
+      },
+      lineStyle: {
+        color: '#3b82f6',
+        width: 2,
+      },
+      itemStyle: {
+        color: '#3b82f6',
+      },
+      symbol: 'circle',
+      symbolSize: 6,
     },
-    lineStyle: {
-      color: '#3b82f6',
-      width: 2
-    },
-    itemStyle: {
-      color: '#3b82f6'
-    },
-    symbol: 'circle',
-    symbolSize: 6
-  }]
+  ],
 }))
 
 /**
@@ -318,72 +333,74 @@ const pieChartOption = computed(() => {
       formatter: '{b}: {c} ({d}%)',
       backgroundColor: 'rgba(255, 255, 255, 0.95)',
       borderColor: 'var(--border-color-base)',
-      borderWidth: 1
+      borderWidth: 1,
     },
     legend: {
       bottom: 0,
       left: 'center',
       itemGap: 20,
       textStyle: {
-        color: 'var(--text-color-secondary)'
-      }
+        color: 'var(--text-color-secondary)',
+      },
     },
-    series: [{
-      type: 'pie',
-      radius: ['45%', '70%'],
-      center: ['50%', '45%'],
-      avoidLabelOverlap: false,
-      itemStyle: {
-        borderRadius: 6,
-        borderColor: 'var(--card-bg)',
-        borderWidth: 2
-      },
-      label: {
-        show: true,
-        position: 'center',
-        formatter: () => {
-          const total = statistics.totalInstances || 0
-          return `{total|${total}}\n{label|${t('dashboard.instanceCount')}}`
-        },
-        rich: {
-          total: {
-            fontSize: 22,
-            fontWeight: '600',
-            color: 'var(--text-color-primary)'
-          },
-          label: {
-            fontSize: 12,
-            color: 'var(--text-color-secondary)',
-            padding: [5, 0, 0, 0]
-          }
-        }
-      },
-      emphasis: {
-        label: {
-          show: true
-        },
+    series: [
+      {
+        type: 'pie',
+        radius: ['45%', '70%'],
+        center: ['50%', '45%'],
+        avoidLabelOverlap: false,
         itemStyle: {
-          shadowBlur: 10,
-          shadowOffsetX: 0,
-          shadowColor: 'rgba(0, 0, 0, 0.15)'
-        }
-      },
-      labelLine: {
-        show: false
-      },
-      data: [
-        {
-          value: statistics.healthyInstances,
-          name: t('monitor.healthy'),
-          itemStyle: { color: '#10b981' }
+          borderRadius: 6,
+          borderColor: 'var(--card-bg)',
+          borderWidth: 2,
         },
-        {
-          value: unhealthyCount,
-          name: t('monitor.unhealthy'),
-          itemStyle: { color: '#ef4444' }
-        }
-      ]
-    }]
+        label: {
+          show: true,
+          position: 'center',
+          formatter: () => {
+            const total = statistics.totalInstances || 0
+            return `{total|${total}}\n{label|${t('dashboard.instanceCount')}}`
+          },
+          rich: {
+            total: {
+              fontSize: 22,
+              fontWeight: '600',
+              color: 'var(--text-color-primary)',
+            },
+            label: {
+              fontSize: 12,
+              color: 'var(--text-color-secondary)',
+              padding: [5, 0, 0, 0],
+            },
+          },
+        },
+        emphasis: {
+          label: {
+            show: true,
+          },
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.15)',
+          },
+        },
+        labelLine: {
+          show: false,
+        },
+        data: [
+          {
+            value: statistics.healthyInstances,
+            name: t('monitor.healthy'),
+            itemStyle: { color: '#10b981' },
+          },
+          {
+            value: unhealthyCount,
+            name: t('monitor.unhealthy'),
+            itemStyle: { color: '#ef4444' },
+          },
+        ],
+      },
+    ],
   }
 })
 
@@ -401,10 +418,7 @@ const formatNumber = (num: number): string => {
 const loadData = async () => {
   loading.value = true
   try {
-    const [statsRes, instancesRes] = await Promise.all([
-      getStatistics({}),
-      getGatewayInstances({})
-    ])
+    const [statsRes, instancesRes] = await Promise.all([getStatistics({}), getGatewayInstances({})])
 
     // 统计数据
     if (statsRes) {
@@ -417,7 +431,7 @@ const loadData = async () => {
       // 记录流量历史
       trafficHistory.value.push({
         time: new Date().toLocaleTimeString(),
-        count: statsRes.totalRequests || 0
+        count: statsRes.totalRequests || 0,
       })
       // 保留最近10条记录
       if (trafficHistory.value.length > 10) {
@@ -471,7 +485,7 @@ const handleClearCache = async () => {
   actionsLoading.clearCache = true
   try {
     // No API yet, just show success
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
     ElMessage.success(t('common.success'))
   } catch (error) {
     ElMessage.error(t('common.failed'))
@@ -513,7 +527,9 @@ onUnmounted(() => {
   .stat-card {
     margin-bottom: 20px;
     border: 1px solid var(--border-color-base);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    transition:
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
 
     &:hover {
       box-shadow: var(--shadow-medium);

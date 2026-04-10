@@ -32,19 +32,27 @@ const status = computed(() => {
 
 const statusClass = computed(() => {
   switch (status.value) {
-    case 'operational': return 'status-ok'
-    case 'degraded': return 'status-warning'
-    case 'down': return 'status-error'
-    default: return 'status-unknown'
+    case 'operational':
+      return 'status-ok'
+    case 'degraded':
+      return 'status-warning'
+    case 'down':
+      return 'status-error'
+    default:
+      return 'status-unknown'
   }
 })
 
 const statusText = computed(() => {
   switch (status.value) {
-    case 'operational': return 'common.allSystemsOperational'
-    case 'degraded': return 'common.degraded'
-    case 'down': return 'common.systemDown'
-    default: return 'common.unknown'
+    case 'operational':
+      return 'common.allSystemsOperational'
+    case 'degraded':
+      return 'common.degraded'
+    case 'down':
+      return 'common.systemDown'
+    default:
+      return 'common.unknown'
   }
 })
 
@@ -111,10 +119,18 @@ onUnmounted(() => {
   height: 8px;
   border-radius: 50%;
 
-  &.status-ok { background-color: var(--success-color); }
-  &.status-warning { background-color: var(--warning-color); }
-  &.status-error { background-color: var(--danger-color); }
-  &.status-unknown { background-color: var(--text-color-placeholder); }
+  &.status-ok {
+    background-color: var(--success-color);
+  }
+  &.status-warning {
+    background-color: var(--warning-color);
+  }
+  &.status-error {
+    background-color: var(--danger-color);
+  }
+  &.status-unknown {
+    background-color: var(--text-color-placeholder);
+  }
 }
 
 .status-text {

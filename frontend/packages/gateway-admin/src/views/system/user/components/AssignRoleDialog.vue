@@ -12,7 +12,13 @@
       <div class="selected-info">
         <span class="info-label">{{ t('system.user.selectedUsers') }}:</span>
         <div class="user-tags">
-          <el-tag v-for="user in users" :key="user.userId" class="user-tag" type="primary" effect="plain">
+          <el-tag
+            v-for="user in users"
+            :key="user.userId"
+            class="user-tag"
+            type="primary"
+            effect="plain"
+          >
             {{ user.username || user.loginName }}
           </el-tag>
         </div>
@@ -64,12 +70,29 @@
                     size="small"
                     max-height="200"
                   >
-                    <el-table-column prop="acName" :label="t('system.permission.acName')" min-width="150" />
-                    <el-table-column prop="acIdentity" :label="t('system.permission.acIdentity')" min-width="150" />
-                    <el-table-column prop="acType" :label="t('system.permission.acType')" width="100" align="center">
+                    <el-table-column
+                      prop="acName"
+                      :label="t('system.permission.acName')"
+                      min-width="150"
+                    />
+                    <el-table-column
+                      prop="acIdentity"
+                      :label="t('system.permission.acIdentity')"
+                      min-width="150"
+                    />
+                    <el-table-column
+                      prop="acType"
+                      :label="t('system.permission.acType')"
+                      width="100"
+                      align="center"
+                    >
                       <template #default="{ row }">
-                        <el-tag v-if="row.acType === 1" type="primary" size="small">{{ t('system.permission.typePage') }}</el-tag>
-                        <el-tag v-else-if="row.acType === 2" type="success" size="small">{{ t('system.permission.typeButton') }}</el-tag>
+                        <el-tag v-if="row.acType === 1" type="primary" size="small">
+                          {{ t('system.permission.typePage') }}
+                        </el-tag>
+                        <el-tag v-else-if="row.acType === 2" type="success" size="small">
+                          {{ t('system.permission.typeButton') }}
+                        </el-tag>
                         <el-tag v-else type="info" size="small">{{ row.acType }}</el-tag>
                       </template>
                     </el-table-column>
@@ -97,9 +120,25 @@
                     <template #default="{ node, data }">
                       <span class="custom-tree-node">
                         <span class="node-label">{{ node.label }}</span>
-                        <el-tag v-if="data.type === 1" size="small" type="info" class="tree-tag">{{ t('system.menu.typeDirectory') }}</el-tag>
-                        <el-tag v-else-if="data.type === 2" size="small" type="success" class="tree-tag">{{ t('system.menu.typeMenu') }}</el-tag>
-                        <el-tag v-else-if="data.type === 3" size="small" type="primary" class="tree-tag">{{ t('system.menu.typeButton') }}</el-tag>
+                        <el-tag v-if="data.type === 1" size="small" type="info" class="tree-tag">
+                          {{ t('system.menu.typeDirectory') }}
+                        </el-tag>
+                        <el-tag
+                          v-else-if="data.type === 2"
+                          size="small"
+                          type="success"
+                          class="tree-tag"
+                        >
+                          {{ t('system.menu.typeMenu') }}
+                        </el-tag>
+                        <el-tag
+                          v-else-if="data.type === 3"
+                          size="small"
+                          type="primary"
+                          class="tree-tag"
+                        >
+                          {{ t('system.menu.typeButton') }}
+                        </el-tag>
                       </span>
                     </template>
                   </el-tree>
@@ -167,7 +206,7 @@ const filteredRoleList = computed(() => {
   if (isSuperAdmin.value) {
     return roleList.value
   }
-  return roleList.value.filter(role => role.roleId !== SUPER_ADMIN_ROLE_ID)
+  return roleList.value.filter((role) => role.roleId !== SUPER_ADMIN_ROLE_ID)
 })
 
 const menuTreeProps = {
@@ -198,13 +237,15 @@ const fetchRoleDetail = async (roleId: number): Promise<RoleDetailRsp | null> =>
 }
 
 const handleRoleChange = async (newRoleIds: number[]) => {
-  const existingRoleIds = selectedRoleDetails.value.map(d => d.roleInfo.roleId)
+  const existingRoleIds = selectedRoleDetails.value.map((d) => d.roleInfo.roleId)
 
-  const toAdd = newRoleIds.filter(id => !existingRoleIds.includes(id))
-  const toRemove = existingRoleIds.filter(id => !newRoleIds.includes(id))
+  const toAdd = newRoleIds.filter((id) => !existingRoleIds.includes(id))
+  const toRemove = existingRoleIds.filter((id) => !newRoleIds.includes(id))
 
   if (toRemove.length > 0) {
-    selectedRoleDetails.value = selectedRoleDetails.value.filter(d => !toRemove.includes(d.roleInfo.roleId))
+    selectedRoleDetails.value = selectedRoleDetails.value.filter(
+      (d) => !toRemove.includes(d.roleInfo.roleId)
+    )
   }
 
   for (const roleId of toAdd) {
@@ -233,11 +274,11 @@ const buildMenuTree = (menus: any[]) => {
   const menuMap = new Map<number, any>()
   const rootMenus: any[] = []
 
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     menuMap.set(menu.menuId, { ...menu, children: [] })
   })
 
-  menus.forEach(menu => {
+  menus.forEach((menu) => {
     const menuItem = menuMap.get(menu.menuId)
     if (menuItem) {
       if (menu.parentId === 0 || !menuMap.has(menu.parentId)) {

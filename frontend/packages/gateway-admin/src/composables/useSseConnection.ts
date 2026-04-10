@@ -27,7 +27,7 @@ export function useSseConnection(options: SseOptions): SseConnection {
     onConnect,
     onDisconnect,
     maxRetries = 10,
-    retryDelay = 1000
+    retryDelay = 1000,
   } = options
 
   const status = ref<SseConnection['status']>('disconnected')
@@ -46,7 +46,7 @@ export function useSseConnection(options: SseOptions): SseConnection {
     abortController = new AbortController()
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     }
 
     // 添加认证 header
@@ -104,7 +104,9 @@ export function useSseConnection(options: SseOptions): SseConnection {
         if (retryCount < maxRetries) {
           const delay = Math.min(retryDelay * Math.pow(2, retryCount), 30000)
           retryCount++
-          console.warn(`[SSE] Connection error, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`)
+          console.warn(
+            `[SSE] Connection error, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`
+          )
           return delay
         } else {
           status.value = 'disconnected'
@@ -124,7 +126,7 @@ export function useSseConnection(options: SseOptions): SseConnection {
             onDisconnect()
           }
         }
-      }
+      },
     }).catch((error) => {
       if (!isManualDisconnect && status.value !== 'disconnected') {
         console.error('[SSE] Connection failed:', error)
@@ -162,6 +164,6 @@ export function useSseConnection(options: SseOptions): SseConnection {
   return {
     status: status.value as SseConnection['status'],
     connect,
-    disconnect
+    disconnect,
   }
 }

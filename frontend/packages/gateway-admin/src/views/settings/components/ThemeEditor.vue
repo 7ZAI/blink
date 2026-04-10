@@ -11,10 +11,7 @@
           :class="{ active: themeStore.currentPresetId === preset.id }"
           @click="handleApplyPreset(preset.id)"
         >
-          <div
-            class="preset-color"
-            :style="{ backgroundColor: preset.colors.primary }"
-          ></div>
+          <div class="preset-color" :style="{ backgroundColor: preset.colors.primary }"></div>
           <span class="preset-name">{{ locale === 'zh_cn' ? preset.name : preset.nameEn }}</span>
         </div>
       </div>
@@ -28,10 +25,7 @@
       <el-form label-width="100px" class="color-form">
         <el-form-item :label="t('settings.primaryColor')">
           <div class="color-picker-wrapper">
-            <el-color-picker
-              v-model="localColors.primary"
-              @change="handleColorChange"
-            />
+            <el-color-picker v-model="localColors.primary" @change="handleColorChange" />
             <el-input
               v-model="localColors.primary"
               class="color-input"
@@ -41,10 +35,7 @@
         </el-form-item>
         <el-form-item :label="t('settings.successColor')">
           <div class="color-picker-wrapper">
-            <el-color-picker
-              v-model="localColors.success"
-              @change="handleColorChange"
-            />
+            <el-color-picker v-model="localColors.success" @change="handleColorChange" />
             <el-input
               v-model="localColors.success"
               class="color-input"
@@ -54,10 +45,7 @@
         </el-form-item>
         <el-form-item :label="t('settings.warningColor')">
           <div class="color-picker-wrapper">
-            <el-color-picker
-              v-model="localColors.warning"
-              @change="handleColorChange"
-            />
+            <el-color-picker v-model="localColors.warning" @change="handleColorChange" />
             <el-input
               v-model="localColors.warning"
               class="color-input"
@@ -67,10 +55,7 @@
         </el-form-item>
         <el-form-item :label="t('settings.dangerColor')">
           <div class="color-picker-wrapper">
-            <el-color-picker
-              v-model="localColors.danger"
-              @change="handleColorChange"
-            />
+            <el-color-picker v-model="localColors.danger" @change="handleColorChange" />
             <el-input
               v-model="localColors.danger"
               class="color-input"
@@ -80,15 +65,8 @@
         </el-form-item>
         <el-form-item :label="t('settings.infoColor')">
           <div class="color-picker-wrapper">
-            <el-color-picker
-              v-model="localColors.info"
-              @change="handleColorChange"
-            />
-            <el-input
-              v-model="localColors.info"
-              class="color-input"
-              @change="handleColorChange"
-            />
+            <el-color-picker v-model="localColors.info" @change="handleColorChange" />
+            <el-input v-model="localColors.info" class="color-input" @change="handleColorChange" />
           </div>
         </el-form-item>
       </el-form>
@@ -161,12 +139,13 @@
       <h4 class="section-title">{{ t('settings.animationSettings') }}</h4>
       <div class="animation-row">
         <span class="animation-label">{{ t('settings.enableAnimations') }}</span>
-        <el-switch
-          v-model="localAnimationsEnabled"
-          @change="handleAnimationChange"
-        />
+        <el-switch v-model="localAnimationsEnabled" @change="handleAnimationChange" />
         <span class="animation-hint">
-          {{ localAnimationsEnabled ? t('settings.animationsEnabled') : t('settings.animationsDisabled') }}
+          {{
+            localAnimationsEnabled
+              ? t('settings.animationsEnabled')
+              : t('settings.animationsDisabled')
+          }}
         </span>
       </div>
     </div>
@@ -197,12 +176,7 @@
         >
           <div class="preset-header">
             <span class="preset-name">{{ preset.name }}</span>
-            <el-button
-              type="danger"
-              text
-              size="small"
-              @click.stop="handleDeletePreset(preset)"
-            >
+            <el-button type="danger" text size="small" @click.stop="handleDeletePreset(preset)">
               <el-icon><Delete /></el-icon>
             </el-button>
           </div>
@@ -222,11 +196,7 @@
     </div>
 
     <!-- 保存预设对话框 -->
-    <el-dialog
-      v-model="showSaveDialog"
-      :title="t('settings.saveAsPreset')"
-      width="400px"
-    >
+    <el-dialog v-model="showSaveDialog" :title="t('settings.saveAsPreset')" width="400px">
       <el-form>
         <el-form-item :label="t('settings.presetName')">
           <el-input
@@ -255,7 +225,13 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
 import { useThemeStore, STORAGE_KEYS } from '@/stores/theme'
-import { type ThemeColors, PRESET_THEMES, PRESET_FONTS, FONT_SIZE_CONFIG, MAX_CUSTOM_PRESETS } from '@/config/themes'
+import {
+  type ThemeColors,
+  PRESET_THEMES,
+  PRESET_FONTS,
+  FONT_SIZE_CONFIG,
+  MAX_CUSTOM_PRESETS,
+} from '@/config/themes'
 
 const { t, locale } = useI18n()
 const themeStore = useThemeStore()

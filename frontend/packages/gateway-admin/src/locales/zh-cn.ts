@@ -12,6 +12,7 @@ export default {
     close: '关闭',
     yes: '是',
     no: '否',
+    createBy: '创建人',
     success: '操作成功',
     failed: '操作失败',
     loading: '加载中...',
@@ -32,6 +33,8 @@ export default {
     required: '不能为空',
     pleaseInput: '请输入',
     pleaseSelect: '请选择',
+    select: '选择',
+    clear: '清除',
     fullscreen: '全屏',
     exitFullscreen: '退出全屏',
     darkMode: '暗黑模式',
@@ -63,6 +66,7 @@ export default {
     lock: '锁定',
     unlock: '解锁',
     show: '显示',
+    to: '至',
     hide: '隐藏',
     selectAll: '全选',
   },
@@ -83,7 +87,7 @@ export default {
   },
   sidebar: {
     collapse: '折叠侧边栏',
-    expand: '展开侧边栏'
+    expand: '展开侧边栏',
   },
   pagination: {
     total: '共 {total} 条',
@@ -129,6 +133,7 @@ export default {
     typeMenu: '菜单',
     typeButton: '按钮',
     icon: '图标',
+    selectIcon: '请选择图标',
     url: '路由地址',
     componentPath: '组件路径',
     permName: '权限名称',
@@ -139,9 +144,30 @@ export default {
     createTime: '创建时间',
     updateTime: '更新时间',
     deleteConfirm: '确定要删除该菜单吗？',
-    deleteConfirmWithRoles: '该菜单已分配给角色：{roles}，删除后这些角色将失去该菜单权限，确定要删除吗？',
+    deleteConfirmWithRoles:
+      '该菜单已分配给角色：{roles}，删除后这些角色将失去该菜单权限，确定要删除吗？',
     parentMenu: '上级菜单',
     rootMenu: '根目录',
+    relatedPermission: '关联权限',
+    selectPermission: '选择权限',
+    permChangeConfirmWithRoles:
+      '该菜单已分配给角色【{roles}】，修改权限后相关角色的权限关联将被同步更新，确定要修改吗？',
+    addMenu: '新增菜单',
+    editMenu: '编辑菜单',
+  },
+  permission: {
+    title: '权限管理',
+    acName: '权限名称',
+    acEnName: '权限英文名',
+    acIdentity: '权限标识',
+    acType: '权限类型',
+    acTypeApi: '接口权限',
+    acTypeData: '数据权限',
+    typeApi: '接口权限',
+    typeData: '数据权限',
+    url: '权限地址',
+    createTime: '创建时间',
+    createBy: '创建人',
   },
   dashboard: {
     title: '仪表盘',
@@ -166,7 +192,7 @@ export default {
     clearCache: '清除缓存',
     recentActivity: '最近活动',
     noActivity: '暂无活动记录',
-    activityNote: '活动日志功能即将上线'
+    activityNote: '活动日志功能即将上线',
   },
   channel: {
     title: '渠道管理',
@@ -336,7 +362,7 @@ export default {
     '404Desc': '抱歉，您访问的页面不存在',
     '500Message': '服务器错误',
     '500Desc': '抱歉，服务器出了点问题',
-    backToDashboard: '返回仪表盘'
+    backToDashboard: '返回仪表盘',
   },
   header: {
     profile: '个人中心',
@@ -361,7 +387,7 @@ export default {
     closeOthers: '关闭其他',
     closeLeft: '关闭左侧',
     closeRight: '关闭右侧',
-    closeAll: '关闭全部'
+    closeAll: '关闭全部',
   },
   system: {
     title: '系统管理',
@@ -427,6 +453,9 @@ export default {
       onlySuperAdminCanAssign: '只有超级管理员可以分配超级管理员角色',
       permissionList: '权限列表',
       remark: '备注',
+      viewRolePermission: '查看角色权限',
+      menus: '菜单',
+      permissions: '权限',
     },
     role: {
       title: '角色管理',
@@ -467,6 +496,10 @@ export default {
       menuName: '菜单名称',
       menuEnName: '英文名',
       menuType: '类型',
+      type: '类型',
+      typeDirectory: '目录',
+      typeMenu: '菜单',
+      typeButton: '按钮',
       menuTypeDir: '目录',
       menuTypeMenu: '菜单',
       menuTypeButton: '按钮',
@@ -484,10 +517,14 @@ export default {
       deleteConfirm: '确定要删除该菜单吗？',
       addRootMenu: '新增根菜单',
       addChildMenu: '新增子菜单',
-      selectParent: '请选择上级菜单'
+      selectParent: '请选择上级菜单',
     },
     permission: {
       title: '权限管理',
+      apiPermission: '接口权限',
+      dataPermission: '数据权限',
+      dataPermissionList: '数据权限列表',
+      dataFilterRule: '过滤规则',
       acName: '权限名称',
       acEnName: '权限英文名',
       acIdentity: '权限标识',
@@ -500,7 +537,7 @@ export default {
       typeButton: '按钮权限',
       url: '权限地址',
       dataFilterId: '数据过滤规则',
-      dataFilterRule: '选择数据过滤规则',
+      selectDataFilterRule: '选择数据过滤规则',
       createTime: '创建时间',
       createBy: '创建人',
       addPermission: '新增权限',
@@ -536,7 +573,7 @@ export default {
       title: '字典管理',
       typeTitle: '字典类型',
       dataTitle: '字典数据',
-    }
+    },
   },
   settings: {
     title: '系统设置',
@@ -673,30 +710,101 @@ export default {
     dataItems: '项数据',
   },
   dataScope: {
-    title: '数据过滤规则',
+    // 页面标题
+    title: '过滤规则',
+    list: '过滤规则列表',
+    addTitle: '新增过滤规则',
+    editTitle: '编辑过滤规则',
+
+    // 基础字段
     filterName: '规则名称',
     filterEnName: '规则英文名',
-    entityClass: '实体类',
+    entityClass: '过滤对象',
     tableName: '表名',
     ruleType: '规则类型',
     ruleConfig: '规则配置',
-    ruleConfigPlaceholder: '请输入规则配置JSON',
     status: '状态',
     remark: '备注',
+    basicInfo: '基础信息',
+    refreshCache: '刷新缓存',
+    refreshCacheSuccess: '缓存刷新成功',
+
+    // 规则类型
     fieldFilter: '字段过滤',
-    creatorFilter: '创建人过滤',
+    creatorFilter: '用户过滤',
     dateRangeFilter: '时间范围过滤',
     customSql: '自定义SQL',
-    relationFilter: '关联过滤',
-    addTitle: '新增数据过滤规则',
-    editTitle: '编辑数据过滤规则',
-    detailTitle: '数据过滤规则详情',
-    deleteConfirm: '确定要删除该数据过滤规则吗？',
-    nameRequired: '规则名称不能为空',
-    entityRequired: '请选择实体类',
+
+    // 字段过滤配置
+    excludeMode: '排除模式',
+    includeMode: '包含模式',
+    availableFields: '可选字段',
+    selectedFields: '已选字段',
+    noFieldsSelected: '请选择字段',
+    matchMode: '匹配模式',
+
+    // 创建人过滤配置
+    matchField: '匹配字段',
+    matchType: '匹配类型',
+    currentUser: '当前用户',
+    specifiedUser: '指定用户',
+    roleUser: '指定角色的用户',
+    selectUser: '选择用户',
+    selectRole: '选择角色',
+
+    // 时间范围配置
+    rangeType: '范围类型',
+    relativeTime: '相对时间',
+    absoluteTime: '绝对时间',
+    timeValue: '时间数值',
+    timeUnit: '单位',
+    day: '天',
+    week: '周',
+    month: '月',
+    year: '年',
+    startTime: '开始时间',
+    endTime: '结束时间',
+    noTimeField: '过滤对象不支持时间范围过滤',
+    noUserIdField: '过滤对象不支持用户过滤',
+
+    // 自定义SQL配置
+    sqlFragment: 'SQL片段',
+    securityWarning: 'SQL片段将直接拼接到WHERE条件，请确保安全性',
+    commonTemplates: '常用模板',
+    last7Days: '最近7天',
+    thisMonth: '本月',
+    statusEnabled: '状态为启用',
+
+    // 操作
+    deleteConfirm: '确定要删除该过滤规则吗？',
+
+    // 验证
+    nameRequired: '请输入规则名称',
+    nameMaxLength: '最大{max}个字符',
+    entityRequired: '请选择过滤对象',
     ruleTypeRequired: '请选择规则类型',
-    ruleConfigRequired: '规则配置不能为空',
+    ruleConfigRequired: '请配置规则',
     loadDetailFailed: '加载详情失败',
+
+    // 规则类型枚举值
+    FIELD_FILTER: '字段过滤',
+    CREATOR_FILTER: '用户过滤',
+    DATE_RANGE_FILTER: '时间范围过滤',
+    CUSTOM_SQL: '自定义SQL',
+    RELATION_FILTER: '关联过滤',
+
+    // 关联过滤配置
+    relationFilter: '关联过滤',
+    relationName: '关联关系',
+    noRelationSupport: '该过滤对象不支持关联过滤',
+    selectMatchValues: '选择匹配值',
+    selectedUsers: '已选用户',
+
+    // 匹配类型
+    MATCH_CURRENT_USER: '当前用户',
+    MATCH_CURRENT_ROLE: '当前用户拥有的角色',
+    MATCH_USER_LIST: '指定用户',
+    MATCH_ROLE_LIST: '指定角色下的用户',
   },
   systemConfig: {
     title: '系统配置',

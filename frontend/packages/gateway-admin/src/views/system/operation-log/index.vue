@@ -5,10 +5,20 @@
     <el-card class="search-card" shadow="never">
       <el-form :model="searchForm" inline class="search-form">
         <el-form-item :label="t('system.operationLog.operator')">
-          <el-input v-model.trim="searchForm.loginName" :placeholder="t('common.pleaseInput')" clearable style="width: 120px" />
+          <el-input
+            v-model.trim="searchForm.loginName"
+            :placeholder="t('common.pleaseInput')"
+            clearable
+            style="width: 120px"
+          />
         </el-form-item>
         <el-form-item :label="t('system.operationLog.logType')">
-          <el-select v-model="searchForm.logType" :placeholder="t('common.pleaseSelect')" clearable style="width: 100px">
+          <el-select
+            v-model="searchForm.logType"
+            :placeholder="t('common.pleaseSelect')"
+            clearable
+            style="width: 100px"
+          >
             <el-option
               v-for="item in logTypeOptions"
               :key="item.value"
@@ -18,7 +28,12 @@
           </el-select>
         </el-form-item>
         <el-form-item :label="t('system.operationLog.executeStatus')">
-          <el-select v-model="searchForm.executeStatus" :placeholder="t('common.pleaseSelect')" clearable style="width: 90px">
+          <el-select
+            v-model="searchForm.executeStatus"
+            :placeholder="t('common.pleaseSelect')"
+            clearable
+            style="width: 90px"
+          >
             <el-option
               v-for="item in executeStatusOptions"
               :key="item.value"
@@ -40,14 +55,25 @@
           />
         </el-form-item>
         <el-form-item :label="t('common.keyword')">
-          <el-input v-model.trim="searchForm.keyword" :placeholder="t('system.operationLog.keywordPlaceholder')" clearable style="width: 140px" />
+          <el-input
+            v-model.trim="searchForm.keyword"
+            :placeholder="t('system.operationLog.keywordPlaceholder')"
+            clearable
+            style="width: 140px"
+          />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleSearch">
-            <el-icon><Search /></el-icon>{{ t('common.search') }}
+          <el-button
+            type="primary"
+            style="height: 28px; padding: 0 12px; font-size: 13px"
+            @click="handleSearch"
+          >
+            <el-icon><Search /></el-icon>
+            {{ t('common.search') }}
           </el-button>
           <el-button style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleReset">
-            <el-icon><Refresh /></el-icon>{{ t('common.reset') }}
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.reset') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -63,31 +89,70 @@
           stripe
           @sort-change="handleSortChange"
         >
-          <el-table-column prop="operationTime" :label="t('system.operationLog.operationTime')" min-width="155" sortable="custom" />
-          <el-table-column prop="loginName" :label="t('system.operationLog.operator')" min-width="80" />
-          <el-table-column prop="logTypeDesc" :label="t('system.operationLog.logType')" min-width="85">
+          <el-table-column
+            prop="operationTime"
+            :label="t('system.operationLog.operationTime')"
+            min-width="155"
+            sortable="custom"
+          />
+          <el-table-column
+            prop="loginName"
+            :label="t('system.operationLog.operator')"
+            min-width="80"
+          />
+          <el-table-column
+            prop="logTypeDesc"
+            :label="t('system.operationLog.logType')"
+            min-width="85"
+          >
             <template #default="{ row }">
               <el-tag :type="getLogTypeTagType(row.logType)">{{ row.logTypeDesc }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="description" :label="t('system.operationLog.description')" min-width="140" show-overflow-tooltip />
-          <el-table-column prop="requestUrl" :label="t('system.operationLog.requestUrl')" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="executeStatusDesc" :label="t('system.operationLog.executeStatus')" min-width="80">
+          <el-table-column
+            prop="description"
+            :label="t('system.operationLog.description')"
+            min-width="140"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="requestUrl"
+            :label="t('system.operationLog.requestUrl')"
+            min-width="180"
+            show-overflow-tooltip
+          />
+          <el-table-column
+            prop="executeStatusDesc"
+            :label="t('system.operationLog.executeStatus')"
+            min-width="80"
+          >
             <template #default="{ row }">
-              <el-tag :type="row.executeStatus === 0 ? 'success' : 'danger'">{{ row.executeStatusDesc }}</el-tag>
+              <el-tag :type="row.executeStatus === 0 ? 'success' : 'danger'">
+                {{ row.executeStatusDesc }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="executeTimeMs" :label="t('system.operationLog.executeTimeMs')" min-width="85" sortable="custom">
+          <el-table-column
+            prop="executeTimeMs"
+            :label="t('system.operationLog.executeTimeMs')"
+            min-width="85"
+            sortable="custom"
+          >
             <template #default="{ row }">
               <span :class="getExecuteTimeClass(row.executeTimeMs)">{{ row.executeTimeMs }}ms</span>
             </template>
           </el-table-column>
-          <el-table-column prop="ipAddress" :label="t('system.operationLog.ipAddress')" min-width="130" />
+          <el-table-column
+            prop="ipAddress"
+            :label="t('system.operationLog.ipAddress')"
+            min-width="130"
+          />
           <el-table-column :label="t('common.operation')" width="90" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
                 <el-button type="primary" link size="small" @click="handleDetail(row)">
-                  <el-icon><View /></el-icon>{{ t('common.detail') }}
+                  <el-icon><View /></el-icon>
+                  {{ t('common.detail') }}
                 </el-button>
               </div>
             </template>
@@ -109,10 +174,7 @@
     </el-card>
 
     <!-- 详情弹窗 -->
-    <OperationLogDetailDialog
-      v-model="detailVisible"
-      :log-id="currentLogId"
-    />
+    <OperationLogDetailDialog v-model="detailVisible" :log-id="currentLogId" />
   </div>
 </template>
 
@@ -126,7 +188,7 @@ import {
   type QueryOperationLogParams,
   logTypeOptions,
   executeStatusOptions,
-  LogType
+  LogType,
 } from '@/api/operation-log'
 import OperationLogDetailDialog from './components/OperationLogDetailDialog.vue'
 
@@ -157,7 +219,7 @@ const pagination = reactive({
 // 排序状态
 const sortState = ref<{ prop: string; order: string | null }>({
   prop: 'operationTime',
-  order: 'descending'
+  order: 'descending',
 })
 
 const loading = ref(false)
@@ -171,8 +233,8 @@ const currentLogId = ref<number>(0)
  * @param type 日志类型
  * @returns 标签类型
  */
-const getLogTypeTagType = (type: string): string => {
-  const typeMap: Record<string, string> = {
+const getLogTypeTagType = (type: string): 'primary' | 'success' | 'warning' | 'info' | 'danger' => {
+  const typeMap: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'danger'> = {
     [LogType.LOGIN]: 'success',
     [LogType.SYSTEM]: 'warning',
     [LogType.OPERATION]: 'primary',

@@ -137,5 +137,5 @@ export const dataSyncApi = {
   getInstances: getGatewayInstances,
   check: checkConsistency,
   sync: syncData,
-  getLogs: getSyncLogs
+  getLogs: getSyncLogs,
 }

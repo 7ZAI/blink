@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="pupilRef"
-    class="pupil"
-    :style="pupilStyle"
-  />
+  <div ref="pupilRef" class="pupil" :style="pupilStyle" />
 </template>
 
 <script setup lang="ts">
@@ -20,7 +16,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   size: 12,
   maxDistance: 5,
-  pupilColor: 'black'
+  pupilColor: 'black',
 })
 
 const mouseX = ref(0)
@@ -60,7 +56,7 @@ const pupilStyle = computed(() => ({
   height: `${props.size}px`,
   backgroundColor: props.pupilColor,
   transform: `translate(${pupilPosition.value.x}px, ${pupilPosition.value.y}px)`,
-  transition: 'transform 0.1s ease-out'
+  transition: 'transform 0.1s ease-out',
 }))
 
 onMounted(() => {

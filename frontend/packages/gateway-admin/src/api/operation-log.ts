@@ -5,32 +5,32 @@ import type { PageResult } from '@/types'
 export enum LogType {
   LOGIN = 'LOGIN',
   SYSTEM = 'SYSTEM',
-  OPERATION = 'OPERATION'
+  OPERATION = 'OPERATION',
 }
 
 // 日志类型标签映射
 export const logTypeLabels: Record<LogType, string> = {
   [LogType.LOGIN]: '登入日志',
   [LogType.SYSTEM]: '系统日志',
-  [LogType.OPERATION]: '操作日志'
+  [LogType.OPERATION]: '操作日志',
 }
 
 // 执行状态标签映射
 export const executeStatusLabels: Record<number, string> = {
   0: '成功',
-  1: '失败'
+  1: '失败',
 }
 
 // 日志类型选项
-export const logTypeOptions = Object.values(LogType).map(type => ({
+export const logTypeOptions = Object.values(LogType).map((type) => ({
   label: logTypeLabels[type],
-  value: type
+  value: type,
 }))
 
 // 执行状态选项
 export const executeStatusOptions = [
   { label: '成功', value: 0 },
-  { label: '失败', value: 1 }
+  { label: '失败', value: 1 },
 ]
 
 export interface QueryOperationLogParams {
@@ -82,10 +82,16 @@ export interface OperationLogDetail {
   operationTime: string
 }
 
-export const getOperationLogList = (params: QueryOperationLogParams): Promise<PageResult<OperationLogInfo>> => {
-  return request.post('/sysOperationLog/getOperationLogList', { body: params }) as Promise<PageResult<OperationLogInfo>>
+export const getOperationLogList = (
+  params: QueryOperationLogParams
+): Promise<PageResult<OperationLogInfo>> => {
+  return request.post('/sysOperationLog/getOperationLogList', { body: params }) as Promise<
+    PageResult<OperationLogInfo>
+  >
 }
 
 export const getOperationLogDetail = (logId: number): Promise<OperationLogDetail> => {
-  return request.post('/sysOperationLog/getOperationLogDetail', { body: { logId } }) as Promise<OperationLogDetail>
+  return request.post('/sysOperationLog/getOperationLogDetail', {
+    body: { logId },
+  }) as Promise<OperationLogDetail>
 }

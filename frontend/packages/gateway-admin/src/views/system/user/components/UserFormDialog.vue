@@ -8,18 +8,9 @@
     :lock-scroll="false"
     @closed="handleClose"
   >
-    <el-form
-      ref="formRef"
-      :model="form"
-      :rules="rules"
-      label-width="100px"
-      class="user-form"
-    >
+    <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="user-form">
       <el-form-item :label="t('system.user.avatar')" prop="avatar">
-        <AvatarSelector
-          v-model="form.avatar"
-          :size="60"
-        />
+        <AvatarSelector v-model="form.avatar" :size="60" />
       </el-form-item>
 
       <el-form-item :label="t('system.user.loginName')" prop="loginName">
@@ -31,7 +22,10 @@
       </el-form-item>
 
       <el-form-item :label="t('system.user.username')" prop="username">
-        <el-input v-model.trim="form.username" :placeholder="t('system.user.usernamePlaceholder')" />
+        <el-input
+          v-model.trim="form.username"
+          :placeholder="t('system.user.usernamePlaceholder')"
+        />
       </el-form-item>
 
       <el-form-item :label="t('system.user.assignRole')" prop="roleIds">
@@ -46,7 +40,8 @@
               {{ role.roleName }}
             </el-tag>
             <el-button type="primary" link @click="roleSelectorVisible = true">
-              <el-icon><Plus /></el-icon>{{ t('system.user.selectRoles') }}
+              <el-icon><Plus /></el-icon>
+              {{ t('system.user.selectRoles') }}
             </el-button>
           </div>
         </div>
@@ -90,13 +85,21 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { addUser, updateUser, type UserInfo, type AddUserParams, type UpdateUserParams } from '@/api/user'
+import {
+  addUser,
+  updateUser,
+  type UserInfo,
+  type AddUserParams,
+  type UpdateUserParams,
+} from '@/api/user'
 import type { RoleInfo } from '@/api/role'
 import AvatarSelector from '@/components/AvatarSelector.vue'
 import RoleSelector from '@/components/RoleSelector.vue'
 import { useSubmitGuard } from '@/composables/useSubmitGuard'
+import { useSystemConfigStore } from '@/stores/systemConfig'
 
 const { t } = useI18n()
+const systemConfigStore = useSystemConfigStore()
 
 interface Props {
   modelValue: boolean
@@ -112,7 +115,9 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
-const dialogTitle = computed(() => (props.type === 'add' ? t('system.user.addUser') : t('system.user.editUser')))
+const dialogTitle = computed(() =>
+  props.type === 'add' ? t('system.user.addUser') : t('system.user.editUser')
+)
 
 const formRef = ref<FormInstance>()
 const { isSubmitting, submitGuard } = useSubmitGuard()
@@ -123,7 +128,7 @@ const form = reactive({
   userId: undefined as number | undefined,
   loginName: '',
   username: '',
-  avatar: 'fun-emoji',
+  avatar: systemConfigStore.defaultAvatar || 'fun-emoji',
   sex: 1,
   phone: '',
   email: '',
@@ -132,19 +137,29 @@ const form = reactive({
 
 const rules = computed<FormRules>(() => ({
   loginName: [
-    { required: true, message: t('validation.required', { field: t('system.user.loginName') }), trigger: 'blur' },
+    {
+      required: true,
+      message: t('validation.required', { field: t('system.user.loginName') }),
+      trigger: 'blur',
+    },
     { min: 3, max: 20, message: t('validation.length', { min: 3, max: 20 }), trigger: 'blur' },
   ],
   sex: [
-    { required: true, message: t('validation.required', { field: t('system.user.sex') }), trigger: 'change' },
+    {
+      required: true,
+      message: t('validation.required', { field: t('system.user.sex') }),
+      trigger: 'change',
+    },
   ],
   phone: [
-    { required: true, message: t('validation.required', { field: t('system.user.phone') }), trigger: 'blur' },
+    {
+      required: true,
+      message: t('validation.required', { field: t('system.user.phone') }),
+      trigger: 'blur',
+    },
     { pattern: /^1[3-9]\d{9}$/, message: t('validation.phone'), trigger: 'blur' },
   ],
-  email: [
-    { type: 'email', message: t('validation.email'), trigger: 'blur' },
-  ],
+  email: [{ type: 'email', message: t('validation.email'), trigger: 'blur' }],
 }))
 
 const handleRoleSelect = (roles: RoleInfo[]) => {
@@ -161,7 +176,7 @@ const initForm = () => {
   form.userId = undefined
   form.loginName = ''
   form.username = ''
-  form.avatar = 'fun-emoji'
+  form.avatar = systemConfigStore.defaultAvatar || 'fun-emoji'
   form.sex = 1
   form.phone = ''
   form.email = ''

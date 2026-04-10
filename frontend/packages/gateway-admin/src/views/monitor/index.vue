@@ -12,7 +12,9 @@
               <div class="stat-value">{{ statistics.totalInstances }}</div>
               <div class="stat-label">{{ t('monitor.instanceList') }}</div>
               <div class="stat-sub">
-                <span class="healthy-count">{{ t('monitor.healthy') }}: {{ statistics.healthyInstances }}</span>
+                <span class="healthy-count">
+                  {{ t('monitor.healthy') }}: {{ statistics.healthyInstances }}
+                </span>
               </div>
             </div>
           </div>
@@ -39,7 +41,10 @@
               <el-icon><CircleCheck /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ healthyRate }}<span class="stat-unit">%</span></div>
+              <div class="stat-value">
+                {{ healthyRate }}
+                <span class="stat-unit">%</span>
+              </div>
               <div class="stat-label">{{ t('monitor.healthStatus') }}</div>
               <div class="stat-sub">{{ t('dashboard.healthyRate') }}</div>
             </div>
@@ -55,19 +60,30 @@
           <span class="card-title">{{ t('monitor.instanceList') }}</span>
           <div class="header-actions">
             <el-button @click="loadData">
-              <el-icon><Refresh /></el-icon>{{ t('common.refresh') }}
+              <el-icon><Refresh /></el-icon>
+              {{ t('common.refresh') }}
             </el-button>
           </div>
         </div>
       </template>
 
       <el-table :data="instances" v-loading="loading" stripe class="instance-table">
-        <el-table-column prop="instanceId" :label="t('monitor.instanceId')" min-width="180" show-overflow-tooltip>
+        <el-table-column
+          prop="instanceId"
+          :label="t('monitor.instanceId')"
+          min-width="180"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <span class="instance-id">{{ row.instanceId }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="serviceId" :label="t('route.routeName')" width="150" show-overflow-tooltip>
+        <el-table-column
+          prop="serviceId"
+          :label="t('route.routeName')"
+          width="150"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <el-tag size="small" effect="plain">{{ row.serviceId || 'gateway-reactive' }}</el-tag>
           </template>
@@ -84,8 +100,13 @@
         <el-table-column :label="t('monitor.healthStatus')" width="100" align="center">
           <template #default="{ row }">
             <div class="health-status">
-              <span class="status-dot" :class="isHealthy(row.status) ? 'healthy' : 'unhealthy'"></span>
-              <span>{{ isHealthy(row.status) ? t('monitor.healthy') : t('monitor.unhealthy') }}</span>
+              <span
+                class="status-dot"
+                :class="isHealthy(row.status) ? 'healthy' : 'unhealthy'"
+              ></span>
+              <span>
+                {{ isHealthy(row.status) ? t('monitor.healthy') : t('monitor.unhealthy') }}
+              </span>
             </div>
           </template>
         </el-table-column>
@@ -99,16 +120,19 @@
           <template #default="{ row }">
             <div class="operation-buttons">
               <el-button type="primary" link size="small" @click="handleViewDetail(row)">
-                <el-icon><View /></el-icon>{{ t('common.detail') }}
+                <el-icon><View /></el-icon>
+                {{ t('common.detail') }}
               </el-button>
               <template v-if="row.status === 0">
                 <el-button type="warning" link size="small" @click="handleOffline(row)">
-                  <el-icon><SwitchButton /></el-icon>{{ t('common.lock') }}
+                  <el-icon><SwitchButton /></el-icon>
+                  {{ t('common.lock') }}
                 </el-button>
               </template>
               <template v-else-if="row.status === 2">
                 <el-button type="success" link size="small" @click="handleOnline(row)">
-                  <el-icon><CircleCheck /></el-icon>{{ t('common.unlock') }}
+                  <el-icon><CircleCheck /></el-icon>
+                  {{ t('common.unlock') }}
                 </el-button>
               </template>
             </div>
@@ -125,11 +149,21 @@
       class="detail-dialog"
     >
       <el-descriptions :column="2" border v-if="currentInstance">
-        <el-descriptions-item :label="t('monitor.instanceId')">{{ currentInstance.instanceId }}</el-descriptions-item>
-        <el-descriptions-item :label="t('route.routeName')">{{ currentInstance.serviceId }}</el-descriptions-item>
-        <el-descriptions-item :label="t('monitor.ip')">{{ currentInstance.host }}</el-descriptions-item>
-        <el-descriptions-item :label="t('monitor.port')">{{ currentInstance.port }}</el-descriptions-item>
-        <el-descriptions-item :label="t('route.uri')" :span="2">{{ currentInstance.uri }}</el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.instanceId')">
+          {{ currentInstance.instanceId }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('route.routeName')">
+          {{ currentInstance.serviceId }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.ip')">
+          {{ currentInstance.host }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('monitor.port')">
+          {{ currentInstance.port }}
+        </el-descriptions-item>
+        <el-descriptions-item :label="t('route.uri')" :span="2">
+          {{ currentInstance.uri }}
+        </el-descriptions-item>
         <el-descriptions-item :label="t('common.status')">
           <el-tag :type="getStatusType(currentInstance.status)" effect="light">
             {{ currentInstance.statusDesc || getStatusText(currentInstance.status) }}
@@ -137,8 +171,15 @@
         </el-descriptions-item>
         <el-descriptions-item :label="t('monitor.healthStatus')">
           <div class="health-status">
-            <span class="status-dot" :class="isHealthy(currentInstance.status) ? 'healthy' : 'unhealthy'"></span>
-            <span>{{ isHealthy(currentInstance.status) ? t('monitor.healthy') : t('monitor.unhealthy') }}</span>
+            <span
+              class="status-dot"
+              :class="isHealthy(currentInstance.status) ? 'healthy' : 'unhealthy'"
+            ></span>
+            <span>
+              {{
+                isHealthy(currentInstance.status) ? t('monitor.healthy') : t('monitor.unhealthy')
+              }}
+            </span>
           </div>
         </el-descriptions-item>
         <el-descriptions-item :label="t('system.user.lastLoginTime')">
@@ -187,14 +228,21 @@
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Monitor, TrendCharts, CircleCheck, View, SwitchButton } from '@element-plus/icons-vue'
+import {
+  Refresh,
+  Monitor,
+  TrendCharts,
+  CircleCheck,
+  View,
+  SwitchButton,
+} from '@element-plus/icons-vue'
 import {
   getInstanceList,
   getStatistics,
   offlineInstance,
   onlineInstance,
   type InstanceInfo,
-  type StatisticsInfo
+  type StatisticsInfo,
 } from '@/api/monitor'
 
 defineOptions({ name: 'MonitorManagement' })
@@ -209,7 +257,7 @@ const statistics = ref<StatisticsInfo>({
   totalRequests: 0,
   successRequests: 0,
   failedRequests: 0,
-  avgResponseTime: 0
+  avgResponseTime: 0,
 })
 
 const detailDialogVisible = ref(false)
@@ -218,7 +266,7 @@ const currentInstance = ref<InstanceInfo | null>(null)
 
 const offlineForm = reactive({
   instanceId: '',
-  reason: ''
+  reason: '',
 })
 
 let refreshTimer: number | null = null
@@ -250,12 +298,16 @@ const formatTime = (time: string): string => {
 /**
  * 获取状态类型
  */
-const getStatusType = (status: number): string => {
+const getStatusType = (status: number): 'primary' | 'success' | 'warning' | 'info' | 'danger' => {
   switch (status) {
-    case 0: return 'success'
-    case 1: return 'danger'
-    case 2: return 'warning'
-    default: return 'info'
+    case 0:
+      return 'success'
+    case 1:
+      return 'danger'
+    case 2:
+      return 'warning'
+    default:
+      return 'info'
   }
 }
 
@@ -264,10 +316,14 @@ const getStatusType = (status: number): string => {
  */
 const getStatusText = (status: number): string => {
   switch (status) {
-    case 0: return t('monitor.up')
-    case 1: return t('monitor.down')
-    case 2: return t('system.user.statusLocked')
-    default: return t('common.unknown')
+    case 0:
+      return t('monitor.up')
+    case 1:
+      return t('monitor.down')
+    case 2:
+      return t('system.user.statusLocked')
+    default:
+      return t('common.unknown')
   }
 }
 
@@ -284,10 +340,7 @@ const isHealthy = (status: number): boolean => {
 const loadData = async () => {
   loading.value = true
   try {
-    const [statsRes, instancesRes] = await Promise.all([
-      getStatistics({}),
-      getInstanceList()
-    ])
+    const [statsRes, instancesRes] = await Promise.all([getStatistics({}), getInstanceList()])
     if (statsRes) {
       statistics.value = statsRes
     }
@@ -338,11 +391,9 @@ const confirmOffline = async () => {
  * 上线实例
  */
 const handleOnline = (row: InstanceInfo) => {
-  ElMessageBox.confirm(
-    t('system.user.unlockConfirm'),
-    t('common.confirm'),
-    { type: 'warning' }
-  ).then(async () => {
+  ElMessageBox.confirm(t('system.user.unlockConfirm'), t('common.confirm'), {
+    type: 'warning',
+  }).then(async () => {
     try {
       await onlineInstance({ instanceId: row.instanceId })
       ElMessage.success(t('common.success'))

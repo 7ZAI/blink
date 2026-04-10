@@ -88,9 +88,7 @@ const filteredRoles = computed(() => {
     return allRoles.value
   }
   return allRoles.value.filter(
-    (role) =>
-      role.roleName.includes(searchText.value) ||
-      role.roleCode.includes(searchText.value)
+    (role) => role.roleName.includes(searchText.value) || role.roleCode.includes(searchText.value)
   )
 })
 
