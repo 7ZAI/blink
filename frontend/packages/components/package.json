@@ -18,11 +18,13 @@
     "dist"
   ],
   "scripts": {
+    "dev": "vite --config vite.dev.config.ts",
     "build:lib": "vite build --config vite.lib.config.ts",
     "pack:lib": "npm run build:lib && npm pack",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix"
   },
   "peerDependencies": {

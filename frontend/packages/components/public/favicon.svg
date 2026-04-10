@@ -1,3 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 32" fill="#3b82f6">
-  <path d="M7 2L2 14h5l-2 12 9-16h-5l2-8z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="blink-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#blink-gradient)" d="M16 2L6 14h6l-2 12 12-14h-6l2-10z"/>
 </svg>

@@ -61,7 +61,6 @@
 
 import { computed, type Component } from 'vue'
 import { UserFilled, ArrowDown } from '@element-plus/icons-vue'
-import { getLocalAvatarUrl } from '@/utils/avatar'
 
 // ============================================
 // 类型定义
@@ -180,8 +179,8 @@ const resolveAvatar = computed(() => {
   if (props.avatarResolver && props.userInfo) {
     return props.avatarResolver(props.userInfo)
   }
-  // 使用 getLocalAvatarUrl 将头像名称转换为 URL
-  return getLocalAvatarUrl(props.userInfo?.avatar)
+  // 直接使用 userInfo.avatar 作为头像 URL
+  return props.userInfo?.avatar || ''
 })
 
 /**
