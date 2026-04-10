@@ -323,7 +323,6 @@ export default {
     ipBlackList: 'IP Black List',
     addIp: 'Add IP',
     removeIp: 'Remove IP',
-    ipPlaceholder: 'Please input IP address',
     ipRequired: 'IP address is required',
     timesPerSecond: 'times/sec',
     milliseconds: 'ms',

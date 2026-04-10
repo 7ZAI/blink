@@ -889,7 +889,6 @@ export default {
     ipBlackList: 'IP黑名单',
     addIp: '添加IP',
     removeIp: '移除IP',
-    ipPlaceholder: '请输入IP地址',
     ipRequired: '请输入IP地址',
     timesPerSecond: '次/秒',
     milliseconds: '毫秒',
