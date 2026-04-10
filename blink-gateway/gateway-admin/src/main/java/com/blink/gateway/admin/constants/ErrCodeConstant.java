@@ -92,6 +92,21 @@ public interface ErrCodeConstant {
     String SYNC_ROUTE_FAILED = "GATE0030";
 
     /**
+     * 获取 Nacos 配置失败
+     */
+    String GET_NACOS_CONFIG_FAILED = "GATE0031";
+
+    /**
+     * 发布 Nacos 配置失败
+     */
+    String PUBLISH_NACOS_CONFIG_FAILED = "GATE0032";
+
+    /**
+     * 删除 Nacos 路由失败
+     */
+    String DELETE_NACOS_ROUTE_FAILED = "GATE0033";
+
+    /**
      * Nacos 路由未实现
      */
     String NACOS_ROUTE_NOT_IMPLEMENTED = "GATE0034";
