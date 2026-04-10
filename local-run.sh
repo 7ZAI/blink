@@ -28,13 +28,13 @@ echo "========================================"
 
 case $MODULE in
     "blink-base-app")
-        ./gradlew :blink-base:blink-base-app:bootRun --no-daemon -Dorg.gradle.jvmargs="-Xmx256m" $JVM_OPTS
+        ./gradlew :blink-base:blink-base-app:bootRun --no-daemon -Dorg.gradle.jvmargs="-Xmx256m" --args="$JVM_OPTS"
         ;;
     "gateway-admin")
-        ./gradlew :blink-gateway:gateway-admin:bootRun --no-daemon -Dorg.gradle.jvmargs="-Xmx256m" $JVM_OPTS
+        ./gradlew :blink-gateway:gateway-admin:bootRun --no-daemon -Dorg.gradle.jvmargs="-Xmx256m" --args="$JVM_OPTS"
         ;;
     "blink-gateway-reactive")
-        ./gradlew :blink-gateway:blink-gateway-reactive:bootRun --no-daemon -Dorg.gradle.jvmargs="-Xmx256m" $JVM_OPTS
+        ./gradlew :blink-gateway:blink-gateway-reactive:bootRun --no-daemon -Dorg.gradle.jvmargs="-Xmx256m" --args="$JVM_OPTS"
         ;;
     *)
         echo "未知模块: $MODULE"

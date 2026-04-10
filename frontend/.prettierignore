@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.local
+*.log*
+.vscode/
+.idea/
+**/auto-imports.d.ts
+**/components.d.ts
+pnpm-lock.yaml
