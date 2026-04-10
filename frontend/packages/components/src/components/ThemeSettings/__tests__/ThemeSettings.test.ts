@@ -4,7 +4,12 @@ import { defineComponent, h, ref } from 'vue'
 import { createI18n } from 'vue-i18n'
 import ThemeSettings from '../index.vue'
 import type { FullThemeConfig, CustomPreset, ThemeColors } from '../types'
-import { PRESET_THEMES, PRESET_FONTS, DEFAULT_SYSTEM_CONFIG, FONT_SIZE_CONFIG } from '@/config/themes'
+import {
+  PRESET_THEMES,
+  PRESET_FONTS,
+  DEFAULT_SYSTEM_CONFIG,
+  FONT_SIZE_CONFIG,
+} from '@/config/themes'
 
 // 创建 i18n 实例
 const createMockI18n = () => {
@@ -76,18 +81,25 @@ const PresetSelectorStub = defineComponent({
   props: ['presets', 'currentPresetId'],
   emits: ['select'],
   setup(props, { slots, emit }) {
-    return () => h('div', { class: 'preset-selector-stub' }, [
-      h('div', { class: 'preset-list' },
-        props.presets?.map((p: any) =>
-          h('div', {
-            key: p.id,
-            class: ['preset-item', props.currentPresetId === p.id ? 'active' : ''],
-            onClick: () => emit('select', p.id),
-          }, p.name)
-        ) || []
-      ),
-      slots.footer ? slots.footer() : [],
-    ])
+    return () =>
+      h('div', { class: 'preset-selector-stub' }, [
+        h(
+          'div',
+          { class: 'preset-list' },
+          props.presets?.map((p: any) =>
+            h(
+              'div',
+              {
+                key: p.id,
+                class: ['preset-item', props.currentPresetId === p.id ? 'active' : ''],
+                onClick: () => emit('select', p.id),
+              },
+              p.name
+            )
+          ) || []
+        ),
+        slots.footer ? slots.footer() : [],
+      ])
   },
 })
 
@@ -123,7 +135,8 @@ const CustomPresetListStub = defineComponent({
   props: ['presets', 'currentPresetId'],
   emits: ['select', 'delete'],
   setup(_, { slots }) {
-    return () => h('div', { class: 'custom-preset-list-stub' }, slots.default ? slots.default() : [])
+    return () =>
+      h('div', { class: 'custom-preset-list-stub' }, slots.default ? slots.default() : [])
   },
 })
 
@@ -225,7 +238,7 @@ describe('ThemeSettings', () => {
       // 检查按钮是否禁用
       const buttons = wrapper.findAll('.el-button-stub')
       expect(buttons.length).toBeGreaterThan(0)
-      buttons.forEach(button => {
+      buttons.forEach((button) => {
         expect(button.attributes('disabled')).toBeDefined()
       })
     })
@@ -255,7 +268,13 @@ describe('ThemeSettings', () => {
 
       // 通过内部方法测试
       const vm = wrapper.vm as any
-      const newColors = { primary: '#123456', success: '#10b981', warning: '#f59e0b', danger: '#ef4444', info: '#6366f1' }
+      const newColors = {
+        primary: '#123456',
+        success: '#10b981',
+        warning: '#f59e0b',
+        danger: '#ef4444',
+        info: '#6366f1',
+      }
       vm.handleColorChange(newColors)
 
       expect(onColorChange).toHaveBeenCalledWith(newColors)
@@ -368,7 +387,13 @@ describe('ThemeSettings', () => {
         id: 'custom-test-123',
         name: '测试预设',
         nameEn: 'Test Preset',
-        colors: { primary: '#123456', success: '#10b981', warning: '#f59e0b', danger: '#ef4444', info: '#6366f1' } as ThemeColors,
+        colors: {
+          primary: '#123456',
+          success: '#10b981',
+          warning: '#f59e0b',
+          danger: '#ef4444',
+          info: '#6366f1',
+        } as ThemeColors,
         isPreset: false,
         createdAt: Date.now(),
       }
@@ -489,7 +514,12 @@ describe('ThemeSettings', () => {
           smallSize: 14,
         },
         animationsEnabled: false,
-        system: { borderRadius: 16, shadowIntensity: 'none', compactMode: true, contentWidth: 'fixed' },
+        system: {
+          borderRadius: 16,
+          shadowIntensity: 'none',
+          compactMode: true,
+          contentWidth: 'fixed',
+        },
       }
 
       const wrapper = mount(ThemeSettings, {

@@ -13,5 +13,6 @@
     "declaration": true,
     "declarationMap": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
+  "exclude": ["src/**/__tests__/**", "**/*.test.ts", "**/*.spec.ts"]
 }

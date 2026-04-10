@@ -15,7 +15,12 @@
 
     <template #dropdown>
       <el-dropdown-menu>
-        <slot name="menu" :languages="languages" :current-language="currentLanguage" :select="handleCommand">
+        <slot
+          name="menu"
+          :languages="languages"
+          :current-language="currentLanguage"
+          :select="handleCommand"
+        >
           <el-dropdown-item
             v-for="lang in languages"
             :key="lang.code"

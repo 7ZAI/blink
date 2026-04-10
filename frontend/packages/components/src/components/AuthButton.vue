@@ -10,7 +10,7 @@
  */
 import { computed } from 'vue'
 
-interface Props {
+export interface Props {
   /** 单个权限标识 */
   perm?: string
   /** 多个权限标识（任一匹配即显示） */
@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
   perm: '',
   perms: () => [],
   disabledOnNoPerm: false,
-  hasPermission: undefined
+  hasPermission: undefined,
 })
 
 /**
@@ -59,7 +59,7 @@ const isDisabled = computed(() => {
 <template>
   <!-- 无权限且不使用禁用模式，不渲染 -->
   <template v-if="checkHasPermission || disabledOnNoPerm">
-    <el-button v-bind="$attrs" :disabled="isDisabled || $attrs.disabled">
+    <el-button v-bind="$attrs" :disabled="isDisabled || Boolean($attrs.disabled)">
       <slot />
     </el-button>
   </template>

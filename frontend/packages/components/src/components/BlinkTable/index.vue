@@ -66,7 +66,7 @@
                   :src="row[col.prop]"
                   :style="{
                     width: `${col.imageWidth || 40}px`,
-                    height: `${col.imageHeight || 40}px`
+                    height: `${col.imageHeight || 40}px`,
                   }"
                   fit="cover"
                 />
@@ -145,7 +145,7 @@ const tableRef = ref()
 // 选择变化
 const handleSelectionChange = (selection: any[]) => {
   emit('selection-change', selection)
-  const keys = selection.map(item => {
+  const keys = selection.map((item) => {
     if (typeof props.rowKey === 'function') {
       return props.rowKey(item)
     }
@@ -162,7 +162,13 @@ const handleSelectAll = (selection: any[]) => {
   emit('select-all', selection)
 }
 
-const handleSortChange = ({ prop, order }: { prop: string; order: 'ascending' | 'descending' | null }) => {
+const handleSortChange = ({
+  prop,
+  order,
+}: {
+  prop: string
+  order: 'ascending' | 'descending' | null
+}) => {
   emit('sort-change', { prop, order: order || '' })
 }
 
@@ -175,21 +181,24 @@ const handleRowDblclick = (row: any, column: any, event: Event) => {
 }
 
 // 获取标签类型
-const getTagType = (col: TableColumn, row: any): string => {
+const getTagType = (
+  col: TableColumn,
+  row: any
+): 'primary' | 'success' | 'warning' | 'info' | 'danger' => {
   if (typeof col.tagType === 'function') {
-    return col.tagType(row)
+    return col.tagType(row) as 'primary' | 'success' | 'warning' | 'info' | 'danger'
   }
   if (col.tagOptions) {
-    const option = col.tagOptions.find(opt => opt.value === row[col.prop])
-    return option?.type || 'info'
+    const option = col.tagOptions.find((opt) => opt.value === row[col.prop])
+    return (option?.type as 'primary' | 'success' | 'warning' | 'info' | 'danger') || 'info'
   }
-  return col.tagType || 'info'
+  return (col.tagType as 'primary' | 'success' | 'warning' | 'info' | 'danger') || 'info'
 }
 
 // 获取标签文本
 const getTagLabel = (col: TableColumn, row: any): string => {
   if (col.tagOptions) {
-    const option = col.tagOptions.find(opt => opt.value === row[col.prop])
+    const option = col.tagOptions.find((opt) => opt.value === row[col.prop])
     return option?.label ?? row[col.prop]
   }
   return row[col.prop]
@@ -242,11 +251,11 @@ defineExpose<BlinkTableExpose>({
         background: var(--table-row-hover) !important;
       }
     }
+  }
 
-    // 斑马纹
-    &--striped .el-table__row--striped td {
-      background: var(--bg-color-page);
-    }
+  // 斑马纹 - 移到 :deep() 外部
+  :deep(.el-table--striped .el-table__row--striped td) {
+    background: var(--bg-color-page);
   }
 
   .operation-buttons {

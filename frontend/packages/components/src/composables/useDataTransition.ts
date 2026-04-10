@@ -103,7 +103,7 @@ export function useFadeIn(delay: number = 0) {
 
   const show = async () => {
     if (delay > 0) {
-      await new Promise(resolve => setTimeout(resolve, delay))
+      await new Promise((resolve) => setTimeout(resolve, delay))
     }
     isVisible.value = true
     requestAnimationFrame(() => {

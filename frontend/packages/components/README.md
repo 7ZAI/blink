@@ -10,23 +10,24 @@ Blink Base Web is a modern admin dashboard for the Blink microservice framework.
 
 ## Tech Stack
 
-| Technology | Version | Description |
-|------------|---------|-------------|
-| Vue | 3.5+ | Progressive JavaScript framework |
-| TypeScript | 5.9+ | Type-safe JavaScript superset |
-| Vite | 7.0+ | Next generation frontend build tool |
-| Element Plus | 2.13+ | Vue 3 UI component library |
-| Pinia | 3.0+ | Intuitive, type safe state management |
-| Vue Router | 4.6+ | Routing management |
-| Vue I18n | 11.0+ | Internationalization |
-| Axios | 1.13+ | HTTP client |
-| SCSS | - | CSS preprocessor |
-| LogicFlow | 1.2+ | Process flowchart engine |
-| tsParticles | 3.9+ | Particle animations |
+| Technology   | Version | Description                           |
+| ------------ | ------- | ------------------------------------- |
+| Vue          | 3.5+    | Progressive JavaScript framework      |
+| TypeScript   | 5.9+    | Type-safe JavaScript superset         |
+| Vite         | 7.0+    | Next generation frontend build tool   |
+| Element Plus | 2.13+   | Vue 3 UI component library            |
+| Pinia        | 3.0+    | Intuitive, type safe state management |
+| Vue Router   | 4.6+    | Routing management                    |
+| Vue I18n     | 11.0+   | Internationalization                  |
+| Axios        | 1.13+   | HTTP client                           |
+| SCSS         | -       | CSS preprocessor                      |
+| LogicFlow    | 1.2+    | Process flowchart engine              |
+| tsParticles  | 3.9+    | Particle animations                   |
 
 ## Features
 
 ### Core Capabilities
+
 - **User Management** - Full CRUD with role/group assignment, force logout
 - **Role Management** - Role CRUD with menu & permission assignment, role details viewer
 - **Menu Management** - Tree-structured menu management with routing configuration
@@ -35,16 +36,19 @@ Blink Base Web is a modern admin dashboard for the Blink microservice framework.
 - **Data Scope Control** - Fine-grained data permission configuration with field-level filtering
 
 ### System Configuration
+
 - **Dictionary Management** - Dictionary type and data management
 - **System Parameters** - Configuration parameter management
 - **Operation Logs** - Full operation audit trail
 
 ### Workflow Engine
+
 - **Process Designer** - Visual flow design with LogicFlow
 - **Process Instances** - Deployment and runtime monitoring
 - **Task Management** - Pending and completed tasks
 
 ### User Experience
+
 - **Light/Dark Theme** - Real-time theme switching with CSS variables
 - **Internationalization** - Full i18n support (Chinese/English)
 - **Responsive Layout** - Adaptive to all screen sizes
@@ -198,7 +202,9 @@ const fetchData = async () => {
   }
 }
 
-onMounted(() => { fetchData() })
+onMounted(() => {
+  fetchData()
+})
 </script>
 ```
 

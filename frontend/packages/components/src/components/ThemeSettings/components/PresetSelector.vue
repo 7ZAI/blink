@@ -10,14 +10,20 @@
         @click="handleSelect(preset.id)"
       >
         <!-- 渐变背景预览 -->
-        <div
-          class="preset-preview"
-          :style="getPresetPreviewStyle(preset)"
-        >
+        <div class="preset-preview" :style="getPresetPreviewStyle(preset)">
           <div class="preview-inner">
-            <span class="preview-dot primary" :style="{ backgroundColor: preset.colors.primary }"></span>
-            <span class="preview-dot success" :style="{ backgroundColor: preset.colors.success }"></span>
-            <span class="preview-dot warning" :style="{ backgroundColor: preset.colors.warning }"></span>
+            <span
+              class="preview-dot primary"
+              :style="{ backgroundColor: preset.colors.primary }"
+            ></span>
+            <span
+              class="preview-dot success"
+              :style="{ backgroundColor: preset.colors.success }"
+            ></span>
+            <span
+              class="preview-dot warning"
+              :style="{ backgroundColor: preset.colors.warning }"
+            ></span>
           </div>
         </div>
         <!-- 预设名称 -->
@@ -85,7 +91,7 @@ const getPresetHint = (preset: PresetTheme) => {
   const hue = getHueFromHex(preset.colors.primary)
   if (hue >= 200 && hue <= 260) return t('settings.styleModern')
   if (hue >= 80 && hue <= 160) return t('settings.styleNatural')
-  if (hue >= 0 && hue <= 40 || hue >= 320) return t('settings.styleWarm')
+  if ((hue >= 0 && hue <= 40) || hue >= 320) return t('settings.styleWarm')
   if (hue >= 260 && hue <= 320) return t('settings.styleCreative')
   return t('settings.styleClassic')
 }

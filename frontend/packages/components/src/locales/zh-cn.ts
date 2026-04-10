@@ -202,8 +202,10 @@ export default {
     selectPermission: '选择权限',
     permName: '权限名称',
     permIdentity: '权限标识',
-    deleteConfirmWithRoles: '该菜单已分配给角色【{roles}】，删除后相关角色的菜单和权限关联将被同步删除，确定要删除吗？',
-    permChangeConfirmWithRoles: '该菜单已分配给角色【{roles}】，修改权限后相关角色的权限关联将被同步更新，确定要修改吗？',
+    deleteConfirmWithRoles:
+      '该菜单已分配给角色【{roles}】，删除后相关角色的菜单和权限关联将被同步删除，确定要删除吗？',
+    permChangeConfirmWithRoles:
+      '该菜单已分配给角色【{roles}】，修改权限后相关角色的权限关联将被同步更新，确定要修改吗？',
   },
   tabs: {
     refresh: '刷新',

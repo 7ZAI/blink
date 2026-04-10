@@ -17,9 +17,7 @@ export function loadGoogleFont(googleFontsName: string): Promise<void> {
 
   return new Promise((resolve, reject) => {
     // 检查是否已存在该 link 标签
-    const existingLink = document.querySelector(
-      `link[href*="${googleFontsName.split(':')[0]}"]`
-    )
+    const existingLink = document.querySelector(`link[href*="${googleFontsName.split(':')[0]}"]`)
     if (existingLink) {
       loadedFonts.add(googleFontsName)
       resolve()
@@ -49,9 +47,7 @@ export function loadGoogleFont(googleFontsName: string): Promise<void> {
 /**
  * 预加载所有预设字体
  */
-export async function preloadFonts(
-  fonts: Array<{ googleFontsName?: string }>
-): Promise<void> {
+export async function preloadFonts(fonts: Array<{ googleFontsName?: string }>): Promise<void> {
   const loadPromises = fonts
     .filter((f) => f.googleFontsName)
     .map((f) => loadGoogleFont(f.googleFontsName!))

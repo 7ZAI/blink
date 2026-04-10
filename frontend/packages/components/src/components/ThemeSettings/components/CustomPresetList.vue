@@ -55,10 +55,7 @@
               :content="t(`settings.${key}Color`)"
               placement="top"
             >
-              <span
-                class="color-dot"
-                :style="{ backgroundColor: color }"
-              />
+              <span class="color-dot" :style="{ backgroundColor: color }" />
             </el-tooltip>
           </div>
 
@@ -116,13 +113,15 @@ const handleSelect = (presetId: string) => {
 const handleDelete = async (preset: CustomPreset) => {
   try {
     await ElMessageBox.confirm(
-      t('settings.deletePresetConfirm', { name: locale.value === 'zh_cn' ? preset.name : preset.nameEn }),
+      t('settings.deletePresetConfirm', {
+        name: locale.value === 'zh_cn' ? preset.name : preset.nameEn,
+      }),
       t('settings.deletePreset'),
       {
         confirmButtonText: t('common.confirm'),
         cancelButtonText: t('common.cancel'),
         type: 'warning',
-      },
+      }
     )
     emit('delete', preset.id)
   } catch {

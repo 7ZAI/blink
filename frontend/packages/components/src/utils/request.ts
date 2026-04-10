@@ -1,4 +1,9 @@
-import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig, type AxiosRequestConfig } from 'axios'
+import axios, {
+  type AxiosInstance,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+  type AxiosRequestConfig,
+} from 'axios'
 import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types'
 import { getBaseUrl, getCurrentModeName, isGatewayMode } from '@/config/api.config'
@@ -17,17 +22,14 @@ import { useUserStore } from '@/stores/user'
 const SUCCESS_CODE = 'BLINK0000'
 
 const ALLOWED_METHODS = ['post', 'POST']
-const ALLOWED_CONTENT_TYPES = [
-  'application/json',
-  'multipart/form-data',
-]
+const ALLOWED_CONTENT_TYPES = ['application/json', 'multipart/form-data']
 
 const baseConfig: AxiosRequestConfig = {
   baseURL: getBaseUrl(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    Accept: 'application/json',
   },
 }
 
@@ -64,7 +66,8 @@ function urlSafeToBase64(urlSafe: string): string {
 request.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const method = config.method?.toLowerCase() || 'get'
-    const contentType = config.headers['Content-Type'] || config.headers['content-type'] || 'application/json'
+    const contentType =
+      config.headers['Content-Type'] || config.headers['content-type'] || 'application/json'
 
     if (!ALLOWED_METHODS.includes(method)) {
       const error = new Error(t('common.methodNotAllowed'))
@@ -72,7 +75,7 @@ request.interceptors.request.use(
       return Promise.reject(error)
     }
 
-    const isAllowedContentType = ALLOWED_CONTENT_TYPES.some(ct =>
+    const isAllowedContentType = ALLOWED_CONTENT_TYPES.some((ct) =>
       contentType.toLowerCase().includes(ct.toLowerCase())
     )
 
@@ -90,7 +93,7 @@ request.interceptors.request.use(
     config.headers[HEADER_CONSTANTS.X_BLINK_TIMESTAMP] = timestamp
     config.headers[HEADER_CONSTANTS.X_BLINK_NONCE] = nonce
     config.headers[HEADER_CONSTANTS.X_BLINK_LOCALE] = getCurrentLocale()
-    
+
     config.headers['Accept'] = 'application/json'
 
     if (token) {
@@ -168,14 +171,9 @@ request.interceptors.response.use(
         // 将 URL 安全 Base64 还原为标准 Base64
         encryptedKey = urlSafeToBase64(encryptedKey)
         iv = urlSafeToBase64(iv)
-        
+
         if (typeof data === 'string') {
-          data = await decryptResponse(
-            data,
-            encryptedKey,
-            iv,
-            channelConfig.channelPrivateKey
-          )
+          data = await decryptResponse(data, encryptedKey, iv, channelConfig.channelPrivateKey)
           data = JSON.parse(data)
         }
       } catch (e) {

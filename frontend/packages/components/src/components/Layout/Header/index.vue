@@ -1,9 +1,5 @@
 <template>
-  <el-header
-    class="header-container"
-    :class="{ 'header-fixed': fixed }"
-    :style="containerStyle"
-  >
+  <el-header class="header-container" :class="{ 'header-fixed': fixed }" :style="containerStyle">
     <!-- 左侧区域 Slot -->
     <div class="header-left">
       <slot name="left">

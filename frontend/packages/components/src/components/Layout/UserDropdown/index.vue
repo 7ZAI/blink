@@ -9,14 +9,10 @@
     <!-- 触发器 Slot -->
     <slot name="trigger" :user-info="userInfo" :collapsed="collapsed">
       <!-- 默认触发器 -->
-      <div class="user-dropdown-trigger" :class="{ 'collapsed': collapsed }">
+      <div class="user-dropdown-trigger" :class="{ collapsed: collapsed }">
         <!-- 头像 -->
         <slot name="avatar" :user-info="userInfo">
-          <el-avatar
-            :src="resolveAvatar"
-            :size="collapsed ? 32 : avatarSize"
-            class="user-avatar"
-          >
+          <el-avatar :src="resolveAvatar" :size="collapsed ? 32 : avatarSize" class="user-avatar">
             <el-icon><UserFilled /></el-icon>
           </el-avatar>
         </slot>
@@ -65,6 +61,7 @@
 
 import { computed, type Component } from 'vue'
 import { UserFilled, ArrowDown } from '@element-plus/icons-vue'
+import { getLocalAvatarUrl } from '@/utils/avatar'
 
 // ============================================
 // 类型定义
@@ -183,7 +180,8 @@ const resolveAvatar = computed(() => {
   if (props.avatarResolver && props.userInfo) {
     return props.avatarResolver(props.userInfo)
   }
-  return props.userInfo?.avatar
+  // 使用 getLocalAvatarUrl 将头像名称转换为 URL
+  return getLocalAvatarUrl(props.userInfo?.avatar)
 })
 
 /**

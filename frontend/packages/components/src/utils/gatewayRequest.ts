@@ -4,7 +4,11 @@
  * 整合签名、加密、解密功能
  */
 
-import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import axios, {
+  type AxiosInstance,
+  type AxiosResponse,
+  type InternalAxiosRequestConfig,
+} from 'axios'
 import { ElMessage } from 'element-plus'
 import {
   generateTimestamp,
@@ -138,12 +142,7 @@ export function createGatewayRequest(options: GatewayRequestOptions = {}): Axios
       if (config.enableEncryption && encryptedKey && iv) {
         try {
           if (typeof data === 'string') {
-            data = await decryptResponse(
-              data,
-              encryptedKey,
-              iv,
-              channelConfig.channelPrivateKey
-            )
+            data = await decryptResponse(data, encryptedKey, iv, channelConfig.channelPrivateKey)
             data = JSON.parse(data)
           }
         } catch (e) {

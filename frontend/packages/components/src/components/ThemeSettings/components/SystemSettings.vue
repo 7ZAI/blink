@@ -23,10 +23,7 @@
         </div>
       </div>
       <div class="preview-row">
-        <div
-          class="radius-preview"
-          :style="{ borderRadius: `${localConfig.borderRadius}px` }"
-        >
+        <div class="radius-preview" :style="{ borderRadius: `${localConfig.borderRadius}px` }">
           <span>{{ t('settings.radiusPreview') }}</span>
         </div>
       </div>
@@ -51,10 +48,7 @@
         </div>
       </div>
       <div class="preview-row">
-        <div
-          class="shadow-preview"
-          :style="shadowPreviewStyle"
-        >
+        <div class="shadow-preview" :style="shadowPreviewStyle">
           <span>{{ t('settings.shadowPreview') }}</span>
         </div>
       </div>
@@ -64,11 +58,7 @@
     <div class="setting-item">
       <div class="setting-header">
         <span class="setting-label">{{ t('settings.compactMode') }}</span>
-        <el-switch
-          v-model="localConfig.compactMode"
-          size="small"
-          @change="handleConfigChange"
-        />
+        <el-switch v-model="localConfig.compactMode" size="small" @change="handleConfigChange" />
       </div>
       <div class="setting-desc">
         {{ t('settings.compactModeDesc') }}
@@ -113,7 +103,13 @@
             class="width-preview"
             :style="{ width: localConfig.contentWidth === 'fixed' ? '50%' : '100%' }"
           >
-            <span>{{ localConfig.contentWidth === 'fluid' ? t('settings.fluidLabel') : t('settings.fixedLabel') }}</span>
+            <span>
+              {{
+                localConfig.contentWidth === 'fluid'
+                  ? t('settings.fluidLabel')
+                  : t('settings.fixedLabel')
+              }}
+            </span>
           </div>
         </div>
       </div>

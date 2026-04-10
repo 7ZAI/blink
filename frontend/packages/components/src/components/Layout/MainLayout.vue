@@ -1,11 +1,7 @@
 <template>
   <el-container class="layout-container" :class="layoutClass">
     <!-- ========== 侧边栏区域 ========== -->
-    <slot
-      v-if="showSidebar"
-      name="sidebar"
-      v-bind="sidebarSlotProps"
-    >
+    <slot v-if="showSidebar" name="sidebar" v-bind="sidebarSlotProps">
       <!-- 默认侧边栏 -->
       <Sidebar
         ref="sidebarRef"
@@ -42,11 +38,7 @@
     <!-- ========== 主内容区域 ========== -->
     <el-container direction="vertical" class="main-container">
       <!-- ========== 头部区域 ========== -->
-      <slot
-        v-if="showHeader"
-        name="header"
-        v-bind="headerSlotProps"
-      >
+      <slot v-if="showHeader" name="header" v-bind="headerSlotProps">
         <!-- 默认头部 -->
         <Header
           :user-info="userInfo"
@@ -99,11 +91,7 @@
       </slot>
 
       <!-- ========== 标签页区域 ========== -->
-      <slot
-        v-if="showTabs"
-        name="tabs"
-        v-bind="tabsSlotProps"
-      >
+      <slot v-if="showTabs" name="tabs" v-bind="tabsSlotProps">
         <!-- 默认标签页 -->
         <TabsView
           :tabs="tabs"
@@ -408,7 +396,8 @@ const handleUserCommand = (command: string) => emit('user-command', command)
 const handleFullscreenChange = (isFullscreen: boolean) => emit('fullscreen-change', isFullscreen)
 
 // 侧边栏
-const handleSidebarCollapseChange = (collapsed: boolean) => emit('sidebar-collapse-change', collapsed)
+const handleSidebarCollapseChange = (collapsed: boolean) =>
+  emit('sidebar-collapse-change', collapsed)
 const handleSidebarWidthChange = (width: number) => emit('sidebar-width-change', width)
 
 // 标签页

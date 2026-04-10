@@ -2,16 +2,9 @@
 <template>
   <div class="color-settings">
     <div class="color-grid">
-      <div
-        v-for="(config, key) in colorConfigs"
-        :key="key"
-        class="color-item"
-      >
+      <div v-for="(config, key) in colorConfigs" :key="key" class="color-item">
         <div class="color-label-row">
-          <span
-            class="color-dot"
-            :style="{ backgroundColor: localColors[key] }"
-          />
+          <span class="color-dot" :style="{ backgroundColor: localColors[key] }" />
           <span class="color-label">{{ t(config.label) }}</span>
         </div>
         <div class="color-input-row">
@@ -41,28 +34,16 @@
         <span class="preview-label">{{ t('settings.contrastPreview') }}</span>
       </div>
       <div class="preview-grid">
-        <div
-          class="preview-button primary"
-          :style="{ backgroundColor: localColors.primary }"
-        >
+        <div class="preview-button primary" :style="{ backgroundColor: localColors.primary }">
           {{ t('settings.primaryBtn') }}
         </div>
-        <div
-          class="preview-button success"
-          :style="{ backgroundColor: localColors.success }"
-        >
+        <div class="preview-button success" :style="{ backgroundColor: localColors.success }">
           {{ t('settings.successBtn') }}
         </div>
-        <div
-          class="preview-button warning"
-          :style="{ backgroundColor: localColors.warning }"
-        >
+        <div class="preview-button warning" :style="{ backgroundColor: localColors.warning }">
           {{ t('settings.warningBtn') }}
         </div>
-        <div
-          class="preview-button danger"
-          :style="{ backgroundColor: localColors.danger }"
-        >
+        <div class="preview-button danger" :style="{ backgroundColor: localColors.danger }">
           {{ t('settings.dangerBtn') }}
         </div>
       </div>
@@ -117,9 +98,24 @@ const colorConfigs = {
 
 // Predefined colors for quick selection
 const predefineColors = [
-  '#3b82f6', '#8b5cf6', '#f97316', '#10b981', '#ef4444', '#06b6d4',
-  '#64748b', '#1e293b', '#6366f1', '#f43f5e', '#22c55e', '#fbbf24',
-  '#0d9488', '#14b8a6', '#2563eb', '#7c3aed', '#db2777', '#ea580c',
+  '#3b82f6',
+  '#8b5cf6',
+  '#f97316',
+  '#10b981',
+  '#ef4444',
+  '#06b6d4',
+  '#64748b',
+  '#1e293b',
+  '#6366f1',
+  '#f43f5e',
+  '#22c55e',
+  '#fbbf24',
+  '#0d9488',
+  '#14b8a6',
+  '#2563eb',
+  '#7c3aed',
+  '#db2777',
+  '#ea580c',
 ]
 
 // Local reactive copy of colors

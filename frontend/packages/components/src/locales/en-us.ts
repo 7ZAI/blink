@@ -61,7 +61,8 @@ export default {
     disabled: 'Disabled',
     // Request related
     methodNotAllowed: 'Unsupported request method, only POST is allowed',
-    contentTypeNotAllowed: 'Unsupported Content-Type, only application/json and multipart/form-data are allowed',
+    contentTypeNotAllowed:
+      'Unsupported Content-Type, only application/json and multipart/form-data are allowed',
     responseDecryptFailed: 'Response decryption failed',
   },
   // Form validation
@@ -202,8 +203,10 @@ export default {
     selectPermission: 'Select Permission',
     permName: 'Permission Name',
     permIdentity: 'Permission Identity',
-    deleteConfirmWithRoles: 'This menu is assigned to roles [{roles}]. Deleting it will remove the menu and permission associations for these roles. Are you sure you want to delete?',
-    permChangeConfirmWithRoles: 'This menu is assigned to roles [{roles}]. Changing the permission will update the permission associations for these roles. Are you sure you want to proceed?',
+    deleteConfirmWithRoles:
+      'This menu is assigned to roles [{roles}]. Deleting it will remove the menu and permission associations for these roles. Are you sure you want to delete?',
+    permChangeConfirmWithRoles:
+      'This menu is assigned to roles [{roles}]. Changing the permission will update the permission associations for these roles. Are you sure you want to proceed?',
   },
   tabs: {
     refresh: 'Refresh',
@@ -418,7 +421,8 @@ export default {
     noUserIdField: 'Filter object does not support user filtering',
 
     sqlFragment: 'SQL Fragment',
-    securityWarning: 'SQL fragment will be directly concatenated to WHERE clause, please ensure security',
+    securityWarning:
+      'SQL fragment will be directly concatenated to WHERE clause, please ensure security',
     commonTemplates: 'Common Templates',
     last7Days: 'Last 7 Days',
     thisMonth: 'This Month',
@@ -446,18 +450,19 @@ export default {
     selectMatchValues: 'Select Match Values',
     selectDept: 'Select Department',
     selectedDept: 'Selected Departments',
-    MATCH_CURRENT_USER: 'Logged-in User\'s Organization',
-    MATCH_CURRENT_DEPT: 'Logged-in User\'s Department',
-    MATCH_CURRENT_ROLE: 'Logged-in User\'s Roles',
-    MATCH_CURRENT_USER_DEPT_CHILDREN: 'Logged-in User\'s Org and Sub-orgs',
-    MATCH_USER_LIST: 'Specified Users\' Organizations',
+    MATCH_CURRENT_USER: "Logged-in User's Organization",
+    MATCH_CURRENT_DEPT: "Logged-in User's Department",
+    MATCH_CURRENT_ROLE: "Logged-in User's Roles",
+    MATCH_CURRENT_USER_DEPT_CHILDREN: "Logged-in User's Org and Sub-orgs",
+    MATCH_USER_LIST: "Specified Users' Organizations",
     MATCH_DEPT_LIST: 'Specified Departments',
     MATCH_ROLE_LIST: 'Users under Specified Roles',
-    MATCH_CURRENT_USER_DEPT_CHILDREN_GROUP: 'Current User\'s Dept and Sub-depts',
+    MATCH_CURRENT_USER_DEPT_CHILDREN_GROUP: "Current User's Dept and Sub-depts",
     currentUserTip: 'Filter results to the organization of the logged-in user',
     currentDeptTip: 'Filter results to the department of the logged-in user',
-    currentRoleTip: 'Filter results to organizations of users with the logged-in user\'s roles',
-    currentUserDeptChildrenTip: 'Filter results to the logged-in user\'s organization and all sub-organizations',
+    currentRoleTip: "Filter results to organizations of users with the logged-in user's roles",
+    currentUserDeptChildrenTip:
+      "Filter results to the logged-in user's organization and all sub-organizations",
   },
   profile: {
     personalInfo: 'Personal Info',
@@ -691,7 +696,8 @@ export default {
     editDictData: 'Edit Dict Data',
     deleteTypeConfirm: 'Are you sure you want to delete this dict type?',
     deleteDataConfirm: 'Are you sure you want to delete this dict data?',
-    dictTypeFormat: 'Dict type can only contain lowercase letters, numbers and underscores, and must start with a letter',
+    dictTypeFormat:
+      'Dict type can only contain lowercase letters, numbers and underscores, and must start with a letter',
     dataItems: 'items',
   },
   workflow: {
@@ -797,7 +803,8 @@ export default {
     deployConfirm: 'Are you sure you want to deploy the current process?',
     startConfirm: 'Are you sure you want to start this process?',
     toggleSuspendConfirm: 'Are you sure you want to {action} process [{name}]?',
-    deleteProcessConfirm: 'Are you sure you want to delete process [{name}]? This cannot be undone.',
+    deleteProcessConfirm:
+      'Are you sure you want to delete process [{name}]? This cannot be undone.',
     deleteInstanceConfirm: 'Are you sure you want to delete this process instance?',
     completeConfirm: 'Are you sure you want to complete this task?',
     delegateConfirm: 'Are you sure you want to delegate this task?',

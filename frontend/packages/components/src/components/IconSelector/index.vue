@@ -8,12 +8,7 @@
   >
     <template #reference>
       <div class="icon-selector-trigger" :class="{ 'is-empty': !modelValue }">
-        <BlinkIcon
-          v-if="modelValue"
-          :icon="modelValue"
-          :size="18"
-          class="selected-icon"
-        />
+        <BlinkIcon v-if="modelValue" :icon="modelValue" :size="18" class="selected-icon" />
         <span v-else class="placeholder">{{ placeholder || t('iconSelector.placeholder') }}</span>
         <el-icon class="arrow-icon"><ArrowDown /></el-icon>
       </div>
@@ -101,120 +96,347 @@ export interface IconGroup {
  * Element Plus 图标列表（常用）
  */
 export const DEFAULT_ELEMENT_ICONS = [
-  'HomeFilled', 'Home', 'Setting', 'User', 'UserFilled', 'Menu', 'Key', 'Monitor',
-  'Edit', 'Delete', 'Plus', 'Minus', 'Check', 'Close', 'Search', 'Refresh',
-  'Folder', 'FolderOpened', 'Document', 'DocumentCopy', 'Files',
-  'Bell', 'BellFilled', 'Message', 'ChatDotRound', 'ChatLineRound',
-  'Star', 'StarFilled', 'Heart', 'HeartFilled',
-  'Calendar', 'Clock', 'Timer', 'AlarmClock',
-  'Location', 'MapLocation', 'Compass', 'Guide',
-  'Picture', 'Camera', 'VideoCamera', 'Microphone',
-  'Lock', 'Unlock', 'View', 'Hide', 'Eye', 'EyeOpen',
-  'Upload', 'Download', 'Link', 'Disconnect', 'Share',
-  'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-  'More', 'MoreFilled', 'Operation', 'Tools', 'MagicStick',
-  'Warning', 'WarningFilled', 'CircleCheck', 'CircleClose', 'CirclePlus',
-  'InfoFilled', 'QuestionFilled', 'SuccessFilled', 'CircleCheckFilled',
-  'Grid', 'List', 'Histogram', 'DataLine', 'DataBoard', 'PieChart',
-  'TrendCharts', 'DataAnalysis', 'Coin', 'Money', 'Wallet', 'ShoppingCart',
-  'Goods', 'GoodsFilled', 'ShoppingBag', 'Shop', 'Box', 'Present',
-  'Phone', 'PhoneFilled', 'Iphone', 'Cellphone', 'Mouse',
-  'Cpu', 'Connection', 'Platform', 'Notebook', 'OfficeBuilding',
-  'Avatar', 'Stamp', 'Medal', 'Trophy', 'TrendCharts',
+  'HomeFilled',
+  'Home',
+  'Setting',
+  'User',
+  'UserFilled',
+  'Menu',
+  'Key',
+  'Monitor',
+  'Edit',
+  'Delete',
+  'Plus',
+  'Minus',
+  'Check',
+  'Close',
+  'Search',
+  'Refresh',
+  'Folder',
+  'FolderOpened',
+  'Document',
+  'DocumentCopy',
+  'Files',
+  'Bell',
+  'BellFilled',
+  'Message',
+  'ChatDotRound',
+  'ChatLineRound',
+  'Star',
+  'StarFilled',
+  'Heart',
+  'HeartFilled',
+  'Calendar',
+  'Clock',
+  'Timer',
+  'AlarmClock',
+  'Location',
+  'MapLocation',
+  'Compass',
+  'Guide',
+  'Picture',
+  'Camera',
+  'VideoCamera',
+  'Microphone',
+  'Lock',
+  'Unlock',
+  'View',
+  'Hide',
+  'Eye',
+  'EyeOpen',
+  'Upload',
+  'Download',
+  'Link',
+  'Disconnect',
+  'Share',
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'More',
+  'MoreFilled',
+  'Operation',
+  'Tools',
+  'MagicStick',
+  'Warning',
+  'WarningFilled',
+  'CircleCheck',
+  'CircleClose',
+  'CirclePlus',
+  'InfoFilled',
+  'QuestionFilled',
+  'SuccessFilled',
+  'CircleCheckFilled',
+  'Grid',
+  'List',
+  'Histogram',
+  'DataLine',
+  'DataBoard',
+  'PieChart',
+  'TrendCharts',
+  'DataAnalysis',
+  'Coin',
+  'Money',
+  'Wallet',
+  'ShoppingCart',
+  'Goods',
+  'GoodsFilled',
+  'ShoppingBag',
+  'Shop',
+  'Box',
+  'Present',
+  'Phone',
+  'PhoneFilled',
+  'Iphone',
+  'Cellphone',
+  'Mouse',
+  'Cpu',
+  'Connection',
+  'Platform',
+  'Notebook',
+  'OfficeBuilding',
+  'Avatar',
+  'Stamp',
+  'Medal',
+  'Trophy',
+  'TrendCharts',
 ]
 
 /**
  * 导航类 MDI 图标
  */
 export const NAVIGATION_ICONS = [
-  'mdi:view-dashboard', 'mdi:view-dashboard-outline',
-  'mdi:menu', 'mdi:menu-open', 'mdi:sitemap',
-  'mdi:folder-outline', 'mdi:file-tree', 'mdi:compass-outline',
-  'mdi:map-marker-path', 'mdi:table-large', 'mdi:widgets-outline',
-  'mdi:bookmark-outline', 'mdi:bookmark-multiple-outline',
-  'mdi:format-list-bulleted', 'mdi:format-list-checkbox',
+  'mdi:view-dashboard',
+  'mdi:view-dashboard-outline',
+  'mdi:menu',
+  'mdi:menu-open',
+  'mdi:sitemap',
+  'mdi:folder-outline',
+  'mdi:file-tree',
+  'mdi:compass-outline',
+  'mdi:map-marker-path',
+  'mdi:table-large',
+  'mdi:widgets-outline',
+  'mdi:bookmark-outline',
+  'mdi:bookmark-multiple-outline',
+  'mdi:format-list-bulleted',
+  'mdi:format-list-checkbox',
 ]
 
 /**
  * 网关/API 类图标
  */
 export const GATEWAY_ICONS = [
-  'mdi:router-network', 'mdi:router-wireless', 'mdi:transit-connection-variant',
-  'mdi:lan-connect', 'mdi:source-branch', 'mdi:shuffle-variant',
-  'mdi:api', 'mdi:api-off', 'mdi:web', 'mdi:cloud-outline',
-  'mdi:server-network', 'mdi:server-network-off',
-  'mdi:network-outline', 'mdi:network-pos',
-  'mdi:signal', 'mdi:signal-off', 'mdi:trending-up', 'mdi:trending-down',
+  'mdi:router-network',
+  'mdi:router-wireless',
+  'mdi:transit-connection-variant',
+  'mdi:lan-connect',
+  'mdi:source-branch',
+  'mdi:shuffle-variant',
+  'mdi:api',
+  'mdi:api-off',
+  'mdi:web',
+  'mdi:cloud-outline',
+  'mdi:server-network',
+  'mdi:server-network-off',
+  'mdi:network-outline',
+  'mdi:network-pos',
+  'mdi:signal',
+  'mdi:signal-off',
+  'mdi:trending-up',
+  'mdi:trending-down',
 ]
 
 /**
  * 常用 MDI 图标列表
  */
 export const DEFAULT_COMMON_ICONS = [
-  'mdi:home', 'mdi:home-outline', 'mdi:cog', 'mdi:cog-outline',
-  'mdi:account', 'mdi:account-outline', 'mdi:account-group', 'mdi:account-group-outline',
-  'mdi:file-document', 'mdi:file-document-outline', 'mdi:folder', 'mdi:folder-outline',
-  'mdi:plus', 'mdi:minus', 'mdi:close', 'mdi:check',
-  'mdi:delete', 'mdi:delete-outline', 'mdi:pencil', 'mdi:pencil-outline',
-  'mdi:refresh', 'mdi:magnify', 'mdi:upload', 'mdi:download',
-  'mdi:link', 'mdi:link-variant', 'mdi:star', 'mdi:star-outline',
-  'mdi:heart', 'mdi:heart-outline', 'mdi:bell', 'mdi:bell-outline',
-  'mdi:email', 'mdi:email-outline', 'mdi:calendar', 'mdi:calendar-outline',
-  'mdi:clock', 'mdi:clock-outline', 'mdi:map-marker', 'mdi:map-marker-outline',
-  'mdi:image', 'mdi:image-outline', 'mdi:lock', 'mdi:lock-outline',
-  'mdi:key', 'mdi:eye', 'mdi:eye-outline', 'mdi:alert', 'mdi:alert-outline',
-  'mdi:check-circle', 'mdi:check-circle-outline', 'mdi:filter', 'mdi:filter-outline',
+  'mdi:home',
+  'mdi:home-outline',
+  'mdi:cog',
+  'mdi:cog-outline',
+  'mdi:account',
+  'mdi:account-outline',
+  'mdi:account-group',
+  'mdi:account-group-outline',
+  'mdi:file-document',
+  'mdi:file-document-outline',
+  'mdi:folder',
+  'mdi:folder-outline',
+  'mdi:plus',
+  'mdi:minus',
+  'mdi:close',
+  'mdi:check',
+  'mdi:delete',
+  'mdi:delete-outline',
+  'mdi:pencil',
+  'mdi:pencil-outline',
+  'mdi:refresh',
+  'mdi:magnify',
+  'mdi:upload',
+  'mdi:download',
+  'mdi:link',
+  'mdi:link-variant',
+  'mdi:star',
+  'mdi:star-outline',
+  'mdi:heart',
+  'mdi:heart-outline',
+  'mdi:bell',
+  'mdi:bell-outline',
+  'mdi:email',
+  'mdi:email-outline',
+  'mdi:calendar',
+  'mdi:calendar-outline',
+  'mdi:clock',
+  'mdi:clock-outline',
+  'mdi:map-marker',
+  'mdi:map-marker-outline',
+  'mdi:image',
+  'mdi:image-outline',
+  'mdi:lock',
+  'mdi:lock-outline',
+  'mdi:key',
+  'mdi:eye',
+  'mdi:eye-outline',
+  'mdi:alert',
+  'mdi:alert-outline',
+  'mdi:check-circle',
+  'mdi:check-circle-outline',
+  'mdi:filter',
+  'mdi:filter-outline',
 ]
 
 /**
  * 系统 MDI 图标列表
  */
 export const DEFAULT_SYSTEM_ICONS = [
-  'mdi:monitor', 'mdi:cellphone', 'mdi:phone', 'mdi:phone-outline',
-  'mdi:mouse', 'mdi:cpu-64-bit', 'mdi:chart-line', 'mdi:chart-bar', 'mdi:chart-pie',
-  'mdi:database', 'mdi:database-outline', 'mdi:server', 'mdi:server-outline',
-  'mdi:cloud', 'mdi:cloud-outline', 'mdi:shield', 'mdi:shield-outline',
-  'mdi:security', 'mdi:lock-alert', 'mdi:alert-circle', 'mdi:alert-circle-outline',
-  'mdi:warning', 'mdi:information', 'mdi:power', 'mdi:power-plug', 'mdi:power-plug-off',
-  'mdi:cog', 'mdi:cog-outline', 'mdi:wrench', 'mdi:wrench-outline',
-  'mdi:code-tags', 'mdi:code-braces', 'mdi:xml', 'mdi:source-commit',
+  'mdi:monitor',
+  'mdi:cellphone',
+  'mdi:phone',
+  'mdi:phone-outline',
+  'mdi:mouse',
+  'mdi:cpu-64-bit',
+  'mdi:chart-line',
+  'mdi:chart-bar',
+  'mdi:chart-pie',
+  'mdi:database',
+  'mdi:database-outline',
+  'mdi:server',
+  'mdi:server-outline',
+  'mdi:cloud',
+  'mdi:cloud-outline',
+  'mdi:shield',
+  'mdi:shield-outline',
+  'mdi:security',
+  'mdi:lock-alert',
+  'mdi:alert-circle',
+  'mdi:alert-circle-outline',
+  'mdi:warning',
+  'mdi:information',
+  'mdi:power',
+  'mdi:power-plug',
+  'mdi:power-plug-off',
+  'mdi:cog',
+  'mdi:cog-outline',
+  'mdi:wrench',
+  'mdi:wrench-outline',
+  'mdi:code-tags',
+  'mdi:code-braces',
+  'mdi:xml',
+  'mdi:source-commit',
 ]
 
 /**
  * 媒体 MDI 图标列表
  */
 export const DEFAULT_MEDIA_ICONS = [
-  'mdi:camera', 'mdi:camera-outline', 'mdi:video', 'mdi:video-outline',
-  'mdi:microphone', 'mdi:microphone-outline', 'mdi:headphones', 'mdi:volume-high',
-  'mdi:play', 'mdi:pause', 'mdi:stop', 'mdi:skip-next', 'mdi:skip-previous',
-  'mdi:image', 'mdi:image-outline', 'mdi:file-image', 'mdi:file-video',
-  'mdi:music', 'mdi:music-note', 'mdi:playlist-music',
-  'mdi:message', 'mdi:message-outline', 'mdi:chat', 'mdi:chat-outline',
-  'mdi:comment', 'mdi:comment-outline', 'mdi:send', 'mdi:send-outline',
+  'mdi:camera',
+  'mdi:camera-outline',
+  'mdi:video',
+  'mdi:video-outline',
+  'mdi:microphone',
+  'mdi:microphone-outline',
+  'mdi:headphones',
+  'mdi:volume-high',
+  'mdi:play',
+  'mdi:pause',
+  'mdi:stop',
+  'mdi:skip-next',
+  'mdi:skip-previous',
+  'mdi:image',
+  'mdi:image-outline',
+  'mdi:file-image',
+  'mdi:file-video',
+  'mdi:music',
+  'mdi:music-note',
+  'mdi:playlist-music',
+  'mdi:message',
+  'mdi:message-outline',
+  'mdi:chat',
+  'mdi:chat-outline',
+  'mdi:comment',
+  'mdi:comment-outline',
+  'mdi:send',
+  'mdi:send-outline',
 ]
 
 /**
  * 生活 MDI 图标列表
  */
 export const DEFAULT_LIFESTYLE_ICONS = [
-  'mdi:weather-sunny', 'mdi:weather-night', 'mdi:weather-cloudy', 'mdi:weather-rainy',
-  'mdi:weather-snowy', 'mdi:weather-windy', 'mdi:thermometer',
-  'mdi:food', 'mdi:food-apple', 'mdi:coffee', 'mdi:tea',
-  'mdi:car', 'mdi:car-outline', 'mdi:bike', 'mdi:walk',
-  'mdi:run', 'mdi:heart', 'mdi:heart-outline', 'mdi:gift', 'mdi:gift-outline',
+  'mdi:weather-sunny',
+  'mdi:weather-night',
+  'mdi:weather-cloudy',
+  'mdi:weather-rainy',
+  'mdi:weather-snowy',
+  'mdi:weather-windy',
+  'mdi:thermometer',
+  'mdi:food',
+  'mdi:food-apple',
+  'mdi:coffee',
+  'mdi:tea',
+  'mdi:car',
+  'mdi:car-outline',
+  'mdi:bike',
+  'mdi:walk',
+  'mdi:run',
+  'mdi:heart',
+  'mdi:heart-outline',
+  'mdi:gift',
+  'mdi:gift-outline',
 ]
 
 /**
  * 商业 MDI 图标列表
  */
 export const DEFAULT_BUSINESS_ICONS = [
-  'mdi:cart', 'mdi:cart-outline', 'mdi:shopping', 'mdi:shopping-outline',
-  'mdi:store', 'mdi:store-outline', 'mdi:briefcase', 'mdi:briefcase-outline',
-  'mdi:currency-usd', 'mdi:currency-eur', 'mdi:currency-cny',
-  'mdi:credit-card', 'mdi:credit-card-outline', 'mdi:wallet', 'mdi:wallet-outline',
-  'mdi:bank', 'mdi:bank-outline', 'mdi:cash', 'mdi:cash-multiple',
-  'mdi:chart-line', 'mdi:chart-bar', 'mdi:trending-up', 'mdi:trending-down',
-  'mdi:trophy', 'mdi:trophy-outline', 'mdi:medal', 'mdi:package-variant',
+  'mdi:cart',
+  'mdi:cart-outline',
+  'mdi:shopping',
+  'mdi:shopping-outline',
+  'mdi:store',
+  'mdi:store-outline',
+  'mdi:briefcase',
+  'mdi:briefcase-outline',
+  'mdi:currency-usd',
+  'mdi:currency-eur',
+  'mdi:currency-cny',
+  'mdi:credit-card',
+  'mdi:credit-card-outline',
+  'mdi:wallet',
+  'mdi:wallet-outline',
+  'mdi:bank',
+  'mdi:bank-outline',
+  'mdi:cash',
+  'mdi:cash-multiple',
+  'mdi:chart-line',
+  'mdi:chart-bar',
+  'mdi:trending-up',
+  'mdi:trending-down',
+  'mdi:trophy',
+  'mdi:trophy-outline',
+  'mdi:medal',
+  'mdi:package-variant',
 ]
 
 /**
@@ -255,14 +477,14 @@ export interface Props {
  * 标签 key 映射（用于 i18n）
  */
 export const LABEL_KEY_MAP: Record<string, string> = {
-  'element': 'iconSelector.elementIcons',
-  'common': 'iconSelector.commonIcons',
-  'system': 'iconSelector.systemIcons',
-  'media': 'iconSelector.mediaIcons',
-  'lifestyle': 'iconSelector.lifestyleIcons',
-  'business': 'iconSelector.businessIcons',
-  'navigation': 'iconSelector.navigationIcons',
-  'gateway': 'iconSelector.gatewayIcons',
+  element: 'iconSelector.elementIcons',
+  common: 'iconSelector.commonIcons',
+  system: 'iconSelector.systemIcons',
+  media: 'iconSelector.mediaIcons',
+  lifestyle: 'iconSelector.lifestyleIcons',
+  business: 'iconSelector.businessIcons',
+  navigation: 'iconSelector.navigationIcons',
+  gateway: 'iconSelector.gatewayIcons',
 }
 
 /**
@@ -294,16 +516,43 @@ export const createMenuIconGroups = (): IconGroup[] => [
   {
     name: 'element',
     label: 'Element Icons',
-    icons: ['HomeFilled', 'Home', 'Setting', 'User', 'UserFilled', 'Menu', 'Key', 'Monitor',
-            'Tools', 'Operation', 'Document', 'Folder', 'FolderOpened', 'Files',
-            'Lock', 'Unlock', 'View', 'Connection', 'Platform', 'OfficeBuilding'],
+    icons: [
+      'HomeFilled',
+      'Home',
+      'Setting',
+      'User',
+      'UserFilled',
+      'Menu',
+      'Key',
+      'Monitor',
+      'Tools',
+      'Operation',
+      'Document',
+      'Folder',
+      'FolderOpened',
+      'Files',
+      'Lock',
+      'Unlock',
+      'View',
+      'Connection',
+      'Platform',
+      'OfficeBuilding',
+    ],
   },
   {
     name: 'common',
     label: 'Common',
-    icons: ['mdi:cog-outline', 'mdi:shield-outline', 'mdi:database-outline',
-            'mdi:account-group-outline', 'mdi:chart-line', 'mdi:bell-outline',
-            'mdi:check-circle-outline', 'mdi:alert-circle-outline', 'mdi:flash-outline'],
+    icons: [
+      'mdi:cog-outline',
+      'mdi:shield-outline',
+      'mdi:database-outline',
+      'mdi:account-group-outline',
+      'mdi:chart-line',
+      'mdi:bell-outline',
+      'mdi:check-circle-outline',
+      'mdi:alert-circle-outline',
+      'mdi:flash-outline',
+    ],
   },
 ]
 </script>
@@ -362,7 +611,7 @@ const saveRecentIcon = (icon: string) => {
   if (!props.showRecent || !props.recentStorageKey) return
 
   // 移除已存在的，添加到头部
-  const icons = recentIcons.value.filter(i => i !== icon)
+  const icons = recentIcons.value.filter((i) => i !== icon)
   icons.unshift(icon)
   recentIcons.value = icons.slice(0, props.maxRecent)
 
@@ -378,8 +627,8 @@ loadRecentIcons()
 
 const visibleGroups = computed(() => {
   return props.groups
-    .filter(group => group.icons.length > 0)
-    .map(group => {
+    .filter((group) => group.icons.length > 0)
+    .map((group) => {
       const labelKey = LABEL_KEY_MAP[group.name]
       return {
         ...group,
@@ -392,7 +641,7 @@ const filteredIconsMap = computed<Record<string, string[]>>(() => {
   const keyword = searchKeyword.value.toLowerCase()
   return visibleGroups.value.reduce<Record<string, string[]>>((result, group) => {
     result[group.name] = keyword
-      ? group.icons.filter(icon => icon.toLowerCase().includes(keyword))
+      ? group.icons.filter((icon) => icon.toLowerCase().includes(keyword))
       : group.icons
     return result
   }, {})
@@ -403,7 +652,7 @@ const getInitialTab = () => props.defaultTab || visibleGroups.value[0]?.name || 
 watch(
   () => [props.defaultTab, props.groups],
   () => {
-    if (!visibleGroups.value.some(group => group.name === activeTab.value)) {
+    if (!visibleGroups.value.some((group) => group.name === activeTab.value)) {
       activeTab.value = getInitialTab()
     }
   },

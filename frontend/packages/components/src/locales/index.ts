@@ -3,10 +3,10 @@ import zhCn from './zh-cn'
 import enUs from './en-us'
 
 const messages = {
-  'zh_cn': {
+  zh_cn: {
     ...zhCn,
   },
-  'en_us': {
+  en_us: {
     ...enUs,
   },
 }

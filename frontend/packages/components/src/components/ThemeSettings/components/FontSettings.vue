@@ -103,12 +103,7 @@
     <div class="preview-section">
       <div class="preview-header">
         <span class="preview-label">{{ t('settings.fontPreview') }}</span>
-        <el-button
-          size="small"
-          text
-          type="primary"
-          @click="resetFontSizes"
-        >
+        <el-button size="small" text type="primary" @click="resetFontSizes">
           {{ t('settings.resetFontSizes') }}
         </el-button>
       </div>
@@ -302,7 +297,11 @@ const resetFontSizes = () => {
 
           .el-slider__bar {
             height: 6px;
-            background: linear-gradient(90deg, var(--primary-color-light-5) 0%, var(--primary-color) 100%);
+            background: linear-gradient(
+              90deg,
+              var(--primary-color-light-5) 0%,
+              var(--primary-color) 100%
+            );
             border-radius: 3px;
           }
 

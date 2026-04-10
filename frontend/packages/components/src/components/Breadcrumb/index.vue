@@ -14,7 +14,9 @@
       <el-breadcrumb-item
         v-for="(item, index) in resolvedItems"
         :key="item.path"
-        :to="item.redirect && index !== resolvedItems.length - 1 ? { path: item.redirect } : undefined"
+        :to="
+          item.redirect && index !== resolvedItems.length - 1 ? { path: item.redirect } : undefined
+        "
         :class="{ 'no-redirect': index === resolvedItems.length - 1 }"
       >
         {{ resolveTitle(item) }}
@@ -29,26 +31,26 @@
  * 用于将旧的中文标题映射到 i18n key
  */
 export const LEGACY_TITLE_MAP: Record<string, string> = {
-  '首页': 'menu.dashboard',
-  '系统管理': 'menu.system',
-  '用户管理': 'menu.user',
-  '角色管理': 'menu.role',
-  '菜单管理': 'menu.menu',
-  '部门管理': 'menu.dept',
-  '个人中心': 'menu.profile',
-  '系统设置': 'menu.settings',
-  '用户列表': 'menu.userList',
-  '在线用户': 'menu.onlineUser',
-  '组织管理': 'menu.group',
-  '权限管理': 'menu.permission',
-  '流程管理': 'menu.workflow',
-  '流程设计': 'menu.workflowDesigner',
-  '流程列表': 'menu.workflowProcess',
-  '我的待办': 'menu.workflowTask',
-  '系统配置': 'menu.config',
-  '字典管理': 'menu.dict',
-  '字典类型': 'menu.dictType',
-  '字典数据': 'menu.dictData',
+  首页: 'menu.dashboard',
+  系统管理: 'menu.system',
+  用户管理: 'menu.user',
+  角色管理: 'menu.role',
+  菜单管理: 'menu.menu',
+  部门管理: 'menu.dept',
+  个人中心: 'menu.profile',
+  系统设置: 'menu.settings',
+  用户列表: 'menu.userList',
+  在线用户: 'menu.onlineUser',
+  组织管理: 'menu.group',
+  权限管理: 'menu.permission',
+  流程管理: 'menu.workflow',
+  流程设计: 'menu.workflowDesigner',
+  流程列表: 'menu.workflowProcess',
+  我的待办: 'menu.workflowTask',
+  系统配置: 'menu.config',
+  字典管理: 'menu.dict',
+  字典类型: 'menu.dictType',
+  字典数据: 'menu.dictData',
 }
 
 /**
@@ -109,7 +111,9 @@ const routeItems = computed<BreadcrumbItem[]>(() => {
   }
 
   return route.matched
-    .filter(item => item.meta && item.meta.title && !props.excludeRouteNames.includes(String(item.name)))
+    .filter(
+      (item) => item.meta && item.meta.title && !props.excludeRouteNames.includes(String(item.name))
+    )
     .map((item: RouteLocationMatched) => ({
       path: item.path,
       redirect: typeof item.redirect === 'string' ? item.redirect : undefined,
@@ -122,7 +126,7 @@ const resolvedItems = computed(() => {
   if (props.items.length > 0) {
     return props.items
   }
-  return routeItems.value.filter(item => item.path !== props.homePath)
+  return routeItems.value.filter((item) => item.path !== props.homePath)
 })
 
 const resolveTitle = (item: BreadcrumbItem): string => {

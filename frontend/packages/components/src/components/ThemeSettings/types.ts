@@ -6,6 +6,7 @@ import type {
   PresetTheme,
   CustomPreset,
   FontOption,
+  SystemConfig,
 } from '@/config/themes'
 
 /**
@@ -37,17 +38,14 @@ export interface ThemeSettingsEmits {
   (e: 'update:modelValue', value: FullThemeConfig): void
   (e: 'preset-change', presetId: string): void
   (e: 'color-change', colors: ThemeColors): void
-  (e: 'font-change', font: { family: string; baseSize: number; largeSize: number; smallSize: number }): void
+  (
+    e: 'font-change',
+    font: { family: string; baseSize: number; largeSize: number; smallSize: number }
+  ): void
   (e: 'animation-change', enabled: boolean): void
   (e: 'preset-save', preset: CustomPreset): void
   (e: 'preset-delete', presetId: string): void
 }
 
 // 重导出类型
-export type {
-  ThemeColors,
-  FullThemeConfig,
-  PresetTheme,
-  CustomPreset,
-  FontOption,
-}
+export type { ThemeColors, FullThemeConfig, PresetTheme, CustomPreset, FontOption, SystemConfig }

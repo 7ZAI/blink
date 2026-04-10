@@ -7,7 +7,11 @@
     </div>
 
     <div ref="scrollContainer" class="tabs-scroll-container">
-      <div ref="scrollWrapper" class="tabs-scroll-wrapper" :style="{ transform: `translateX(${left}px)` }">
+      <div
+        ref="scrollWrapper"
+        class="tabs-scroll-wrapper"
+        :style="{ transform: `translateX(${left}px)` }"
+      >
         <div
           v-for="tab in translatedTabs"
           :key="tab.path"
@@ -18,11 +22,7 @@
           @contextmenu.prevent="openContextMenu($event, tab)"
         >
           <span class="tags-title">{{ tab.translatedTitle }}</span>
-          <el-icon
-            v-if="!tab.affix"
-            class="tags-close"
-            @click.stop="closeTab(tab)"
-          >
+          <el-icon v-if="!tab.affix" class="tags-close" @click.stop="closeTab(tab)">
             <Close />
           </el-icon>
         </div>
@@ -91,11 +91,11 @@ export interface TabItem {
  * 标题映射常量
  */
 export const LEGACY_TITLE_MAP: Record<string, string> = {
-  '首页': 'menu.dashboard',
-  '系统管理': 'menu.system',
-  '用户管理': 'menu.user',
-  '角色管理': 'menu.role',
-  '菜单管理': 'menu.menu',
+  首页: 'menu.dashboard',
+  系统管理: 'menu.system',
+  用户管理: 'menu.user',
+  角色管理: 'menu.role',
+  菜单管理: 'menu.menu',
 }
 
 /**
@@ -179,9 +179,9 @@ const isActive = (tab: TabItem) => tab.path === currentPath.value
 
 // 计算属性：翻译后的标签页列表（响应式国际化）
 const translatedTabs = computed(() => {
-  return props.tabs.map(tab => ({
+  return props.tabs.map((tab) => ({
     ...tab,
-    translatedTitle: getTabTitle(tab)
+    translatedTitle: getTabTitle(tab),
   }))
 })
 
@@ -189,7 +189,8 @@ const checkScrollButtons = () => {
   nextTick(() => {
     const container = scrollContainer.value
     const wrapper = scrollWrapper.value
-    showScrollButtons.value = !!container && !!wrapper && wrapper.scrollWidth > container.clientWidth
+    showScrollButtons.value =
+      !!container && !!wrapper && wrapper.scrollWidth > container.clientWidth
   })
 }
 
@@ -302,7 +303,7 @@ const closeTab = (tab: TabItem) => {
     return
   }
 
-  const currentIndex = props.tabs.findIndex(item => item.path === tab.path)
+  const currentIndex = props.tabs.findIndex((item) => item.path === tab.path)
   const nextTab = props.tabs[currentIndex + 1] || props.tabs[currentIndex - 1]
 
   if (nextTab) {
@@ -338,15 +339,17 @@ const handleRefresh = (tab: TabItem) => {
     }
 
     if (tab.path === currentPath.value) {
-      router.replace({
-        path: `${props.refreshRedirectPrefix}${tab.path}`,
-        query: tab.query,
-      }).then(() => {
-        router.replace({
-          path: tab.path,
-          query: { ...tab.query, _t: String(Date.now()) },
+      router
+        .replace({
+          path: `${props.refreshRedirectPrefix}${tab.path}`,
+          query: tab.query,
         })
-      })
+        .then(() => {
+          router.replace({
+            path: tab.path,
+            query: { ...tab.query, _t: String(Date.now()) },
+          })
+        })
     } else {
       router.push({
         path: tab.path,
@@ -588,7 +591,9 @@ onUnmounted(() => {
   position: fixed;
   background: var(--card-bg);
   border-radius: 12px;
-  box-shadow: var(--card-shadow), 0 10px 40px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    var(--card-shadow),
+    0 10px 40px rgba(0, 0, 0, 0.2);
   padding: 8px 0;
   min-width: 150px;
   z-index: 9999;

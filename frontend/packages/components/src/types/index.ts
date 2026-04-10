@@ -74,8 +74,8 @@ export interface Menu {
   componentPath: string
   hasChildren: boolean
   permId?: number
-  permIdentity?: string  // 关联的权限标识
-  permName?: string      // 关联的权限名称
+  permIdentity?: string // 关联的权限标识
+  permName?: string // 关联的权限名称
   children?: Menu[]
 }
 

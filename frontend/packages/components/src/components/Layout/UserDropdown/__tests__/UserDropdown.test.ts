@@ -10,13 +10,18 @@ const ElDropdownWithCommandStub = defineComponent({
   props: ['trigger', 'placement'],
   emits: ['command'],
   setup(_, { slots, emit }) {
-    return () => h('div', { class: 'el-dropdown-stub' }, [
-      slots.default ? slots.default() : [],
-      h('div', {
-        class: 'test-dropdown-menu',
-        onClick: () => emit('command', 'logout'),
-      }, slots.dropdown ? slots.dropdown() : []),
-    ])
+    return () =>
+      h('div', { class: 'el-dropdown-stub' }, [
+        slots.default ? slots.default() : [],
+        h(
+          'div',
+          {
+            class: 'test-dropdown-menu',
+            onClick: () => emit('command', 'logout'),
+          },
+          slots.dropdown ? slots.dropdown() : []
+        ),
+      ])
   },
 })
 
@@ -100,7 +105,9 @@ describe('UserDropdown', () => {
 
       const vm = wrapper.vm as any
       // 默认菜单应该包含 themeSettings
-      expect(vm.defaultMenuItems.some((item: MenuItem) => item.command === 'themeSettings')).toBe(true)
+      expect(vm.defaultMenuItems.some((item: MenuItem) => item.command === 'themeSettings')).toBe(
+        true
+      )
     })
 
     it('应该支持 collapsed 模式', () => {

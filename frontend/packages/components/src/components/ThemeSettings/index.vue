@@ -49,7 +49,9 @@
     <section v-if="showPresets" class="settings-section">
       <div class="section-header">
         <h4 class="section-title">{{ t('settings.presetThemes') }}</h4>
-        <el-tag size="small" effect="plain">{{ presetThemes.length }} {{ t('settings.available') }}</el-tag>
+        <el-tag size="small" effect="plain">
+          {{ presetThemes.length }} {{ t('settings.available') }}
+        </el-tag>
       </div>
       <PresetSelector
         :presets="presetThemes"
@@ -62,19 +64,11 @@
     <section v-if="showColors" class="settings-section">
       <div class="section-header">
         <h4 class="section-title">{{ t('settings.colorSettings') }}</h4>
-        <el-button
-          size="small"
-          text
-          type="primary"
-          @click="resetColors"
-        >
+        <el-button size="small" text type="primary" @click="resetColors">
           {{ t('settings.resetColors') }}
         </el-button>
       </div>
-      <ColorSettings
-        :colors="localConfig.colors"
-        @change="handleColorChange"
-      />
+      <ColorSettings :colors="localConfig.colors" @change="handleColorChange" />
     </section>
 
     <!-- 字体设置 -->
@@ -82,11 +76,7 @@
       <div class="section-header">
         <h4 class="section-title">{{ t('settings.fontSettings') }}</h4>
       </div>
-      <FontSettings
-        :fonts="presetFonts"
-        :font="localConfig.font"
-        @change="handleFontChange"
-      />
+      <FontSettings :fonts="presetFonts" :font="localConfig.font" @change="handleFontChange" />
     </section>
 
     <!-- 动画设置 -->
@@ -105,7 +95,11 @@
           <div class="animation-info">
             <span class="animation-label">{{ t('settings.enableAnimations') }}</span>
             <span class="animation-desc">
-              {{ localConfig.animationsEnabled ? t('settings.animationsEnabledDesc') : t('settings.animationsDisabledDesc') }}
+              {{
+                localConfig.animationsEnabled
+                  ? t('settings.animationsEnabledDesc')
+                  : t('settings.animationsDisabledDesc')
+              }}
             </span>
           </div>
         </div>
@@ -128,11 +122,7 @@
         >
           {{ t('settings.saveAsPreset') }}
         </el-button>
-        <el-button
-          :icon="RefreshRight"
-          :disabled="readonly"
-          @click="handleReset"
-        >
+        <el-button :icon="RefreshRight" :disabled="readonly" @click="handleReset">
           {{ t('settings.resetToDefault') }}
         </el-button>
       </div>
@@ -146,7 +136,9 @@
     <section v-if="customPresets.length > 0" class="settings-section">
       <div class="section-header">
         <h4 class="section-title">{{ t('settings.myPresets') }}</h4>
-        <el-tag size="small" effect="plain">{{ customPresets.length }}/{{ maxCustomPresets }}</el-tag>
+        <el-tag size="small" effect="plain">
+          {{ customPresets.length }}/{{ maxCustomPresets }}
+        </el-tag>
       </div>
       <CustomPresetList
         :presets="customPresets"
@@ -275,7 +267,10 @@ const emit = defineEmits<{
   (e: 'update:mode', value: 'light' | 'dark'): void
   (e: 'preset-change', presetId: string): void
   (e: 'color-change', colors: ThemeColors): void
-  (e: 'font-change', font: { family: string; baseSize: number; largeSize: number; smallSize: number }): void
+  (
+    e: 'font-change',
+    font: { family: string; baseSize: number; largeSize: number; smallSize: number }
+  ): void
   (e: 'animation-change', enabled: boolean): void
   (e: 'preset-save', preset: CustomPreset): void
   (e: 'preset-delete', presetId: string): void
@@ -299,9 +294,7 @@ const localConfig = reactive<FullThemeConfig>({
 const currentPresetId = computed(() => localConfig.presetId)
 
 // Check if max presets reached
-const isMaxPresetsReached = computed(
-  () => props.customPresets.length >= props.maxCustomPresets
-)
+const isMaxPresetsReached = computed(() => props.customPresets.length >= props.maxCustomPresets)
 
 // Save dialog state
 const saveDialogVisible = ref(false)
@@ -445,9 +438,10 @@ const handleFontChange = (font: {
 /**
  * Handle animation change
  */
-const handleAnimationChange = (enabled: boolean) => {
-  localConfig.animationsEnabled = enabled
-  emit('animation-change', enabled)
+const handleAnimationChange = (enabled: string | number | boolean) => {
+  const isEnabled = Boolean(enabled)
+  localConfig.animationsEnabled = isEnabled
+  emit('animation-change', isEnabled)
 }
 
 /**
@@ -769,7 +763,8 @@ onMounted(() => {
 
 // 动画关键帧
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1);
     opacity: 1;
   }

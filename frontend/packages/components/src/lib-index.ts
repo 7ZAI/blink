@@ -20,9 +20,43 @@ export { default as SkeletonLoader } from './components/SkeletonLoader/index.vue
 export { default as BlinkIcon } from './components/BlinkIcon/index.vue'
 export { default as ThemeSettings } from './components/ThemeSettings/index.vue'
 export { default as AuthButton } from './components/AuthButton.vue'
+export { default as CaptchaSlider } from './components/CaptchaSlider/index.vue'
 
-// AuthButton Props 类型导出
+// 业务组件
+export { default as BlinkDialog } from './components/BlinkDialog/index.vue'
+export { default as BlinkTable } from './components/BlinkTable/index.vue'
+export { default as BlinkTableColumn } from './components/BlinkTable/Column.vue'
+
+// ============================================
+// 类型导出
+// ============================================
+
+// AuthButton 类型导出
 export type { Props as AuthButtonProps } from './components/AuthButton.vue'
+
+// CaptchaSlider 类型导出
+export type {
+  CaptchaType,
+  CaptchaData,
+  CaptchaCheckResult,
+  ClickPoint,
+  CaptchaSliderProps,
+  CaptchaSliderEmits,
+  CaptchaLocale,
+  CaptchaRequestParams,
+  CaptchaCheckParams,
+} from './components/CaptchaSlider/types'
+
+export { defaultZhCnLocale, defaultEnUsLocale } from './components/CaptchaSlider/types'
+
+// BlinkDialog 类型导出
+export * from './components/BlinkDialog/types'
+
+// BlinkTable 类型导出
+export * from './components/BlinkTable/types'
+
+// ThemeSettings 类型导出
+export * from './components/ThemeSettings/types'
 
 // 选择器组件
 export { default as IconSelector } from './components/IconSelector/index.vue'
@@ -76,13 +110,25 @@ export { useSidebarState } from './composables/useSidebarState'
 export type { UseSidebarStateOptions, UseSidebarStateReturn } from './composables/useSidebarState'
 
 export { useTabsState } from './composables/useTabsState'
-export type { UseTabsStateOptions, UseTabsStateReturn, TabItem as TabItemState } from './composables/useTabsState'
+export type {
+  UseTabsStateOptions,
+  UseTabsStateReturn,
+  TabItem as TabItemState,
+} from './composables/useTabsState'
 
 export { useHeaderState } from './composables/useHeaderState'
 export type { UseHeaderStateOptions, UseHeaderStateReturn } from './composables/useHeaderState'
 
-export { useLayoutState, useInjectLayoutState, LAYOUT_STATE_KEY } from './composables/useLayoutState'
-export type { UseLayoutStateOptions, UseLayoutStateReturn, LayoutProps } from './composables/useLayoutState'
+export {
+  useLayoutState,
+  useInjectLayoutState,
+  LAYOUT_STATE_KEY,
+} from './composables/useLayoutState'
+export type {
+  UseLayoutStateOptions,
+  UseLayoutStateReturn,
+  LayoutProps,
+} from './composables/useLayoutState'
 
 export { useThemeSettings } from './composables/useThemeSettings'
 export type {

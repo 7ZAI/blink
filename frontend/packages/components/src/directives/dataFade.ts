@@ -3,7 +3,7 @@ import type { Directive, DirectiveBinding } from 'vue'
 /**
  * 数据加载平滑过渡指令
  * 使用方式: v-data-fade="{ loading: isLoading, delay: 50 }"
- * 
+ *
  * 当 loading 从 true 变为 false 时，会自动添加淡入动画
  */
 
@@ -21,10 +21,10 @@ const dataFadeDirective: Directive<HTMLElement, DataFadeOptions> = {
     const options = binding.value || { loading: true }
     const duration = options.duration || 300
     const delay = options.delay || 0
-    
+
     // 设置初始状态
     el.style.transition = `opacity ${duration}ms ease-out ${delay}ms, transform ${duration}ms ease-out ${delay}ms`
-    
+
     if (options.loading) {
       el.style.opacity = '0'
       el.style.transform = 'translateY(10px)'
@@ -33,11 +33,11 @@ const dataFadeDirective: Directive<HTMLElement, DataFadeOptions> = {
       el.style.transform = 'translateY(0)'
     }
   },
-  
+
   updated(el: HTMLElement, binding: DirectiveBinding<DataFadeOptions>) {
     const options = binding.value || { loading: false }
     const oldValue = binding.oldValue as DataFadeOptions | undefined
-    
+
     // 只在 loading 状态从 true 变为 false 时触发动画
     if (oldValue?.loading && !options.loading) {
       // 触发重排后添加过渡
@@ -50,7 +50,7 @@ const dataFadeDirective: Directive<HTMLElement, DataFadeOptions> = {
       el.style.opacity = '0'
       el.style.transform = 'translateY(10px)'
     }
-  }
+  },
 }
 
 /**
@@ -70,9 +70,9 @@ const listFadeDirective: Directive<HTMLElement, ListFadeOptions> = {
     const baseDelay = options.baseDelay || 30
     const delay = options.index * baseDelay
     const duration = 300
-    
+
     el.style.transition = `opacity ${duration}ms ease-out ${delay}ms, transform ${duration}ms ease-out ${delay}ms`
-    
+
     if (options.loading) {
       el.style.opacity = '0'
       el.style.transform = 'translateX(-10px)'
@@ -81,11 +81,11 @@ const listFadeDirective: Directive<HTMLElement, ListFadeOptions> = {
       el.style.transform = 'translateX(0)'
     }
   },
-  
+
   updated(el: HTMLElement, binding: DirectiveBinding<ListFadeOptions>) {
     const options = binding.value || { loading: false, index: 0 }
     const oldValue = binding.oldValue as ListFadeOptions | undefined
-    
+
     if (oldValue?.loading && !options.loading) {
       requestAnimationFrame(() => {
         el.style.opacity = '1'
@@ -95,7 +95,7 @@ const listFadeDirective: Directive<HTMLElement, ListFadeOptions> = {
       el.style.opacity = '0'
       el.style.transform = 'translateX(-10px)'
     }
-  }
+  },
 }
 
 /**
@@ -106,7 +106,7 @@ const tableFadeDirective: Directive<HTMLElement, boolean> = {
   mounted(el: HTMLElement, binding: DirectiveBinding<boolean>) {
     const isLoading = binding.value
     el.style.transition = 'opacity 0.3s ease-out, transform 0.3s ease-out'
-    
+
     if (isLoading) {
       el.style.opacity = '0'
       el.style.transform = 'translateY(5px)'
@@ -115,11 +115,11 @@ const tableFadeDirective: Directive<HTMLElement, boolean> = {
       el.style.transform = 'translateY(0)'
     }
   },
-  
+
   updated(el: HTMLElement, binding: DirectiveBinding<boolean>) {
     const isLoading = binding.value
     const wasLoading = binding.oldValue
-    
+
     if (wasLoading && !isLoading) {
       requestAnimationFrame(() => {
         el.style.opacity = '1'
@@ -129,7 +129,7 @@ const tableFadeDirective: Directive<HTMLElement, boolean> = {
       el.style.opacity = '0'
       el.style.transform = 'translateY(5px)'
     }
-  }
+  },
 }
 
 export { dataFadeDirective, listFadeDirective, tableFadeDirective }
@@ -139,5 +139,5 @@ export default {
     app.directive('data-fade', dataFadeDirective)
     app.directive('list-fade', listFadeDirective)
     app.directive('table-fade', tableFadeDirective)
-  }
+  },
 }

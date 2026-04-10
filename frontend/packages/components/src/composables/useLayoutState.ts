@@ -3,9 +3,22 @@
  */
 
 import { ref, computed, provide, inject, type Ref, type ComputedRef } from 'vue'
-import { useSidebarState, type UseSidebarStateOptions, type UseSidebarStateReturn } from './useSidebarState'
-import { useTabsState, type UseTabsStateOptions, type UseTabsStateReturn, type TabItem } from './useTabsState'
-import { useHeaderState, type UseHeaderStateOptions, type UseHeaderStateReturn } from './useHeaderState'
+import {
+  useSidebarState,
+  type UseSidebarStateOptions,
+  type UseSidebarStateReturn,
+} from './useSidebarState'
+import {
+  useTabsState,
+  type UseTabsStateOptions,
+  type UseTabsStateReturn,
+  type TabItem,
+} from './useTabsState'
+import {
+  useHeaderState,
+  type UseHeaderStateOptions,
+  type UseHeaderStateReturn,
+} from './useHeaderState'
 
 export interface UseLayoutStateOptions {
   sidebar?: UseSidebarStateOptions

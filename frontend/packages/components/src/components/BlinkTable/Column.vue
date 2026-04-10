@@ -16,7 +16,7 @@
     </template>
 
     <template v-else-if="formatter" #default="{ row, column }">
-      {{ formatter(row, column, row[prop]) }}
+      {{ formatter(row, column, prop ? row[prop] : undefined) }}
     </template>
 
     <template v-if="$slots.header" #header="scope">

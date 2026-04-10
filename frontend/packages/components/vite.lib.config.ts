@@ -10,21 +10,27 @@ export default defineConfig({
     dts({
       tsconfigPath: './tsconfig.app.json',
       outDir: 'dist',
-      include: ['src/lib-index.ts', 'src/components/**/*.vue', 'src/composables/**/*.ts', 'src/directives/**/*.ts', 'src/config/**/*.ts'],
+      include: [
+        'src/lib-index.ts',
+        'src/components/**/*.vue',
+        'src/composables/**/*.ts',
+        'src/directives/**/*.ts',
+        'src/config/**/*.ts',
+      ],
       exclude: ['node_modules/**', 'src/views/**'],
-    })
+    }),
   ],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
-    }
+      '@': resolve(__dirname, 'src'),
+    },
   },
   build: {
     lib: {
       entry: resolve(__dirname, 'src/lib-index.ts'),
       name: 'BlinkComponents',
       formats: ['es', 'cjs'],
-      fileName: (format) => `index.${format === 'es' ? 'js' : 'cjs'}`
+      fileName: (format) => `index.${format === 'es' ? 'js' : 'cjs'}`,
     },
     rollupOptions: {
       external: [
@@ -34,7 +40,7 @@ export default defineConfig({
         'element-plus',
         '@element-plus/icons-vue',
         '@iconify/vue',
-        'vue-i18n'
+        'vue-i18n',
       ],
       output: {
         globals: {
@@ -43,9 +49,9 @@ export default defineConfig({
           pinia: 'Pinia',
           'element-plus': 'ElementPlus',
           'vue-i18n': 'VueI18n',
-        }
-      }
+        },
+      },
     },
     cssCodeSplit: false,
-  }
+  },
 })

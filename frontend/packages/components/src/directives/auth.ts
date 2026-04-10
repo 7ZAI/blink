@@ -30,7 +30,7 @@ function checkPermission(perms: string | string[]): boolean {
 
   // 支持数组形式，任一权限匹配即通过
   if (Array.isArray(perms)) {
-    return perms.some(perm => permissions.includes(perm))
+    return perms.some((perm) => permissions.includes(perm))
   }
 
   return permissions.includes(perms)
@@ -52,7 +52,7 @@ export const auth: Directive = {
     if (!checkPermission(value)) {
       el.parentNode?.removeChild(el)
     }
-  }
+  },
 }
 
 /**
@@ -74,7 +74,7 @@ export const authDisabled: Directive = {
       el.style.pointerEvents = 'none'
       el.style.opacity = '0.5'
     }
-  }
+  },
 }
 
 /**
@@ -89,5 +89,5 @@ export default {
   install(app: import('vue').App) {
     app.directive('auth', auth)
     app.directive('auth-disabled', authDisabled)
-  }
+  },
 }

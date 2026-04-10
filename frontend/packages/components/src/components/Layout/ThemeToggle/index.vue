@@ -1,10 +1,5 @@
 <template>
-  <div
-    class="theme-toggle"
-    :class="{ 'is-dark': isDark }"
-    :title="title"
-    @click="handleToggle"
-  >
+  <div class="theme-toggle" :class="{ 'is-dark': isDark }" :title="title" @click="handleToggle">
     <slot :is-dark="isDark" :toggle="handleToggle">
       <!-- 默认图标切换 -->
       <el-icon class="toggle-icon">

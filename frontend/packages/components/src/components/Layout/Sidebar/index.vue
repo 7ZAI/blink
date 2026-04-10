@@ -6,12 +6,7 @@
     :style="containerStyle"
   >
     <!-- Logo 区域 Slot -->
-    <slot
-      name="logo"
-      :collapsed="isCollapsed"
-      :width="sidebarWidth"
-      :toggle="toggleSidebar"
-    >
+    <slot name="logo" :collapsed="isCollapsed" :width="sidebarWidth" :toggle="toggleSidebar">
       <!-- 默认 Logo - 展开状态 -->
       <div class="sidebar-logo" v-show="!isCollapsed">
         <div class="logo-icon" v-html="logo"></div>
@@ -57,7 +52,7 @@
     <div
       v-if="resizable && !isCollapsed"
       class="sidebar-resize-handle"
-      :class="{ 'resizing': isResizing }"
+      :class="{ resizing: isResizing }"
       @mousedown="startResize"
     >
       <div class="resize-indicator"></div>
@@ -74,7 +69,7 @@
     <!-- 默认折叠按钮 -->
     <div
       class="sidebar-collapse-btn"
-      :class="{ 'collapsed': isCollapsed }"
+      :class="{ collapsed: isCollapsed }"
       :style="collapseBtnStyle"
       @click="toggleSidebar"
     >
@@ -166,17 +161,23 @@ const sidebarState = useSidebarState({
 
 const { sidebarWidth, isCollapsed, isResizing, toggleSidebar, startResize } = sidebarState
 
-watch(() => props.collapsed, (val) => {
-  if (val !== undefined && val !== isCollapsed.value) {
-    sidebarState.setCollapsed(val)
+watch(
+  () => props.collapsed,
+  (val) => {
+    if (val !== undefined && val !== isCollapsed.value) {
+      sidebarState.setCollapsed(val)
+    }
   }
-})
+)
 
-watch(() => props.width, (val) => {
-  if (val !== undefined && val !== sidebarWidth.value) {
-    sidebarState.setWidth(val)
+watch(
+  () => props.width,
+  (val) => {
+    if (val !== undefined && val !== sidebarWidth.value) {
+      sidebarState.setWidth(val)
+    }
   }
-})
+)
 
 const activeMenu = computed(() => props.activeMenuPath || route.path)
 
