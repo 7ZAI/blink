@@ -148,6 +148,7 @@ const handleSubmit = async () => {
     visible.value = false
   } catch (error) {
     console.error('[SyncInstanceDialog] 同步失败:', error)
+    ElMessage.error(t('message.syncFailed') || '同步失败')
   } finally {
     submitting.value = false
   }
