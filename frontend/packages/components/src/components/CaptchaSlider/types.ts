@@ -314,7 +314,8 @@ export interface ClickWordEmits {
  * useCaptchaCore composable 选项
  */
 export interface UseCaptchaCoreOptions {
-  captchaType: CaptchaType
+  // 使用 getter 函数获取最新的 captchaType，确保响应式更新
+  getCaptchaType: () => CaptchaType
   getCaptchaApi?: (params: CaptchaRequestParams) => Promise<CaptchaData>
   checkCaptchaApi?: (params: CaptchaCheckParams) => Promise<CaptchaCheckResult>
   imageWidth: number

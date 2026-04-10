@@ -54,6 +54,9 @@ public class SysCaptchaController {
     // 验证码验证状态缓存前缀
     private static final String CAPTCHA_VERIFIED_PREFIX = "captcha:verified:";
 
+    // anji-captcha Redis key 格式（包含 captcha: 前缀，因为 CaptchaCacheServiceRedisImpl 使用了前缀）
+    private static final String REDIS_CAPTCHA_KEY = "captcha:RUNNING:CAPTCHA:%s";
+
     private static final String[] CAPTCHA_TYPES = {"clickWord", "blockPuzzle"};
     private static final Random RANDOM = new Random();
 
@@ -130,8 +133,25 @@ public class SysCaptchaController {
                 resultVO.setOriginalImageBase64(anjiCaptchaVO.getOriginalImageBase64());
                 resultVO.setJigsawImageBase64(anjiCaptchaVO.getJigsawImageBase64());
                 resultVO.setToken(anjiCaptchaVO.getToken());
-                resultVO.setPointJson(anjiCaptchaVO.getPointJson());
                 resultVO.setWordList(anjiCaptchaVO.getWordList());
+                // 返回 secretKey，前端需要用它加密 pointJson
+                resultVO.setSecretKey(anjiCaptchaVO.getSecretKey());
+                log.info("SecretKey: {}", anjiCaptchaVO.getSecretKey() != null ? "已返回" : "null");
+
+                // 滑块验证码：从 Redis 获取正确的 y 坐标返回给前端
+                // anji-captcha 不返回 pointJson，前端需要知道 y 坐标才能正确提交验证
+                // 点选文字验证码不需要返回 pointJson，不影响其校验
+                if ("blockPuzzle".equals(resultCaptchaType) && StrUtil.isNotBlank(anjiCaptchaVO.getToken())) {
+                    String pointKey = String.format(REDIS_CAPTCHA_KEY, anjiCaptchaVO.getToken());
+                    Object pointObj = redisClient.get(pointKey);
+                    String pointJsonFromRedis = pointObj != null ? pointObj.toString() : null;
+                    log.info("从 Redis 获取 point 信息: key={}, value={}", pointKey, pointJsonFromRedis);
+
+                    if (StrUtil.isNotBlank(pointJsonFromRedis)) {
+                        // 返回 pointJson 给前端，前端提交验证时需要包含正确的 y 坐标
+                        resultVO.setPointJson(pointJsonFromRedis);
+                    }
+                }
             } else {
                 BeanUtils.copyProperties(repData, resultVO);
             }

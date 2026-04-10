@@ -1,7 +1,10 @@
 package com.blink.base.config;
 
+import com.anji.captcha.service.CaptchaCacheService;
 import com.anji.captcha.service.CaptchaService;
 import com.anji.captcha.service.impl.CaptchaServiceFactory;
+import com.blink.framework.redis.component.RedisClient;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -34,18 +37,27 @@ public class CaptchaConfig {
     @Value("${blink.captcha.type:blockPuzzle}")
     private String captchaType;
 
+    @Resource
+    private RedisClient redisClient;
+
     /**
      * 配置验证码服务
      * 使用 Redis 缓存方式存储验证码，支持微服务多实例环境
      */
     @Bean
     public CaptchaService captchaService() {
+        // 手动注册 Redis 缓存实现到 CaptchaServiceFactory（解决 SPI 与 Spring 的集成问题）
+        CaptchaCacheService redisCacheService = new CaptchaCacheServiceRedisImpl(redisClient);
+        CaptchaServiceFactory.cacheService.put("redis", redisCacheService);
+        log.info("已注册验证码 Redis 缓存服务");
+
         Properties config = new Properties();
 
         // ==================== 缓存配置 ====================
         // 验证码缓存方式：local(本地缓存)/redis(Redis缓存)
         // 微服务多实例环境必须使用 redis，否则会出现验证失败问题
-        config.setProperty("captcha.cache.type", "redis");
+        // 注意：属性名是 captcha.cacheType（一个点），不是 captcha.cache.type
+        config.setProperty("captcha.cacheType", "redis");
 
         // ==================== 验证码基本配置 ====================
         // 验证码类型：从配置文件读取，支持 clickWord/blockPuzzle
@@ -94,5 +106,55 @@ public class CaptchaConfig {
         }
 
         return CaptchaServiceFactory.getInstance(config);
+    }
+
+    /**
+     * Redis 缓存实现内部类
+     * 直接接收 RedisClient，避免 SPI 与 Spring 的冲突
+     */
+    private static class CaptchaCacheServiceRedisImpl implements CaptchaCacheService {
+
+        private final RedisClient redisClient;
+        private static final String CAPTCHA_KEY_PREFIX = "captcha:";
+
+        public CaptchaCacheServiceRedisImpl(RedisClient redisClient) {
+            this.redisClient = redisClient;
+        }
+
+        @Override
+        public void set(String key, String value, long expiresInSeconds) {
+            String redisKey = CAPTCHA_KEY_PREFIX + key;
+            redisClient.setEx(redisKey, value, expiresInSeconds);
+        }
+
+        @Override
+        public boolean exists(String key) {
+            String redisKey = CAPTCHA_KEY_PREFIX + key;
+            return redisClient.exists(redisKey);
+        }
+
+        @Override
+        public void delete(String key) {
+            String redisKey = CAPTCHA_KEY_PREFIX + key;
+            redisClient.delete(redisKey);
+        }
+
+        @Override
+        public String get(String key) {
+            String redisKey = CAPTCHA_KEY_PREFIX + key;
+            Object value = redisClient.get(redisKey);
+            return value != null ? value.toString() : null;
+        }
+
+        @Override
+        public Long increment(String key, long val) {
+            String redisKey = CAPTCHA_KEY_PREFIX + key;
+            return redisClient.incrementBy(redisKey, val);
+        }
+
+        @Override
+        public String type() {
+            return "redis";
+        }
     }
 }

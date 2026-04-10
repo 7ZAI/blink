@@ -27,7 +27,7 @@ function generateUUID(): string {
  */
 export function useCaptchaCore(options: UseCaptchaCoreOptions): UseCaptchaCoreReturn {
   const {
-    captchaType,
+    getCaptchaType,
     getCaptchaApi,
     checkCaptchaApi,
     imageWidth,
@@ -88,7 +88,7 @@ export function useCaptchaCore(options: UseCaptchaCoreOptions): UseCaptchaCoreRe
       clientUid.value = generateUUID()
 
       const data = await getCaptchaApi({
-        captchaType: captchaType,
+        captchaType: getCaptchaType(),
         clientUid: clientUid.value,
         ts: Date.now(),
       })

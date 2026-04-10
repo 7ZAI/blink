@@ -158,7 +158,8 @@ const {
   handleWordClick,
   cleanup,
 } = useCaptchaCore({
-  captchaType: props.captchaType,
+  // 使用 getter 函数确保每次都获取最新的 captchaType 值
+  getCaptchaType: () => props.captchaType,
   getCaptchaApi: props.getCaptchaApi,
   checkCaptchaApi: props.checkCaptchaApi,
   imageWidth: props.imageWidth,
