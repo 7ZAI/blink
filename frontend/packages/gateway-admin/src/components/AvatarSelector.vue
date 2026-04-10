@@ -14,6 +14,7 @@
       :title="t('avatar.selectStyle')"
       width="700px"
       :close-on-click-modal="false"
+      :lock-scroll="false"
     >
       <div class="avatar-preview">
         <el-avatar :size="80" :src="previewAvatarUrl">

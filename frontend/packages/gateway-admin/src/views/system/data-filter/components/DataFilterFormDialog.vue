@@ -4,6 +4,7 @@
     :title="dialogTitle"
     width="900px"
     :close-on-click-modal="false"
+    :lock-scroll="false"
     class="data-filter-dialog"
     @close="handleClose"
   >

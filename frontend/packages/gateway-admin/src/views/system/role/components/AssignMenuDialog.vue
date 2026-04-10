@@ -4,6 +4,7 @@
     :title="t('system.role.assignMenuTitle')"
     width="500px"
     :close-on-click-modal="false"
+    :lock-scroll="false"
     @update:model-value="emit('update:modelValue', $event)"
     @closed="handleClose"
   >

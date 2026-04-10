@@ -4,6 +4,8 @@
     :title="t('common.globalSearch')"
     width="500px"
     :show-close="false"
+    :close-on-click-modal="false"
+    :lock-scroll="false"
     class="global-search-dialog"
     @open="handleOpen"
   >

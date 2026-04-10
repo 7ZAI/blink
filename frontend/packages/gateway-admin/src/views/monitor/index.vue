@@ -146,6 +146,8 @@
       v-model="detailDialogVisible"
       :title="t('monitor.instanceId') + ': ' + (currentInstance?.instanceId || '')"
       width="600px"
+      :close-on-click-modal="false"
+      :lock-scroll="false"
       class="detail-dialog"
     >
       <el-descriptions :column="2" border v-if="currentInstance">
@@ -200,6 +202,7 @@
       :title="t('monitor.instanceId') + ' ' + t('common.lock')"
       width="450px"
       :close-on-click-modal="false"
+      :lock-scroll="false"
     >
       <el-form :model="offlineForm" label-width="100px">
         <el-form-item :label="t('monitor.instanceId')">

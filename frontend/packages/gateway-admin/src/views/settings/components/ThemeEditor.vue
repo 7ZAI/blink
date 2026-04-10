@@ -196,7 +196,13 @@
     </div>
 
     <!-- 保存预设对话框 -->
-    <el-dialog v-model="showSaveDialog" :title="t('settings.saveAsPreset')" width="400px">
+    <el-dialog
+      v-model="showSaveDialog"
+      :title="t('settings.saveAsPreset')"
+      width="400px"
+      :close-on-click-modal="false"
+      :lock-scroll="false"
+    >
       <el-form>
         <el-form-item :label="t('settings.presetName')">
           <el-input

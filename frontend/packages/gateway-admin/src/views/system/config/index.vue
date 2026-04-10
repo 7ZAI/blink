@@ -178,6 +178,7 @@
       :title="t('config.editJson')"
       width="650px"
       :close-on-click-modal="false"
+      :lock-scroll="false"
       class="json-dialog"
     >
       <div class="json-editor-wrapper">

@@ -4,6 +4,7 @@
     :title="t('role.selectRole')"
     width="500px"
     :close-on-click-modal="false"
+    :lock-scroll="false"
   >
     <el-input
       v-model.trim="searchText"

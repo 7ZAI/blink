@@ -173,10 +173,6 @@
                         <el-icon><Refresh /></el-icon>
                         {{ t('channel.refreshSystemKey') }}
                       </el-dropdown-item>
-                      <el-dropdown-item command="issueToken">
-                        <el-icon><Key /></el-icon>
-                        {{ t('channel.issueToken') }}
-                      </el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
                 </el-dropdown>
@@ -460,33 +456,6 @@
       </template>
     </el-dialog>
 
-    <!-- Issue Token Result Dialog -->
-    <el-dialog
-      v-model="tokenDialogVisible"
-      :title="t('channel.issueToken')"
-      width="480px"
-      :close-on-click-modal="false"
-      :lock-scroll="false"
-    >
-      <el-form label-width="100px" class="dialog-form">
-        <el-form-item :label="t('channel.token')">
-          <el-input v-model="tokenResult.token" readonly class="token-input">
-            <template #append>
-              <el-button @click="copyToken">
-                <el-icon><DocumentCopy /></el-icon>
-              </el-button>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item :label="t('channel.expireTime')">
-          <el-input v-model="tokenResult.expireTime" readonly />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="tokenDialogVisible = false">{{ t('common.close') }}</el-button>
-      </template>
-    </el-dialog>
-
     <!-- Channel Detail Dialog -->
     <el-dialog
       v-model="detailDialogVisible"
@@ -620,7 +589,6 @@ import {
   Delete,
   MoreFilled,
   DocumentCopy,
-  Key,
   User,
   View,
 } from '@element-plus/icons-vue'
@@ -633,12 +601,10 @@ import {
   deleteChannel,
   refreshChannelKey,
   refreshSystemKey,
-  issueChannelToken,
   type QueryChannelParams,
   type AddChannelParams,
   type UpdateChannelParams,
   type ChannelInfo,
-  type IssueTokenResult,
   type GetChannelSecretParams,
 } from '@/api/channel'
 import { syncChannelData, type SyncChannelDataParams } from '@/api/dataSync'
@@ -707,14 +673,6 @@ const dialogTitle = computed(() =>
     ? t('common.edit') + t('channel.channelInfo')
     : t('common.add') + t('channel.channelInfo')
 )
-
-// 令牌弹窗
-const tokenDialogVisible = ref(false)
-const tokenResult = reactive<IssueTokenResult>({
-  token: '',
-  expireTime: '',
-  expiresIn: 0,
-})
 
 // 用户选择器
 const userSelectorVisible = ref(false)
@@ -817,7 +775,7 @@ const handleSyncSelected = async () => {
   }
 
   try {
-    await ElMessageBox.confirm(t('channel.syncConfirm'), t('message.tips'), { type: 'info' })
+    await ElMessageBox.confirm(t('channel.syncConfirm'), t('message.tips'), { type: 'info', lockScroll: false })
 
     loading.value = true
     await syncChannelData({
@@ -971,7 +929,7 @@ const handleEncryptionBeforeChange = async (row: ChannelInfo): Promise<boolean> 
     : t('channel.encryptionDisableConfirm')
 
   try {
-    await ElMessageBox.confirm(confirmMsg, t('message.tips'), { type: 'warning' })
+    await ElMessageBox.confirm(confirmMsg, t('message.tips'), { type: 'warning', lockScroll: false })
   } catch {
     // 用户取消
     return false
@@ -1006,6 +964,7 @@ const handleDelete = async (row: ChannelInfo) => {
   try {
     await ElMessageBox.confirm(t('common.confirm') + t('common.delete') + '?', t('message.tips'), {
       type: 'warning',
+      lockScroll: false,
     })
     await deleteChannel({ channelId: row.channelId })
     // 从列表中移除删除的数据
@@ -1053,26 +1012,7 @@ const handleCommand = async (command: string, row: ChannelInfo) => {
         console.error('[ChannelManagement] Failed to refresh system key:', error)
       }
       break
-    case 'issueToken':
-      try {
-        const res = await issueChannelToken({ channelId: row.channelId, expireMinutes: 60 })
-        tokenResult.token = res.token
-        tokenResult.expireTime = res.expireTime
-        tokenResult.expiresIn = res.expiresIn
-        tokenDialogVisible.value = true
-      } catch (error) {
-        console.error('[ChannelManagement] Failed to issue token:', error)
-      }
-      break
   }
-}
-
-/**
- * 复制令牌到剪贴板
- */
-const copyToken = () => {
-  navigator.clipboard.writeText(tokenResult.token)
-  ElMessage.success(t('common.copy') + t('message.success'))
 }
 
 /**
