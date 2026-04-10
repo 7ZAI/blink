@@ -6,11 +6,13 @@ export interface NotificationItem {
   notificationId: number
   title: string
   content: string
-  type: 'SYSTEM' | 'OPERATION' | 'ALERT'
+  type: string // 通知类型：instance_sync_success/failed, cache_sync_summary_success/partial 等
   severity: 'INFO' | 'WARNING' | 'ERROR' | 'SUCCESS'
-  sourceRef?: string
+  sourceRef?: string // 关联的消息ID，用于去重
   createdTime: string
   read?: boolean
+  targetType?: string // 目标类型：user/channel
+  targetUserId?: number // 目标用户ID
 }
 
 export interface NotificationListRsp {

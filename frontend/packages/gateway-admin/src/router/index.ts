@@ -380,6 +380,18 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/settings/index.vue'),
         meta: { title: 'settings.title' },
       },
+      {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/profile/index.vue'),
+        meta: { title: 'header.profile' },
+      },
+      {
+        path: 'notification',
+        name: 'Notification',
+        component: () => import('@/views/notification/index.vue'),
+        meta: { title: 'notification.title' },
+      },
     ],
   },
   {

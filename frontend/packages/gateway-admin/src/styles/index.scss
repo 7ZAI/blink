@@ -18,6 +18,33 @@ html, body {
               border-color var(--transition-duration);
 }
 
+// ============================================
+// 弹窗防抖动优化 - 使用 scrollbar-gutter 保持滚动条空间
+// ============================================
+
+// 确保页面始终预留滚动条空间，防止弹窗打开时抖动
+html {
+  // 现代浏览器使用 scrollbar-gutter 保持滚动条空间
+  scrollbar-gutter: stable;
+
+  // 兼容性方案：始终显示滚动条（即使内容不足）
+  overflow-y: scroll;
+}
+
+// 弹窗打开时的 body 样式 - 防止抖动
+body.el-popup-parent--hidden {
+  // 保持滚动条可见，只是禁用滚动
+  overflow-y: scroll !important;
+  // 固定 padding 补偿滚动条宽度
+  padding-right: 0 !important;
+}
+
+// Element Plus Overlay 防抖动
+.el-overlay {
+  // 防止遮罩层影响页面布局
+  position: fixed !important;
+}
+
 #app {
   width: 100%;
   height: 100%;

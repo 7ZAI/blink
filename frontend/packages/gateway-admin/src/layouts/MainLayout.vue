@@ -76,6 +76,7 @@
       direction="rtl"
       size="400px"
       :append-to-body="true"
+      :lock-scroll="false"
     >
       <ThemeSettings
         :model-value="themeConfig"
@@ -229,7 +230,7 @@ const handleThemeChange = (theme: 'light' | 'dark') => {
 const handleUserCommand = async (command: string) => {
   switch (command) {
     case 'profile':
-      router.push('/settings')
+      router.push('/profile')
       break
     case 'themeSettings':
       themeSettingsVisible.value = true

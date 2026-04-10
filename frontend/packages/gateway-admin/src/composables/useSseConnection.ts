@@ -41,6 +41,12 @@ export function useSseConnection(options: SseOptions): SseConnection {
       abortController.abort()
     }
 
+    // 清除之前的重连定时器
+    if (retryTimer) {
+      clearTimeout(retryTimer)
+      retryTimer = null
+    }
+
     isManualDisconnect = false
     status.value = 'connecting'
     abortController = new AbortController()
@@ -124,6 +130,21 @@ export function useSseConnection(options: SseOptions): SseConnection {
           status.value = 'disconnected'
           if (onDisconnect) {
             onDisconnect()
+          }
+          // 自动重连：连接正常关闭时（如服务重启）尝试重连
+          if (retryCount < maxRetries) {
+            const delay = Math.min(retryDelay * Math.pow(2, retryCount), 30000)
+            retryCount++
+            console.warn(
+              `[SSE] Connection closed, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`
+            )
+            retryTimer = setTimeout(() => {
+              if (!isManualDisconnect) {
+                connect()
+              }
+            }, delay)
+          } else {
+            console.error('[SSE] Max retries reached, connection permanently disconnected')
           }
         }
       },

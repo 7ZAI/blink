@@ -1,6 +1,6 @@
 <template>
   <el-dropdown trigger="click" @command="handleCommand">
-    <div class="notification-trigger">
+    <div class="notification-trigger" :class="{ shaking: isShaking }">
       <el-icon class="trigger-icon"><Bell /></el-icon>
       <span v-if="unreadCount > 0" class="badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
     </div>
@@ -28,7 +28,7 @@
             :key="item.notificationId"
             class="notification-item"
             :class="{ unread: !item.read }"
-            @click="markAsRead(item.notificationId)"
+            @click="handleNotificationClick(item)"
           >
             <el-icon :class="getSeverityClass(item.severity)" class="notification-icon">
               <component :is="getIcon(item.severity)" />
@@ -51,7 +51,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   Bell,
@@ -64,11 +65,29 @@ import { useNotificationStore, type NotificationStoreItem } from '@/stores/notif
 
 defineOptions({ name: 'NotificationCenter' })
 
+const router = useRouter()
 const { t } = useI18n()
 const notificationStore = useNotificationStore()
 
 const notifications = computed(() => notificationStore.notifications)
 const unreadCount = computed(() => notificationStore.unreadCount)
+
+// 铃铛震动动画状态
+const isShaking = ref(false)
+const prevUnreadCount = ref(0)
+
+// 监听未读数变化，触发震动动画
+watch(unreadCount, (newCount, oldCount) => {
+  if (newCount > oldCount && newCount > 0) {
+    // 新消息到来，触发震动
+    isShaking.value = true
+    // 1.5秒后停止震动
+    setTimeout(() => {
+      isShaking.value = false
+    }, 1500)
+  }
+  prevUnreadCount.value = newCount
+})
 
 const markAsRead = (notificationId: number) => {
   notificationStore.markAsRead(notificationId)
@@ -83,7 +102,17 @@ const handleCommand = (_command: string) => {
 }
 
 const viewAll = () => {
-  // Navigate to notifications page
+  // 导航到通知历史页面
+  router.push('/notification')
+}
+
+/**
+ * 处理通知项点击
+ * 导航到通知历史页面查看详情，不自动标记已读
+ */
+const handleNotificationClick = (item: NotificationStoreItem) => {
+  // 导航到通知历史页面
+  router.push('/notification')
 }
 
 const getIcon = (severity: NotificationStoreItem['severity']) => {
@@ -134,6 +163,58 @@ const formatTime = (time: string) => {
 
   .trigger-icon {
     font-size: 20px;
+  }
+
+  /* 铃铛震动动画 */
+  &.shaking {
+    animation: bell-shake 0.5s ease-in-out 3;
+
+    .trigger-icon {
+      animation: bell-ring 0.3s ease-in-out 5;
+    }
+
+    .badge {
+      animation: badge-bounce 0.4s ease-in-out 4;
+    }
+  }
+}
+
+/* 铃铛整体震动 */
+@keyframes bell-shake {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: rotate(-10deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: rotate(10deg);
+  }
+}
+
+/* 铃铛图标晃动 */
+@keyframes bell-ring {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-15deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(0deg) scale(1);
+  }
+  75% {
+    transform: rotate(15deg) scale(1.1);
+  }
+}
+
+/* 徽章弹跳 */
+@keyframes badge-bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.3);
   }
 }
 
