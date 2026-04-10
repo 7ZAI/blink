@@ -43,20 +43,20 @@ public class ChannelAsyncSyncServiceImpl implements ChannelAsyncSyncService {
 
     @Async("ioIntensiveThreadPool")
     @Override
-    public void syncAddChannel(String appKey, ChannelInfoRedisDO channelInfo) {
-        syncChannelWithRetry(appKey, channelInfo, OPERATOR_ADD);
+    public void syncAddChannel(String appKey, ChannelInfoRedisDO channelInfo, Integer operatorUser, String operatorName) {
+        syncChannelWithRetry(appKey, channelInfo, OPERATOR_ADD, operatorUser, operatorName);
     }
 
     @Async("ioIntensiveThreadPool")
     @Override
-    public void syncModifyChannel(String appKey, ChannelInfoRedisDO channelInfo) {
-        syncChannelWithRetry(appKey, channelInfo, OPERATOR_MODIFY);
+    public void syncModifyChannel(String appKey, ChannelInfoRedisDO channelInfo, Integer operatorUser, String operatorName) {
+        syncChannelWithRetry(appKey, channelInfo, OPERATOR_MODIFY, operatorUser, operatorName);
     }
 
     @Async("ioIntensiveThreadPool")
     @Override
-    public void syncDeleteChannel(String appKey) {
-        syncChannelWithRetry(appKey, null, OPERATOR_DELETE);
+    public void syncDeleteChannel(String appKey, Integer operatorUser, String operatorName) {
+        syncChannelWithRetry(appKey, null, OPERATOR_DELETE, operatorUser, operatorName);
     }
 
     /**
@@ -65,8 +65,11 @@ public class ChannelAsyncSyncServiceImpl implements ChannelAsyncSyncService {
      * @param appKey       渠道 appKey
      * @param channelInfo  渠道信息（删除时为 null）
      * @param operator     操作类型：A/M/D
+     * @param operatorUser 操作人用户ID
+     * @param operatorName 操作人用户名
      */
-    private void syncChannelWithRetry(String appKey, ChannelInfoRedisDO channelInfo, String operator) {
+    private void syncChannelWithRetry(String appKey, ChannelInfoRedisDO channelInfo, String operator,
+                                       Integer operatorUser, String operatorName) {
         // 构建缓存 key
         String cacheKey = RedisCacheKeyConstant.CHANNEL_CACHE_PREFIX + appKey;
 
@@ -77,13 +80,16 @@ public class ChannelAsyncSyncServiceImpl implements ChannelAsyncSyncService {
         cacheMsg.setOperator(operator);
         // 使用时间戳作为版本号，防止消息乱序
         cacheMsg.setVersion((int) (System.currentTimeMillis() / 1000));
+        // 设置操作人信息（从调用方传递，因为异步线程无法访问 ThreadLocal）
+        cacheMsg.setOperatorUser(operatorUser);
+        cacheMsg.setOperatorName(operatorName);
 
         // 重试发送
         for (int retryCount = 0; retryCount < MAX_RETRY_TIMES; retryCount++) {
             try {
                 gateWayStreamMessageProducer.sendCacheSyncMsg(cacheMsg);
-                log.info("[ChannelAsyncSync] 渠道数据同步成功 | appKey: {}, operator: {}, version: {}",
-                        appKey, operator, cacheMsg.getVersion());
+                log.info("[ChannelAsyncSync] 渠道数据同步成功 | appKey: {}, operator: {}, version: {}, operatorUser: {}",
+                        appKey, operator, cacheMsg.getVersion(), operatorUser);
                 return;
             } catch (Exception e) {
                 log.warn("[ChannelAsyncSync] 同步失败，第{}次重试 | appKey: {}, operator: {}, error: {}",

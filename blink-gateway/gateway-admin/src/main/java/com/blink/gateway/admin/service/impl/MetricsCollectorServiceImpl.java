@@ -54,7 +54,10 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
     @Resource
     private DistributedLockClient distributedLockClient;
 
-    private static final String GATEWAY_SERVICE_NAME = "gateway-reactive";
+    private static final String DEFAULT_GATEWAY_SERVICE_NAME = "gateway-app";
+
+    @Value("${blink.gateway.monitor.gateway-service-name:" + DEFAULT_GATEWAY_SERVICE_NAME + "}")
+    private String gatewayServiceName;
 
     /**
      * 采集任务分布式锁 Key
@@ -109,7 +112,7 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
         log.debug("[MetricsCollector] 开始采集网关指标...");
         long startTime = System.currentTimeMillis();
 
-        List<ServiceInstance> instances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);
+        List<ServiceInstance> instances = discoveryClient.getInstances(gatewayServiceName);
         if (CollUtil.isEmpty(instances)) {
             log.warn("[MetricsCollector] 未发现网关实例");
             return;

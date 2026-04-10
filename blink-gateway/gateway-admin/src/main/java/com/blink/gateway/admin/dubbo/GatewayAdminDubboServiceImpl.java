@@ -9,8 +9,11 @@ import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.data.SysConfigCacheDO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.gateway.admin.service.ChannelService;
+import com.blink.gateway.admin.service.MessageAckService;
+import com.blink.gateway.dto.req.MessageAckReq;
 import com.blink.gateway.dto.req.QueryChannelConfigReq;
 import com.blink.gateway.dto.req.QueryOneChannelReq;
+import com.blink.gateway.dto.rsp.MessageAckRsp;
 import com.blink.gateway.dto.vo.ChannelVO;
 import com.blink.gateway.dubbo.service.GatewayAdminDubboService;
 import jakarta.annotation.Resource;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 
 import static com.blink.framework.core.data.CoreConstant.IO_THREADPOOL;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.CHANNEL_NOT_EXIST;
@@ -53,6 +57,9 @@ public class GatewayAdminDubboServiceImpl implements GatewayAdminDubboService {
 
     @Resource
     private SysConfigService configService;
+
+    @Resource
+    private MessageAckService messageAckService;
 
     /**
      * 尝试获取 IO 线程池 Bean，如果不存在则使用默认 ForkJoinPool
@@ -152,6 +159,39 @@ public class GatewayAdminDubboServiceImpl implements GatewayAdminDubboService {
             return CompletableFuture.supplyAsync(() -> getChannelConfig(reqDto), ioThreadPool);
         }
         return CompletableFuture.supplyAsync(() -> getChannelConfig(reqDto));
+    }
+
+    // ==================== 消息 ACK 确认 ====================
+
+    @Override
+    public CompletableFuture<ResponseDTO<MessageAckRsp>> ackMessageAsync(RequestDTO<MessageAckReq> reqDto) {
+        MessageAckReq req = reqDto.getBody();
+
+        // ACK 调用失败不影响主流程，仅记录日志
+        CompletableFuture<ResponseDTO<MessageAckRsp>> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                MessageAckRsp rsp = messageAckService.ackMessage(req);
+                return ResponseDTO.newSuccessInstance(rsp);
+            } catch (Exception e) {
+                log.error("[DubboACK] 处理 ACK 确认异常 | streamId: {}, msgId: {}, error: {}",
+                        req.getStreamId(), req.getMsgId(), e.getMessage(), e);
+                MessageAckRsp failRsp = new MessageAckRsp();
+                failRsp.setAcked(false);
+                failRsp.setMessage("ACK 处理异常: " + e.getMessage());
+                return ResponseDTO.newSuccessInstance(failRsp);
+            }
+        }, ioThreadPool != null ? ioThreadPool : ForkJoinPool.commonPool());
+
+        // 异步执行，失败仅记录日志，不抛出异常影响调用方
+        future.whenComplete((rsp, ex) -> {
+            if (ex != null) {
+                log.error("[DubboACK] ACK 异步调用异常 | streamId: {}, msgId: {}", req.getStreamId(), req.getMsgId(), ex);
+            } else if (rsp != null && rsp.getBody() != null) {
+                log.debug("[DubboACK] ACK 完成 | result: {}", rsp.getBody().getAcked());
+            }
+        });
+
+        return future;
     }
 
 }

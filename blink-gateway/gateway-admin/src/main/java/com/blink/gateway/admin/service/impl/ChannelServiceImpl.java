@@ -1,5 +1,6 @@
 package com.blink.gateway.admin.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
@@ -175,11 +176,15 @@ public class ChannelServiceImpl implements ChannelService {
         // 构建渠道信息对象用于同步
         ChannelInfoRedisDO channelInfo = BeanUtil.copyProperties(blinkChannelDO, ChannelInfoRedisDO.class);
 
-        // 异步同步渠道信息到网关（新增缓存，operator="A"）
-        channelAsyncSyncService.syncAddChannel(blinkChannelDO.getAppKey(), channelInfo);
+        // 获取当前操作人信息（在调用异步方法前获取，因为异步线程无法访问 ThreadLocal）
+        Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
 
-        log.info("[Channel] 新增渠道成功 | channelId: {}, channelName: {}, appKey: {}",
-                blinkChannelDO.getChannelId(), blinkChannelDO.getChannelName(), blinkChannelDO.getAppKey());
+        // 异步同步渠道信息到网关（新增缓存，operator="A"）
+        channelAsyncSyncService.syncAddChannel(blinkChannelDO.getAppKey(), channelInfo, operatorUser, operatorName);
+
+        log.info("[Channel] 新增渠道成功 | channelId: {}, channelName: {}, appKey: {}, operatorUser: {}",
+                blinkChannelDO.getChannelId(), blinkChannelDO.getChannelName(), blinkChannelDO.getAppKey(), operatorUser);
 
         return ResponseDTO.newSuccessInstance();
     }
@@ -191,17 +196,21 @@ public class ChannelServiceImpl implements ChannelService {
             BlinkException.throwBusinessException(DATA_NOT_EXIST);
         }
 
-        // 更新渠道信息
-        BeanUtil.copyProperties(req, channel);
+        // 更新渠道信息（忽略 appKey，appKey 不可修改）
+        BeanUtil.copyProperties(req, channel, "appKey", "appSecret");
         channelMapper.updateById(channel);
 
         // 构建渠道信息对象用于同步
         ChannelInfoRedisDO channelInfo = BeanUtil.copyProperties(channel, ChannelInfoRedisDO.class);
 
-        // 异步同步渠道信息到网关（直接更新缓存，operator="M"，不再先删除 Redis 缓存）
-        channelAsyncSyncService.syncModifyChannel(channel.getAppKey(), channelInfo);
+        // 获取当前操作人信息（在调用异步方法前获取，因为异步线程无法访问 ThreadLocal）
+        Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
 
-        log.info("[Channel] 更新渠道成功 | channelId: {}, appKey: {}", channel.getChannelId(), channel.getAppKey());
+        // 异步同步渠道信息到网关（直接更新缓存，operator="M"，不再先删除 Redis 缓存）
+        channelAsyncSyncService.syncModifyChannel(channel.getAppKey(), channelInfo, operatorUser, operatorName);
+
+        log.info("[Channel] 更新渠道成功 | channelId: {}, appKey: {}, operatorUser: {}", channel.getChannelId(), channel.getAppKey(), operatorUser);
 
         ChannelVO channelVO = new ChannelVO();
         BeanUtils.copyProperties(channel, channelVO);
@@ -227,13 +236,17 @@ public class ChannelServiceImpl implements ChannelService {
         String cacheKey = RedisCacheKeyConstant.CHANNEL_CACHE_PREFIX + blinkChannelDO.getAppKey();
         redisClient.delete(cacheKey);
 
+        // 获取当前操作人信息（在调用异步方法前获取，因为异步线程无法访问 ThreadLocal）
+        Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
+
         // 异步同步删除通知到 gateway-reactive（operator="D"）
-        channelAsyncSyncService.syncDeleteChannel(blinkChannelDO.getAppKey());
+        channelAsyncSyncService.syncDeleteChannel(blinkChannelDO.getAppKey(), operatorUser, operatorName);
 
         // 异步删除渠道密钥配置
         channelSecretSyncService.deleteChannelSecretConfigAsync(blinkChannelDO.getAppKey());
 
-        log.info("[Channel] 删除渠道成功 | channelId: {}, appKey: {}", req.getChannelId(), blinkChannelDO.getAppKey());
+        log.info("[Channel] 删除渠道成功 | channelId: {}, appKey: {}, operatorUser: {}", req.getChannelId(), blinkChannelDO.getAppKey(), operatorUser);
 
         return ResponseDTO.newSuccessInstance();
     }

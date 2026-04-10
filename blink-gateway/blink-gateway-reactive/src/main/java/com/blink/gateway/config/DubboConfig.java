@@ -37,6 +37,14 @@ public class DubboConfig {
     private GatewayAdminDubboService gatewayAdminDubboService;
 
     /**
+     * 暴露 GatewayAdminDubboService Bean
+     */
+    @Bean
+    public GatewayAdminDubboService gatewayAdminDubboService() {
+        return gatewayAdminDubboService;
+    }
+
+    /**
      * 创建 BaseAppDubboService 实例
      * 使用 Dubbo 3.x 原生异步接口（CompletableFuture），无需额外线程池
      */

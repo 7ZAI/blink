@@ -1,5 +1,7 @@
 package com.blink.gateway.admin.constants;
 
+import com.blink.framework.common.constrant.RedisCacheKeyConstant;
+
 /**
  * Redis Key 常量
  *
@@ -10,7 +12,7 @@ public interface RedisKeyConstant {
     /**
      * blink前缀
      */
-    String BLINK_PREFIX = "blink:gateway:admin";
+    String BLINK_PREFIX = "blink:gateway:admin:";
 
     /**
      * 渠道信息Redis Key前缀
@@ -28,9 +30,9 @@ public interface RedisKeyConstant {
     String GATEWAY_DYNAMIC_ROUTES = BLINK_PREFIX + "gateway:routes";
 
     /**
-     * gateway同步 stream key
+     * gateway同步 stream key（使用共享常量，确保与 gateway-reactive 一致）
      */
-    String GATEWAY_STREAM_EVENT = BLINK_PREFIX + "stream:gateway:event";
+    String GATEWAY_STREAM_EVENT = RedisCacheKeyConstant.GATEWAY_STREAM_EVENT;
 
     // ==================== 网关监控指标 ====================
 

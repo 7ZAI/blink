@@ -5,8 +5,10 @@ import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.data.SysConfigCacheDO;
+import com.blink.gateway.dto.req.MessageAckReq;
 import com.blink.gateway.dto.req.QueryChannelConfigReq;
 import com.blink.gateway.dto.req.QueryOneChannelReq;
+import com.blink.gateway.dto.rsp.MessageAckRsp;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -54,5 +56,19 @@ public interface GatewayAdminDubboService {
      * @return CompletableFuture<ResponseDTO<SysConfigCacheDO>> 配置信息
      */
     CompletableFuture<ResponseDTO<SysConfigCacheDO>> getChannelConfigAsync(RequestDTO<QueryChannelConfigReq> reqDto);
+
+    // ==================== 消息 ACK 确认 ====================
+
+    /**
+     * 消息消费 ACK 确认（异步）
+     * <p>
+     * gateway-reactive 消费消息后调用此方法反馈消费结果，
+     * gateway-admin 更新 redis_mq 表的消息状态。
+     * </p>
+     *
+     * @param reqDto ACK 请求参数，包含 streamId、msgId、success、errorMsg
+     * @return CompletableFuture<ResponseDTO<MessageAckRsp>> 确认结果
+     */
+    CompletableFuture<ResponseDTO<MessageAckRsp>> ackMessageAsync(RequestDTO<MessageAckReq> reqDto);
 
 }

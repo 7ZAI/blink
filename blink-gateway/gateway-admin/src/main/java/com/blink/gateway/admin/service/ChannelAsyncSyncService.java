@@ -17,8 +17,10 @@ public interface ChannelAsyncSyncService {
      *
      * @param appKey       渠道 appKey，作为缓存 key 的一部分
      * @param channelInfo  渠道信息数据
+     * @param operatorUser 操作人用户ID
+     * @param operatorName 操作人用户名
      */
-    void syncAddChannel(String appKey, ChannelInfoRedisDO channelInfo);
+    void syncAddChannel(String appKey, ChannelInfoRedisDO channelInfo, Integer operatorUser, String operatorName);
 
     /**
      * 异步同步修改渠道数据到网关
@@ -26,14 +28,18 @@ public interface ChannelAsyncSyncService {
      *
      * @param appKey       渠道 appKey，作为缓存 key 的一部分
      * @param channelInfo  渠道信息数据
+     * @param operatorUser 操作人用户ID
+     * @param operatorName 操作人用户名
      */
-    void syncModifyChannel(String appKey, ChannelInfoRedisDO channelInfo);
+    void syncModifyChannel(String appKey, ChannelInfoRedisDO channelInfo, Integer operatorUser, String operatorName);
 
     /**
      * 异步同步删除渠道数据到网关
      * 发送 CacheMsg(operator="D") 实现删除缓存
      *
-     * @param appKey 渠道 appKey，作为缓存 key 的一部分
+     * @param appKey       渠道 appKey，作为缓存 key 的一部分
+     * @param operatorUser 操作人用户ID
+     * @param operatorName 操作人用户名
      */
-    void syncDeleteChannel(String appKey);
+    void syncDeleteChannel(String appKey, Integer operatorUser, String operatorName);
 }

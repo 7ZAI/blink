@@ -43,7 +43,7 @@ public interface RedisKeyConstants {
     /**
      * 系统配置 配置缓存key
      */
-    String SYSTEM_CONFIG = BLINK_PREFIX + "base:system:config";
+    String SYSTEM_CONFIG = BLINK_PREFIX + "gate:system:config";
 
     /**
      * 数据范围权限缓存 key前缀

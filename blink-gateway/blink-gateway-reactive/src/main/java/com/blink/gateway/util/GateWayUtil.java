@@ -14,9 +14,11 @@ import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
@@ -303,6 +305,7 @@ public class GateWayUtil {
 
     /**
      * 如果Stream和group不存在  则创建 Stream 和消费者组（响应式方式）
+     * 创建时使用 "$" 作为起始 ID，只消费新消息，避免重复消费历史消息
      *
      * @param redisClient redis客户端
      * @param streamKey   流key值
@@ -324,7 +327,8 @@ public class GateWayUtil {
                     log.info("在stream:{} 中创建组:{}", streamKey, groupName);
 
                     // createGroup 如果stream 不存在也会创建 再创建组
-                    return redisClient.xGroupCreate(streamKey, groupName, "0-0")
+                    // 使用 "$" 作为起始 ID，只消费新消息
+                    return redisClient.xGroupCreate(streamKey, groupName, "$")
                             .map(s -> {
                                 log.info("在stream:{} 创建组:{} 创建结果：{}", streamKey, groupName, s);
 
@@ -338,6 +342,61 @@ public class GateWayUtil {
                                 log.warn("创建stream:{} 创建组:{} 失败", streamKey, groupName);
                                 return Mono.just(false);
                             });
+                });
+    }
+
+    /**
+     * 清理 PEL（Pending Entry List）中空闲时间超过阈值的消息
+     * 启动时调用，避免重复消费历史消息
+     *
+     * @param redisClient   redis客户端
+     * @param streamKey     流key值
+     * @param groupName     组名称
+     * @param consumerName  消费者名称
+     * @param idleThresholdMs 空闲时间阈值（毫秒）
+     * @return Mono<Long> 清理的消息数量
+     */
+    public static Mono<Long> cleanupPel(ReactiveRedisClient redisClient, String streamKey,
+                                        String groupName, String consumerName, long idleThresholdMs) {
+
+        log.info("[PEL] 开始清理待处理消息 | stream: {}, group: {}, consumer: {}", streamKey, groupName, consumerName);
+
+        return redisClient.xPending(streamKey, groupName, consumerName)
+                .flatMapMany(pendingMessages -> {
+                    if (pendingMessages == null || pendingMessages.isEmpty()) {
+                        log.info("[PEL] 无待处理消息");
+                        return Flux.empty();
+                    }
+
+                    long totalPending = pendingMessages.size();
+                    log.info("[PEL] 发现 {} 条待处理消息", totalPending);
+
+                    return Flux.fromIterable(pendingMessages)
+                            .filter(msg -> {
+                                // 只清理空闲时间超过阈值的消息
+                                Duration idleTime = msg.getElapsedTimeSinceLastDelivery();
+                                boolean shouldClean = idleTime.toMillis() > idleThresholdMs;
+                                if (shouldClean) {
+                                    log.debug("[PEL] 消息超时待清理 | messageId: {}, idleTime: {}ms",
+                                            msg.getIdAsString(), idleTime.toMillis());
+                                }
+                                return shouldClean;
+                            })
+                            .flatMap(msg -> {
+                                String messageId = msg.getIdAsString();
+                                return redisClient.xAck(streamKey, groupName, messageId)
+                                        .doOnSuccess(acked -> log.info("[PEL] 已清理历史消息 | messageId: {}", messageId))
+                                        .onErrorResume(e -> {
+                                            log.warn("[PEL] 清理消息失败 | messageId: {}, error: {}", messageId, e.getMessage());
+                                            return Mono.just(0L);
+                                        });
+                            });
+                })
+                .reduce(0L, Long::sum)
+                .doOnSuccess(count -> log.info("[PEL] 清理完成 | 共清理 {} 条历史消息", count))
+                .onErrorResume(e -> {
+                    log.error("[PEL] 清理失败 | error: {}", e.getMessage(), e);
+                    return Mono.just(0L);
                 });
     }
 

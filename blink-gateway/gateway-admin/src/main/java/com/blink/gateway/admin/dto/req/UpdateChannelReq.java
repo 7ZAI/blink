@@ -31,11 +31,6 @@ public class UpdateChannelReq implements Serializable {
     private String channelName;
 
     /**
-     * 应用key值
-     */
-    private String appKey;
-
-    /**
      * 应用秘钥
      */
     private String appSecret;
