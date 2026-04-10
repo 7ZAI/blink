@@ -1,3 +1,5 @@
+import type { Ref } from 'vue'
+
 // src/components/CaptchaSlider/types.ts
 
 /**
@@ -214,4 +216,153 @@ export const defaultEnUsLocale: CaptchaLocale = {
   captchaFailed: 'Verification failed, please retry',
   captchaLoadFailed: 'Captcha loading failed',
   pleaseClickWords: 'Please click the words',
+}
+
+// ========== 子组件 Props ==========
+
+/**
+ * CaptchaDialog 组件 Props 类型
+ */
+export interface CaptchaDialogProps {
+  modelValue: boolean
+  captchaData: CaptchaData
+  currentCaptchaType: CaptchaType | 'loading'
+  loading: boolean
+  isRefreshing: boolean
+  imageWidth: number
+  imageHeight: number
+  sliderMaxDistance: number
+  sliderLeft: number
+  jigsawLeft: number
+  clickedPoints: ClickPoint[]
+  locale: CaptchaLocale
+  dialogTitle: string
+  dialogWidth: string | number
+  sliderHint: string
+  clickWordHint: string
+  sliderClass: string
+  dialogClass: string
+}
+
+/**
+ * BlockPuzzle 组件 Props 类型
+ */
+export interface BlockPuzzleProps {
+  captchaData: CaptchaData
+  imageWidth: number
+  imageHeight: number
+  sliderMaxDistance: number
+  sliderLeft: number
+  jigsawLeft: number
+  isRefreshing: boolean
+  locale: CaptchaLocale
+  sliderClass: string
+}
+
+/**
+ * ClickWord 组件 Props 类型
+ */
+export interface ClickWordProps {
+  captchaData: CaptchaData
+  imageWidth: number
+  imageHeight: number
+  clickedPoints: ClickPoint[]
+  isRefreshing: boolean
+  locale: CaptchaLocale
+}
+
+// ========== 子组件 Emits ==========
+
+/**
+ * CaptchaDialog 组件 Emits 类型
+ */
+export interface CaptchaDialogEmits {
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'refresh'): void
+  (e: 'image-load'): void
+  (e: 'start-drag', event: MouseEvent | TouchEvent): void
+  (e: 'on-drag', event: MouseEvent | TouchEvent): void
+  (e: 'stop-drag'): void
+  (e: 'word-click', event: MouseEvent): void
+  (e: 'open'): void
+  (e: 'closed'): void
+}
+
+/**
+ * BlockPuzzle 组件 Emits 类型
+ */
+export interface BlockPuzzleEmits {
+  (e: 'refresh'): void
+  (e: 'image-load'): void
+  (e: 'start-drag', event: MouseEvent | TouchEvent): void
+  (e: 'on-drag', event: MouseEvent | TouchEvent): void
+  (e: 'stop-drag'): void
+}
+
+/**
+ * ClickWord 组件 Emits 类型
+ */
+export interface ClickWordEmits {
+  (e: 'refresh'): void
+  (e: 'image-load'): void
+  (e: 'word-click', event: MouseEvent): void
+}
+
+// ========== Composable 类型 ==========
+
+/**
+ * useCaptchaCore composable 选项
+ */
+export interface UseCaptchaCoreOptions {
+  captchaType: CaptchaType
+  getCaptchaApi?: (params: CaptchaRequestParams) => Promise<CaptchaData>
+  checkCaptchaApi?: (params: CaptchaCheckParams) => Promise<CaptchaCheckResult>
+  imageWidth: number
+  imageHeight: number
+  sliderMaxDistance: number
+  locale: CaptchaLocale
+  autoCloseOnSuccess: boolean
+  onSuccess: (result: CaptchaCheckResult) => void
+  onFail: (result: CaptchaCheckResult) => void
+}
+
+/**
+ * useCaptchaCore composable 返回值
+ */
+export interface UseCaptchaCoreReturn {
+  // 状态
+  captchaData: Ref<CaptchaData>
+  currentCaptchaType: Ref<CaptchaType | 'loading'>
+  loading: Ref<boolean>
+  isRefreshing: Ref<boolean>
+  imageLoaded: Ref<boolean>
+  clientUid: Ref<string>
+
+  // 滑块专用状态
+  sliderLeft: Ref<number>
+  jigsawLeft: Ref<number>
+
+  // 点选专用状态
+  clickedPoints: Ref<ClickPoint[]>
+
+  // 核心方法
+  fetchCaptcha: () => Promise<void>
+  refreshCaptcha: () => Promise<void>
+  submitSliderCaptcha: () => Promise<void>
+  submitWordCaptcha: () => Promise<void>
+
+  // 工具方法
+  formatImageData: (base64: string) => string
+  handleImageLoad: () => void
+
+  // 拖动方法
+  startDrag: (e: MouseEvent | TouchEvent) => void
+  onDrag: (e: MouseEvent | TouchEvent) => void
+  stopDrag: () => Promise<void>
+
+  // 点击方法
+  handleWordClick: (e: MouseEvent) => void
+
+  // 清理方法
+  cleanup: () => void
 }
