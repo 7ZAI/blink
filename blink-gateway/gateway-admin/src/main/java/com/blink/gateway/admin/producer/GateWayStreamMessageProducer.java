@@ -1,5 +1,6 @@
 package com.blink.gateway.admin.producer;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 
 import com.blink.framework.common.utils.JacksonUtil;
@@ -53,6 +54,8 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
         cacheMsg.setKey(cacheKey);
         // D = Delete，表示删除缓存
         cacheMsg.setOperator("D");
+        // 设置操作人信息
+        setOperatorInfo(cacheMsg);
         //发送通知同步
         StreamMessage<CacheMsg> msg = StreamMessage.of(GATEWAY_STREAM_EVENT, MessageType.EVENT, cacheMsg);
         msg.setSender(appName);
@@ -68,6 +71,8 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
      * @param cacheMsg 缓存消息对象，包含 key、value、operator
      */
     public void sendCacheSyncMsg(CacheMsg cacheMsg) {
+        // 设置操作人信息
+        setOperatorInfo(cacheMsg);
         //发送通知同步
         StreamMessage<CacheMsg> msg = StreamMessage.of(GATEWAY_STREAM_EVENT, MessageType.EVENT, cacheMsg);
         msg.setSender(appName);
@@ -91,6 +96,42 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
         //发送并记录
         sendAndRecord(msg, routeSyncMsgDTO);
 
+    }
+
+    /**
+     * 路由同步（支持指定实例推送）
+     *
+     * @param routeSyncMsg 路由同步消息
+     */
+    public void routesOnChangeWithTarget(RouteSyncMsg routeSyncMsg) {
+        StreamMessage<RouteSyncMsg> msg = StreamMessage.of(GATEWAY_STREAM_EVENT, MessageType.EVENT, routeSyncMsg);
+        msg.setSender(appName);
+        msg.setPayloadClass(RouteSyncMsg.class.getName());
+        sendAndRecord(msg, routeSyncMsg);
+    }
+
+    /**
+     * 设置操作人信息到 CacheMsg
+     * 从 Sa-Token 获取当前登录用户信息
+     *
+     * @param cacheMsg 缓存消息对象
+     */
+    private void setOperatorInfo(CacheMsg cacheMsg) {
+        try {
+            // 检查是否已登录
+            if (StpUtil.isLogin()) {
+                Integer userId = StpUtil.getLoginIdAsInt();
+                String userName = StpUtil.getLoginIdAsString();
+                cacheMsg.setOperatorUser(userId);
+                cacheMsg.setOperatorName(userName);
+                log.debug("[StreamProducer] 设置操作人 | userId: {}, userName: {}", userId, userName);
+            } else {
+                log.debug("[StreamProducer] 当前无登录用户，跳过操作人设置");
+            }
+        } catch (Exception e) {
+            // 获取登录信息失败不影响主流程
+            log.warn("[StreamProducer] 获取登录用户信息失败: {}", e.getMessage());
+        }
     }
 
     /**
