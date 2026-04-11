@@ -1,56 +1,62 @@
 package com.blink.gateway.admin.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.blink.datasource.utils.PageUtils;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
-import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.RedisClient;
-import com.blink.gateway.admin.dto.req.DeleteNacosRouteReq;
-import com.blink.gateway.admin.dto.req.DeleteRouteReq;
-import com.blink.gateway.admin.dto.req.QueryNacosRouteReq;
-import com.blink.gateway.admin.dto.req.QueryRouteReq;
-import com.blink.gateway.admin.dto.req.RouteDefinitionReq;
-import com.blink.gateway.admin.dto.req.SaveNacosRouteReq;
-import com.blink.gateway.admin.dto.req.SaveRouteReq;
-import com.blink.gateway.admin.dto.req.SyncRoutesReq;
+import com.blink.gateway.admin.constants.RouteConstant;
+import com.blink.gateway.admin.dto.req.*;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
+import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
-import com.blink.gateway.admin.entity.RouteDefinitionDO;
+import com.blink.gateway.admin.entity.GaRouteDO;
+import com.blink.gateway.admin.entity.GaRouteHistoryDO;
+import com.blink.gateway.admin.mapper.GaRouteHistoryMapper;
+import com.blink.gateway.admin.mapper.GaRouteMapper;
 import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
 import com.blink.gateway.admin.service.GatewayInstanceService;
+import com.blink.gateway.admin.service.NacosRouteService;
+import com.blink.gateway.admin.service.RouteAsyncSyncService;
 import com.blink.gateway.admin.service.RouteService;
 import com.blink.gateway.dto.RouteSyncMsg;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.blink.gateway.admin.constants.ErrCodeConstant.DELETE_ROUTE_FAILED;
-import static com.blink.gateway.admin.constants.ErrCodeConstant.NACOS_ROUTE_NOT_IMPLEMENTED;
-import static com.blink.gateway.admin.constants.ErrCodeConstant.ROUTE_GROUP_EMPTY;
-import static com.blink.gateway.admin.constants.ErrCodeConstant.SAVE_ROUTE_FAILED;
-import static com.blink.gateway.admin.constants.ErrCodeConstant.SYNC_ROUTE_FAILED;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.*;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_DYNAMIC_ROUTES;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_STREAM_EVENT;
 
 /**
  * 路由管理服务实现
- * 直接操作Redis存储路由，发送Stream通知网关同步
+ * 数据库为主存储 + Redis/Nacos 为运行时缓存
  *
  * @author binblink
  */
 @Service
 @Slf4j
+@Transactional(rollbackFor = Exception.class)
 public class RouteServiceImpl implements RouteService {
+
+    @Resource
+    private GaRouteMapper gaRouteMapper;
+
+    @Resource
+    private GaRouteHistoryMapper gaRouteHistoryMapper;
 
     @Resource
     private RedisClient redisClient;
@@ -61,109 +67,240 @@ public class RouteServiceImpl implements RouteService {
     @Resource
     private GatewayInstanceService gatewayInstanceService;
 
-    private static final String STORAGE_MODE_REDIS = "redis";
-    private static final String STORAGE_MODE_NACOS = "nacos";
-    private static final String PUSH_MODE_BROADCAST = "broadcast";
-    private static final String PUSH_MODE_SPECIFIED = "specified";
+    @Resource
+    private RouteAsyncSyncService routeAsyncSyncService;
+
+    @Resource
+    private NacosRouteService nacosRouteService;
+
+    // ========== Redis 路由管理（数据库存储） ==========
 
     @Override
-    public ResponseDTO<QueryGateWayRoutesRsp> getRouteList(QueryRouteReq req) {
-        QueryGateWayRoutesRsp pageRsp = new QueryGateWayRoutesRsp();
+    public ResponseDTO<QueryRouteRsp> getRouteList(QueryRouteReq req) {
+        QueryRouteRsp rsp = new QueryRouteRsp();
 
-        // 根据路由组查询
-        String routesGroup = req.getRoutesGroup();
-        String key = StrUtil.isNotBlank(routesGroup)
-                ? GATEWAY_DYNAMIC_ROUTES + ":" + routesGroup
-                : GATEWAY_DYNAMIC_ROUTES;
+        // 构建动态查询条件
+        LambdaQueryWrapper<GaRouteDO> queryWrapper = new LambdaQueryWrapper<GaRouteDO>()
+                .eq(StrUtil.isNotBlank(req.getRouteId()), GaRouteDO::getRouteId, req.getRouteId())
+                .like(StrUtil.isNotBlank(req.getRouteName()), GaRouteDO::getRouteName, req.getRouteName())
+                .eq(StrUtil.isNotBlank(req.getRoutesGroup()), GaRouteDO::getRoutesGroup, req.getRoutesGroup())
+                .eq(StrUtil.isNotBlank(req.getStorageMode()), GaRouteDO::getStorageMode, req.getStorageMode())
+                .eq(req.getStatus() != null, GaRouteDO::getStatus, req.getStatus())
+                .like(StrUtil.isNotBlank(req.getUri()), GaRouteDO::getUri, req.getUri())
+                .orderByAsc(GaRouteDO::getOrderNum)
+                .orderByDesc(GaRouteDO::getUpdateTime);
 
-        Map<String, Object> map = redisClient.hGetStringMap(key);
-        int total = map.size();
-        // 记录数
-        pageRsp.setTotal(total);
-        // 总页数
-        int pages = (total % pageRsp.getPageSize()) != 0 ? (total / pageRsp.getPageSize() + 1) : (total / pageRsp.getPageSize());
+        PageUtils.queryPage(req, () -> gaRouteMapper.selectList(queryWrapper), rsp);
 
-        pageRsp.setPages(pages);
-        List<RouteDefinitionDO> routes = new ArrayList<>(total);
+        log.info("[Route] 查询路由列表成功 | routesGroup: {}, count: {}", req.getRoutesGroup(), rsp.getTotal());
+        return ResponseDTO.newSuccessInstance(rsp);
+    }
 
-        map.forEach((k, v) -> {
-            RouteDefinitionDO route = JacksonUtil.parseMessyJson(v.toString(), RouteDefinitionDO.class);
-            routes.add(route);
-        });
+    @Override
+    public ResponseDTO<GaRouteDO> getRouteDetail(String routeId) {
+        if (StrUtil.isBlank(routeId)) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
 
-        pageRsp.setRows(routes);
-        return ResponseDTO.newSuccessInstance(pageRsp);
+        GaRouteDO routeDO = gaRouteMapper.selectById(routeId);
+        if (ObjectUtil.isNull(routeDO)) {
+            BlinkException.throwBusinessException(ROUTE_NOT_EXIST);
+        }
+
+        log.info("[Route] 查询路由详情成功 | routeId: {}", routeId);
+        return ResponseDTO.newSuccessInstance(routeDO);
     }
 
     @Override
     public ResponseDTO<EmptyBody> saveRoute(SaveRouteReq req) {
-        try {
-            // 校验路由组参数
-            String routesGroup = req.getRoutesGroup();
-            if (StrUtil.isBlank(routesGroup)) {
-                BlinkException.throwBusinessException(ROUTE_GROUP_EMPTY);
-            }
-
-            List<RouteDefinitionReq> routesList = req.getRoutes();
-            if (ObjectUtil.isNull(routesList) || routesList.isEmpty()) {
-                BlinkException.throwBusinessException(ROUTE_GROUP_EMPTY);
-            }
-
-            String key = GATEWAY_DYNAMIC_ROUTES + ":" + routesGroup;
-            Map<String, Object> map = redisClient.hGetStringMap(key);
-
-            for (RouteDefinitionReq routeReq : routesList) {
-                String routeId = routeReq.getId();
-                if (StrUtil.isNotBlank(routeId)) {
-                    // 将 RouteDefinitionReq 转换为 Map 存储
-                    Map<String, Object> routeMap = convertRouteToMap(routeReq);
-                    map.put(routeId, routeMap);
-                }
-            }
-
-            redisClient.hSet(key, map);
-            messageProducer.routesOnChange(GATEWAY_STREAM_EVENT);
-
-            log.info("[Route] 保存路由成功 | routesGroup: {}, count: {}", routesGroup, routesList.size());
-
-            return ResponseDTO.newSuccessInstance();
-        } catch (BlinkException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("[Route] 保存路由失败 | error: {}", e.getMessage(), e);
-            throw new BlinkException("保存路由失败: " + e.getMessage(), e, SAVE_ROUTE_FAILED);
+        // 校验路由ID
+        if (StrUtil.isBlank(req.getRouteId())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
         }
+
+        // 检查路由ID是否已存在
+        GaRouteDO existingRoute = gaRouteMapper.selectById(req.getRouteId());
+        if (ObjectUtil.isNotNull(existingRoute)) {
+            BlinkException.throwBusinessException(ROUTE_ID_EXISTS);
+        }
+
+        // 校验 URI
+        if (StrUtil.isBlank(req.getUri())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 构建 GaRouteDO
+        GaRouteDO routeDO = BeanUtil.copyProperties(req, GaRouteDO.class);
+        routeDO.setStatus(RouteConstant.STATUS_ENABLE);
+        if (StrUtil.isBlank(routeDO.getRoutesGroup())) {
+            routeDO.setRoutesGroup(RouteConstant.DEFAULT_ROUTES_GROUP);
+        }
+        if (StrUtil.isBlank(routeDO.getStorageMode())) {
+            routeDO.setStorageMode(RouteConstant.STORAGE_MODE_REDIS);
+        }
+
+        // 写入数据库
+        gaRouteMapper.insert(routeDO);
+
+        // 记录历史（新增操作）
+        saveRouteHistory(routeDO, null, routeDO, RouteConstant.OPERATION_ADD);
+
+        // 获取操作人信息
+        Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+
+        log.info("[Route] 保存路由成功（仓库路由，需手动推送生效） | routeId: {}, uri: {}, routesGroup: {}, operatorUser: {}",
+                routeDO.getRouteId(), routeDO.getUri(), routeDO.getRoutesGroup(), operatorUser);
+
+        return ResponseDTO.newSuccessInstance();
+    }
+
+    @Override
+    public ResponseDTO<EmptyBody> updateRoute(UpdateRouteReq req) {
+        // 校验路由ID
+        if (StrUtil.isBlank(req.getRouteId())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 查询现有路由
+        GaRouteDO existingRoute = gaRouteMapper.selectById(req.getRouteId());
+        if (ObjectUtil.isNull(existingRoute)) {
+            BlinkException.throwBusinessException(ROUTE_NOT_EXIST);
+        }
+
+        // 记录变更前数据（用于历史）
+        GaRouteDO beforeData = BeanUtil.copyProperties(existingRoute, GaRouteDO.class);
+
+        // 更新路由信息
+        BeanUtil.copyProperties(req, existingRoute, "routeId", "createBy", "createTime");
+        gaRouteMapper.updateById(existingRoute);
+
+        // 记录历史（修改操作）
+        saveRouteHistory(existingRoute, beforeData, existingRoute, RouteConstant.OPERATION_MODIFY);
+
+        // 获取操作人信息
+        Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+
+        log.info("[Route] 更新路由成功（仓库路由，需手动推送生效） | routeId: {}, uri: {}, operatorUser: {}",
+                existingRoute.getRouteId(), existingRoute.getUri(), operatorUser);
+
+        return ResponseDTO.newSuccessInstance();
     }
 
     @Override
     public ResponseDTO<EmptyBody> deleteRoute(DeleteRouteReq req) {
-        try {
-            String routesGroup = req.getRoutesGroup();
-            List<String> routeIds = req.getRouteIds();
-
-            if (ObjectUtil.isNull(routeIds) || routeIds.isEmpty()) {
-                return ResponseDTO.newSuccessInstance();
-            }
-
-            // 根据路由组删除
-            String key = StrUtil.isNotBlank(routesGroup)
-                    ? GATEWAY_DYNAMIC_ROUTES + ":" + routesGroup
-                    : GATEWAY_DYNAMIC_ROUTES;
-
-            for (String routeId : routeIds) {
-                redisClient.hDeleteFields(key, routeId);
-            }
-            messageProducer.routesOnChange(GATEWAY_STREAM_EVENT);
-
-            log.info("[Route] 删除路由成功 | routesGroup: {}, routeIds: {}", routesGroup, routeIds);
-
+        List<String> routeIds = req.getRouteIds();
+        if (ObjectUtil.isNull(routeIds) || routeIds.isEmpty()) {
             return ResponseDTO.newSuccessInstance();
-        } catch (BlinkException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("[Route] 删除路由失败 | error: {}", e.getMessage(), e);
-            throw new BlinkException("删除路由失败: " + e.getMessage(), e, DELETE_ROUTE_FAILED);
         }
+
+        // 获取操作人信息
+        Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+
+        for (String routeId : routeIds) {
+            GaRouteDO existingRoute = gaRouteMapper.selectById(routeId);
+            if (ObjectUtil.isNull(existingRoute)) {
+                log.warn("[Route] 路由不存在，跳过删除 | routeId: {}", routeId);
+                continue;
+            }
+
+            // 记录历史（删除操作）
+            saveRouteHistory(existingRoute, existingRoute, null, RouteConstant.OPERATION_DELETE);
+
+            // 删除数据库记录
+            gaRouteMapper.deleteById(routeId);
+        }
+
+        log.info("[Route] 删除路由成功 | routeIds: {}, operatorUser: {}", routeIds, operatorUser);
+
+        return ResponseDTO.newSuccessInstance();
+    }
+
+    @Override
+    public ResponseDTO<QueryRouteHistoryRsp> getRouteHistory(QueryRouteHistoryReq req) {
+        QueryRouteHistoryRsp rsp = new QueryRouteHistoryRsp();
+
+        if (StrUtil.isBlank(req.getRouteId())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 构建查询条件
+        LambdaQueryWrapper<GaRouteHistoryDO> queryWrapper = new LambdaQueryWrapper<GaRouteHistoryDO>()
+                .eq(GaRouteHistoryDO::getRouteId, req.getRouteId())
+                .eq(StrUtil.isNotBlank(req.getOperationType()), GaRouteHistoryDO::getOperationType, req.getOperationType())
+                .like(StrUtil.isNotBlank(req.getOperatorName()), GaRouteHistoryDO::getOperatorName, req.getOperatorName())
+                .orderByDesc(GaRouteHistoryDO::getOperateTime);
+
+        PageUtils.queryPage(req, () -> gaRouteHistoryMapper.selectList(queryWrapper), rsp);
+
+        log.info("[Route] 查询路由历史成功 | routeId: {}, count: {}", req.getRouteId(), rsp.getTotal());
+        return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    @Override
+    public ResponseDTO<EmptyBody> rollbackRoute(RollbackRouteReq req) {
+        if (StrUtil.isBlank(req.getRouteId())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+        if (req.getHistoryId() == null) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 查询历史记录
+        GaRouteHistoryDO historyDO = gaRouteHistoryMapper.selectById(req.getHistoryId());
+        if (ObjectUtil.isNull(historyDO) || !req.getRouteId().equals(historyDO.getRouteId())) {
+            BlinkException.throwBusinessException(ROUTE_HISTORY_NOT_EXIST);
+        }
+
+        // 根据操作类型确定回滚数据
+        GaRouteDO rollbackData = null;
+        if (RouteConstant.OPERATION_MODIFY.equals(historyDO.getOperationType())) {
+            // 修改操作：回滚到变更前的数据
+            rollbackData = historyDO.getBeforeData();
+        } else if (RouteConstant.OPERATION_ADD.equals(historyDO.getOperationType())) {
+            // 新增操作：回滚意味着删除（不允许）
+            BlinkException.throwBusinessException(ROUTE_ROLLBACK_FAILED);
+        } else if (RouteConstant.OPERATION_DELETE.equals(historyDO.getOperationType())) {
+            // 删除操作：回滚到删除前的数据
+            rollbackData = historyDO.getBeforeData();
+        }
+
+        if (ObjectUtil.isNull(rollbackData)) {
+            BlinkException.throwBusinessException(ROUTE_ROLLBACK_FAILED);
+        }
+
+        // 查询当前路由状态
+        GaRouteDO currentRoute = gaRouteMapper.selectById(req.getRouteId());
+
+        // 记录当前数据作为回滚前数据
+        GaRouteDO beforeRollback = ObjectUtil.isNotNull(currentRoute)
+                ? BeanUtil.copyProperties(currentRoute, GaRouteDO.class)
+                : null;
+
+        // 执行回滚：更新或插入数据库
+        if (ObjectUtil.isNotNull(currentRoute)) {
+            BeanUtil.copyProperties(rollbackData, currentRoute, "routeId", "createBy", "createTime");
+            gaRouteMapper.updateById(currentRoute);
+        } else {
+            gaRouteMapper.insert(rollbackData);
+        }
+
+        // 记录回滚历史（作为修改操作）
+        GaRouteDO afterRollback = gaRouteMapper.selectById(req.getRouteId());
+        saveRouteHistory(afterRollback, beforeRollback, afterRollback, RouteConstant.OPERATION_MODIFY);
+
+        // 获取操作人信息
+        Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
+
+        // 是否同步到运行时存储（默认同步）
+        if (ObjectUtil.isNull(req.getSyncToStorage()) || req.getSyncToStorage()) {
+            routeAsyncSyncService.syncModifyRoute(req.getRouteId(), afterRollback, operatorUser, operatorName);
+        }
+
+        log.info("[Route] 回滚路由成功 | routeId: {}, historyId: {}, operatorUser: {}",
+                req.getRouteId(), req.getHistoryId(), operatorUser);
+
+        return ResponseDTO.newSuccessInstance();
     }
 
     @Override
@@ -174,141 +311,105 @@ public class RouteServiceImpl implements RouteService {
         return ResponseDTO.newSuccessInstance();
     }
 
-    /**
-     * 将 RouteDefinitionReq 转换为 Map
-     *
-     * @param routeReq 路由定义请求
-     * @return 路由定义 Map
-     */
-    private Map<String, Object> convertRouteToMap(RouteDefinitionReq routeReq) {
-        Map<String, Object> map = new HashMap<>();
-        map.put("id", routeReq.getId());
-        map.put("name", routeReq.getName());
-        map.put("uri", routeReq.getUri());
-        map.put("predicates", routeReq.getPredicates());
-        map.put("filters", routeReq.getFilters());
-        map.put("order", routeReq.getOrder());
-        map.put("metadata", routeReq.getMetadata());
-        return map;
+    // ========== Nacos 路由管理（委托给 NacosRouteService） ==========
+
+    @Override
+    public ResponseDTO<QueryGateWayRoutesRsp> getNacosRouteList(QueryNacosRouteReq req) {
+        return nacosRouteService.getNacosRouteList(req);
+    }
+
+    @Override
+    public ResponseDTO<EmptyBody> saveNacosRoute(SaveNacosRouteReq req) {
+        return nacosRouteService.saveNacosRoute(req);
+    }
+
+    @Override
+    public ResponseDTO<EmptyBody> deleteNacosRoute(DeleteNacosRouteReq req) {
+        return nacosRouteService.deleteNacosRoute(req);
     }
 
     // ========== 存储方式和实例同步 ==========
 
-    /**
-     * 获取支持的存储方式列表
-     *
-     * @return 存储方式列表
-     */
     @Override
     public ResponseDTO<List<StorageModeVO>> getStorageModes() {
         List<StorageModeVO> modes = new ArrayList<>();
 
         StorageModeVO redisMode = new StorageModeVO();
-        redisMode.setMode(STORAGE_MODE_REDIS);
+        redisMode.setMode(RouteConstant.STORAGE_MODE_REDIS);
         redisMode.setName("Redis 存储");
-        redisMode.setDescription("路由存储在 Redis Hash");
+        redisMode.setDescription("路由存储在 Redis Hash，支持实时同步");
         modes.add(redisMode);
 
         StorageModeVO nacosMode = new StorageModeVO();
-        nacosMode.setMode(STORAGE_MODE_NACOS);
+        nacosMode.setMode(RouteConstant.STORAGE_MODE_NACOS);
         nacosMode.setName("Nacos 配置");
-        nacosMode.setDescription("路由存储在 Nacos Config");
+        nacosMode.setDescription("路由存储在 Nacos Config，支持配置历史");
         modes.add(nacosMode);
 
         return ResponseDTO.newSuccessInstance(modes);
     }
 
-    /**
-     * 获取在线网关实例列表
-     *
-     * @return 在线实例列表
-     */
     @Override
     public ResponseDTO<List<GatewayInstanceVO>> getOnlineGatewayInstances() {
         ResponseDTO<GatewayInstanceListRsp> rsp = gatewayInstanceService.getGatewayInstances();
         List<GatewayInstanceVO> onlineInstances = rsp.getBody().getInstances().stream()
-                .filter(instance -> instance.getStatus() == 0) // STATUS_ONLINE
+                .filter(instance -> instance.getStatus() == 0)
                 .collect(Collectors.toList());
 
         log.info("[Route] 获取在线网关实例成功 | count: {}", onlineInstances.size());
         return ResponseDTO.newSuccessInstance(onlineInstances);
     }
 
-    /**
-     * 同步路由到指定实例
-     *
-     * @param req 同步请求参数
-     * @return 操作结果
-     */
     @Override
     public ResponseDTO<EmptyBody> syncRoutesToInstances(SyncRoutesReq req) {
-        try {
-            RouteSyncMsg routeSyncMsg = new RouteSyncMsg();
-            routeSyncMsg.setStorageMode(req.getStorageMode());
-            routeSyncMsg.setPushMode(req.getPushMode());
-            routeSyncMsg.setTargetInstanceIds(req.getTargetInstanceIds());
+        RouteSyncMsg routeSyncMsg = new RouteSyncMsg();
+        routeSyncMsg.setStorageMode(req.getStorageMode());
+        routeSyncMsg.setPushMode(req.getPushMode());
+        routeSyncMsg.setTargetInstanceIds(req.getTargetInstanceIds());
 
-            if (STORAGE_MODE_REDIS.equals(req.getStorageMode())) {
-                String routesGroup = req.getRoutesGroup();
-                if (StrUtil.isBlank(routesGroup)) {
-                    routesGroup = "default";
-                }
-                routeSyncMsg.setDynamicRouteKey(GATEWAY_DYNAMIC_ROUTES + ":" + routesGroup);
-            } else if (STORAGE_MODE_NACOS.equals(req.getStorageMode())) {
-                routeSyncMsg.setDataId(req.getDataId());
-                routeSyncMsg.setGroup(req.getGroup());
+        if (RouteConstant.STORAGE_MODE_REDIS.equals(req.getStorageMode())) {
+            String routesGroup = req.getRoutesGroup();
+            if (StrUtil.isBlank(routesGroup)) {
+                routesGroup = RouteConstant.DEFAULT_ROUTES_GROUP;
             }
-
-            messageProducer.routesOnChangeWithTarget(routeSyncMsg);
-
-            log.info("[Route] 同步路由到实例成功 | storageMode: {}, pushMode: {}, targetInstances: {}",
-                    req.getStorageMode(), req.getPushMode(), req.getTargetInstanceIds());
-
-            return ResponseDTO.newSuccessInstance();
-        } catch (Exception e) {
-            log.error("[Route] 同步路由到实例失败 | error: {}", e.getMessage(), e);
-            throw new BlinkException("同步路由失败: " + e.getMessage(), e, SYNC_ROUTE_FAILED);
+            routeSyncMsg.setDynamicRouteKey(GATEWAY_DYNAMIC_ROUTES + ":" + routesGroup);
+        } else if (RouteConstant.STORAGE_MODE_NACOS.equals(req.getStorageMode())) {
+            routeSyncMsg.setDataId(req.getDataId());
+            routeSyncMsg.setGroup(req.getGroup());
         }
+
+        messageProducer.routesOnChangeWithTarget(routeSyncMsg);
+
+        log.info("[Route] 同步路由到实例成功 | storageMode: {}, pushMode: {}, targetInstances: {}",
+                req.getStorageMode(), req.getPushMode(), req.getTargetInstanceIds());
+
+        return ResponseDTO.newSuccessInstance();
     }
 
-    // ========== Nacos 路由管理（委托给 NacosRouteService） ==========
+    // ========== 私有方法 ==========
 
     /**
-     * 查询 Nacos 路由列表
-     * 由 NacosRouteService 实现
+     * 保存路由变更历史
      *
-     * @param req 查询请求
-     * @return 路由列表
+     * @param routeDO       路由数据
+     * @param beforeData    变更前数据
+     * @param afterData     变更后数据
+     * @param operationType 操作类型
      */
-    @Override
-    public ResponseDTO<QueryGateWayRoutesRsp> getNacosRouteList(QueryNacosRouteReq req) {
-        // 由 NacosRouteService 实现
-        throw new BlinkException("Nacos 路由由 NacosRouteService 处理", NACOS_ROUTE_NOT_IMPLEMENTED);
-    }
+    private void saveRouteHistory(GaRouteDO routeDO, GaRouteDO beforeData, GaRouteDO afterData, String operationType) {
+        GaRouteHistoryDO historyDO = new GaRouteHistoryDO();
+        historyDO.setRouteId(routeDO.getRouteId());
+        historyDO.setRouteName(routeDO.getRouteName());
+        historyDO.setOperationType(operationType);
+        historyDO.setBeforeData(beforeData);
+        historyDO.setAfterData(afterData);
 
-    /**
-     * 保存 Nacos 路由
-     * 由 NacosRouteService 实现
-     *
-     * @param req 保存请求
-     * @return 操作结果
-     */
-    @Override
-    public ResponseDTO<EmptyBody> saveNacosRoute(SaveNacosRouteReq req) {
-        // 由 NacosRouteService 实现
-        throw new BlinkException("Nacos 路由由 NacosRouteService 处理", NACOS_ROUTE_NOT_IMPLEMENTED);
-    }
+        // 获取操作人信息
+        Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
+        historyDO.setOperatorId(operatorUser);
+        historyDO.setOperatorName(operatorName);
 
-    /**
-     * 删除 Nacos 路由
-     * 由 NacosRouteService 实现
-     *
-     * @param req 删除请求
-     * @return 操作结果
-     */
-    @Override
-    public ResponseDTO<EmptyBody> deleteNacosRoute(DeleteNacosRouteReq req) {
-        // 由 NacosRouteService 实现
-        throw new BlinkException("Nacos 路由由 NacosRouteService 处理", NACOS_ROUTE_NOT_IMPLEMENTED);
+        gaRouteHistoryMapper.insert(historyDO);
     }
 }

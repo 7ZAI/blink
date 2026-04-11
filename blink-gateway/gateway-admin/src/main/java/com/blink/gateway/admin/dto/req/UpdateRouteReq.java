@@ -10,14 +10,15 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 保存路由请求DTO
- * 用于新增单个路由配置
+ * 更新路由请求DTO
+ * 用于修改单个路由配置
  *
  * @author binblink
+ * @since 2026-04-11
  */
 @Getter
 @Setter
-public class SaveRouteReq implements Serializable {
+public class UpdateRouteReq implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -32,8 +33,7 @@ public class SaveRouteReq implements Serializable {
     private String routeName;
 
     /**
-     * 目标URI（必填）
-     * 如 lb://service-name 或 https://example.com
+     * 目标URI
      */
     private String uri;
 
@@ -58,24 +58,29 @@ public class SaveRouteReq implements Serializable {
     private Map<String, Object> metadata;
 
     /**
-     * 路由分组（用于 Redis 模式）
+     * 路由分组
      */
     private String routesGroup;
 
     /**
-     * 存储方式：redis/nacos
+     * 存储方式
      */
     private String storageMode;
 
     /**
-     * Nacos Data ID（用于 Nacos 模式）
+     * Nacos Data ID
      */
     private String nacosDataId;
 
     /**
-     * Nacos Group（用于 Nacos 模式）
+     * Nacos Group
      */
     private String nacosGroup;
+
+    /**
+     * 状态：1启用 0禁用
+     */
+    private Byte status;
 
     /**
      * 备注

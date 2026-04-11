@@ -5,15 +5,28 @@ import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.gateway.admin.dto.req.DeleteNacosRouteReq;
 import com.blink.gateway.admin.dto.req.DeleteRouteReq;
+import com.blink.gateway.admin.dto.req.PushRoutesReq;
+import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryNacosRouteReq;
+import com.blink.gateway.admin.dto.req.QueryPushLogReq;
 import com.blink.gateway.admin.dto.req.QueryRouteReq;
+import com.blink.gateway.admin.dto.req.QueryRouteHistoryReq;
+import com.blink.gateway.admin.dto.req.RollbackPushReq;
+import com.blink.gateway.admin.dto.req.RollbackRouteReq;
 import com.blink.gateway.admin.dto.req.SaveNacosRouteReq;
 import com.blink.gateway.admin.dto.req.SaveRouteReq;
 import com.blink.gateway.admin.dto.req.SyncRoutesReq;
+import com.blink.gateway.admin.dto.req.UpdateRouteReq;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
+import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
+import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
+import com.blink.gateway.admin.entity.GaRouteDO;
 import com.blink.gateway.admin.service.NacosRouteService;
+import com.blink.gateway.admin.service.RoutePushService;
 import com.blink.gateway.admin.service.RouteService;
 import jakarta.annotation.Resource;
 import java.util.List;
@@ -21,11 +34,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 路由管理控制器
  * 管理网关动态路由配置
+ * 数据库为主存储 + Redis/Nacos 为运行时缓存
  *
  * @author binblink
  */
@@ -39,19 +54,35 @@ public class RouteController {
     @Resource
     private NacosRouteService nacosRouteService;
 
+    @Resource
+    private RoutePushService routePushService;
+
+    // ========== Redis/数据库 路由管理 ==========
+
     /**
-     * 查询路由列表
+     * 查询路由列表（从数据库）
      *
      * @param reqDto 请求参数
      * @return 路由列表
      */
     @PostMapping("/getRouteList")
-    public ResponseDTO<QueryGateWayRoutesRsp> getRouteList(@RequestBody @Validated RequestDTO<QueryRouteReq> reqDto) {
+    public ResponseDTO<QueryRouteRsp> getRouteList(@RequestBody @Validated RequestDTO<QueryRouteReq> reqDto) {
         return routeService.getRouteList(reqDto.getBody());
     }
 
     /**
-     * 保存路由
+     * 获取路由详情
+     *
+     * @param reqDto 请求参数（body 包含 routeId）
+     * @return 路由详情
+     */
+    @PostMapping("/getRouteDetail")
+    public ResponseDTO<GaRouteDO> getRouteDetail(@RequestBody RequestDTO<String> reqDto) {
+        return routeService.getRouteDetail(reqDto.getBody());
+    }
+
+    /**
+     * 保存路由（新增）
      *
      * @param reqDto 请求参数
      * @return 操作结果
@@ -59,6 +90,17 @@ public class RouteController {
     @PostMapping("/saveRoute")
     public ResponseDTO<EmptyBody> saveRoute(@RequestBody @Validated RequestDTO<SaveRouteReq> reqDto) {
         return routeService.saveRoute(reqDto.getBody());
+    }
+
+    /**
+     * 更新路由
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @PostMapping("/updateRoute")
+    public ResponseDTO<EmptyBody> updateRoute(@RequestBody @Validated RequestDTO<UpdateRouteReq> reqDto) {
+        return routeService.updateRoute(reqDto.getBody());
     }
 
     /**
@@ -73,6 +115,28 @@ public class RouteController {
     }
 
     /**
+     * 查询路由变更历史
+     *
+     * @param reqDto 请求参数
+     * @return 历史记录列表
+     */
+    @PostMapping("/getRouteHistory")
+    public ResponseDTO<QueryRouteHistoryRsp> getRouteHistory(@RequestBody @Validated RequestDTO<QueryRouteHistoryReq> reqDto) {
+        return routeService.getRouteHistory(reqDto.getBody());
+    }
+
+    /**
+     * 回滚路由到指定历史版本
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @PostMapping("/rollbackRoute")
+    public ResponseDTO<EmptyBody> rollbackRoute(@RequestBody @Validated RequestDTO<RollbackRouteReq> reqDto) {
+        return routeService.rollbackRoute(reqDto.getBody());
+    }
+
+    /**
      * 刷新路由缓存
      *
      * @param reqDto 请求参数
@@ -82,6 +146,8 @@ public class RouteController {
     public ResponseDTO<EmptyBody> refreshRoutes(@RequestBody RequestDTO<EmptyBody> reqDto) {
         return routeService.refreshRoutes();
     }
+
+    // ========== 存储方式和实例同步 ==========
 
     /**
      * 获取支持的存储方式列表
@@ -116,6 +182,8 @@ public class RouteController {
         return routeService.syncRoutesToInstances(reqDto.getBody());
     }
 
+    // ========== Nacos 路由管理 ==========
+
     /**
      * 查询 Nacos 路由列表
      *
@@ -147,5 +215,51 @@ public class RouteController {
     @PostMapping("/deleteNacosRoute")
     public ResponseDTO<EmptyBody> deleteNacosRoute(@RequestBody @Validated RequestDTO<DeleteNacosRouteReq> reqDto) {
         return nacosRouteService.deleteNacosRoute(reqDto.getBody());
+    }
+
+    // ========== 路由推送管理 ==========
+
+    /**
+     * 推送路由到实例
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @PostMapping("/pushRoutes")
+    public ResponseDTO<EmptyBody> pushRoutes(@RequestBody @Validated RequestDTO<PushRoutesReq> reqDto) {
+        return routePushService.pushRoutes(reqDto.getBody());
+    }
+
+    /**
+     * 查询推送历史
+     *
+     * @param reqDto 请求参数
+     * @return 推送历史列表
+     */
+    @PostMapping("/getPushHistory")
+    public ResponseDTO<QueryPushLogRsp> getPushHistory(@RequestBody @Validated RequestDTO<QueryPushLogReq> reqDto) {
+        return routePushService.getPushHistory(reqDto.getBody());
+    }
+
+    /**
+     * 查询实例当前路由
+     *
+     * @param reqDto 请求参数
+     * @return 实例路由列表
+     */
+    @PostMapping("/getInstanceRoutes")
+    public ResponseDTO<QueryInstanceRoutesRsp> getInstanceRoutes(@RequestBody RequestDTO<QueryInstanceRoutesReq> reqDto) {
+        return routePushService.getInstanceRoutes(reqDto.getBody());
+    }
+
+    /**
+     * 回滚推送
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @PostMapping("/rollbackPush")
+    public ResponseDTO<EmptyBody> rollbackPush(@RequestBody @Validated RequestDTO<RollbackPushReq> reqDto) {
+        return routePushService.rollbackPush(reqDto.getBody());
     }
 }
