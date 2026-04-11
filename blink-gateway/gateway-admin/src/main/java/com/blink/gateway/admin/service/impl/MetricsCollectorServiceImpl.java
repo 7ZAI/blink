@@ -226,7 +226,81 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
                 extractHttpMetrics(httpMetrics, metrics);
             }
 
-            // 5. 熔断器状态（暂不支持实时采集，默认 CLOSED）
+            // 5. 获取堆内存和非堆内存指标
+            Map<String, Object> heapUsedMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.memory.used?tag=area:heap");
+            if (MapUtil.isNotEmpty(heapUsedMetrics)) {
+                metrics.heapUsed = extractMeasureValue(heapUsedMetrics);
+            }
+
+            Map<String, Object> heapMaxMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.memory.max?tag=area:heap");
+            if (MapUtil.isNotEmpty(heapMaxMetrics)) {
+                metrics.heapMax = extractMeasureValue(heapMaxMetrics);
+            }
+
+            Map<String, Object> nonHeapMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.memory.used?tag=area:nonheap");
+            if (MapUtil.isNotEmpty(nonHeapMetrics)) {
+                metrics.nonHeapUsed = extractMeasureValue(nonHeapMetrics);
+            }
+
+            // 6. 获取 GC 指标
+            try {
+                Map<String, Object> youngGcMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.gc.count?tag=gc:G1 Young Generation");
+                if (MapUtil.isNotEmpty(youngGcMetrics)) {
+                    metrics.youngGcCount = extractMeasureValue(youngGcMetrics);
+                }
+
+                Map<String, Object> youngGcTimeMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.gc.time?tag=gc:G1 Young Generation");
+                if (MapUtil.isNotEmpty(youngGcTimeMetrics)) {
+                    metrics.youngGcTime = extractMeasureValue(youngGcTimeMetrics);
+                }
+            } catch (Exception e) {
+                log.debug("[MetricsCollector] 获取年轻代 GC 指标失败 | instanceId: {}", instanceId);
+            }
+
+            try {
+                Map<String, Object> oldGcMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.gc.count?tag=gc:G1 Old Generation");
+                if (MapUtil.isNotEmpty(oldGcMetrics)) {
+                    metrics.oldGcCount = extractMeasureValue(oldGcMetrics);
+                }
+
+                Map<String, Object> oldGcTimeMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.gc.time?tag=gc:G1 Old Generation");
+                if (MapUtil.isNotEmpty(oldGcTimeMetrics)) {
+                    metrics.oldGcTime = extractMeasureValue(oldGcTimeMetrics);
+                }
+            } catch (Exception e) {
+                log.debug("[MetricsCollector] 获取老年代 GC 指标失败 | instanceId: {}", instanceId);
+            }
+
+            // 7. 获取线程指标
+            try {
+                Map<String, Object> liveThreadsMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.threads.live");
+                if (MapUtil.isNotEmpty(liveThreadsMetrics)) {
+                    Object value = extractMeasureValueAsObject(liveThreadsMetrics);
+                    if (ObjectUtil.isNotNull(value)) {
+                        metrics.liveThreads = ((Number) value).intValue();
+                    }
+                }
+
+                Map<String, Object> peakThreadsMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.threads.peak");
+                if (MapUtil.isNotEmpty(peakThreadsMetrics)) {
+                    Object value = extractMeasureValueAsObject(peakThreadsMetrics);
+                    if (ObjectUtil.isNotNull(value)) {
+                        metrics.peakThreads = ((Number) value).intValue();
+                    }
+                }
+
+                Map<String, Object> daemonThreadsMetrics = fetchMetrics(baseUrl + "/actuator/metrics/jvm.threads.daemon");
+                if (MapUtil.isNotEmpty(daemonThreadsMetrics)) {
+                    Object value = extractMeasureValueAsObject(daemonThreadsMetrics);
+                    if (ObjectUtil.isNotNull(value)) {
+                        metrics.daemonThreads = ((Number) value).intValue();
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("[MetricsCollector] 获取线程指标失败 | instanceId: {}", instanceId);
+            }
+
+            // 8. 熔断器状态（暂不支持实时采集，默认 CLOSED）
             // TODO: 后续可通过 /actuator/circuitbreakers 端点获取实际状态
             metrics.circuitBreakerState = "CLOSED";
 
@@ -317,6 +391,22 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
     }
 
     /**
+     * 从 metrics 响应中提取测量值（Object 类型）
+     */
+    @SuppressWarnings("unchecked")
+    private Object extractMeasureValueAsObject(Map<String, Object> metrics) {
+        try {
+            List<Map<String, Object>> measurements = (List<Map<String, Object>>) metrics.get("measurements");
+            if (CollUtil.isNotEmpty(measurements)) {
+                return measurements.get(0).get("value");
+            }
+        } catch (Exception e) {
+            log.debug("[MetricsCollector] 提取测量值失败: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
      * 从 HTTP 请求指标中提取统计数据
      */
     @SuppressWarnings("unchecked")
@@ -370,6 +460,18 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
         if (ObjectUtil.isNotNull(metrics.memoryMax)) {
             data.put("memoryMax", metrics.memoryMax);
         }
+
+        // 存储堆内存和非堆内存指标
+        if (ObjectUtil.isNotNull(metrics.heapUsed)) {
+            data.put("heapUsed", metrics.heapUsed);
+        }
+        if (ObjectUtil.isNotNull(metrics.heapMax)) {
+            data.put("heapMax", metrics.heapMax);
+        }
+        if (ObjectUtil.isNotNull(metrics.nonHeapUsed)) {
+            data.put("nonHeapUsed", metrics.nonHeapUsed);
+        }
+
         if (ObjectUtil.isNotNull(metrics.totalRequests)) {
             data.put("totalRequests", metrics.totalRequests);
         }
@@ -382,6 +484,32 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
         if (ObjectUtil.isNotNull(metrics.avgResponseTime)) {
             data.put("avgResponseTime", metrics.avgResponseTime);
         }
+
+        // 存储 GC 指标
+        if (ObjectUtil.isNotNull(metrics.youngGcCount)) {
+            data.put("youngGcCount", metrics.youngGcCount);
+        }
+        if (ObjectUtil.isNotNull(metrics.youngGcTime)) {
+            data.put("youngGcTime", metrics.youngGcTime);
+        }
+        if (ObjectUtil.isNotNull(metrics.oldGcCount)) {
+            data.put("oldGcCount", metrics.oldGcCount);
+        }
+        if (ObjectUtil.isNotNull(metrics.oldGcTime)) {
+            data.put("oldGcTime", metrics.oldGcTime);
+        }
+
+        // 存储线程指标
+        if (ObjectUtil.isNotNull(metrics.liveThreads)) {
+            data.put("liveThreads", metrics.liveThreads);
+        }
+        if (ObjectUtil.isNotNull(metrics.peakThreads)) {
+            data.put("peakThreads", metrics.peakThreads);
+        }
+        if (ObjectUtil.isNotNull(metrics.daemonThreads)) {
+            data.put("daemonThreads", metrics.daemonThreads);
+        }
+
         if (StrUtil.isNotBlank(metrics.healthStatus)) {
             data.put("healthStatus", metrics.healthStatus);
         }
@@ -450,6 +578,12 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
         Long memoryUsed;
         /** 最大内存 (bytes) */
         Long memoryMax;
+        /** 堆内存使用量 (bytes) */
+        Long heapUsed;
+        /** 堆内存最大值 (bytes) */
+        Long heapMax;
+        /** 非堆内存使用量 (bytes) */
+        Long nonHeapUsed;
         /** 请求总数 */
         Long totalRequests;
         /** 成功请求数 */
@@ -462,6 +596,20 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
         String healthStatus;
         /** 熔断器状态 */
         String circuitBreakerState;
+        /** 年轻代 GC 次数 */
+        Long youngGcCount;
+        /** 年轻代 GC 时间 (ms) */
+        Long youngGcTime;
+        /** 老年代 GC 次数 */
+        Long oldGcCount;
+        /** 老年代 GC 时间 (ms) */
+        Long oldGcTime;
+        /** 活跃线程数 */
+        Integer liveThreads;
+        /** 峰值线程数 */
+        Integer peakThreads;
+        /** 守护线程数 */
+        Integer daemonThreads;
         /** 采集时间戳 */
         Long collectTime;
     }
