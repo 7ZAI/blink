@@ -260,21 +260,61 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: 'route',
-        name: 'Route',
-        component: () => import('@/views/route/index.vue'),
+        name: 'RouteManagement',
+        redirect: '/route/repository',
         meta: { title: 'route.title' },
+        children: [
+          {
+            path: 'repository',
+            name: 'RouteRepository',
+            component: () => import('@/views/route/index.vue'),
+            meta: { title: 'route.repositoryTitle' },
+          },
+          {
+            path: 'instance',
+            name: 'InstanceRoute',
+            component: () => import('@/views/instanceRoute/index.vue'),
+            meta: { title: 'instanceRoute.title' },
+          },
+        ],
       },
       {
         path: 'config',
-        name: 'Config',
-        component: () => import('@/views/config/index.vue'),
+        name: 'ConfigManagement',
+        redirect: '/config/repository',
         meta: { title: 'config.title' },
+        children: [
+          {
+            path: 'repository',
+            name: 'ConfigRepository',
+            component: () => import('@/views/config/index.vue'),
+            meta: { title: 'config.repositoryTitle' },
+          },
+          {
+            path: 'instance',
+            name: 'InstanceConfig',
+            component: () => import('@/views/config/instance.vue'),
+            meta: { title: 'config.instanceTitle' },
+          },
+          {
+            path: 'history',
+            name: 'ConfigPushHistory',
+            component: () => import('@/views/config/history.vue'),
+            meta: { title: 'config.historyTitle' },
+          },
+        ],
       },
       {
         path: 'monitor',
         name: 'Monitor',
         component: () => import('@/views/monitor/index.vue'),
         meta: { title: 'monitor.title' },
+      },
+      {
+        path: 'instance',
+        name: 'Instance',
+        component: () => import('@/views/instance/index.vue'),
+        meta: { title: 'instance.title' },
       },
       {
         path: 'dataSync',
