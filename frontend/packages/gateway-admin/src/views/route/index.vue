@@ -36,6 +36,17 @@
           />
         </el-form-item>
 
+        <!-- Redis 模式：路由名称 -->
+        <el-form-item v-if="searchForm.storageMode === 'redis'" :label="t('route.routeName')">
+          <el-input
+            v-model.trim="searchForm.routeName"
+            :placeholder="t('route.routeNamePlaceholder')"
+            clearable
+            style="width: 150px"
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
+
         <!-- Nacos 模式：Data ID 和 Group -->
         <el-form-item v-if="searchForm.storageMode === 'nacos'" :label="t('route.nacosDataId')">
           <el-input
@@ -88,10 +99,11 @@
           <AuthButton
             :has-permission="() => checkPermission(ButtonPerms.Route.Refresh)"
             type="success"
-            @click="handleRefreshRoutes"
+            :disabled="selectedRoutes.length === 0"
+            @click="handlePushSelected"
           >
-            <el-icon><Refresh /></el-icon>
-            {{ t('dashboard.refreshRoutes') }}
+            <el-icon><Promotion /></el-icon>
+            {{ t('route.pushSelected') }} ({{ selectedRoutes.length }})
           </AuthButton>
           <AuthButton
             :has-permission="() => checkPermission(ButtonPerms.Route.Refresh)"
@@ -106,15 +118,27 @@
 
       <!-- 表格区域 -->
       <div class="table-wrapper">
-        <el-table v-loading="loading" :data="tableData" height="100%" stripe>
+        <el-table
+          v-loading="loading"
+          :data="tableData"
+          height="100%"
+          stripe
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column type="selection" width="50" />
           <el-table-column
-            prop="id"
+            prop="routeId"
             :label="t('route.routeId')"
             min-width="160"
             show-overflow-tooltip
           >
             <template #default="{ row }">
-              <span class="route-id">{{ row.id || '-' }}</span>
+              <span class="route-id">{{ row.routeId || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="routeName" :label="t('route.routeName')" min-width="120" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span>{{ row.routeName || '-' }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="uri" :label="t('route.uri')" min-width="180" show-overflow-tooltip>
@@ -128,7 +152,7 @@
                 <el-tooltip
                   v-for="(p, index) in row.predicates"
                   :key="index"
-                  :content="formatPredicateArgs(p)"
+                  :content="formatConfigArgs(p)"
                   placement="top"
                 >
                   <el-tag class="predicate-tag" type="primary" effect="light" size="small">
@@ -158,10 +182,17 @@
           </el-table-column>
           <el-table-column :label="t('route.order')" width="80" align="center">
             <template #default="{ row }">
-              <el-tag type="info" effect="plain" size="small">{{ row.order || 0 }}</el-tag>
+              <el-tag type="info" effect="plain" size="small">{{ row.orderNum || 0 }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="t('common.operation')" width="180" fixed="right">
+          <el-table-column :label="t('route.status')" width="80" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.status === 1 ? 'success' : 'danger'" effect="plain" size="small">
+                {{ row.status === 1 ? t('route.statusEnable') : t('route.statusDisable') }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('common.operation')" width="240" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
                 <AuthButton
@@ -173,6 +204,16 @@
                 >
                   <el-icon><Edit /></el-icon>
                   {{ t('common.edit') }}
+                </AuthButton>
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.Route.Edit)"
+                  type="info"
+                  link
+                  size="small"
+                  @click="handleHistory(row)"
+                >
+                  <el-icon><Clock /></el-icon>
+                  {{ t('route.history') }}
                 </AuthButton>
                 <AuthButton
                   :has-permission="() => checkPermission(ButtonPerms.Route.Delete)"
@@ -221,6 +262,23 @@
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
         <el-row :gutter="20">
           <el-col :span="12">
+            <el-form-item :label="t('route.routeId')" prop="routeId">
+              <el-input
+                v-model="formData.routeId"
+                :placeholder="t('route.routeIdPlaceholder')"
+                :disabled="isEdit"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item :label="t('route.routeName')">
+              <el-input v-model="formData.routeName" :placeholder="t('route.routeNamePlaceholder')" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="12">
             <el-form-item :label="t('route.routeGroup')" prop="routesGroup">
               <el-input
                 v-model.trim="formData.routesGroup"
@@ -229,24 +287,38 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item :label="t('route.routeId')" prop="routeId">
-              <el-input v-model="currentRoute.id" :placeholder="t('route.routeIdPlaceholder')" />
+            <el-form-item :label="t('route.uri')" prop="uri">
+              <el-input
+                v-model="formData.uri"
+                placeholder="lb://service-name 或 https://example.com"
+              />
             </el-form-item>
           </el-col>
         </el-row>
 
         <el-row :gutter="20">
-          <el-col :span="18">
-            <el-form-item :label="t('route.uri')" prop="uri">
-              <el-input
-                v-model="currentRoute.uri"
-                placeholder="lb://service-name 或 https://example.com"
+          <el-col :span="12">
+            <el-form-item :label="t('route.order')">
+              <el-input-number v-model="formData.orderNum" :min="0" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item :label="t('route.status')">
+              <el-switch
+                v-model="formData.status"
+                :active-value="1"
+                :inactive-value="0"
+                :active-text="t('route.statusEnable')"
+                :inactive-text="t('route.statusDisable')"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="6">
-            <el-form-item :label="t('route.order')">
-              <el-input-number v-model="currentRoute.order" :min="0" style="width: 100%" />
+        </el-row>
+
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item :label="t('route.remark')">
+              <el-input v-model="formData.remark" :placeholder="t('route.remarkPlaceholder')" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -265,7 +337,7 @@
           <el-form-item :label="t('route.predicates')">
             <div class="dynamic-section">
               <div
-                v-for="(predicate, index) in currentRoute.predicates"
+                v-for="(predicate, index) in formData.predicates"
                 :key="index"
                 class="dynamic-item"
               >
@@ -327,6 +399,18 @@
                   <template v-else-if="predicate.name === 'Host'">
                     <el-input v-model="predicate.args.pattern" placeholder="**.example.com" />
                   </template>
+                  <template v-else-if="predicate.name === 'Custom'">
+                    <el-input
+                      v-model="predicate.customName"
+                      :placeholder="t('route.customNamePlaceholder')"
+                      style="width: 150px"
+                    />
+                    <el-input
+                      v-model="predicate.customArgsJson"
+                      :placeholder="t('route.customArgsPlaceholder')"
+                      class="flex-1"
+                    />
+                  </template>
                   <template v-else>
                     <el-input v-model="predicate.args.pattern" placeholder="参数值" />
                   </template>
@@ -343,7 +427,7 @@
           <el-form-item :label="t('route.filters')">
             <div class="dynamic-section">
               <div
-                v-for="(filter, index) in currentRoute.filters"
+                v-for="(filter, index) in formData.filters"
                 :key="index"
                 class="dynamic-item"
               >
@@ -419,6 +503,18 @@
                       style="width: 120px"
                     />
                   </template>
+                  <template v-else-if="filter.name === 'Custom'">
+                    <el-input
+                      v-model="filter.customName"
+                      :placeholder="t('route.customNamePlaceholder')"
+                      style="width: 150px"
+                    />
+                    <el-input
+                      v-model="filter.customArgsJson"
+                      :placeholder="t('route.customArgsPlaceholder')"
+                      class="flex-1"
+                    />
+                  </template>
                   <template v-else>
                     <el-input v-model="filter.args.args" placeholder="参数值" class="flex-1" />
                   </template>
@@ -454,6 +550,58 @@
       </template>
     </el-dialog>
 
+    <!-- 历史记录弹窗 -->
+    <el-dialog
+      v-model="historyDialogVisible"
+      :title="t('route.historyTitle')"
+      width="800px"
+      :close-on-click-modal="false"
+      class="history-dialog"
+    >
+      <el-table v-loading="historyLoading" :data="historyData" height="400" stripe>
+        <el-table-column prop="historyId" :label="t('route.historyId')" width="100" />
+        <el-table-column prop="routeName" :label="t('route.routeName')" width="120" />
+        <el-table-column prop="operationType" :label="t('route.operationType')" width="100">
+          <template #default="{ row }">
+            <el-tag :type="getOperationTypeTag(row.operationType)" effect="plain" size="small">
+              {{ getOperationTypeLabel(row.operationType) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="operatorName" :label="t('route.operatorName')" width="120" />
+        <el-table-column prop="operateTime" :label="t('route.operateTime')" width="160" />
+        <el-table-column :label="t('common.operation')" width="120" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.operationType !== 'A'"
+              type="primary"
+              link
+              size="small"
+              @click="handleRollback(row)"
+            >
+              {{ t('route.rollback') }}
+            </el-button>
+            <el-button type="info" link size="small" @click="handleViewHistoryDetail(row)">
+              {{ t('route.viewDetail') }}
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页 -->
+      <div class="pagination-wrapper mt-4">
+        <el-pagination
+          v-model:current-page="historyPagination.pageNum"
+          v-model:page-size="historyPagination.pageSize"
+          :total="historyPagination.total"
+          :page-sizes="[10, 20, 50]"
+          layout="total, sizes, prev, pager, next"
+          @size-change="loadHistoryData"
+          @current-change="loadHistoryData"
+        />
+      </div>
+    </el-dialog>
+
     <!-- 同步到实例弹窗 -->
     <SyncInstanceDialog
       v-model="syncDialogVisible"
@@ -470,8 +618,8 @@
 <script setup lang="ts">
 /**
  * 路由管理页面
- * 管理网关路由，包括创建、编辑、删除和刷新
- * 支持运行时切换存储方式（Redis/Nacos）
+ * 管理网关路由，包括创建、编辑、删除、历史查询和回滚
+ * 数据库为主存储 + Redis/Nacos 为运行时缓存
  *
  * @author binblink
  * @since 2024-01-01
@@ -479,19 +627,27 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Edit, Delete, Connection } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Edit, Delete, Connection, Clock, Promotion } from '@element-plus/icons-vue'
 import {
   getRouteList,
   saveRoute,
+  updateRoute,
   deleteRoute,
   refreshRoutes,
+  getRouteHistory,
+  rollbackRoute,
   getNacosRouteList,
   saveNacosRoute,
   deleteNacosRoute,
   type RouteDefinition,
-  type PredicateDefinition,
-  type FilterDefinition,
-  type RouteForm,
+  type PredicateConfig,
+  type FilterConfig,
+  type SaveRouteReq,
+  type UpdateRouteReq,
+  type DeleteRouteReq,
+  type QueryRouteHistoryReq,
+  type RollbackRouteReq,
+  type RouteHistory,
   type SaveNacosRouteReq,
 } from '@/api/route'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
@@ -512,6 +668,7 @@ const STORAGE_MODE_KEY = 'route_storage_mode'
 const searchForm = reactive({
   storageMode: localStorage.getItem(STORAGE_MODE_KEY) || 'redis',
   routesGroup: '',
+  routeName: '',
   nacosDataId: t('route.nacosDataIdDefault'),
   nacosGroup: t('route.nacosGroupDefault'),
 })
@@ -530,6 +687,7 @@ const pagination = reactive({
 // 表格数据
 const loading = ref(false)
 const tableData = ref<RouteDefinition[]>([])
+const selectedRoutes = ref<RouteDefinition[]>([])
 
 // 弹窗
 const dialogVisible = ref(false)
@@ -539,26 +697,43 @@ const formRef = ref()
 const editMode = ref<'form' | 'json'>('form')
 const routeJson = ref('')
 
-const formData = reactive<RouteForm>({
-  routesGroup: 'default',
-  routes: [],
-})
+// 表单数据（扩展类型，确保 predicates 和 filters 均存在）
+interface RouteFormData extends SaveRouteReq {
+  predicates: PredicateConfig[]
+  filters: FilterConfig[]
+}
 
-const currentRoute = reactive<RouteDefinition>({
-  id: '',
+const formData = reactive<RouteFormData>({
+  routeId: '',
+  routeName: '',
   uri: '',
-  predicates: [],
+  predicates: [{ name: 'Path', args: { pattern: '' } }],
   filters: [],
-  order: 0,
+  orderNum: 0,
+  routesGroup: 'default',
+  storageMode: 'redis',
+  remark: '',
+  status: 1,
 })
 
 const formRules = {
-  routesGroup: [{ required: true, message: () => t('route.routeGroupRequired'), trigger: 'blur' }],
   routeId: [{ required: true, message: () => t('route.routeIdPlaceholder'), trigger: 'blur' }],
-  uri: [{ required: true, message: 'URI is required', trigger: 'blur' }],
+  routesGroup: [{ required: true, message: () => t('route.routeGroupRequired'), trigger: 'blur' }],
+  uri: [{ required: true, message: () => t('route.uriRequired'), trigger: 'blur' }],
 }
 
 const dialogTitle = computed(() => (isEdit.value ? t('route.editRoute') : t('route.addRoute')))
+
+// 历史弹窗
+const historyDialogVisible = ref(false)
+const historyLoading = ref(false)
+const historyData = ref<RouteHistory[]>([])
+const historyPagination = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  total: 0,
+})
+const currentHistoryRouteId = ref('')
 
 // 断言类型选项
 const predicateTypes = [
@@ -572,6 +747,7 @@ const predicateTypes = [
   { label: 'Before', value: 'Before' },
   { label: 'Between', value: 'Between' },
   { label: 'RemoteAddr', value: 'RemoteAddr' },
+  { label: t('route.customPredicate'), value: 'Custom' },
 ]
 
 // 过滤器类型选项
@@ -586,25 +762,54 @@ const filterTypes = [
   { label: 'Retry', value: 'Retry' },
   { label: 'PrefixPath', value: 'PrefixPath' },
   { label: 'SetPath', value: 'SetPath' },
+  { label: t('route.customFilter'), value: 'Custom' },
 ]
 
-// 格式化断言参数显示
-const formatPredicateArgs = (predicate: PredicateDefinition): string => {
-  if (!predicate.args) return ''
-  const args = Object.entries(predicate.args)
+// 格式化配置参数显示
+const formatConfigArgs = (config: PredicateConfig | FilterConfig): string => {
+  if (!config.args) return ''
+  const args = Object.entries(config.args)
     .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
     .join(', ')
   return args
 }
 
+// 获取操作类型标签
+const getOperationTypeTag = (type: string): 'success' | 'warning' | 'danger' | 'info' => {
+  switch (type) {
+    case 'A':
+      return 'success'
+    case 'M':
+      return 'warning'
+    case 'D':
+      return 'danger'
+    default:
+      return 'info'
+  }
+}
+
+// 获取操作类型标签文本
+const getOperationTypeLabel = (type: string): string => {
+  switch (type) {
+    case 'A':
+      return t('route.operationAdd')
+    case 'M':
+      return t('route.operationModify')
+    case 'D':
+      return t('route.operationDelete')
+    default:
+      return type
+  }
+}
+
 // 监听编辑模式切换
 watch(editMode, (mode) => {
   if (mode === 'json') {
-    routeJson.value = JSON.stringify(currentRoute, null, 2)
+    routeJson.value = JSON.stringify(formData, null, 2)
   } else {
     try {
       const parsed = JSON.parse(routeJson.value)
-      Object.assign(currentRoute, parsed)
+      Object.assign(formData, parsed)
     } catch {
       // JSON 解析错误，忽略
     }
@@ -618,13 +823,14 @@ const loadData = async () => {
   loading.value = true
   try {
     if (searchForm.storageMode === 'redis') {
-      // Redis 模式
+      // Redis 模式 - 从数据库查询
       const res = await getRouteList({
         routesGroup: searchForm.routesGroup,
+        routeName: searchForm.routeName,
         pageNum: pagination.pageNum,
         pageSize: pagination.pageSize,
       })
-      tableData.value = res.routes || res.rows || []
+      tableData.value = res.rows || []
       pagination.total = res.total || 0
     } else {
       // Nacos 模式
@@ -634,7 +840,7 @@ const loadData = async () => {
         pageNum: pagination.pageNum,
         pageSize: pagination.pageSize,
       })
-      tableData.value = res.routes || res.rows || []
+      tableData.value = res.rows || []
       pagination.total = res.total || 0
     }
   } catch (error) {
@@ -647,18 +853,40 @@ const loadData = async () => {
 }
 
 /**
+ * 加载路由历史数据
+ */
+const loadHistoryData = async () => {
+  if (!currentHistoryRouteId.value) return
+
+  historyLoading.value = true
+  try {
+    const req: QueryRouteHistoryReq = {
+      routeId: currentHistoryRouteId.value,
+      pageNum: historyPagination.pageNum,
+      pageSize: historyPagination.pageSize,
+    }
+    const res = await getRouteHistory(req)
+    historyData.value = res.rows || []
+    historyPagination.total = res.total || 0
+  } catch (error) {
+    console.error('[RouteManagement] Failed to load route history:', error)
+    historyData.value = []
+    historyPagination.total = 0
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+/**
  * 处理存储方式切换
  */
 const handleStorageModeChange = (mode: string) => {
-  // 保存到 localStorage
   localStorage.setItem(STORAGE_MODE_KEY, mode)
-  // 清空搜索条件
   searchForm.routesGroup = ''
+  searchForm.routeName = ''
   searchForm.nacosDataId = t('route.nacosDataIdDefault')
   searchForm.nacosGroup = t('route.nacosGroupDefault')
-  // 重置分页
   pagination.pageNum = 1
-  // 加载新数据
   loadData()
 }
 
@@ -676,6 +904,7 @@ const handleSearch = () => {
 const handleReset = () => {
   if (searchForm.storageMode === 'redis') {
     searchForm.routesGroup = ''
+    searchForm.routeName = ''
   } else {
     searchForm.nacosDataId = t('route.nacosDataIdDefault')
     searchForm.nacosGroup = t('route.nacosGroupDefault')
@@ -704,42 +933,83 @@ const handleCurrentChange = () => {
 const handleAdd = () => {
   isEdit.value = false
   editMode.value = 'form'
-  Object.assign(currentRoute, {
-    id: '',
-    uri: '',
-    predicates: [{ name: 'Path', args: { pattern: '' } }],
-    filters: [],
-    order: 0,
-  })
-  // 根据当前存储方式设置默认值
-  if (searchForm.storageMode === 'redis') {
-    formData.routesGroup = searchForm.routesGroup || 'default'
-  } else {
-    formData.routesGroup = ''
-  }
+  resetFormData()
+  formData.routesGroup = searchForm.routesGroup || 'default'
   dialogVisible.value = true
 }
 
 /**
  * 处理编辑路由
- * @param row - 路由信息
  */
 const handleEdit = (row: RouteDefinition) => {
   isEdit.value = true
   editMode.value = 'form'
-  const copyData = JSON.parse(JSON.stringify(row))
-  // 确保 predicates 和 filters 存在
-  copyData.predicates = copyData.predicates || []
-  copyData.filters = copyData.filters || []
-  // 确保每个断言和过滤器都有 args
-  copyData.predicates.forEach((p: PredicateDefinition) => {
-    p.args = p.args || {}
-  })
-  copyData.filters.forEach((f: FilterDefinition) => {
-    f.args = f.args || {}
-  })
-  Object.assign(currentRoute, copyData)
+  const copyData = JSON.parse(JSON.stringify(row)) as RouteFormData
+  // 转换字段名以适配表单
+  formData.routeId = copyData.routeId
+  formData.routeName = copyData.routeName || ''
+  formData.uri = copyData.uri
+  formData.predicates = copyData.predicates?.length
+    ? copyData.predicates.map((p) => ({ ...p, args: p.args || {} }))
+    : [{ name: 'Path', args: { pattern: '' } }]
+  formData.filters = copyData.filters?.length
+    ? copyData.filters.map((f) => ({ ...f, args: f.args || {} }))
+    : []
+  formData.orderNum = copyData.orderNum || 0
+  formData.routesGroup = copyData.routesGroup || 'default'
+  formData.storageMode = copyData.storageMode || 'redis'
+  formData.status = copyData.status ?? 1
+  formData.remark = copyData.remark || ''
   dialogVisible.value = true
+}
+
+/**
+ * 处理查看历史
+ */
+const handleHistory = (row: RouteDefinition) => {
+  currentHistoryRouteId.value = row.routeId
+  historyPagination.pageNum = 1
+  historyDialogVisible.value = true
+  loadHistoryData()
+}
+
+/**
+ * 处理回滚
+ */
+const handleRollback = async (row: RouteHistory) => {
+  try {
+    await ElMessageBox.confirm(
+      t('route.rollbackConfirm', { routeName: row.routeName || currentHistoryRouteId.value }),
+      t('message.tips'),
+      { type: 'warning' }
+    )
+
+    const req: RollbackRouteReq = {
+      routeId: currentHistoryRouteId.value,
+      historyId: row.historyId,
+      syncToStorage: true,
+    }
+    await rollbackRoute(req)
+
+    ElMessage.success(t('message.success'))
+    historyDialogVisible.value = false
+    loadData()
+  } catch {
+    // 用户取消
+  }
+}
+
+/**
+ * 处理查看历史详情
+ */
+const handleViewHistoryDetail = (row: RouteHistory) => {
+  // 显示详情，可以使用 JSON 格式展示 beforeData 或 afterData
+  const detail = row.operationType === 'D' ? row.beforeData : row.afterData
+  if (detail) {
+    ElMessageBox.alert(JSON.stringify(detail, null, 2), t('route.historyDetailTitle'), {
+      confirmButtonText: t('common.confirm'),
+    })
+  }
 }
 
 /**
@@ -748,45 +1018,112 @@ const handleEdit = (row: RouteDefinition) => {
 const handleSubmit = async () => {
   if (!formRef.value) return
 
-  await formRef.value.validate(async (valid: boolean) => {
+  try {
+    const valid = await formRef.value.validate()
     if (!valid) return
 
     submitting.value = true
-    try {
-      // 如果是 JSON 模式，解析 JSON
-      let routeData = currentRoute
-      if (editMode.value === 'json') {
-        try {
-          routeData = JSON.parse(routeJson.value)
-        } catch {
-          ElMessage.error('Invalid JSON format')
-          return
-        }
-      }
 
-      if (searchForm.storageMode === 'redis') {
-        // Redis 模式
-        formData.routes = [routeData]
-        await saveRoute(formData)
-      } else {
-        // Nacos 模式
-        const nacosReq: SaveNacosRouteReq = {
-          dataId: searchForm.nacosDataId,
-          group: searchForm.nacosGroup,
-          routes: [routeData],
-        }
-        await saveNacosRoute(nacosReq)
+    // 如果是 JSON 模式，解析 JSON
+    let submitData: SaveRouteReq | UpdateRouteReq = JSON.parse(JSON.stringify(formData))
+    if (editMode.value === 'json') {
+      try {
+        submitData = JSON.parse(routeJson.value)
+      } catch {
+        ElMessage.error('Invalid JSON format')
+        submitting.value = false
+        return
       }
-
-      ElMessage.success(t('message.success'))
-      dialogVisible.value = false
-      loadData()
-    } catch (error) {
-      console.error('[RouteManagement] Failed to submit form:', error)
-    } finally {
-      submitting.value = false
     }
-  })
+
+    // 处理自定义类型的数据转换
+    submitData = convertCustomTypes(submitData)
+
+    if (searchForm.storageMode === 'redis') {
+      if (isEdit.value) {
+        // 更新路由
+        await updateRoute(submitData as UpdateRouteReq)
+      } else {
+        // 新增路由
+        await saveRoute(submitData as SaveRouteReq)
+      }
+    } else {
+      // Nacos 模式
+      const nacosReq: SaveNacosRouteReq = {
+        dataId: searchForm.nacosDataId,
+        group: searchForm.nacosGroup,
+        routes: [submitData as RouteDefinition],
+      }
+      await saveNacosRoute(nacosReq)
+    }
+
+    ElMessage.success(t('route.pushSuccessTip'))
+    dialogVisible.value = false
+    loadData()
+  } catch (error) {
+    console.error('[RouteManagement] Failed to submit form:', error)
+  } finally {
+    submitting.value = false
+  }
+}
+
+/**
+ * 转换自定义类型的断言和过滤器
+ */
+const convertCustomTypes = (data: SaveRouteReq | UpdateRouteReq): SaveRouteReq | UpdateRouteReq => {
+  const converted = JSON.parse(JSON.stringify(data))
+
+  if (converted.predicates && Array.isArray(converted.predicates)) {
+    converted.predicates = converted.predicates.map((p: PredicateConfig) => {
+      if (p.name === 'Custom' && p.customName) {
+        const newPredicate: PredicateConfig = { name: p.customName, args: {} }
+        if (p.customArgsJson) {
+          try {
+            newPredicate.args = JSON.parse(p.customArgsJson)
+          } catch {
+            newPredicate.args = {}
+          }
+        }
+        return newPredicate
+      }
+      return p
+    })
+  }
+
+  if (converted.filters && Array.isArray(converted.filters)) {
+    converted.filters = converted.filters.map((f: FilterConfig) => {
+      if (f.name === 'Custom' && f.customName) {
+        const newFilter: FilterConfig = { name: f.customName, args: {} }
+        if (f.customArgsJson) {
+          try {
+            newFilter.args = JSON.parse(f.customArgsJson)
+          } catch {
+            newFilter.args = {}
+          }
+        }
+        return newFilter
+      }
+      return f
+    })
+  }
+
+  return converted
+}
+
+/**
+ * 重置表单数据
+ */
+const resetFormData = () => {
+  formData.routeId = ''
+  formData.routeName = ''
+  formData.uri = ''
+  formData.predicates = [{ name: 'Path', args: { pattern: '' } }]
+  formData.filters = []
+  formData.orderNum = 0
+  formData.routesGroup = 'default'
+  formData.storageMode = 'redis'
+  formData.remark = ''
+  formData.status = 1
 }
 
 /**
@@ -794,28 +1131,27 @@ const handleSubmit = async () => {
  */
 const resetForm = () => {
   formRef.value?.resetFields()
+  resetFormData()
 }
 
 /**
  * 处理删除路由
- * @param row - 路由信息
  */
 const handleDelete = async (row: RouteDefinition) => {
   try {
     await ElMessageBox.confirm(t('route.deleteConfirm'), t('message.tips'), { type: 'warning' })
 
     if (searchForm.storageMode === 'redis') {
-      // Redis 模式
-      await deleteRoute({
+      const req: DeleteRouteReq = {
         routesGroup: searchForm.routesGroup || 'default',
-        routeIds: [row.id],
-      })
+        routeIds: [row.routeId],
+      }
+      await deleteRoute(req)
     } else {
-      // Nacos 模式
       await deleteNacosRoute({
         dataId: searchForm.nacosDataId,
         group: searchForm.nacosGroup,
-        routeIds: [row.id],
+        routeIds: [row.routeId],
       })
     }
 
@@ -842,7 +1178,7 @@ const handleRefreshRoutes = async () => {
  * 处理同步到实例
  */
 const handleSyncToInstances = () => {
-  selectedRouteIds.value = tableData.value.map((r) => r.id)
+  selectedRouteIds.value = tableData.value.map((r) => r.routeId)
   syncDialogVisible.value = true
 }
 
@@ -854,37 +1190,60 @@ const handleSyncSuccess = () => {
 }
 
 const addPredicate = () => {
-  currentRoute.predicates.push({ name: 'Path', args: { pattern: '' } })
+  formData.predicates.push({ name: 'Path', args: { pattern: '' } })
 }
 
 const removePredicate = (index: number) => {
-  currentRoute.predicates.splice(index, 1)
+  formData.predicates.splice(index, 1)
 }
 
-const onPredicateChange = (predicate: PredicateDefinition) => {
-  // 重置参数
+const onPredicateChange = (predicate: PredicateConfig) => {
   predicate.args = {}
   if (predicate.name === 'Path') {
     predicate.args.pattern = ''
   } else if (predicate.name === 'Method') {
-    predicate.args.methods = []
+    predicate.args.methods = [] as string[]
+  } else if (predicate.name === 'Custom') {
+    predicate.customName = ''
+    predicate.customArgsJson = ''
   }
 }
 
 const addFilter = () => {
-  currentRoute.filters.push({ name: 'StripPrefix', args: { parts: 1 } })
+  formData.filters.push({ name: 'StripPrefix', args: { parts: '1' } })
 }
 
 const removeFilter = (index: number) => {
-  currentRoute.filters.splice(index, 1)
+  formData.filters.splice(index, 1)
 }
 
-const onFilterChange = (filter: FilterDefinition) => {
-  // 重置参数
+const onFilterChange = (filter: FilterConfig) => {
   filter.args = {}
   if (filter.name === 'StripPrefix') {
-    filter.args.parts = 1
+    filter.args.parts = '1'
+  } else if (filter.name === 'Custom') {
+    filter.customName = ''
+    filter.customArgsJson = ''
   }
+}
+
+/**
+ * 处理表格选择变化
+ */
+const handleSelectionChange = (selection: RouteDefinition[]) => {
+  selectedRoutes.value = selection
+}
+
+/**
+ * 处理推送选中路由
+ */
+const handlePushSelected = () => {
+  if (selectedRoutes.value.length === 0) {
+    ElMessage.warning(t('route.selectRouteToPush'))
+    return
+  }
+  selectedRouteIds.value = selectedRoutes.value.map((r) => r.routeId)
+  syncDialogVisible.value = true
 }
 
 // 组件挂载时加载初始数据
@@ -921,11 +1280,17 @@ onMounted(() => {
 .filter-tag {
   cursor: pointer;
 }
+
+.operation-buttons {
+  display: flex;
+  gap: 8px;
+}
 </style>
 
 <style lang="scss">
 /* 路由弹窗样式（非 scoped） */
-.route-dialog {
+.route-dialog,
+.history-dialog {
   .dynamic-section {
     .dynamic-item {
       display: flex;
