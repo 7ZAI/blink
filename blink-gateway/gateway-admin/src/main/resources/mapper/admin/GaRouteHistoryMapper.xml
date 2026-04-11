@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.admin.mapper.GaRouteHistoryMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.admin.entity.GaRouteHistoryDO">
+        <id column="history_id" property="historyId"/>
+        <result column="route_id" property="routeId"/>
+        <result column="route_name" property="routeName"/>
+        <result column="operation_type" property="operationType"/>
+        <result column="before_data" property="beforeData" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="after_data" property="afterData" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="operator_id" property="operatorId"/>
+        <result column="operator_name" property="operatorName"/>
+        <result column="operate_time" property="operateTime"/>
+        <result column="remark" property="remark"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        history_id, route_id, route_name, operation_type, before_data, after_data,
+        operator_id, operator_name, operate_time, remark
+    </sql>
+
+</mapper>

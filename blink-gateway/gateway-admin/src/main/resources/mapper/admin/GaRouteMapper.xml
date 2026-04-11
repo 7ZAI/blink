@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.gateway.admin.mapper.GaRouteMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.blink.gateway.admin.entity.GaRouteDO">
+        <id column="route_id" property="routeId"/>
+        <result column="route_name" property="routeName"/>
+        <result column="uri" property="uri"/>
+        <result column="predicates" property="predicates" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="filters" property="filters" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="order_num" property="orderNum"/>
+        <result column="metadata" property="metadata" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="routes_group" property="routesGroup"/>
+        <result column="storage_mode" property="storageMode"/>
+        <result column="nacos_data_id" property="nacosDataId"/>
+        <result column="nacos_group" property="nacosGroup"/>
+        <result column="status" property="status"/>
+        <result column="remark" property="remark"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        route_id, route_name, uri, predicates, filters, order_num, metadata,
+        routes_group, storage_mode, nacos_data_id, nacos_group, status, remark,
+        create_by, update_by, create_time, update_time
+    </sql>
+
+</mapper>
