@@ -6,7 +6,7 @@
         <el-card class="stat-card" shadow="never">
           <div class="stat-content">
             <div class="stat-icon total">
-              <el-icon><Server /></el-icon>
+              <el-icon><Monitor /></el-icon>
             </div>
             <div class="stat-info">
               <div class="stat-value">{{ statistics.totalInstances }}</div>
@@ -456,7 +456,7 @@ import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
-  Server,
+  Monitor,
   CircleCheck,
   SuccessFilled,
   Cpu,
