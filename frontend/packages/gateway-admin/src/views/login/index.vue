@@ -1,5 +1,12 @@
 <template>
-  <div class="login-container">
+  <!-- 配置加载中显示加载状态 -->
+  <div v-if="!configLoaded" class="config-loading-container">
+    <div class="config-loading-spinner"></div>
+    <p class="config-loading-text">{{ t('login.loading') }}</p>
+  </div>
+
+  <!-- 配置加载完成后显示登录页面 -->
+  <div v-else class="login-container">
     <!-- Left Panel - Animated Characters -->
     <div class="login-left">
       <div class="characters-wrapper">
@@ -143,9 +150,7 @@
       <div v-if="loginLoading" class="login-loading-overlay">
         <div class="login-loading-content">
           <div class="loading-logo-wrapper">
-            <svg viewBox="0 0 12 32" class="loading-logo">
-              <path d="M7 2L2 14h5l-2 12 9-16h-5l2-8z" />
-            </svg>
+            <div class="loading-logo" v-html="systemConfigStore.systemLogo"></div>
           </div>
           <div class="loading-progress-container">
             <div class="loading-progress-bar">
@@ -453,5 +458,39 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
-// Styles are in global index.scss
+// 配置加载状态样式
+.config-loading-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: 9999;
+}
+
+.config-loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s linear infinite;
+}
+
+.config-loading-text {
+  margin-top: 16px;
+  color: #fff;
+  font-size: 14px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>

@@ -110,9 +110,26 @@ public interface CommonConstants {
     String DEFAULT_SYSTEM_TITLE = "Blink Gateway";
 
     /**
-     * 系统默认logo 前端代码形式
+     * 系统默认logo - Blink Gateway 专业设计
+     * 设计理念：双层菱形网关 + 数据流动 + B标识
      */
-    String DEFAULT_SYSTEM_LOGO = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\"><defs><linearGradient id=\"bgGrad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\"><stop offset=\"0%\" stop-color=\"#3b82f6\"/><stop offset=\"100%\" stop-color=\"#1d4ed8\"/></linearGradient></defs><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"url(#bgGrad)\"/><circle cx=\"24\" cy=\"24\" r=\"20\" fill=\"none\" stroke=\"#60a5fa\" stroke-width=\"1\" opacity=\"0.5\"/><path d=\"M14 24 C14 17 19 12 26 12 C33 12 38 17 38 24 C38 31 33 36 26 36 L26 28 L34 28\" fill=\"none\" stroke=\"#fff\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M8 24 L14 20 L14 28 Z\" fill=\"#fff\"/><path d=\"M40 24 L34 28 L34 20 Z\" fill=\"#fff\"/></svg>";
+    String DEFAULT_SYSTEM_LOGO = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\">"
+        + "<defs>"
+        + "<linearGradient id=\"grad\" x1=\"0%\" y1=\"0%\" x2=\"100%\" y2=\"100%\">"
+        + "<stop offset=\"0%\" stop-color=\"#6366f1\"/>"
+        + "<stop offset=\"100%\" stop-color=\"#3b82f6\"/>"
+        + "</linearGradient>"
+        + "</defs>"
+        + "<rect x=\"4\" y=\"4\" width=\"40\" height=\"40\" rx=\"10\" fill=\"url(#grad)\"/>"
+        + "<g fill=\"none\" stroke=\"#fff\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\">"
+        + "<path d=\"M24 8 L36 20 L36 28 L24 40 L12 28 L12 20 L24 8\"/>"
+        + "<path d=\"M24 14 L30 20 L30 28 L24 34 L18 28 L18 20 L24 14\" stroke-opacity=\"0.6\"/>"
+        + "</g>"
+        + "<circle cx=\"24\" cy=\"24\" r=\"6\" fill=\"#fff\"/>"
+        + "<path d=\"M21 21 L21 27 L26 27\" fill=\"none\" stroke=\"#6366f1\" stroke-width=\"2\" stroke-linecap=\"round\"/>"
+        + "<path d=\"M2 24 L8 24 L8 20 L12 24 L8 28 L8 24\" fill=\"#a5b4fc\"/>"
+        + "<path d=\"M46 24 L40 24 L40 20 L36 24 L40 28 L40 24\" fill=\"#a5b4fc\"/>"
+        + "</svg>";
 
     /**
      * 系统默认页脚

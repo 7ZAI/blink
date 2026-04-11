@@ -109,6 +109,7 @@ import { useThemeStore } from '@/stores/theme'
 import { useUserStore } from '@/stores/user'
 import { useTabsStore } from '@/stores/tabs'
 import { useNotificationStore } from '@/stores/notification'
+import { useSystemConfigStore } from '@/stores/systemConfig'
 import type { MenuVO } from '@/api/auth'
 import { getLocalAvatarUrl } from '@/utils/avatar'
 
@@ -122,6 +123,7 @@ const themeStore = useThemeStore()
 const userStore = useUserStore()
 const tabsStore = useTabsStore()
 const notificationStore = useNotificationStore()
+const systemConfigStore = useSystemConfigStore()
 
 // 监听路由变化，更新激活的标签页
 watch(
@@ -161,10 +163,8 @@ onUnmounted(() => {
   notificationStore.disconnectSse()
 })
 
-// Logo SVG
-const logoSvg = `<svg viewBox="0 0 24 24" fill="currentColor">
-  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-</svg>`
+// Logo SVG - 从系统配置动态获取
+const logoSvg = computed(() => systemConfigStore.systemLogo)
 
 // 转换 MenuVO 到 MenuItem
 const convertMenuVO = (menu: MenuVO): MenuItem => {
