@@ -112,6 +112,31 @@ public interface ErrCodeConstant {
     String NACOS_ROUTE_NOT_IMPLEMENTED = "GATE0034";
 
     /**
+     * 路由不存在
+     */
+    String ROUTE_NOT_EXIST = "GATE0035";
+
+    /**
+     * 路由ID已存在
+     */
+    String ROUTE_ID_EXISTS = "GATE0036";
+
+    /**
+     * 路由历史不存在
+     */
+    String ROUTE_HISTORY_NOT_EXIST = "GATE0037";
+
+    /**
+     * 路由回滚失败
+     */
+    String ROUTE_ROLLBACK_FAILED = "GATE0038";
+
+    /**
+     * 推送记录不存在
+     */
+    String PUSH_LOG_NOT_EXIST = "GATE0039";
+
+    /**
      * 线程中断
      */
     String THREAD_INTERRUPTED = "GATE0008";
@@ -289,4 +314,31 @@ public interface ErrCodeConstant {
      * SSE连接失败
      */
     String SSE_CONNECTION_FAILED = "GATE0152";
+
+    // ============ 实例管理错误码 GATE0160-GATE0169 ============
+
+    /**
+     * 实例已存在（相同 host:port）
+     */
+    String INSTANCE_ALREADY_EXIST = "GATE0160";
+
+    /**
+     * 保存实例失败
+     */
+    String SAVE_INSTANCE_FAILED = "GATE0161";
+
+    /**
+     * 删除实例失败
+     */
+    String DELETE_INSTANCE_FAILED = "GATE0162";
+
+    /**
+     * 查询实例列表失败
+     */
+    String QUERY_INSTANCE_LIST_FAILED = "GATE0163";
+
+    /**
+     * 在线实例不允许删除
+     */
+    String INSTANCE_ONLINE_CANNOT_DELETE = "GATE0164";
 }
