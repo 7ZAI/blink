@@ -35,6 +35,17 @@ export interface UpdateConfigParams {
   description?: string
 }
 
+/** 网关实例 VO */
+export interface GatewayInstanceVO {
+  instanceId: string
+  serviceId: string
+  host: string
+  port: number
+  uri: string
+  status: number
+  statusDesc: string
+}
+
 /**
  * 根据分组键名查询配置
  * @param groupKey 分组键名 (base, system, security, login, log)
@@ -123,6 +134,25 @@ export const syncConfig = (params: PushConfigParams = {}): Promise<void> => {
   return request.post('/configPush/pushConfig', { body: params })
 }
 
+// 获取实例当前配置
+export interface QueryInstanceConfigParams {
+  instanceId: string
+}
+
+export const getInstanceConfig = (params: QueryInstanceConfigParams): Promise<GatewayConfig> => {
+  return request.post('/gatewayConfig/getInstanceConfig', { body: params })
+}
+
+// 推送配置到指定实例
+export interface PushConfigToInstanceParams {
+  instanceIds?: string[]
+  broadcast?: boolean
+}
+
+export const pushConfigToInstance = (params: PushConfigToInstanceParams): Promise<void> => {
+  return request.post('/gatewayConfig/pushConfigToInstance', { body: params })
+}
+
 // Config API object (for component using configApi.xxx pattern)
 export const configApi = {
   getGatewayConfig,
@@ -130,4 +160,6 @@ export const configApi = {
   getIpList,
   updateIpList,
   syncConfig,
+  getInstanceConfig,
+  pushConfigToInstance,
 }
