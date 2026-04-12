@@ -79,8 +79,6 @@ public class FlowableConfig implements EngineConfigurationConfigurer<SpringProce
             
             // 设置异步执行器配置
             processEngineConfiguration.setAsyncExecutorActivate(false);
-            
-            // 设置作业执行器配置
             processEngineConfiguration.setAsyncExecutorCorePoolSize(2);
             processEngineConfiguration.setAsyncExecutorMaxPoolSize(10);
             processEngineConfiguration.setAsyncExecutorThreadKeepAliveTime(300);

@@ -279,6 +279,121 @@ public interface BaseErrCodeConstant {
      */
     String NO_TASK_PERMISSION = "FLOW0004";
 
+    /**
+     * 部署流程定义失败
+     */
+    String DEPLOY_PROCESS_ERROR = "FLOW0005";
+
+    /**
+     * 查询流程定义列表失败
+     */
+    String QUERY_PROCESS_DEF_ERROR = "FLOW0006";
+
+    /**
+     * 获取流程图XML失败
+     */
+    String GET_DIAGRAM_XML_ERROR = "FLOW0007";
+
+    /**
+     * 获取流程图图片失败
+     */
+    String GET_DIAGRAM_IMAGE_ERROR = "FLOW0008";
+
+    /**
+     * 启动流程实例失败
+     */
+    String START_PROCESS_ERROR = "FLOW0009";
+
+    /**
+     * 查询流程实例列表失败
+     */
+    String QUERY_PROCESS_INSTANCE_ERROR = "FLOW0010";
+
+    /**
+     * 查询用户发起的流程实例失败
+     */
+    String QUERY_MY_PROCESS_ERROR = "FLOW0011";
+
+    /**
+     * 获取流程实例详情失败
+     */
+    String GET_PROCESS_INSTANCE_ERROR = "FLOW0012";
+
+    /**
+     * 删除流程实例失败
+     */
+    String DELETE_PROCESS_ERROR = "FLOW0013";
+
+    /**
+     * 查询用户待办任务失败
+     */
+    String QUERY_TASK_ERROR = "FLOW0014";
+
+    /**
+     * 分页查询待办任务失败
+     */
+    String QUERY_PENDING_TASK_ERROR = "FLOW0015";
+
+    /**
+     * 分页查询已办任务失败
+     */
+    String QUERY_COMPLETED_TASK_ERROR = "FLOW0016";
+
+    /**
+     * 完成任务失败
+     */
+    String COMPLETE_TASK_ERROR = "FLOW0017";
+
+    /**
+     * 委托任务失败
+     */
+    String DELEGATE_TASK_ERROR = "FLOW0018";
+
+    /**
+     * 认领任务失败
+     */
+    String CLAIM_TASK_ERROR = "FLOW0019";
+
+    /**
+     * 取消认领任务失败
+     */
+    String UNCLAIM_TASK_ERROR = "FLOW0020";
+
+    /**
+     * 查询流程历史失败
+     */
+    String QUERY_HISTORY_ERROR = "FLOW0021";
+
+    /**
+     * 撤回任务失败
+     */
+    String WITHDRAW_TASK_ERROR = "FLOW0022";
+
+    /**
+     * 回退流程失败
+     */
+    String ROLLBACK_PROCESS_ERROR = "FLOW0023";
+
+    /**
+     * 导入BPMN XML失败
+     */
+    String XML_IMPORT_ERROR = "FLOW0024";
+
+    /**
+     * 流程图生成失败
+     */
+    String GENERATE_DIAGRAM_ERROR = "FLOW0025";
+
+    /**
+     * 挂起流程定义失败
+     */
+    String SUSPEND_PROCESS_ERROR = "FLOW0026";
+
+    /**
+     * 激活流程定义失败
+     */
+    String ACTIVATE_PROCESS_ERROR = "FLOW0027";
+
     // ==================== Dubbo服务相关错误码 ====================
 
     /**
@@ -297,14 +412,9 @@ public interface BaseErrCodeConstant {
     String API_PERMISSION_NOT_EXIST = "BUSS0045";
 
     /**
-     * 流程图生成失败
-     */
-    String GENERATE_DIAGRAM_ERROR = "BUSS0046";
-
-    /**
      * 操作日志不存在
      */
-    String OPERATION_LOG_NOT_EXIST = "BUSS0047";
+    String OPERATION_LOG_NOT_EXIST = "BUSS0046";
 
     /**
      * 用户无需重置密码
