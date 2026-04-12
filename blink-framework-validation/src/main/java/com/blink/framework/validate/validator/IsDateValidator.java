@@ -36,8 +36,14 @@ public class IsDateValidator implements ConstraintValidator<IsDate, Object> {
 
             return date.isEqual(dateValue);
 
+        } catch (NoSuchMethodException e) {
+            log.error("[IsDateValidator] Supplier类缺少无参构造函数 | supplierClass: {}", dateSupperClazz.getName(), e);
+            return false;
+        } catch (ClassCastException e) {
+            log.error("[IsDateValidator] 值类型转换失败，期望LocalDate | value type: {}", value.getClass().getName(), e);
+            return false;
         } catch (Exception e) {
-            log.error("IsDateValidator校验出现异常{}",e.getMessage(),e);
+            log.error("[IsDateValidator] 校验出现异常 | supplierClass: {}, error: {}", dateSupperClazz.getName(), e.getMessage(), e);
             return false;
         }
     }

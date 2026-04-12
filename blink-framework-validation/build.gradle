@@ -39,6 +39,13 @@ dependencies {
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
+
+    // 测试依赖
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 

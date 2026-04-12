@@ -2,7 +2,6 @@ package com.blink.framework.validate.checker;
 
 import com.blink.framework.common.data.FieldConstraintCacheDO;
 
-import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -33,7 +32,11 @@ public class GeneralValidChecker implements FieldConstraintValidChecker {
      * @return 是否通过校验
      */
     protected boolean checkMaxLength(FieldConstraintCacheDO constraint, String valueStr) {
-        return !Objects.nonNull(constraint) || valueStr.length() <= constraint.getMaxLength();
+        // 当 constraint 为 null 或 maxLength 为 null 时，跳过长度校验
+        if (constraint == null || constraint.getMaxLength() == null) {
+            return true;
+        }
+        return valueStr.length() <= constraint.getMaxLength();
     }
 
     /**

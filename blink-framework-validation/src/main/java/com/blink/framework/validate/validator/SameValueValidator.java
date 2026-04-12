@@ -39,10 +39,20 @@ public class SameValueValidator implements ConstraintValidator<SameValue, Object
             //BeanWrapperImpl 提供通过字段名访问对象字段的能力
             BeanWrapperImpl wrapper = new BeanWrapperImpl(value);
             Object originVal = wrapper.getPropertyValue(fields[0]);
-            //按一般情况 配置的字段值不应该为空 如果全部为空默认校验失败 不符合SameValue初衷
+
+            // 第一个字段为null时，检查其他字段是否也为null
+            // 如果所有字段均为null，返回true（由@NotNull处理null检查）
+            // 如果部分字段为null，返回false（值不一致）
             if (originVal == null) {
-                return false;
+                for (String field : fields) {
+                    if (wrapper.getPropertyValue(field) != null) {
+                        return false;
+                    }
+                }
+                // 所有字段均为null，返回true
+                return true;
             }
+
             for (String field : fields) {
                 Object temp = wrapper.getPropertyValue(field);
                 //originVal不为空 temp 空 失败
@@ -57,7 +67,7 @@ public class SameValueValidator implements ConstraintValidator<SameValue, Object
             //全部相等
             return true;
         } catch (Exception e) {
-            log.error("SameValueValidator校验出现异常{}",e.getMessage(),e);
+            log.error("[SameValueValidator] 校验出现异常 | error: {}", e.getMessage(), e);
             return false;
         }
     }
