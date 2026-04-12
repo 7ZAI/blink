@@ -4,7 +4,10 @@
     title="同步到网关实例"
     width="500px"
     :close-on-click-modal="false"
+    :lock-scroll="false"
     class="sync-instance-dialog"
+    @open="lockBodyScroll"
+    @closed="unlockBodyScroll"
   >
     <el-form label-width="100px">
       <!-- 推送方式选择 -->
@@ -71,10 +74,7 @@ import {
 
 const props = defineProps<{
   modelValue: boolean
-  storageMode: string
   routesGroup?: string
-  dataId?: string
-  group?: string
   routeIds?: string[]
 }>()
 
@@ -109,7 +109,7 @@ const loadOnlineInstances = async () => {
   loadingInstances.value = true
   try {
     const instances = await getOnlineGatewayInstances()
-    onlineInstances.value = instances
+    onlineInstances.value = Array.isArray(instances) ? instances : []
   } catch (error) {
     console.error('[SyncInstanceDialog] 加载实例列表失败:', error)
     onlineInstances.value = []
@@ -125,17 +125,11 @@ const handleCancel = () => {
 const handleSubmit = async () => {
   submitting.value = true
   try {
+    // 不再传递 storageMode，由后端根据实例配置自动决定
     const req: SyncRoutesReq = {
-      storageMode: props.storageMode,
       pushMode: pushMode.value,
       routeIds: props.routeIds,
-    }
-
-    if (props.storageMode === 'redis') {
-      req.routesGroup = props.routesGroup || 'default'
-    } else {
-      req.dataId = props.dataId
-      req.group = props.group
+      routesGroup: props.routesGroup || 'default',
     }
 
     if (pushMode.value === 'specified') {
@@ -152,6 +146,15 @@ const handleSubmit = async () => {
   } finally {
     submitting.value = false
   }
+}
+
+// 弹窗防抖动 - 手动锁定滚动条
+const lockBodyScroll = () => {
+  document.body.classList.add('dialog-open')
+}
+
+const unlockBodyScroll = () => {
+  document.body.classList.remove('dialog-open')
 }
 </script>
 

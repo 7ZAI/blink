@@ -4,29 +4,8 @@
     <!-- 搜索卡片 -->
     <el-card class="search-card shrink-0" shadow="never">
       <el-form :model="searchForm" inline class="search-form">
-        <!-- 存储方式选择 -->
-        <el-form-item :label="t('route.storageMode')">
-          <el-select
-            v-model="searchForm.storageMode"
-            :placeholder="t('route.storageModePlaceholder')"
-            style="width: 160px"
-            @change="handleStorageModeChange"
-          >
-            <el-option value="redis">
-              <div class="storage-mode-option">
-                <span>{{ t('route.redisStorage') }}</span>
-              </div>
-            </el-option>
-            <el-option value="nacos">
-              <div class="storage-mode-option">
-                <span>{{ t('route.nacosStorage') }}</span>
-              </div>
-            </el-option>
-          </el-select>
-        </el-form-item>
-
-        <!-- Redis 模式：路由分组 -->
-        <el-form-item v-if="searchForm.storageMode === 'redis'" :label="t('route.routeGroup')">
+        <!-- 路由分组 -->
+        <el-form-item :label="t('route.routeGroup')">
           <el-input
             v-model.trim="searchForm.routesGroup"
             :placeholder="t('route.routeGroupPlaceholder')"
@@ -36,31 +15,11 @@
           />
         </el-form-item>
 
-        <!-- Redis 模式：路由名称 -->
-        <el-form-item v-if="searchForm.storageMode === 'redis'" :label="t('route.routeName')">
+        <!-- 路由名称 -->
+        <el-form-item :label="t('route.routeName')">
           <el-input
             v-model.trim="searchForm.routeName"
             :placeholder="t('route.routeNamePlaceholder')"
-            clearable
-            style="width: 150px"
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-
-        <!-- Nacos 模式：Data ID 和 Group -->
-        <el-form-item v-if="searchForm.storageMode === 'nacos'" :label="t('route.nacosDataId')">
-          <el-input
-            v-model.trim="searchForm.nacosDataId"
-            :placeholder="t('route.nacosDataIdPlaceholder')"
-            clearable
-            style="width: 200px"
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-        <el-form-item v-if="searchForm.storageMode === 'nacos'" :label="t('route.nacosGroup')">
-          <el-input
-            v-model.trim="searchForm.nacosGroup"
-            :placeholder="t('route.nacosGroupPlaceholder')"
             clearable
             style="width: 150px"
             @keyup.enter="handleSearch"
@@ -116,14 +75,6 @@
             {{ t('route.batchStatus') }} ({{ selectedRoutes.length }})
           </AuthButton>
           <AuthButton
-            :has-permission="() => checkPermission(ButtonPerms.Route.FullPush)"
-            type="warning"
-            @click="handleFullPush"
-          >
-            <el-icon><Upload /></el-icon>
-            {{ t('route.fullPush') }}
-          </AuthButton>
-          <AuthButton
             :has-permission="() => checkPermission(ButtonPerms.Route.Import)"
             type="default"
             @click="handleImport"
@@ -141,12 +92,12 @@
             {{ t('route.exportRoutes') }} ({{ selectedRoutes.length }})
           </AuthButton>
           <AuthButton
-            :has-permission="() => checkPermission(ButtonPerms.Route.Refresh)"
+            :has-permission="() => checkPermission(ButtonPerms.Route.Add)"
             type="warning"
-            @click="handleSyncToInstances"
+            @click="handleFetchInstanceRoutes"
           >
-            <el-icon><Connection /></el-icon>
-            {{ t('route.syncToInstances') }}
+            <el-icon><Download /></el-icon>
+            {{ t('route.fetchInstanceRoutes') }}
           </AuthButton>
         </div>
       </template>
@@ -174,6 +125,11 @@
           <el-table-column prop="routeName" :label="t('route.routeName')" min-width="120" show-overflow-tooltip>
             <template #default="{ row }">
               <span>{{ row.routeName || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="routesGroup" :label="t('route.routeGroup')" min-width="100" show-overflow-tooltip>
+            <template #default="{ row }">
+              <el-tag type="info" effect="plain" size="small">{{ row.routesGroup || 'default' }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="uri" :label="t('route.uri')" min-width="180" show-overflow-tooltip>
@@ -245,9 +201,19 @@
               <span class="time-text">{{ row.lastPushTime || '-' }}</span>
             </template>
           </el-table-column>
-          <el-table-column :label="t('common.operation')" width="280" fixed="right">
+          <el-table-column :label="t('common.operation')" width="320" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.Route.Edit)"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="handleDetail(row)"
+                >
+                  <el-icon><View /></el-icon>
+                  {{ t('common.detail') }}
+                </AuthButton>
                 <AuthButton
                   :has-permission="() => checkPermission(ButtonPerms.Route.Edit)"
                   type="primary"
@@ -320,6 +286,8 @@
       :close-on-click-modal="false"
       :lock-scroll="false"
       class="route-dialog"
+      @open="lockBodyScroll"
+      @closed="unlockBodyScroll"
       @close="resetForm"
     >
       <el-form ref="formRef" :model="formData" :rules="formRules" label-width="100px">
@@ -391,6 +359,7 @@
           <el-radio-group v-model="editMode" size="small">
             <el-radio-button value="form">{{ t('common.show') }}</el-radio-button>
             <el-radio-button value="json">JSON</el-radio-button>
+            <el-radio-button value="yaml">YAML</el-radio-button>
           </el-radio-group>
         </el-divider>
 
@@ -592,7 +561,7 @@
         </template>
 
         <!-- JSON 模式 -->
-        <template v-else>
+        <template v-else-if="editMode === 'json'">
           <el-form-item label="JSON">
             <el-input
               v-model="routeJson"
@@ -600,6 +569,19 @@
               :rows="15"
               placeholder="JSON format route definition"
               class="json-editor"
+            />
+          </el-form-item>
+        </template>
+
+        <!-- YAML 模式 -->
+        <template v-else-if="editMode === 'yaml'">
+          <el-form-item label="YAML">
+            <el-input
+              v-model="routeYaml"
+              type="textarea"
+              :rows="15"
+              placeholder="YAML format route definition"
+              class="yaml-editor"
             />
           </el-form-item>
         </template>
@@ -619,34 +601,40 @@
       :title="t('route.historyTitle')"
       width="800px"
       :close-on-click-modal="false"
+      :lock-scroll="false"
       class="history-dialog"
+      @open="lockBodyScroll"
+      @closed="unlockBodyScroll"
     >
       <el-table v-loading="historyLoading" :data="historyData" height="400" stripe>
-        <el-table-column prop="historyId" :label="t('route.historyId')" width="100" />
-        <el-table-column prop="routeName" :label="t('route.routeName')" width="120" />
-        <el-table-column prop="operationType" :label="t('route.operationType')" width="100">
+        <el-table-column prop="historyId" :label="t('route.historyId')" width="100" align="center" />
+        <el-table-column prop="routeName" :label="t('route.routeName')" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="operationType" :label="t('route.operationType')" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="getOperationTypeTag(row.operationType)" effect="plain" size="small">
               {{ getOperationTypeLabel(row.operationType) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="operatorName" :label="t('route.operatorName')" width="120" />
+        <el-table-column prop="operatorName" :label="t('route.operatorName')" min-width="100" show-overflow-tooltip />
         <el-table-column prop="operateTime" :label="t('route.operateTime')" width="160" />
-        <el-table-column :label="t('common.operation')" width="120" fixed="right">
+        <el-table-column :label="t('common.operation')" width="140" align="center">
           <template #default="{ row }">
-            <el-button
-              v-if="row.operationType !== 'A'"
-              type="primary"
-              link
-              size="small"
-              @click="handleRollback(row)"
-            >
-              {{ t('route.rollback') }}
-            </el-button>
-            <el-button type="info" link size="small" @click="handleViewHistoryDetail(row)">
-              {{ t('route.viewDetail') }}
-            </el-button>
+            <div class="history-operation-buttons">
+              <el-button
+                v-if="row.operationType !== 'A'"
+                type="primary"
+                link
+                size="small"
+                @click="handleRollback(row)"
+              >
+                {{ t('route.rollback') }}
+              </el-button>
+              <span v-else class="operation-placeholder">-</span>
+              <el-button type="info" link size="small" @click="handleViewHistoryDetail(row)">
+                {{ t('route.viewDetail') }}
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -668,10 +656,7 @@
     <!-- 同步到实例弹窗 -->
     <SyncInstanceDialog
       v-model="syncDialogVisible"
-      :storage-mode="searchForm.storageMode"
       :routes-group="searchForm.routesGroup"
-      :data-id="searchForm.nacosDataId"
-      :group="searchForm.nacosGroup"
       :route-ids="selectedRouteIds"
       @success="handleSyncSuccess"
     />
@@ -682,6 +667,9 @@
       :title="t('route.batchStatus')"
       width="400px"
       :close-on-click-modal="false"
+      :lock-scroll="false"
+      @open="lockBodyScroll"
+      @closed="unlockBodyScroll"
     >
       <div class="batch-status-tip">
         {{ t('route.batchStatusTip', { count: selectedRoutes.length }) }}
@@ -712,6 +700,9 @@
       :title="t('route.importRoutes')"
       width="600px"
       :close-on-click-modal="false"
+      :lock-scroll="false"
+      @open="lockBodyScroll"
+      @closed="unlockBodyScroll"
     >
       <div class="import-tip">{{ t('route.importTip') }}</div>
       <el-form label-width="100px">
@@ -744,6 +735,9 @@
       :title="t('route.cloneRoute')"
       width="500px"
       :close-on-click-modal="false"
+      :lock-scroll="false"
+      @open="lockBodyScroll"
+      @closed="unlockBodyScroll"
     >
       <div class="clone-tip">
         {{ t('route.cloneTip', { routeId: cloneSourceRouteId }) }}
@@ -763,6 +757,205 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 路由详情弹窗 -->
+    <el-dialog
+      v-model="detailDialogVisible"
+      :title="t('route.routeDetail')"
+      width="700px"
+      :close-on-click-modal="false"
+      :lock-scroll="false"
+      class="route-detail-dialog"
+      @open="lockBodyScroll"
+      @closed="unlockBodyScroll"
+    >
+      <div v-if="currentRouteDetail" class="route-detail-content">
+        <el-descriptions :column="2" border size="small">
+          <el-descriptions-item :label="t('route.routeId')">
+            <span class="mono-text">{{ currentRouteDetail.routeId }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('route.routeName')">
+            {{ currentRouteDetail.routeName || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('route.routeGroup')">
+            <el-tag size="small" effect="plain" type="info">{{ currentRouteDetail.routesGroup || 'default' }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('route.uri')">
+            <el-tag size="small" effect="plain" type="success">{{ currentRouteDetail.uri }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('route.order')">
+            {{ currentRouteDetail.orderNum || 0 }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('route.status')">
+            <el-tag :type="currentRouteDetail.status === 1 ? 'success' : 'danger'" size="small" effect="light">
+              {{ currentRouteDetail.status === 1 ? t('route.statusEnable') : t('route.statusDisable') }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('route.pushStatus')">
+            <el-tag :type="getPushStatusType(currentRouteDetail.pushStatus)" size="small" effect="plain">
+              {{ getPushStatusText(currentRouteDetail.pushStatus) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('route.lastPushTime')">
+            {{ currentRouteDetail.lastPushTime || '-' }}
+          </el-descriptions-item>
+          <el-descriptions-item :label="t('route.remark')" :span="2">
+            {{ currentRouteDetail.remark || '-' }}
+          </el-descriptions-item>
+        </el-descriptions>
+
+        <!-- 断言配置 -->
+        <div class="detail-section">
+          <div class="section-title">{{ t('route.predicates') }}</div>
+          <div v-if="currentRouteDetail.predicates?.length" class="config-list">
+            <div v-for="(p, idx) in currentRouteDetail.predicates" :key="idx" class="config-item">
+              <el-tag type="primary" effect="light" size="small">{{ p.name }}</el-tag>
+              <span class="config-args">{{ formatConfigArgs(p) }}</span>
+            </div>
+          </div>
+          <div v-else class="empty-section">-</div>
+        </div>
+
+        <!-- 过滤器配置 -->
+        <div class="detail-section">
+          <div class="section-title">{{ t('route.filters') }}</div>
+          <div v-if="currentRouteDetail.filters?.length" class="config-list">
+            <div v-for="(f, idx) in currentRouteDetail.filters" :key="idx" class="config-item">
+              <el-tag type="warning" effect="light" size="small">{{ f.name }}</el-tag>
+              <span class="config-args">{{ formatConfigArgs(f) }}</span>
+            </div>
+          </div>
+          <div v-else class="empty-section">-</div>
+        </div>
+
+        <!-- JSON/YAML 预览 (Spring Cloud Gateway 格式) -->
+        <div class="detail-section">
+          <div class="section-header">
+            <div class="section-title">Spring Cloud Gateway</div>
+            <el-radio-group v-model="detailFormat" size="small">
+              <el-radio-button value="json">JSON</el-radio-button>
+              <el-radio-button value="yaml">YAML</el-radio-button>
+            </el-radio-group>
+          </div>
+          <div class="json-preview">
+            <pre>{{ gatewayRoutePreview }}</pre>
+          </div>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 获取实例路由弹窗 -->
+    <el-dialog
+      v-model="fetchInstanceDialogVisible"
+      :title="t('route.fetchInstanceRoutes')"
+      width="900px"
+      :close-on-click-modal="false"
+      :lock-scroll="false"
+      class="fetch-instance-dialog"
+      @open="lockBodyScroll"
+      @closed="unlockBodyScroll"
+    >
+      <div class="fetch-instance-content">
+        <!-- 实例选择 -->
+        <div class="instance-select-section">
+          <el-form label-width="80px">
+            <el-form-item :label="t('route.targetInstances')">
+              <el-select
+                v-model="selectedFetchInstance"
+                :placeholder="t('route.selectInstanceToFetch')"
+                style="width: 300px"
+                :loading="fetchInstanceLoading"
+                @change="handleInstanceSelect"
+              >
+                <el-option
+                  v-for="instance in onlineInstances"
+                  :key="instance.instanceId"
+                  :label="instance.instanceId"
+                  :value="instance.instanceId"
+                >
+                  <div class="instance-option">
+                    <span class="instance-id">{{ instance.instanceId }}</span>
+                    <el-tag type="success" size="small" effect="plain">{{ instance.uri }}</el-tag>
+                  </div>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-form>
+        </div>
+
+        <!-- 实例路由列表 -->
+        <div v-if="instanceRoutes.length > 0" class="instance-routes-section">
+          <div class="section-header">
+            <span class="section-title">
+              {{ t('route.instanceRoutesList', { count: instanceRoutes.length }) }}
+            </span>
+            <div class="section-actions">
+              <el-checkbox v-model="selectAllInstanceRoutes" @change="handleSelectAllInstanceRoutes as any">
+                {{ t('common.selectAll') }}
+              </el-checkbox>
+              <el-button type="primary" size="small" :loading="importingRoutes" @click="handleImportInstanceRoutes">
+                {{ t('route.importSelectedRoutes') }} ({{ selectedInstanceRouteIds.length }})
+              </el-button>
+            </div>
+          </div>
+          <el-table
+            :data="instanceRoutes"
+            height="400"
+            stripe
+            @selection-change="handleInstanceRouteSelection"
+          >
+            <el-table-column type="selection" width="50" />
+            <el-table-column prop="routeId" :label="t('route.routeId')" min-width="140">
+              <template #default="{ row }">
+                <span class="mono-text">{{ row.routeId }}</span>
+                <el-tag v-if="row.existsInRepo" type="warning" size="small" effect="plain" class="ml-2">
+                  {{ t('route.alreadyExists') }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="uri" :label="t('route.uri')" min-width="160" show-overflow-tooltip>
+              <template #default="{ row }">
+                <el-tag type="success" effect="plain" size="small">{{ row.uri }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('route.predicates')" min-width="180">
+              <template #default="{ row }">
+                <div class="predicate-tags">
+                  <el-tag
+                    v-for="(p, idx) in row.predicates"
+                    :key="idx"
+                    type="primary"
+                    effect="light"
+                    size="small"
+                  >
+                    {{ p.name }}
+                  </el-tag>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column :label="t('route.filters')" min-width="140">
+              <template #default="{ row }">
+                <div class="filter-tags">
+                  <el-tag
+                    v-for="(f, idx) in row.filters"
+                    :key="idx"
+                    type="warning"
+                    effect="light"
+                    size="small"
+                  >
+                    {{ f.name }}
+                  </el-tag>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="orderNum" :label="t('route.order')" width="80" align="center" />
+          </el-table>
+        </div>
+        <div v-else-if="selectedFetchInstance && !fetchInstanceRoutesLoading" class="empty-section">
+          <el-empty :description="t('route.noInstanceRoutes')" />
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -778,21 +971,22 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import yaml from 'js-yaml'
 import {
   Search,
   Refresh,
   Plus,
   Edit,
   Delete,
-  Connection,
   Clock,
   Promotion,
+  View,
   // 新增图标
   Switch,
-  Upload,
   UploadFilled,
   Download,
   DocumentCopy,
+  Download as FetchInstance,
 } from '@element-plus/icons-vue'
 import {
   getRouteList,
@@ -802,15 +996,12 @@ import {
   refreshRoutes,
   getRouteHistory,
   rollbackRoute,
-  getNacosRouteList,
-  saveNacosRoute,
-  deleteNacosRoute,
   // 新增接口方法
-  fullPushRoutes,
   batchUpdateStatus,
   exportRoutes,
   importRoutes,
   cloneRoute,
+  routeApi,
   type RouteDefinition,
   type PredicateConfig,
   type FilterConfig,
@@ -820,34 +1011,28 @@ import {
   type QueryRouteHistoryReq,
   type RollbackRouteReq,
   type RouteHistory,
-  type SaveNacosRouteReq,
   type BatchUpdateStatusReq,
-  type FullPushRoutesReq,
   type ImportRoutesReq,
   type ImportRoutesRsp,
   type CloneRouteReq,
+  type ExportRoutesReq,
+  type GatewayInstanceVO,
 } from '@/api/route'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
 import SyncInstanceDialog from './components/SyncInstanceDialog.vue'
 
 defineOptions({
-  name: 'RouteManagement',
+  name: 'RouteRepository',
 })
 
 const { hasPermission: checkPermission } = usePermission()
 
 const { t } = useI18n()
 
-// 存储方式常量
-const STORAGE_MODE_KEY = 'route_storage_mode'
-
 // 搜索表单
 const searchForm = reactive({
-  storageMode: localStorage.getItem(STORAGE_MODE_KEY) || 'redis',
   routesGroup: '',
   routeName: '',
-  nacosDataId: t('route.nacosDataIdDefault'),
-  nacosGroup: t('route.nacosGroupDefault'),
 })
 
 // 同步弹窗
@@ -871,8 +1056,14 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const submitting = ref(false)
 const formRef = ref()
-const editMode = ref<'form' | 'json'>('form')
+const editMode = ref<'form' | 'json' | 'yaml'>('form')
 const routeJson = ref('')
+const routeYaml = ref('')
+
+// 详情弹窗
+const detailDialogVisible = ref(false)
+const currentRouteDetail = ref<RouteDefinition | null>(null)
+const detailFormat = ref<'json' | 'yaml'>('json')
 
 // 表单数据（扩展类型，确保 predicates 和 filters 均存在）
 interface RouteFormData extends SaveRouteReq {
@@ -979,16 +1170,87 @@ const getOperationTypeLabel = (type: string): string => {
   }
 }
 
-// 监听编辑模式切换
-watch(editMode, (mode) => {
-  if (mode === 'json') {
-    routeJson.value = JSON.stringify(formData, null, 2)
-  } else {
+/**
+ * 将路由数据转换为 Spring Cloud Gateway 路由定义格式
+ */
+function convertToGatewayRouteDefinition(route: RouteDefinition) {
+  const gatewayRoute: {
+    id: string
+    uri: string
+    predicates: Array<{ name: string; args: Record<string, any> }>
+    filters: Array<{ name: string; args: Record<string, any> }>
+    order: number
+    metadata?: Record<string, any>
+  } = {
+    id: route.routeId,
+    uri: route.uri,
+    predicates: [],
+    filters: [],
+    order: route.orderNum || 0,
+  }
+
+  // 转换断言配置
+  if (route.predicates && Array.isArray(route.predicates)) {
+    gatewayRoute.predicates = route.predicates.map(p => ({
+      name: p.name,
+      args: p.args || {},
+    }))
+  }
+
+  // 转换过滤器配置
+  if (route.filters && Array.isArray(route.filters)) {
+    gatewayRoute.filters = route.filters.map(f => ({
+      name: f.name,
+      args: f.args || {},
+    }))
+  }
+
+  // 只在有元数据时添加
+  if (route.metadata && Object.keys(route.metadata).length > 0) {
+    gatewayRoute.metadata = route.metadata
+  }
+
+  return gatewayRoute
+}
+
+// Gateway 路由预览（JSON/YAML）
+const gatewayRoutePreview = computed(() => {
+  if (!currentRouteDetail.value) return ''
+  const gatewayRoute = convertToGatewayRouteDefinition(currentRouteDetail.value)
+  if (detailFormat.value === 'yaml') {
     try {
-      const parsed = JSON.parse(routeJson.value)
-      Object.assign(formData, parsed)
+      return yaml.dump(gatewayRoute, { indent: 2, lineWidth: -1 })
     } catch {
-      // JSON 解析错误，忽略
+      return JSON.stringify(gatewayRoute, null, 2)
+    }
+  }
+  return JSON.stringify(gatewayRoute, null, 2)
+})
+
+// 监听编辑模式切换
+watch(editMode, (mode, oldMode) => {
+  if (mode === 'json') {
+    // 切换到 JSON 模式，序列化表单数据
+    routeJson.value = JSON.stringify(formData, null, 2)
+  } else if (mode === 'yaml') {
+    // 切换到 YAML 模式，序列化表单数据
+    try {
+      routeYaml.value = yaml.dump(formData, { indent: 2, lineWidth: -1 })
+    } catch {
+      routeYaml.value = JSON.stringify(formData, null, 2)
+    }
+  } else if (mode === 'form') {
+    // 切换回表单模式，解析当前编辑器的数据
+    try {
+      if (oldMode === 'yaml') {
+        const parsed = yaml.load(routeYaml.value) as object
+        Object.assign(formData, parsed)
+      } else {
+        const parsed = JSON.parse(routeJson.value)
+        Object.assign(formData, parsed)
+      }
+    } catch {
+      // 解析错误，忽略
     }
   }
 })
@@ -999,27 +1261,15 @@ watch(editMode, (mode) => {
 const loadData = async () => {
   loading.value = true
   try {
-    if (searchForm.storageMode === 'redis') {
-      // Redis 模式 - 从数据库查询
-      const res = await getRouteList({
-        routesGroup: searchForm.routesGroup,
-        routeName: searchForm.routeName,
-        pageNum: pagination.pageNum,
-        pageSize: pagination.pageSize,
-      })
-      tableData.value = res.rows || []
-      pagination.total = res.total || 0
-    } else {
-      // Nacos 模式
-      const res = await getNacosRouteList({
-        dataId: searchForm.nacosDataId,
-        group: searchForm.nacosGroup,
-        pageNum: pagination.pageNum,
-        pageSize: pagination.pageSize,
-      })
-      tableData.value = res.rows || []
-      pagination.total = res.total || 0
-    }
+    // 路由仓库始终从数据库查询
+    const res = await getRouteList({
+      routesGroup: searchForm.routesGroup,
+      routeName: searchForm.routeName,
+      pageNum: pagination.pageNum,
+      pageSize: pagination.pageSize,
+    })
+    tableData.value = res.rows || []
+    pagination.total = res.total || 0
   } catch (error) {
     console.error('[RouteManagement] Failed to load route list:', error)
     tableData.value = []
@@ -1055,19 +1305,6 @@ const loadHistoryData = async () => {
 }
 
 /**
- * 处理存储方式切换
- */
-const handleStorageModeChange = (mode: string) => {
-  localStorage.setItem(STORAGE_MODE_KEY, mode)
-  searchForm.routesGroup = ''
-  searchForm.routeName = ''
-  searchForm.nacosDataId = t('route.nacosDataIdDefault')
-  searchForm.nacosGroup = t('route.nacosGroupDefault')
-  pagination.pageNum = 1
-  loadData()
-}
-
-/**
  * 处理搜索操作
  */
 const handleSearch = () => {
@@ -1079,13 +1316,8 @@ const handleSearch = () => {
  * 处理重置搜索表单
  */
 const handleReset = () => {
-  if (searchForm.storageMode === 'redis') {
-    searchForm.routesGroup = ''
-    searchForm.routeName = ''
-  } else {
-    searchForm.nacosDataId = t('route.nacosDataIdDefault')
-    searchForm.nacosGroup = t('route.nacosGroupDefault')
-  }
+  searchForm.routesGroup = ''
+  searchForm.routeName = ''
   pagination.pageNum = 1
   loadData()
 }
@@ -1138,6 +1370,15 @@ const handleEdit = (row: RouteDefinition) => {
   formData.status = copyData.status ?? 1
   formData.remark = copyData.remark || ''
   dialogVisible.value = true
+}
+
+/**
+ * 处理查看路由详情
+ */
+const handleDetail = (row: RouteDefinition) => {
+  currentRouteDetail.value = row
+  detailFormat.value = 'json'
+  detailDialogVisible.value = true
 }
 
 /**
@@ -1201,7 +1442,7 @@ const handleSubmit = async () => {
 
     submitting.value = true
 
-    // 如果是 JSON 模式，解析 JSON
+    // 根据编辑模式解析数据
     let submitData: SaveRouteReq | UpdateRouteReq = JSON.parse(JSON.stringify(formData))
     if (editMode.value === 'json') {
       try {
@@ -1211,27 +1452,26 @@ const handleSubmit = async () => {
         submitting.value = false
         return
       }
+    } else if (editMode.value === 'yaml') {
+      try {
+        submitData = yaml.load(routeYaml.value) as SaveRouteReq | UpdateRouteReq
+      } catch {
+        ElMessage.error(t('route.invalidYamlFormat'))
+        submitting.value = false
+        return
+      }
     }
 
     // 处理自定义类型的数据转换
     submitData = convertCustomTypes(submitData)
 
-    if (searchForm.storageMode === 'redis') {
-      if (isEdit.value) {
-        // 更新路由
-        await updateRoute(submitData as UpdateRouteReq)
-      } else {
-        // 新增路由
-        await saveRoute(submitData as SaveRouteReq)
-      }
+    // 路由仓库始终保存到数据库
+    if (isEdit.value) {
+      // 更新路由
+      await updateRoute(submitData as UpdateRouteReq)
     } else {
-      // Nacos 模式
-      const nacosReq: SaveNacosRouteReq = {
-        dataId: searchForm.nacosDataId,
-        group: searchForm.nacosGroup,
-        routes: [submitData as RouteDefinition],
-      }
-      await saveNacosRoute(nacosReq)
+      // 新增路由
+      await saveRoute(submitData as SaveRouteReq)
     }
 
     ElMessage.success(t('route.pushSuccessTip'))
@@ -1318,19 +1558,12 @@ const handleDelete = async (row: RouteDefinition) => {
   try {
     await ElMessageBox.confirm(t('route.deleteConfirm'), t('message.tips'), { type: 'warning' })
 
-    if (searchForm.storageMode === 'redis') {
-      const req: DeleteRouteReq = {
-        routesGroup: searchForm.routesGroup || 'default',
-        routeIds: [row.routeId],
-      }
-      await deleteRoute(req)
-    } else {
-      await deleteNacosRoute({
-        dataId: searchForm.nacosDataId,
-        group: searchForm.nacosGroup,
-        routeIds: [row.routeId],
-      })
+    // 路由仓库始终从数据库删除
+    const req: DeleteRouteReq = {
+      routesGroup: searchForm.routesGroup || 'default',
+      routeIds: [row.routeId],
     }
+    await deleteRoute(req)
 
     ElMessage.success(t('message.deleteSuccess'))
     loadData()
@@ -1349,14 +1582,6 @@ const handleRefreshRoutes = async () => {
   } catch (error) {
     console.error('[RouteManagement] Failed to refresh routes:', error)
   }
-}
-
-/**
- * 处理同步到实例
- */
-const handleSyncToInstances = () => {
-  selectedRouteIds.value = tableData.value.map((r) => r.routeId)
-  syncDialogVisible.value = true
 }
 
 /**
@@ -1444,6 +1669,17 @@ const cloneNewRouteId = ref('')
 const cloneNewRouteName = ref('')
 const cloneLoading = ref(false)
 
+// 获取实例路由弹窗状态
+const fetchInstanceDialogVisible = ref(false)
+const onlineInstances = ref<GatewayInstanceVO[]>([])
+const selectedFetchInstance = ref('')
+const fetchInstanceLoading = ref(false)
+const fetchInstanceRoutesLoading = ref(false)
+const instanceRoutes = ref<(RouteDefinition & { existsInRepo?: boolean })[]>([])
+const selectedInstanceRouteIds = ref<string[]>([])
+const selectAllInstanceRoutes = ref(false)
+const importingRoutes = ref(false)
+
 /**
  * 获取推送状态类型（用于Tag颜色）
  */
@@ -1496,31 +1732,6 @@ const handleBatchStatusSubmit = async () => {
     ElMessage.error(t('message.operationFailed'))
   } finally {
     batchStatusLoading.value = false
-  }
-}
-
-/**
- * 处理全量推送按钮点击
- */
-const handleFullPush = async () => {
-  try {
-    await ElMessageBox.confirm(
-      t('route.fullPushConfirm'),
-      t('message.tips'),
-      { type: 'warning' }
-    )
-
-    const req: FullPushRoutesReq = {
-      storageMode: searchForm.storageMode,
-      routesGroup: searchForm.routesGroup || 'default',
-      nacosDataId: searchForm.nacosDataId,
-      nacosGroup: searchForm.nacosGroup,
-    }
-    await fullPushRoutes(req)
-    ElMessage.success(t('route.fullPushSuccess'))
-    loadData()
-  } catch {
-    // 用户取消
   }
 }
 
@@ -1654,6 +1865,167 @@ const handleCloneSubmit = async () => {
   }
 }
 
+// ========== 新增功能：获取实例路由 ==========
+
+/**
+ * 打开获取实例路由弹窗
+ */
+const handleFetchInstanceRoutes = async () => {
+  fetchInstanceDialogVisible.value = true
+  fetchInstanceLoading.value = true
+  selectedFetchInstance.value = ''
+  instanceRoutes.value = []
+  selectedInstanceRouteIds.value = []
+  selectAllInstanceRoutes.value = false
+
+  try {
+    const result = await routeApi.getOnlineGatewayInstances()
+    onlineInstances.value = Array.isArray(result) ? result : []
+  } catch (error) {
+    console.error('[RouteManagement] Failed to load instances:', error)
+    onlineInstances.value = []
+    ElMessage.error(t('message.fetchFailed'))
+  } finally {
+    fetchInstanceLoading.value = false
+  }
+}
+
+/**
+ * 选择实例后获取路由
+ */
+const handleInstanceSelect = async (instanceId: string) => {
+  if (!instanceId) {
+    instanceRoutes.value = []
+    return
+  }
+
+  fetchInstanceRoutesLoading.value = true
+  instanceRoutes.value = []
+  selectedInstanceRouteIds.value = []
+  selectAllInstanceRoutes.value = false
+
+  try {
+    const result = await routeApi.getInstanceRoutes({ instanceId })
+    // getInstanceRoutes 返回 RouteDefinition[] 或 { rows: RouteDefinition[] }
+    let routes: RouteDefinition[]
+    if (Array.isArray(result)) {
+      routes = result
+    } else if (result && Array.isArray((result as any).rows)) {
+      routes = (result as any).rows
+    } else {
+      routes = []
+    }
+
+    // 检查哪些路由已存在于仓库
+    const existingRouteIds = new Set(tableData.value.map(r => r.routeId))
+    instanceRoutes.value = routes.map(route => ({
+      ...route,
+      existsInRepo: existingRouteIds.has(route.routeId),
+    }))
+  } catch (error) {
+    console.error('[RouteManagement] Failed to load instance routes:', error)
+    instanceRoutes.value = []
+    ElMessage.error(t('message.fetchFailed'))
+  } finally {
+    fetchInstanceRoutesLoading.value = false
+  }
+}
+
+/**
+ * 处理实例路由选择
+ */
+const handleInstanceRouteSelection = (selection: (RouteDefinition & { existsInRepo?: boolean })[]) => {
+  selectedInstanceRouteIds.value = selection.map(r => r.routeId)
+  selectAllInstanceRoutes.value = selection.length === instanceRoutes.value.length
+}
+
+/**
+ * 全选/取消全选实例路由
+ */
+const handleSelectAllInstanceRoutes = (val: boolean) => {
+  if (val) {
+    // 只选择不存在于仓库的路由
+    selectedInstanceRouteIds.value = instanceRoutes.value
+      .filter(r => !r.existsInRepo)
+      .map(r => r.routeId)
+  } else {
+    selectedInstanceRouteIds.value = []
+  }
+}
+
+/**
+ * 导入选中的实例路由到仓库
+ */
+const handleImportInstanceRoutes = async () => {
+  if (selectedInstanceRouteIds.value.length === 0) {
+    ElMessage.warning(t('route.selectRouteToImport'))
+    return
+  }
+
+  // 过滤掉已存在的路由
+  const routesToImport = instanceRoutes.value.filter(
+    r => selectedInstanceRouteIds.value.includes(r.routeId) && !r.existsInRepo
+  )
+
+  if (routesToImport.length === 0) {
+    ElMessage.warning(t('route.allRoutesExist'))
+    return
+  }
+
+  importingRoutes.value = true
+  try {
+    // 批量保存路由
+    const routesGroup = searchForm.routesGroup || 'default'
+    let successCount = 0
+    let failCount = 0
+
+    for (const route of routesToImport) {
+      try {
+        const saveReq: SaveRouteReq = {
+          routeId: route.routeId,
+          routeName: route.routeName || route.routeId,
+          uri: route.uri,
+          predicates: route.predicates || [],
+          filters: route.filters || [],
+          orderNum: route.orderNum || 0,
+          routesGroup,
+          status: 1,
+        }
+        await saveRoute(saveReq)
+        successCount++
+      } catch {
+        failCount++
+      }
+    }
+
+    if (failCount > 0) {
+      ElMessage.warning(t('route.importResultPartial', { success: successCount, failed: failCount }))
+    } else {
+      ElMessage.success(t('route.importResultSuccess', { count: successCount }))
+    }
+
+    fetchInstanceDialogVisible.value = false
+    loadData()
+  } catch (error) {
+    console.error('[RouteManagement] Failed to import instance routes:', error)
+    ElMessage.error(t('message.operationFailed'))
+  } finally {
+    importingRoutes.value = false
+  }
+}
+
+// ============================================
+// 弹窗防抖动 - 手动锁定滚动条
+// ============================================
+
+const lockBodyScroll = () => {
+  document.body.classList.add('dialog-open')
+}
+
+const unlockBodyScroll = () => {
+  document.body.classList.remove('dialog-open')
+}
+
 // 组件挂载时加载初始数据
 onMounted(() => {
   loadData()
@@ -1691,7 +2063,12 @@ onMounted(() => {
 
 .operation-buttons {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+
+  :deep(.el-button) {
+    margin: 0;
+  }
 }
 
 // 新增弹窗样式
@@ -1710,6 +2087,140 @@ onMounted(() => {
 .time-text {
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+// 获取实例路由弹窗样式
+.fetch-instance-dialog {
+  .fetch-instance-content {
+    .instance-select-section {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--el-border-color-lighter);
+    }
+
+    .instance-option {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+
+      .instance-id {
+        font-family: 'Monaco', 'Menlo', monospace;
+      }
+    }
+
+    .instance-routes-section {
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+
+        .section-title {
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .section-actions {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+      }
+
+      .ml-2 {
+        margin-left: 8px;
+      }
+    }
+  }
+}
+
+// 历史弹窗操作按钮样式
+.history-operation-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+
+  .operation-placeholder {
+    width: 40px;
+    display: inline-block;
+    text-align: center;
+    color: var(--el-text-color-placeholder);
+  }
+}
+
+// 路由详情弹窗样式
+.route-detail-dialog {
+  .route-detail-content {
+    .mono-text {
+      font-family: 'Monaco', 'Menlo', monospace;
+    }
+
+    .detail-section {
+      margin-top: 16px;
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--el-text-color-primary);
+        padding-left: 8px;
+        border-left: 3px solid var(--el-color-primary);
+      }
+
+      .empty-section {
+        color: var(--el-text-color-secondary);
+        font-size: 12px;
+        padding: 8px 12px;
+        background: var(--el-fill-color-lighter);
+        border-radius: 4px;
+      }
+
+      .config-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .config-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 12px;
+          background: var(--el-fill-color-light);
+          border-radius: 6px;
+
+          .config-args {
+            font-size: 12px;
+            color: var(--el-text-color-secondary);
+            font-family: 'Monaco', 'Menlo', monospace;
+          }
+        }
+      }
+
+      .json-preview {
+        background: var(--el-fill-color-light);
+        border-radius: 8px;
+        padding: 12px;
+        overflow: auto;
+        max-height: 250px;
+
+        pre {
+          margin: 0;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+          font-size: 12px;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          word-break: break-all;
+        }
+      }
+    }
+  }
 }
 </style>
 

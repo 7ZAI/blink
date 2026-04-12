@@ -19,43 +19,52 @@ html, body {
 }
 
 // ============================================
-// 弹窗防抖动优化 - 使用 scrollbar-gutter 保持滚动条空间
+// 弹窗防抖动优化
 // ============================================
-
-// 确保页面始终预留滚动条空间，防止弹窗打开时抖动
-html {
-  // 现代浏览器使用 scrollbar-gutter 保持滚动条空间
-  scrollbar-gutter: stable;
-
-  // 兼容性方案：始终显示滚动条（即使内容不足）
-  overflow-y: scroll;
-}
-
-// 弹窗打开时的 body 样式 - 防止抖动
-body.el-popup-parent--hidden {
-  // 保持滚动条可见，只是禁用滚动
-  overflow-y: scroll !important;
-  // 固定 padding 补偿滚动条宽度
-  padding-right: 0 !important;
-}
-
-// Element Plus Overlay 防抖动
-.el-overlay {
-  // 防止遮罩层影响页面布局
-  position: fixed !important;
-}
 
 #app {
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 // 覆盖 MainLayout 中的 el-main 默认样式
 .main-content.el-main {
   padding: 12px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  height: 100%;
+  // 始终显示滚动条，防止弹窗打开时宽度变化
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  scrollbar-gutter: stable;
+}
+
+// 弹窗打开时锁定滚动，但不改变宽度
+body.dialog-open,
+body.el-popup-parent--hidden {
+  // 覆盖 Element Plus 默认的 padding-right，防止页面移动
+  padding-right: 0 !important;
+
+  // 锁定主内容区滚动
+  .main-content.el-main {
+    overflow: hidden !important;
+  }
+}
+
+// 遮罩层
+.el-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+}
+
+// ElMessageBox 弹窗
+.el-message-box__wrapper {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 // 覆盖侧边栏 Logo 样式

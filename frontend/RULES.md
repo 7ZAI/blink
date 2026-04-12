@@ -199,7 +199,95 @@ const fetchData = async () => {
 
 ---
 
-## 11. 开发检查清单
+## 11. 弹窗规范
+
+### 弹窗打开时背景页面禁止抖动
+
+**核心原则**：弹窗弹出时，背景页面不应出现任何抖动或位移。大多数抖动是由于滚动条显示/隐藏导致的页面宽度变化造成的。
+
+### 强制要求
+
+1. **禁用外部滚动条**：弹窗内容未超出可视高度时，必须禁用外部页面滚动条
+2. **锁定页面宽度**：弹窗打开时应锁定 body 宽度，避免滚动条切换导致的抖动
+
+### 实现方式
+
+#### 方式一：使用 Element Plus Dialog 的 `lock-scroll` 属性（推荐）
+
+```vue
+<el-dialog
+  v-model="dialogVisible"
+  :lock-scroll="true"
+  :close-on-click-modal="false"
+>
+  <!-- 弹窗内容 -->
+</el-dialog>
+```
+
+#### 方式二：手动控制滚动条（适用于复杂场景）
+
+```typescript
+// 打开弹窗时
+const openDialog = () => {
+  const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth
+  document.body.style.overflow = 'hidden'
+  document.body.style.paddingRight = `${scrollBarWidth}px`
+  dialogVisible.value = true
+}
+
+// 关闭弹窗时
+const closeDialog = () => {
+  document.body.style.overflow = ''
+  document.body.style.paddingRight = ''
+  dialogVisible.value = false
+}
+```
+
+#### 方式三：使用 CSS 固定滚动条位置
+
+```scss
+// 在全局样式中添加
+body {
+  overflow-y: scroll; // 始终显示滚动条，避免宽度变化
+}
+
+// 弹窗打开时
+body.dialog-open {
+  overflow: hidden;
+}
+```
+
+### 注意事项
+
+- 弹窗内部内容需要滚动时，应在弹窗内部设置固定高度并启用内部滚动
+- 使用 `el-dialog` 时，设置 `:lock-scroll="true"` 可自动处理滚动条锁定
+- 对于抽屉组件 `el-drawer`，同样适用此规范
+
+### 示例代码
+
+```vue
+<template>
+  <!-- 正确示例：锁定滚动，设置内部高度 -->
+  <el-dialog
+    v-model="dialogVisible"
+    :lock-scroll="true"
+    width="600px"
+  >
+    <div style="max-height: 60vh; overflow-y: auto;">
+      <!-- 内容区域 -->
+    </div>
+  </el-dialog>
+
+  <!-- 错误示例：未锁定滚动，可能导致背景抖动 -->
+  <el-dialog v-model="dialogVisible">
+    <!-- 内容过长时会影响外部滚动条 -->
+  </el-dialog>
+</template>
+```
+
+---
+
+## 12. 开发检查清单
 
 | 检查项 | 说明 |
 |--------|------|
@@ -210,3 +298,4 @@ const fetchData = async () => {
 | 数据过渡 | 列表/树/图形使用 `useTransition` |
 | 空值处理 | 使用 `?.` 和 `||` 安全访问 |
 | 未使用导入 | 定期清理未使用的 import |
+| 弹窗抖动 | 弹窗打开时锁定滚动，避免背景抖动 |
