@@ -1,5 +1,5 @@
 <template>
-  <!-- 实例路由管理页面 - 工业技术风格设计 -->
+  <!-- 实例路由管理页面 -->
   <div class="instance-route-page">
     <!-- 左侧面板：实例列表 -->
     <div class="left-panel">
@@ -79,448 +79,248 @@
       </div>
     </div>
 
-    <!-- 右侧面板：路由与推送历史 -->
+    <!-- 右侧面板：三个独立panel -->
     <div class="right-panel">
-      <!-- 当前路由区域 -->
-      <div class="routes-section">
-        <div class="section-header">
-          <div class="header-title">
-            <div class="title-icon routes-icon">
+      <!-- Panel 1: 当前路由 -->
+      <div class="panel-card routes-panel">
+        <div class="panel-header">
+          <div class="header-left">
+            <div class="panel-icon routes-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
               </svg>
             </div>
-            <h3>{{ t('instanceRoute.currentRoutes') }}</h3>
-            <span v-if="selectedInstance" class="selected-instance-badge">
-              {{ selectedInstance.instanceId }}
-            </span>
+            <h4>{{ t('instanceRoute.currentRoutes') }}</h4>
+            <span v-if="selectedInstance" class="instance-badge">{{ selectedInstance.instanceId }}</span>
           </div>
-          <div class="header-actions">
-            <el-select
-              v-model="storageMode"
-              :placeholder="t('instanceRoute.selectStorageMode')"
-              size="small"
-              class="storage-select"
-              @change="loadInstanceRoutes"
-            >
-              <el-option value="redis">
-                <div class="storage-option">
-                  <span class="option-label">{{ t('instanceRoute.redisStorageLabel') }}</span>
-                </div>
-              </el-option>
-              <el-option value="nacos">
-                <div class="storage-option">
-                  <span class="option-label">{{ t('instanceRoute.nacosConfigLabel') }}</span>
-                </div>
-              </el-option>
-            </el-select>
-            <el-input
-              v-if="storageMode === 'redis'"
-              v-model="routesGroup"
-              :placeholder="t('instanceRoute.inputRoutesGroup')"
-              size="small"
-              class="group-input"
-              @change="loadInstanceRoutes"
-            />
+          <div class="header-right">
             <el-button
               type="primary"
-              :icon="Promotion"
-              class="push-btn"
-              @click="openPushDialog"
+              size="small"
+              :icon="Refresh"
+              :loading="routesLoading"
+              :disabled="!selectedInstance"
+              @click="loadInstanceRoutes"
             >
-              {{ t('instanceRoute.pushRoutes') }}
+              {{ t('common.refresh') }}
             </el-button>
           </div>
         </div>
-
-        <div class="section-content">
-          <el-table
-            :data="instanceRoutes"
-            v-loading="routesLoading"
-            stripe
-            border
-            size="small"
-            class="routes-table"
-          >
-            <el-table-column prop="routeId" :label="t('instanceRoute.routeIdColumn')" min-width="180">
-              <template #default="{ row }">
-                <span class="route-id-cell">{{ row.routeId }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="routeName" :label="t('instanceRoute.routeNameColumn')" min-width="150">
-              <template #default="{ row }">
-                <span>{{ row.routeName || '-' }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="uri" :label="t('instanceRoute.uriColumn')" min-width="200">
-              <template #default="{ row }">
-                <el-tag type="success" effect="plain" size="small" class="uri-tag">
-                  {{ row.uri }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="orderNum" :label="t('instanceRoute.orderColumn')" width="80" align="center">
-              <template #default="{ row }">
-                <el-tag type="info" effect="plain" size="small">{{ row.orderNum || 0 }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="status" :label="t('instanceRoute.statusColumn')" width="80" align="center">
-              <template #default="{ row }">
-                <el-tag :type="row.status === 0 ? 'success' : 'danger'" size="small" effect="dark">
-                  {{ row.status === 0 ? t('instanceRoute.statusEnable') : t('instanceRoute.statusDisable') }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
-          <el-empty
-            v-if="instanceRoutes.length === 0 && !routesLoading"
-            :description="t('instanceRoute.noRoutes')"
-            class="empty-state"
-          />
+        <div class="panel-body">
+          <div v-if="!selectedInstance" class="empty-placeholder">
+            <el-empty :description="t('instanceRoute.selectInstance')" :image-size="60" />
+          </div>
+          <div v-else-if="instanceRoutes.length === 0 && !routesLoading" class="empty-placeholder">
+            <el-empty :description="t('instanceRoute.noRoutes')" :image-size="60" />
+          </div>
+          <template v-else>
+            <div class="format-switcher">
+              <el-radio-group v-model="routeFormat" size="small">
+                <el-radio-button value="json">JSON</el-radio-button>
+                <el-radio-button value="yaml">YAML</el-radio-button>
+              </el-radio-group>
+              <el-button size="small" text @click="copyRoutes">
+                <el-icon><CopyDocument /></el-icon>
+                {{ t('common.copy') }}
+              </el-button>
+            </div>
+            <div class="code-preview">
+              <pre>{{ formattedRoutes }}</pre>
+            </div>
+          </template>
         </div>
       </div>
 
-      <!-- 推送历史区域 -->
-      <div class="history-section">
-        <div class="section-header">
-          <div class="header-title">
-            <div class="title-icon history-icon">
+      <!-- Panel 2: 最新推送历史 -->
+      <div class="panel-card history-panel">
+        <div class="panel-header">
+          <div class="header-left">
+            <div class="panel-icon history-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10" />
-                <polyline points="12,6 12,12 16,14" />
+                <polyline points="12 6 12 12 16 14" />
               </svg>
             </div>
-            <h3>{{ t('instanceRoute.pushHistory') }}</h3>
+            <h4>{{ t('instanceRoute.latestPushHistory') }}</h4>
           </div>
           <el-button
-            type="default"
             size="small"
+            text
             :icon="Refresh"
-            class="refresh-btn"
+            :loading="historyLoading"
             @click="loadPushHistory"
           >
             {{ t('common.refresh') }}
           </el-button>
         </div>
+        <div class="panel-body">
+          <div v-if="pushHistory.length === 0 && !historyLoading" class="empty-placeholder">
+            <el-empty :description="t('instanceRoute.noPushHistory')" :image-size="60" />
+          </div>
+          <div v-else class="history-list">
+            <div
+              v-for="item in pushHistory"
+              :key="item.historyId"
+              class="history-item"
+            >
+              <div class="history-left">
+                <el-tag :type="item.pushStatus === 1 ? 'success' : 'danger'" size="small" effect="plain">
+                  {{ item.pushStatus === 1 ? t('instanceRoute.pushSuccess') : t('instanceRoute.pushFailed') }}
+                </el-tag>
+                <span class="route-count">{{ t('instanceRoute.routeCount', { count: item.routeCount || 0 }) }}</span>
+              </div>
+              <div class="history-right">
+                <span class="operator">{{ item.operatorName || '-' }}</span>
+                <span class="time">{{ item.pushTime || '-' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <div class="section-content">
-          <el-table
-            :data="pushHistoryList"
-            v-loading="historyLoading"
-            stripe
-            border
-            size="small"
-            class="history-table"
-          >
-            <el-table-column prop="pushId" :label="t('instanceRoute.pushId')" width="80" align="center">
-              <template #default="{ row }">
-                <span class="push-id">#{{ row.pushId }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="storageMode" :label="t('instanceRoute.storageModeColumn')" width="100">
-              <template #default="{ row }">
-                <el-tag
-                  :type="row.storageMode === 'redis' ? 'success' : 'warning'"
-                  size="small"
-                  effect="light"
-                >
-                  {{ row.storageMode === 'redis' ? t('instanceRoute.redisStorageLabel') : t('instanceRoute.nacosConfigLabel') }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="routesGroup" :label="t('instanceRoute.routesGroupColumn')" min-width="100">
-              <template #default="{ row }">
-                <span>{{ row.routesGroup || '-' }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="routeIds" :label="t('instanceRoute.routeIdsColumn')" min-width="150">
-              <template #default="{ row }">
-                <el-popover placement="top" trigger="hover" :width="300">
-                  <template #reference>
-                    <div class="route-ids-preview">
-                      <span class="preview-text">{{ formatRouteIds(row.routeIds) }}</span>
-                      <el-icon class="expand-icon"><ArrowRight /></el-icon>
-                    </div>
-                  </template>
-                  <div class="route-ids-detail">
-                    <div class="detail-header">{{ t('instanceRoute.routeIdsPreview') }}</div>
-                    <div class="detail-list">
-                      {{ parseRouteIds(row.routeIds).join(', ') }}
-                    </div>
-                  </div>
-                </el-popover>
-              </template>
-            </el-table-column>
-            <el-table-column prop="pushMode" :label="t('instanceRoute.pushModeColumn')" width="100">
-              <template #default="{ row }">
-                <el-tag
-                  :type="row.pushMode === 'broadcast' ? 'info' : 'primary'"
-                  size="small"
-                  effect="light"
-                >
-                  {{ row.pushMode === 'broadcast' ? t('instanceRoute.broadcastMode') : t('instanceRoute.specifiedMode') }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="instanceCount" :label="t('instanceRoute.instanceCountColumn')" width="80" align="center">
-              <template #default="{ row }">
-                <span class="count-cell">{{ row.instanceCount || 0 }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="successCount" :label="t('instanceRoute.successCountColumn')" width="80" align="center">
-              <template #default="{ row }">
-                <span class="success-count">{{ row.successCount || 0 }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="pushResult" :label="t('instanceRoute.pushResultColumn')" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag
-                  :type="getPushResultType(row.pushResult)"
-                  size="small"
-                  effect="dark"
-                >
-                  {{ getPushResultText(row.pushResult) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <!-- 新增：失败实例详情列 -->
-            <el-table-column :label="t('instanceRoute.failedInstancesColumn')" min-width="120">
-              <template #default="{ row }">
-                <template v-if="row.failedInstanceIds">
-                  <el-popover placement="top" trigger="hover" :width="450">
-                    <template #reference>
-                      <el-tag type="danger" effect="light" size="small" class="failed-tag">
-                        {{ parseFailedIds(row.failedInstanceIds).length }} {{ t('instanceRoute.failedInstances') }}
-                      </el-tag>
-                    </template>
-                    <div class="failed-detail-popover">
-                      <div class="failed-header">{{ t('instanceRoute.failedInstancesDetail') }}</div>
-                      <div class="failed-list">
-                        <div
-                          v-for="(id, idx) in parseFailedIds(row.failedInstanceIds)"
-                          :key="idx"
-                          class="failed-item"
-                        >
-                          <span class="instance-id-text">{{ id }}</span>
-                          <span class="error-msg-text">
-                            {{ row.instanceErrors?.[id] || t('instanceRoute.unknownError') }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </el-popover>
-                </template>
-                <span v-else class="no-failed">-</span>
-              </template>
-            </el-table-column>
-            <!-- 新增：确认状态列 -->
-            <el-table-column :label="t('instanceRoute.confirmStatusColumn')" width="100" align="center">
-              <template #default="{ row }">
-                <el-tag
-                  :type="getConfirmStatusType(row.confirmStatus)"
-                  size="small"
-                  effect="plain"
-                >
-                  {{ getConfirmStatusText(row.confirmStatus) }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="operatorName" :label="t('instanceRoute.operatorColumn')" width="100">
-              <template #default="{ row }">
-                <span class="operator-cell">{{ row.operatorName || '-' }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="pushTime" :label="t('instanceRoute.pushTimeColumn')" width="160">
-              <template #default="{ row }">
-                <span class="time-cell">{{ row.pushTime }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column :label="t('instanceRoute.actionColumn')" width="120" fixed="right">
-              <template #default="{ row }">
-                <div class="action-buttons">
-                  <el-button
-                    type="primary"
-                    link
-                    size="small"
-                    @click="openSnapshotDialog(row)"
-                  >
-                    <el-icon><View /></el-icon>
-                    {{ t('instanceRoute.viewSnapshot') }}
-                  </el-button>
-                  <el-button
-                    type="warning"
-                    link
-                    size="small"
-                    @click="handleRollback(row)"
-                  >
-                    <el-icon><RefreshLeft /></el-icon>
-                    {{ t('instanceRoute.rollbackPush') }}
-                  </el-button>
+      <!-- Panel 3: 比对 -->
+      <div class="panel-card compare-panel">
+        <div class="panel-header">
+          <div class="header-left">
+            <div class="panel-icon compare-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </div>
+            <h4>{{ t('instanceRoute.compare') }}</h4>
+          </div>
+          <div class="header-right">
+            <el-button
+              type="primary"
+              size="small"
+              :loading="comparing"
+              :disabled="!selectedInstance"
+              @click="executeCompare"
+            >
+              {{ t('instanceRoute.executeCompare') }}
+            </el-button>
+            <el-button
+              type="success"
+              size="small"
+              :icon="CircleCheck"
+              :disabled="!selectedInstance || instanceRoutes.length === 0"
+              @click="handleSyncValidate"
+            >
+              {{ t('instanceRoute.sync') }}
+            </el-button>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div v-if="!compareResult && !comparing" class="empty-placeholder">
+            <el-empty :description="t('instanceRoute.clickToCompare')" :image-size="60" />
+          </div>
+          <div v-else-if="compareResult" class="compare-result">
+            <!-- 统计概览 -->
+            <div class="compare-summary">
+              <div class="summary-item matched">
+                <span class="summary-value">{{ compareResult.matchedCount || 0 }}</span>
+                <span class="summary-label">{{ t('instanceRoute.matched') }}</span>
+              </div>
+              <div class="summary-item added">
+                <span class="summary-value">{{ compareResult.addedCount || 0 }}</span>
+                <span class="summary-label">{{ t('instanceRoute.added') }}</span>
+              </div>
+              <div class="summary-item modified">
+                <span class="summary-value">{{ compareResult.modifiedCount || 0 }}</span>
+                <span class="summary-label">{{ t('instanceRoute.modified') }}</span>
+              </div>
+              <div class="summary-item deleted">
+                <span class="summary-value">{{ compareResult.deletedCount || 0 }}</span>
+                <span class="summary-label">{{ t('instanceRoute.deleted') }}</span>
+              </div>
+            </div>
+            <!-- 差异列表 -->
+            <div v-if="compareResult.differences && compareResult.differences.length > 0" class="diff-list">
+              <div
+                v-for="diff in compareResult.differences"
+                :key="diff.routeId"
+                class="diff-item"
+                :class="diff.diffType"
+              >
+                <div class="diff-header">
+                  <span class="route-id">{{ diff.routeId }}</span>
+                  <el-tag :type="getDiffTagType(diff.diffType) as any" size="small">
+                    {{ getDiffTypeLabel(diff.diffType) }}
+                  </el-tag>
                 </div>
-              </template>
-            </el-table-column>
-          </el-table>
-          <el-pagination
-            v-model:current-page="historyPage.pageNum"
-            v-model:page-size="historyPage.pageSize"
-            :total="historyPage.total"
-            :page-sizes="[10, 20, 50, 100]"
-            layout="total, sizes, prev, pager, next"
-            class="pagination-wrapper"
-            @change="loadPushHistory"
-          />
+                <div v-if="diff.detail" class="diff-detail">{{ diff.detail }}</div>
+              </div>
+            </div>
+            <div v-else class="all-matched">
+              <el-icon><CircleCheckFilled /></el-icon>
+              <span>{{ t('instanceRoute.allRoutesConsistent') }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 推送路由弹窗 -->
+    <!-- 同步校验弹窗 -->
     <el-dialog
-      v-model="pushDialogVisible"
-      :title="t('instanceRoute.pushRoutes')"
-      width="680px"
-      class="push-dialog"
+      v-model="validateDialogVisible"
+      :title="t('instanceRoute.syncValidate')"
+      width="700px"
       :close-on-click-modal="false"
+      :lock-scroll="false"
+      class="validate-dialog"
+      @open="lockBodyScroll"
+      @closed="unlockBodyScroll"
     >
-      <div class="dialog-tip">{{ t('instanceRoute.pushRoutesTip') }}</div>
-      <el-form label-width="120px" class="push-form">
-        <el-form-item :label="t('instanceRoute.storageMode')">
-          <el-select v-model="pushForm.storageMode" style="width: 100%" class="form-select">
-            <el-option value="redis">
-              <div class="storage-option">
-                <span class="option-label">{{ t('instanceRoute.redisStorageLabel') }}</span>
+      <div v-loading="validating">
+        <div v-if="validateResult" class="validate-result">
+          <div v-if="validateResult.consistent" class="validate-success">
+            <div class="result-header">
+              <el-icon class="success-icon"><CircleCheckFilled /></el-icon>
+              <span>{{ t('instanceRoute.validateSuccess') }}</span>
+            </div>
+            <div class="result-info">
+              {{ t('instanceRoute.allRoutesConsistent') }}
+            </div>
+          </div>
+          <div v-else class="validate-error">
+            <div class="result-header">
+              <el-icon class="error-icon"><WarningFilled /></el-icon>
+              <span>{{ t('instanceRoute.validateFailed') }}</span>
+            </div>
+            <div class="diff-list">
+              <div v-for="diff in validateResult.differences" :key="diff.routeId" class="diff-item">
+                <div class="diff-header">
+                  <span class="route-id">{{ diff.routeId }}</span>
+                  <el-tag size="small" type="warning">{{ diff.diffType }}</el-tag>
+                </div>
+                <div class="diff-detail">
+                  <div class="diff-row">
+                    <span class="label">{{ t('instanceRoute.expected') }}:</span>
+                    <span class="value">{{ diff.expected }}</span>
+                  </div>
+                  <div class="diff-row">
+                    <span class="label">{{ t('instanceRoute.actual') }}:</span>
+                    <span class="value">{{ diff.actual }}</span>
+                  </div>
+                </div>
               </div>
-            </el-option>
-            <el-option value="nacos">
-              <div class="storage-option">
-                <span class="option-label">{{ t('instanceRoute.nacosConfigLabel') }}</span>
-              </div>
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item v-if="pushForm.storageMode === 'redis'" :label="t('instanceRoute.routesGroupLabel')">
-          <el-input
-            v-model="pushForm.routesGroup"
-            :placeholder="t('instanceRoute.defaultRoutesGroup')"
-          />
-        </el-form-item>
-        <el-form-item v-if="pushForm.storageMode === 'nacos'" :label="t('instanceRoute.dataIdLabel')">
-          <el-input
-            v-model="pushForm.nacosDataId"
-            :placeholder="t('instanceRoute.defaultDataId')"
-          />
-        </el-form-item>
-        <el-form-item v-if="pushForm.storageMode === 'nacos'" :label="t('instanceRoute.groupLabel')">
-          <el-input
-            v-model="pushForm.nacosGroup"
-            :placeholder="t('instanceRoute.defaultGroup')"
-          />
-        </el-form-item>
-        <el-form-item :label="t('instanceRoute.pushModeLabel')">
-          <el-radio-group v-model="pushForm.pushMode" class="push-mode-radio">
-            <el-radio value="broadcast">
-              <div class="radio-content">
-                <span class="radio-label">{{ t('instanceRoute.broadcastMode') }}</span>
-                <span class="radio-desc">{{ t('instanceRoute.broadcastToAll') }}</span>
-              </div>
-            </el-radio>
-            <el-radio value="specified">
-              <div class="radio-content">
-                <span class="radio-label">{{ t('instanceRoute.specifiedMode') }}</span>
-                <span class="radio-desc">{{ t('instanceRoute.specifiedInstances') }}</span>
-              </div>
-            </el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item v-if="pushForm.pushMode === 'specified'" :label="t('instanceRoute.targetInstancesLabel')">
-          <el-select v-model="pushForm.targetInstanceIds" multiple style="width: 100%" class="form-select">
-            <el-option
-              v-for="inst in onlineInstances"
-              :key="inst.instanceId"
-              :label="inst.instanceId"
-              :value="inst.instanceId"
-            >
-              <div class="instance-option">
-                <span class="option-id">{{ inst.instanceId }}</span>
-                <span class="option-uri">{{ inst.uri }}</span>
-              </div>
-            </el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item :label="t('instanceRoute.routesToPush')">
-          <el-table
-            ref="routeSelectTableRef"
-            :data="warehouseRoutes"
-            @selection-change="handleRouteSelection"
-            max-height="300"
-            border
-            stripe
-            size="small"
-            class="route-select-table"
-          >
-            <el-table-column type="selection" width="55" />
-            <el-table-column prop="routeId" :label="t('instanceRoute.routeIdColumn')" min-width="180">
-              <template #default="{ row }">
-                <span class="route-id-cell">{{ row.routeId }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="routeName" :label="t('instanceRoute.routeNameColumn')" min-width="150" />
-            <el-table-column prop="uri" :label="t('instanceRoute.uriColumn')" min-width="200">
-              <template #default="{ row }">
-                <el-tag type="success" effect="plain" size="small">{{ row.uri }}</el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-form-item>
-        <el-form-item :label="t('instanceRoute.remark')">
-          <el-input v-model="pushForm.remark" type="textarea" :rows="2" />
-        </el-form-item>
-      </el-form>
+            </div>
+          </div>
+        </div>
+        <div v-else class="validate-empty">
+          <el-empty :description="t('instanceRoute.clickToValidate')" />
+        </div>
+      </div>
       <template #footer>
-        <el-button @click="pushDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="handlePushRoutes" :loading="pushLoading">
-          {{ t('common.confirm') }}
+        <el-button @click="validateDialogVisible = false">{{ t('common.close') }}</el-button>
+        <el-button type="primary" :loading="validating" @click="executeValidate">
+          {{ t('instanceRoute.executeValidate') }}
         </el-button>
       </template>
-    </el-dialog>
-
-    <!-- 路由快照弹窗 -->
-    <el-dialog
-      v-model="snapshotDialogVisible"
-      :title="t('instanceRoute.routeSnapshot')"
-      width="800px"
-      class="snapshot-dialog"
-    >
-      <div v-if="snapshotRoutes.length > 0" class="snapshot-info">
-        {{ t('instanceRoute.snapshotRoutesCount', { count: snapshotRoutes.length }) }}
-      </div>
-      <el-table :data="snapshotRoutes" border stripe size="small" class="snapshot-table">
-        <el-table-column prop="routeId" :label="t('instanceRoute.routeIdColumn')" min-width="180">
-          <template #default="{ row }">
-            <span class="route-id-cell">{{ row.routeId }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="routeName" :label="t('instanceRoute.routeNameColumn')" min-width="150">
-          <template #default="{ row }">
-            <span>{{ row.routeName || '-' }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="uri" :label="t('instanceRoute.uriColumn')" min-width="200">
-          <template #default="{ row }">
-            <el-tag type="success" effect="plain" size="small">{{ row.uri }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="orderNum" :label="t('instanceRoute.orderColumn')" width="80" align="center">
-          <template #default="{ row }">
-            <el-tag type="info" effect="plain" size="small">{{ row.orderNum || 0 }}</el-tag>
-          </template>
-        </el-table-column>
-      </el-table>
-      <el-empty
-        v-if="snapshotRoutes.length === 0"
-        :description="t('instanceRoute.noSnapshotData')"
-      />
     </el-dialog>
   </div>
 </template>
@@ -528,23 +328,25 @@
 <script setup lang="ts">
 /**
  * 实例路由管理页面
- * 管理网关实例的路由配置，包括查看、推送、历史和回滚功能
+ * 管理网关实例的路由配置，查看路由、同步校验功能
  *
  * @author binblink
  * @since 2024-01-01
  */
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Promotion, Refresh, ArrowRight, View, RefreshLeft } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { Refresh, CircleCheck, CopyDocument, CircleCheckFilled, WarningFilled } from '@element-plus/icons-vue'
+import yaml from 'js-yaml'
 import {
   routeApi,
   type RouteDefinition,
   type GatewayInstanceVO,
-  type GaRoutePushLogDO,
-  type PushRoutesReq,
-  type RollbackPushReq,
 } from '@/api/route'
+
+defineOptions({
+  name: 'InstanceRoute',
+})
 
 const { t } = useI18n()
 
@@ -554,56 +356,84 @@ const selectedInstance = ref<GatewayInstanceVO | null>(null)
 const instanceLoading = ref(false)
 
 // 路由状态
-const storageMode = ref('redis')
-const routesGroup = ref('default_routes')
 const instanceRoutes = ref<RouteDefinition[]>([])
 const routesLoading = ref(false)
+const routeFormat = ref<'json' | 'yaml'>('json')
 
 // 推送历史状态
-const pushHistoryList = ref<GaRoutePushLogDO[]>([])
+const pushHistory = ref<any[]>([])
 const historyLoading = ref(false)
-const historyPage = ref({
-  pageNum: 1,
-  pageSize: 10,
-  total: 0,
-})
 
-// 推送弹窗状态
-const pushDialogVisible = ref(false)
-const pushLoading = ref(false)
-const pushForm = ref<PushRoutesReq>({
-  routeIds: [],
-  storageMode: 'redis',
-  routesGroup: 'default_routes',
-  pushMode: 'broadcast',
-  targetInstanceIds: [],
-  remark: '',
-})
-const warehouseRoutes = ref<RouteDefinition[]>([])
-const selectedRoutesToPush = ref<RouteDefinition[]>([])
+// 校验状态
+const validateDialogVisible = ref(false)
+const validating = ref(false)
+const validateResult = ref<{
+  consistent: boolean
+  differences?: Array<{
+    routeId: string
+    diffType: string
+    expected: string
+    actual: string
+  }>
+} | null>(null)
 
-// 快照弹窗状态
-const snapshotDialogVisible = ref(false)
-const snapshotRoutes = ref<RouteDefinition[]>([])
+// 比对状态
+const comparing = ref(false)
+const compareResult = ref<{
+  matchedCount: number
+  addedCount: number
+  modifiedCount: number
+  deletedCount: number
+  differences?: Array<{
+    routeId: string
+    diffType: 'added' | 'modified' | 'deleted'
+    detail?: string
+  }>
+} | null>(null)
 
 // 在线实例计算属性
 const onlineInstances = computed(() =>
   instances.value.filter(inst => inst.status === 0)
 )
 
+// 格式化路由展示
+const formattedRoutes = computed(() => {
+  if (instanceRoutes.value.length === 0) return ''
+
+  // 转换为 Spring Cloud Gateway 格式
+  const gatewayRoutes = instanceRoutes.value.map(route => ({
+    id: route.routeId,
+    uri: route.uri,
+    predicates: route.predicates || [],
+    filters: route.filters || [],
+    order: route.orderNum || 0,
+    metadata: route.metadata || undefined,
+  }))
+
+  if (routeFormat.value === 'yaml') {
+    try {
+      return yaml.dump(gatewayRoutes, { indent: 2, lineWidth: -1 })
+    } catch {
+      return JSON.stringify(gatewayRoutes, null, 2)
+    }
+  }
+  return JSON.stringify(gatewayRoutes, null, 2)
+})
+
 // 加载实例列表
 async function loadInstances() {
   instanceLoading.value = true
   try {
     const result = await routeApi.getOnlineGatewayInstances()
-    instances.value = result || []
+    instances.value = Array.isArray(result) ? result : []
     // 自动选择第一个在线实例
-    const firstInstance = result && result[0]
-    if (firstInstance && firstInstance.status === 0 && !selectedInstance.value) {
-      selectInstance(firstInstance)
+    const firstOnline = instances.value.find(inst => inst.status === 0)
+    if (firstOnline && !selectedInstance.value) {
+      selectInstance(firstOnline)
     }
   } catch (error) {
     ElMessage.error(t('message.fetchFailed'))
+    instances.value = []
   } finally {
     instanceLoading.value = false
   }
@@ -612,22 +442,36 @@ async function loadInstances() {
 // 选择实例
 function selectInstance(instance: GatewayInstanceVO) {
   selectedInstance.value = instance
+  instanceRoutes.value = []
+  pushHistory.value = []
+  compareResult.value = null
+  // 自动加载路由和历史
   loadInstanceRoutes()
+  loadPushHistory()
 }
 
 // 加载实例路由
 async function loadInstanceRoutes() {
+  if (!selectedInstance.value) {
+    instanceRoutes.value = []
+    return
+  }
   routesLoading.value = true
   try {
-    const routes = await routeApi.getInstanceRoutes({
-      storageMode: storageMode.value,
-      routesGroup: routesGroup.value,
-      nacosDataId: pushForm.value.nacosDataId,
-      nacosGroup: pushForm.value.nacosGroup,
+    const result = await routeApi.getInstanceRoutes({
+      instanceId: selectedInstance.value.instanceId,
     })
-    instanceRoutes.value = routes || []
+    // getInstanceRoutes 返回 RouteDefinition[] 或 { rows: RouteDefinition[] }
+    if (Array.isArray(result)) {
+      instanceRoutes.value = result
+    } else if (result && Array.isArray((result as any).rows)) {
+      instanceRoutes.value = (result as any).rows
+    } else {
+      instanceRoutes.value = []
+    }
   } catch (error) {
     ElMessage.error(t('message.fetchFailed'))
+    instanceRoutes.value = []
   } finally {
     routesLoading.value = false
   }
@@ -635,207 +479,167 @@ async function loadInstanceRoutes() {
 
 // 加载推送历史
 async function loadPushHistory() {
+  if (!selectedInstance.value) {
+    pushHistory.value = []
+    return
+  }
   historyLoading.value = true
   try {
-    const result = await routeApi.getPushHistory({
-      storageMode: storageMode.value,
-      routesGroup: routesGroup.value,
-      pageNum: historyPage.value.pageNum,
-      pageSize: historyPage.value.pageSize,
+    const result = await routeApi.getInstancePushHistory({
+      instanceId: selectedInstance.value.instanceId,
+      pageSize: 10,
     })
-    pushHistoryList.value = result?.rows || []
-    historyPage.value.total = result?.total || 0
+    // getInstancePushHistory 返回 PageResult 或数组
+    if (result && Array.isArray((result as any).rows)) {
+      pushHistory.value = (result as any).rows
+    } else if (Array.isArray(result)) {
+      pushHistory.value = result
+    } else {
+      pushHistory.value = []
+    }
   } catch (error) {
-    ElMessage.error(t('message.fetchFailed'))
+    console.error('[InstanceRoute] Failed to load push history:', error)
+    pushHistory.value = []
   } finally {
     historyLoading.value = false
   }
 }
 
-// 打开推送弹窗
-async function openPushDialog() {
-  // 加载仓库路由供选择
+// 复制路由
+async function copyRoutes() {
+  if (!formattedRoutes.value) return
   try {
-    const result = await routeApi.getList({
-      storageMode: storageMode.value,
-      routesGroup: routesGroup.value,
-      pageNum: 1,
-      pageSize: 100,
+    await navigator.clipboard.writeText(formattedRoutes.value)
+    ElMessage.success(t('common.copy') + ' ' + t('common.success'))
+  } catch {
+    ElMessage.error(t('common.copy') + ' ' + t('common.failed'))
+  }
+}
+
+// 打开同步校验弹窗
+function handleSyncValidate() {
+  validateResult.value = null
+  validateDialogVisible.value = true
+}
+
+// 执行校验
+async function executeValidate() {
+  if (!selectedInstance.value) return
+
+  validating.value = true
+  try {
+    const result = await routeApi.validateInstanceRoutes({
+      instanceId: selectedInstance.value.instanceId,
     })
-    warehouseRoutes.value = result?.rows || []
-  } catch (error) {
-    ElMessage.error(t('message.fetchFailed'))
-    return
-  }
-
-  // 重置表单
-  pushForm.value = {
-    routeIds: [],
-    storageMode: storageMode.value,
-    routesGroup: routesGroup.value,
-    pushMode: 'broadcast',
-    targetInstanceIds: [],
-    remark: '',
-  }
-  selectedRoutesToPush.value = []
-
-  pushDialogVisible.value = true
-}
-
-// 处理路由选择
-function handleRouteSelection(selection: RouteDefinition[]) {
-  selectedRoutesToPush.value = selection
-  pushForm.value.routeIds = selection.map(r => r.routeId)
-}
-
-// 处理推送路由
-async function handlePushRoutes() {
-  if (pushForm.value.routeIds.length === 0) {
-    ElMessage.warning(t('instanceRoute.selectAtLeastOneRoute'))
-    return
-  }
-
-  pushLoading.value = true
-  try {
-    await routeApi.pushRoutes(pushForm.value)
-    ElMessage.success(t('instanceRoute.pushSuccess'))
-    pushDialogVisible.value = false
-    loadInstanceRoutes()
-    loadPushHistory()
-  } catch (error) {
-    ElMessage.error(t('instanceRoute.pushFailed'))
-  } finally {
-    pushLoading.value = false
-  }
-}
-
-// 处理回滚
-async function handleRollback(row: GaRoutePushLogDO) {
-  try {
-    await ElMessageBox.confirm(
-      t('instanceRoute.rollbackConfirm'),
-      t('common.confirm'),
-      { type: 'warning' }
-    )
-  } catch {
-    return
-  }
-
-  const rollbackReq: RollbackPushReq = {
-    pushId: row.pushId,
-    pushMode: row.pushMode,
-    targetInstanceIds: row.targetInstanceIds ? JSON.parse(row.targetInstanceIds) : [],
-  }
-
-  try {
-    await routeApi.rollbackPush(rollbackReq)
-    ElMessage.success(t('instanceRoute.rollbackSuccess'))
-    loadInstanceRoutes()
-    loadPushHistory()
-  } catch (error) {
-    ElMessage.error(t('message.fetchFailed'))
-  }
-}
-
-// 打开快照弹窗
-function openSnapshotDialog(row: GaRoutePushLogDO) {
-  try {
-    snapshotRoutes.value = row.routeSnapshot || []
-    snapshotDialogVisible.value = true
-  } catch {
-    ElMessage.warning(t('instanceRoute.noRoutes'))
-  }
-}
-
-// 解析路由ID JSON
-function parseRouteIds(routeIdsJson: string): string[] {
-  try {
-    return JSON.parse(routeIdsJson)
-  } catch {
-    return []
-  }
-}
-
-// 格式化路由ID显示
-function formatRouteIds(routeIdsJson: string): string {
-  try {
-    const ids = JSON.parse(routeIdsJson)
-    if (ids.length <= 3) {
-      return ids.join(', ')
+    validateResult.value = result
+    if (result.consistent) {
+      ElMessage.success(t('instanceRoute.validateSuccess'))
+    } else {
+      ElMessage.warning(t('instanceRoute.validateFailed'))
     }
-    return `${ids.slice(0, 3).join(', ')}... ${t('instanceRoute.moreRoutes', { count: ids.length - 3 })}`
-  } catch {
-    return routeIdsJson
+  } catch (error) {
+    ElMessage.error(t('message.fetchFailed'))
+    validateResult.value = {
+      consistent: false,
+      differences: [{
+        routeId: 'unknown',
+        diffType: t('instanceRoute.error'),
+        expected: '-',
+        actual: t('message.fetchFailed'),
+      }]
+    }
+  } finally {
+    validating.value = false
   }
 }
 
-// 获取推送结果类型
-function getPushResultType(result: number): 'success' | 'warning' | 'danger' {
-  if (result === 0) return 'success'
-  if (result === 1) return 'warning'
-  return 'danger'
-}
+// 执行比对
+async function executeCompare() {
+  if (!selectedInstance.value) return
 
-// 获取推送结果文本
-function getPushResultText(result: number): string {
-  if (result === 0) return t('instanceRoute.pushResultSuccess')
-  if (result === 1) return t('instanceRoute.pushResultPartial')
-  return t('instanceRoute.pushResultFailed')
-}
-
-// 新增：解析失败实例ID列表
-function parseFailedIds(failedInstanceIdsJson: string): string[] {
-  if (!failedInstanceIdsJson) return []
+  comparing.value = true
   try {
-    return JSON.parse(failedInstanceIdsJson)
-  } catch {
-    return []
+    const result = await routeApi.compareInstanceRoutes({
+      instanceId: selectedInstance.value.instanceId,
+    })
+    compareResult.value = result
+    if (result.matchedCount > 0 && result.addedCount === 0 && result.modifiedCount === 0 && result.deletedCount === 0) {
+      ElMessage.success(t('instanceRoute.compareSuccess'))
+    }
+  } catch (error) {
+    ElMessage.error(t('message.fetchFailed'))
+    compareResult.value = {
+      matchedCount: 0,
+      addedCount: 0,
+      modifiedCount: 0,
+      deletedCount: 0,
+      differences: [{
+        routeId: 'error',
+        diffType: 'modified',
+        detail: t('message.fetchFailed'),
+      }]
+    }
+  } finally {
+    comparing.value = false
   }
 }
 
-// 新增：获取确认状态类型（用于Tag颜色）
-function getConfirmStatusType(confirmStatus: number | undefined): 'warning' | 'success' | 'info' {
-  if (confirmStatus === undefined || confirmStatus === 0) return 'warning' // 待确认
-  if (confirmStatus === 1) return 'success' // 已确认
-  return 'info' // 超时
+// 获取差异类型标签样式
+function getDiffTagType(diffType: string): '' | 'success' | 'warning' | 'danger' | 'info' {
+  const typeMap: Record<string, '' | 'success' | 'warning' | 'danger' | 'info'> = {
+    added: 'success',
+    modified: 'warning',
+    deleted: 'danger',
+  }
+  return typeMap[diffType] || 'info'
 }
 
-// 新增：获取确认状态文本
-function getConfirmStatusText(confirmStatus: number | undefined): string {
-  if (confirmStatus === undefined || confirmStatus === 0) return t('instanceRoute.confirmPending')
-  if (confirmStatus === 1) return t('instanceRoute.confirmConfirmed')
-  return t('instanceRoute.confirmTimeout')
+// 获取差异类型标签文本
+function getDiffTypeLabel(diffType: string): string {
+  const labelMap: Record<string, string> = {
+    added: t('instanceRoute.added'),
+    modified: t('instanceRoute.modified'),
+    deleted: t('instanceRoute.deleted'),
+  }
+  return labelMap[diffType] || diffType
+}
+
+// 弹窗防抖动
+const lockBodyScroll = () => {
+  document.body.classList.add('dialog-open')
+}
+const unlockBodyScroll = () => {
+  document.body.classList.remove('dialog-open')
 }
 
 // 初始化
 onMounted(() => {
   loadInstances()
-  loadPushHistory()
 })
 </script>
 
 <style scoped lang="scss">
-// 实例路由页面 - 工业技术风格设计
+// 实例路由页面
 .instance-route-page {
   display: flex;
-  gap: 20px;
+  gap: 16px;
   height: 100%;
-  padding: 20px;
+  padding: 16px;
   background: var(--el-bg-color-page);
 }
 
 // 左侧面板
 .left-panel {
-  width: 300px;
+  width: 280px;
   background: var(--el-bg-color);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   border: 1px solid var(--el-border-color-light);
 
   .panel-header {
-    padding: 16px 20px;
+    padding: 14px 16px;
     border-bottom: 1px solid var(--el-border-color-light);
     display: flex;
     justify-content: space-between;
@@ -864,37 +668,33 @@ onMounted(() => {
 
       h3 {
         margin: 0;
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
         color: var(--el-text-color-primary);
       }
     }
-
-    .refresh-btn {
-      border-radius: 8px;
-    }
   }
 
   .instance-stats {
-    padding: 12px 20px;
+    padding: 10px 16px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    background: var(--el-fill-color-light);
+    gap: 12px;
+    background: var(--el-fill-color-lighter);
     border-bottom: 1px solid var(--el-border-color-lighter);
 
     .stat-item {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
 
       .stat-label {
-        font-size: 13px;
+        font-size: 12px;
         color: var(--el-text-color-secondary);
       }
 
       .stat-value {
-        font-size: 18px;
+        font-size: 16px;
         font-weight: 600;
         font-family: 'SF Mono', 'Monaco', monospace;
 
@@ -905,7 +705,7 @@ onMounted(() => {
 
     .stat-divider {
       width: 1px;
-      height: 20px;
+      height: 16px;
       background: var(--el-border-color);
     }
   }
@@ -916,14 +716,13 @@ onMounted(() => {
   }
 
   .instance-item {
-    padding: 14px 20px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--el-border-color-lighter);
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 12px;
-    position: relative;
+    gap: 10px;
 
     &:hover {
       background: var(--el-fill-color-light);
@@ -932,22 +731,21 @@ onMounted(() => {
     &.active {
       background: var(--el-color-primary-light-9);
       border-left: 3px solid var(--el-color-primary);
-      padding-left: 17px;
+      padding-left: 13px;
     }
 
     &.offline {
-      opacity: 0.7;
+      opacity: 0.6;
     }
 
     .instance-indicator {
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      transition: all 0.3s ease;
 
       &.online {
         background: var(--el-color-success);
-        box-shadow: 0 0 8px var(--el-color-success-light-3);
+        box-shadow: 0 0 6px var(--el-color-success-light-3);
       }
 
       &.offline {
@@ -960,22 +758,16 @@ onMounted(() => {
       min-width: 0;
 
       .instance-id {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
         color: var(--el-text-color-primary);
-        margin-bottom: 4px;
+        margin-bottom: 2px;
         font-family: 'SF Mono', 'Monaco', monospace;
       }
 
       .instance-meta {
-        font-size: 12px;
+        font-size: 11px;
         color: var(--el-text-color-secondary);
-      }
-    }
-
-    .instance-status-badge {
-      :deep(.el-tag) {
-        border-radius: 6px;
       }
     }
   }
@@ -988,44 +780,46 @@ onMounted(() => {
 // 右侧面板
 .right-panel {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  gap: 12px;
   overflow: hidden;
 }
 
-.routes-section,
-.history-section {
+// 通用面板卡片样式
+.panel-card {
   background: var(--el-bg-color);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   border: 1px solid var(--el-border-color-light);
+  overflow: hidden;
 
-  .section-header {
-    padding: 16px 20px;
+  .panel-header {
+    padding: 12px 16px;
     border-bottom: 1px solid var(--el-border-color-light);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 
-    .header-title {
+    .header-left {
       display: flex;
       align-items: center;
       gap: 10px;
 
-      .title-icon {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
+      .panel-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
 
         svg {
-          width: 18px;
-          height: 18px;
+          width: 16px;
+          height: 16px;
           color: white;
         }
 
@@ -1036,304 +830,299 @@ onMounted(() => {
         &.history-icon {
           background: linear-gradient(135deg, var(--el-color-warning), var(--el-color-warning-light-3));
         }
+
+        &.compare-icon {
+          background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
+        }
       }
 
-      h3 {
+      h4 {
         margin: 0;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         color: var(--el-text-color-primary);
       }
 
-      .selected-instance-badge {
-        padding: 4px 10px;
+      .instance-badge {
+        padding: 2px 6px;
         background: var(--el-color-primary-light-9);
-        border-radius: 6px;
-        font-size: 12px;
+        border-radius: 4px;
+        font-size: 11px;
         font-family: 'SF Mono', 'Monaco', monospace;
         color: var(--el-color-primary);
       }
     }
 
-    .header-actions {
+    .header-right {
       display: flex;
-      gap: 10px;
-      align-items: center;
-
-      .storage-select {
-        width: 140px;
-      }
-
-      .group-input {
-        width: 140px;
-      }
-
-      .push-btn {
-        border-radius: 8px;
-      }
-    }
-
-    .refresh-btn {
-      border-radius: 8px;
+      gap: 8px;
     }
   }
 
-  .section-content {
+  .panel-body {
     flex: 1;
-    padding: 16px 20px;
+    padding: 12px 16px;
     overflow: auto;
+    min-height: 0;
   }
 }
 
-.routes-section {
-  flex: 1;
+// Panel 1: 当前路由（占主要空间）
+.routes-panel {
+  // 默认 1fr
 }
 
-.history-section {
-  height: 340px;
+// Panel 2: 推送历史
+.history-panel {
+  max-height: 180px;
 }
 
-// 路由表格样式
-.routes-table,
-.history-table,
-.snapshot-table,
-.route-select-table {
-  :deep(.el-table__header) {
-    th {
-      background: var(--el-fill-color-light) !important;
-      font-weight: 600;
-    }
-  }
-
-  .route-id-cell {
-    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-    font-size: 13px;
-    color: var(--el-text-color-primary);
-  }
-
-  .uri-tag {
-    font-family: 'SF Mono', 'Monaco', monospace;
-  }
-
-  // 新增：失败实例样式
-  .failed-tag {
-    cursor: pointer;
-  }
-
-  .no-failed {
-    color: var(--el-text-color-secondary);
-  }
+// Panel 3: 比对
+.compare-panel {
+  max-height: 220px;
 }
 
-// 新增：失败详情弹出框样式
-.failed-detail-popover {
-  .failed-header {
-    font-weight: 600;
-    margin-bottom: 12px;
-    color: var(--el-color-danger);
-  }
-
-  .failed-list {
-    max-height: 200px;
-    overflow-y: auto;
-  }
-
-  .failed-item {
-    padding: 8px 12px;
-    background: var(--el-fill-color-light);
-    border-radius: 6px;
-    margin-bottom: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-
-    .instance-id-text {
-      font-family: 'SF Mono', 'Monaco', monospace;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--el-text-color-primary);
-    }
-
-    .error-msg-text {
-      font-size: 12px;
-      color: var(--el-color-danger);
-      word-break: break-all;
-    }
-  }
-}
-
-// 路由ID预览
-.route-ids-preview {
+// 空状态占位
+.empty-placeholder {
   display: flex;
   align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  color: var(--el-color-primary);
-  font-size: 13px;
-
-  .preview-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .expand-icon {
-    font-size: 12px;
-    transition: transform 0.2s;
-  }
-
-  &:hover .expand-icon {
-    transform: translateX(2px);
-  }
+  justify-content: center;
+  height: 100%;
 }
 
-.route-ids-detail {
-  .detail-header {
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--el-text-color-primary);
-  }
-
-  .detail-list {
-    font-size: 12px;
-    font-family: 'SF Mono', 'Monaco', monospace;
-    color: var(--el-text-color-secondary);
-    word-break: break-all;
-    line-height: 1.6;
-  }
-}
-
-// 推送历史表格特殊样式
-.history-table {
-  .push-id {
-    font-family: 'SF Mono', 'Monaco', monospace;
-    font-weight: 600;
-    color: var(--el-color-primary);
-  }
-
-  .count-cell {
-    font-family: 'SF Mono', 'Monaco', monospace;
-    font-weight: 500;
-  }
-
-  .success-count {
-    font-family: 'SF Mono', 'Monaco', monospace;
-    font-weight: 600;
-    color: var(--el-color-success);
-  }
-
-  .operator-cell {
-    font-size: 13px;
-  }
-
-  .time-cell {
-    font-size: 12px;
-    font-family: 'SF Mono', 'Monaco', monospace;
-    color: var(--el-text-color-secondary);
-  }
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-// 分页样式
-.pagination-wrapper {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-// 存储方式选项
-.storage-option {
-  .option-label {
-    font-size: 14px;
-  }
-}
-
-// 实例选项
-.instance-option {
+// 格式切换器
+.format-switcher {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 10px;
+}
 
-  .option-id {
-    font-family: 'SF Mono', 'Monaco', monospace;
-    font-weight: 500;
+// 代码预览
+.code-preview {
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
+  padding: 12px;
+  overflow: auto;
+  height: calc(100% - 42px);
+
+  pre {
+    margin: 0;
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+}
+
+// 推送历史列表
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  .history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--el-fill-color-lighter);
+    border-radius: 6px;
+
+    .history-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .route-count {
+        font-size: 12px;
+        color: var(--el-text-color-secondary);
+      }
+    }
+
+    .history-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--el-text-color-secondary);
+
+      .operator {
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+// 比对结果
+.compare-result {
+  .compare-summary {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--el-fill-color-lighter);
+    border-radius: 8px;
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+
+      .summary-value {
+        font-size: 20px;
+        font-weight: 600;
+        font-family: 'SF Mono', 'Monaco', monospace;
+      }
+
+      .summary-label {
+        font-size: 11px;
+        color: var(--el-text-color-secondary);
+        margin-top: 2px;
+      }
+
+      &.matched .summary-value { color: var(--el-color-success); }
+      &.added .summary-value { color: var(--el-color-success); }
+      &.modified .summary-value { color: var(--el-color-warning); }
+      &.deleted .summary-value { color: var(--el-color-danger); }
+    }
   }
 
-  .option-uri {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
+  .diff-list {
+    max-height: 120px;
+    overflow-y: auto;
+
+    .diff-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background: var(--el-fill-color-lighter);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      border-left: 3px solid transparent;
+
+      &.added { border-left-color: var(--el-color-success); }
+      &.modified { border-left-color: var(--el-color-warning); }
+      &.deleted { border-left-color: var(--el-color-danger); }
+
+      .diff-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+
+        .route-id {
+          font-size: 12px;
+          font-family: 'SF Mono', 'Monaco', monospace;
+          font-weight: 500;
+        }
+      }
+
+      .diff-detail {
+        font-size: 11px;
+        color: var(--el-text-color-secondary);
+        margin-top: 4px;
+        padding-left: 8px;
+        border-left: 2px solid var(--el-border-color-lighter);
+      }
+    }
+  }
+
+  .all-matched {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    background: var(--el-color-success-light-9);
+    border-radius: 8px;
+    color: var(--el-color-success);
+    font-size: 13px;
+
+    .el-icon {
+      font-size: 18px;
+    }
   }
 }
 </style>
 
 <style lang="scss">
-// 推送弹窗样式（非 scoped）
-.push-dialog,
-.snapshot-dialog {
-  .dialog-tip {
-    padding: 12px 16px;
-    background: var(--el-color-primary-light-9);
-    border-radius: 8px;
-    margin-bottom: 16px;
-    font-size: 13px;
-    color: var(--el-text-color-secondary);
-    border-left: 3px solid var(--el-color-primary);
-  }
-
-  .push-form {
-    .form-select {
-      .el-select-dropdown__item {
-        padding: 8px 12px;
-      }
-    }
-
-    .push-mode-radio {
+// 校验弹窗样式
+.validate-dialog {
+  .validate-result {
+    .result-header {
       display: flex;
-      flex-direction: column;
-      gap: 12px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-weight: 500;
 
-      .el-radio {
-        height: auto;
-        padding: 12px 16px;
-        background: var(--el-fill-color-light);
-        border-radius: 8px;
-        margin-right: 0;
-
-        &.is-checked {
-          background: var(--el-color-primary-light-9);
-          border: 1px solid var(--el-color-primary);
-        }
+      .success-icon {
+        font-size: 20px;
+        color: var(--el-color-success);
       }
 
-      .radio-content {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
+      .error-icon {
+        font-size: 20px;
+        color: var(--el-color-danger);
+      }
+    }
 
-        .radio-label {
-          font-size: 14px;
-          font-weight: 500;
-          color: var(--el-text-color-primary);
+    .result-info {
+      padding: 12px 16px;
+      background: var(--el-color-success-light-9);
+      border-radius: 8px;
+      border-left: 3px solid var(--el-color-success);
+      color: var(--el-text-color-secondary);
+    }
+
+    .diff-list {
+      .diff-item {
+        padding: 12px;
+        background: var(--el-color-warning-light-9);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        border-left: 3px solid var(--el-color-warning);
+
+        .diff-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+
+          .route-id {
+            font-family: 'SF Mono', 'Monaco', monospace;
+            font-weight: 500;
+          }
         }
 
-        .radio-desc {
-          font-size: 12px;
-          color: var(--el-text-color-secondary);
+        .diff-detail {
+          .diff-row {
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+            margin-bottom: 4px;
+
+            .label {
+              color: var(--el-text-color-secondary);
+              min-width: 60px;
+            }
+
+            .value {
+              flex: 1;
+              word-break: break-all;
+            }
+          }
         }
       }
     }
   }
 
-  .snapshot-info {
-    padding: 12px 16px;
-    background: var(--el-fill-color-light);
-    border-radius: 8px;
-    margin-bottom: 16px;
-    font-size: 13px;
-    color: var(--el-text-color-secondary);
+  .validate-empty {
+    padding: 20px;
   }
 }
 </style>

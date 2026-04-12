@@ -178,19 +178,24 @@ const getLoadingText = (
   key: 'loadingData' | 'initializing' | 'pleaseWait' = 'loadingData'
 ): string => {
   const lang = localStorage.getItem('language') || 'zh-cn'
+  const defaultTexts: Record<string, string> = {
+    loadingData: '正在加载数据...',
+    initializing: '正在初始化...',
+    pleaseWait: '请稍候',
+  }
   const texts: Record<string, Record<string, string>> = {
-    'zh-cn': {
-      loadingData: '正在加载数据...',
-      initializing: '正在初始化...',
-      pleaseWait: '请稍候',
-    },
+    'zh-cn': defaultTexts,
     'en-us': {
       loadingData: 'Loading data...',
       initializing: 'Initializing...',
       pleaseWait: 'Please wait',
     },
   }
-  return texts[lang]?.[key] || texts['zh-cn'][key] || '正在加载数据...'
+  const selectedTexts = texts[lang]
+  if (selectedTexts && selectedTexts[key]) {
+    return selectedTexts[key]
+  }
+  return defaultTexts[key] || '正在加载数据...'
 }
 
 // 显示全屏加载遮罩（用于登录后的数据加载）
@@ -271,38 +276,30 @@ const routes: RouteRecordRaw[] = [
             meta: { title: 'route.repositoryTitle' },
           },
           {
+            path: 'push',
+            name: 'PushRoute',
+            component: () => import('@/views/pushRoute/index.vue'),
+            meta: { title: 'pushRoute.title' },
+          },
+          {
             path: 'instance',
             name: 'InstanceRoute',
             component: () => import('@/views/instanceRoute/index.vue'),
             meta: { title: 'instanceRoute.title' },
           },
+          {
+            path: 'push-history',
+            name: 'PushHistory',
+            component: () => import('@/views/pushHistory/index.vue'),
+            meta: { title: 'pushHistory.title' },
+          },
         ],
       },
       {
         path: 'config',
-        name: 'ConfigManagement',
-        redirect: '/config/repository',
+        name: 'Config',
+        component: () => import('@/views/config/index.vue'),
         meta: { title: 'config.title' },
-        children: [
-          {
-            path: 'repository',
-            name: 'ConfigRepository',
-            component: () => import('@/views/config/index.vue'),
-            meta: { title: 'config.repositoryTitle' },
-          },
-          {
-            path: 'instance',
-            name: 'InstanceConfig',
-            component: () => import('@/views/config/instance.vue'),
-            meta: { title: 'config.instanceTitle' },
-          },
-          {
-            path: 'history',
-            name: 'ConfigPushHistory',
-            component: () => import('@/views/config/history.vue'),
-            meta: { title: 'config.historyTitle' },
-          },
-        ],
       },
       {
         path: 'monitor',

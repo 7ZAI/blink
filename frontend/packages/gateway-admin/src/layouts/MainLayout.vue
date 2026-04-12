@@ -10,6 +10,8 @@
       :show-breadcrumb="false"
       :show-theme-toggle="true"
       :show-language-switch="true"
+      :enable-keep-alive="true"
+      :cached-views="tabsStore.getCachedViews"
       @theme-change="handleThemeChange"
       @language-change="handleLanguageChange"
     >

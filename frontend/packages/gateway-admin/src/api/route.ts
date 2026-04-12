@@ -217,7 +217,7 @@ export interface GatewayInstanceVO {
 
 /** 同步路由请求 */
 export interface SyncRoutesReq {
-  storageMode: string
+  storageMode?: string
   routesGroup?: string
   dataId?: string
   group?: string
@@ -297,7 +297,7 @@ export const deleteNacosRoute = (params: DeleteNacosRouteReq): Promise<void> => 
 /** 推送路由请求 */
 export interface PushRoutesReq {
   routeIds: string[]
-  storageMode: string
+  storageMode?: string
   routesGroup?: string
   nacosDataId?: string
   nacosGroup?: string
@@ -318,10 +318,36 @@ export interface QueryPushLogReq {
 
 /** 查询实例路由请求 */
 export interface QueryInstanceRoutesReq {
-  storageMode: string
-  routesGroup?: string
-  nacosDataId?: string
-  nacosGroup?: string
+  instanceId: string
+}
+
+/** 查询实例推送历史请求 */
+export interface QueryInstancePushHistoryReq {
+  instanceId: string
+  pageSize?: number
+}
+
+/** 校验实例路由请求 */
+export interface ValidateInstanceRoutesReq {
+  instanceId: string
+}
+
+/** 比对实例路由请求 */
+export interface CompareInstanceRoutesReq {
+  instanceId: string
+}
+
+/** 比对结果 */
+export interface CompareResult {
+  matchedCount: number
+  addedCount: number
+  modifiedCount: number
+  deletedCount: number
+  differences?: Array<{
+    routeId: string
+    diffType: 'added' | 'modified' | 'deleted'
+    detail?: string
+  }>
 }
 
 /** 回滚推送请求 */
@@ -375,6 +401,35 @@ export const getPushHistory = (params: QueryPushLogReq): Promise<PageResult<GaRo
  */
 export const getInstanceRoutes = (params: QueryInstanceRoutesReq): Promise<RouteDefinition[]> => {
   return request.post('/route/getInstanceRoutes', { body: params })
+}
+
+/**
+ * 查询实例推送历史
+ */
+export const getInstancePushHistory = (params: QueryInstancePushHistoryReq): Promise<PageResult<GaRoutePushLogDO>> => {
+  return request.post('/route/getInstancePushHistory', { body: params })
+}
+
+/**
+ * 校验实例路由
+ */
+export const validateInstanceRoutes = (params: ValidateInstanceRoutesReq): Promise<{
+  consistent: boolean
+  differences?: Array<{
+    routeId: string
+    diffType: string
+    expected: string
+    actual: string
+  }>
+}> => {
+  return request.post('/route/validateInstanceRoutes', { body: params })
+}
+
+/**
+ * 比对实例路由（与仓库对比）
+ */
+export const compareInstanceRoutes = (params: CompareInstanceRoutesReq): Promise<CompareResult> => {
+  return request.post('/route/compareInstanceRoutes', { body: params })
 }
 
 /**
@@ -499,6 +554,9 @@ export const routeApi = {
   pushRoutes,
   getPushHistory,
   getInstanceRoutes,
+  getInstancePushHistory,
+  validateInstanceRoutes,
+  compareInstanceRoutes,
   rollbackPush,
   // 新增接口方法
   fullPushRoutes,
