@@ -65,6 +65,10 @@ docs/knowledge/
 # Test coverage
 **/coverage/
 
+# E2E test outputs
+**/playwright-report/
+**/test-results/
+
 # Cache
 **/.cache/
 **/.parcel-cache/
