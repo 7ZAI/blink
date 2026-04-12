@@ -59,6 +59,9 @@ public class SysConfigServiceImpl implements SysConfigService {
     @Resource
     private CacheComponent cacheComponent;
 
+    @Resource
+    private ConfigCacheAsyncService configCacheAsyncService;
+
     /**
      * 保存 参数配置表
      *
@@ -118,15 +121,18 @@ public class SysConfigServiceImpl implements SysConfigService {
         if (Objects.isNull(oldOne)) {
             BlinkException.throwBusinessException(CONFIG_NOT_EXIST);
         }
-        String cacheKey = updateParam.getConfigKey();
+        String rawConfigKey = updateParam.getConfigKey();
 
         //传递的key与数据库中的不符合
-        if (!oldOne.getConfigKey().equals(cacheKey)) {
+        if (!oldOne.getConfigKey().equals(rawConfigKey)) {
             BlinkException.throwBusinessException(CONFIG_NOT_EXIST);
         }
-        cacheKey = BLINK_PREFIX + cacheKey;
-        redisClient.delete(cacheKey);
-        log.info("delete Redis cache key: {}", cacheKey);
+
+        // 统一构建缓存 Key: 去掉可能的前缀，再统一添加
+        String cacheKey = buildCacheKey(rawConfigKey);
+
+        // 立即删除缓存（Redis + 本地）
+        configCacheAsyncService.deleteConfigCache(cacheKey);
 
         BeanUtil.copyProperties(updateParam, sysConfigDO);
         sysConfigMapper.updateById(sysConfigDO);
@@ -137,45 +143,42 @@ public class SysConfigServiceImpl implements SysConfigService {
         if (isSystemConfigChange(cacheKey)) {
             //删除redis中保存的系统配置项
             redisClient.delete(RedisKeyConstants.SYSTEM_CONFIG);
+            //清除本地缓存
+            cacheComponent.clearLocalCache(RedisKeyConstants.SYSTEM_CONFIG);
         }
 
-        // 延迟删除 延迟时间 > 请求时间 + redis 设置值的时间 也就是getOneConfig()接口花费时间
-        try {
-            Thread.sleep(300);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.error("缓存延迟删除被中断", e);
-            throw new BlinkException("缓存延迟删除被中断: " + e.getMessage(), e, "CACHE_DELAY_DELETE_ERROR");
-        }
-        redisClient.delete(cacheKey);
-        log.info("delete Redis cache key second times: {}", cacheKey);
+        // 异步延迟双删，避免阻塞主线程（通过独立 Service 调用，确保 @Async 生效）
+        configCacheAsyncService.asyncDelayedDelete(cacheKey);
     }
 
     /**
-     * 是否 为前端需要的系统配置项 进行了修改
+     * 统一构建缓存 Key
+     * <p>
+     * 确保 Key 格式统一: BLINK_PREFIX + rawKey
+     * 先去掉可能存在的前缀，再统一添加
+     * </p>
      *
-     * @param cacheKey 修改的参数
+     * @param configKey 配置 Key（可能带前缀或不带前缀）
+     * @return 统一格式的缓存 Key
+     */
+    private String buildCacheKey(String configKey) {
+        String rawKey = configKey.replaceAll(BLINK_PREFIX, "");
+        return BLINK_PREFIX + rawKey;
+    }
+
+    /**
+     * 是否为前端需要的系统配置项进行了修改
+     *
+     * @param cacheKey 修改的参数（已带 BLINK_PREFIX）
      * @return boolean
      */
     private boolean isSystemConfigChange(String cacheKey) {
-
-        if (CommonConstants.SysConfigKeys.LOGIN_CAPTCHA_ENABLED.equals(cacheKey)) {
-            return true;
-        }
-
-        if (CommonConstants.SysConfigKeys.SYSTEM_TITLE.equals(cacheKey)) {
-            return true;
-        }
-
-        if (CommonConstants.SysConfigKeys.SYSTEM_LOGO.equals(cacheKey)) {
-            return true;
-        }
-
-        if (CommonConstants.SysConfigKeys.SYSTEM_FOOTER.equals(cacheKey)) {
-            return true;
-        }
-
-        return false;
+        // 使用 switch 模式简化判断，包含所有前端配置项
+        return CommonConstants.SysConfigKeys.LOGIN_CAPTCHA_ENABLED.equals(cacheKey)
+            || CommonConstants.SysConfigKeys.SYSTEM_TITLE.equals(cacheKey)
+            || CommonConstants.SysConfigKeys.SYSTEM_LOGO.equals(cacheKey)
+            || CommonConstants.SysConfigKeys.SYSTEM_FOOTER.equals(cacheKey)
+            || CommonConstants.SysConfigKeys.USER_DEFAULT_AVATAR.equals(cacheKey);
     }
 
 
@@ -246,12 +249,13 @@ public class SysConfigServiceImpl implements SysConfigService {
     @Override
     public SysConfigVO getOneConfigFromCacheOrDataBase(QueryOneSysConfigReq queryParam) throws BlinkException {
 
-
-        String cacheKey = queryParam.getConfigKey();
+        // 统一构建缓存 Key: 去掉可能的前缀，再统一添加
+        String cacheKey = buildCacheKey(queryParam.getConfigKey());
+        // 数据库查询使用的原始 Key（不带前缀）
         String dataKey = cacheKey.replaceAll(BLINK_PREFIX, "");
 
         Object cachedObject = cacheComponent.getFromCacheOrDB(cacheKey, () -> sysConfigMapper.selectOne(new LambdaQueryWrapper<SysConfigDO>()
-                .eq(StrUtil.isNotBlank(queryParam.getConfigKey()), SysConfigDO::getConfigKey, dataKey)
+                .eq(StrUtil.isNotBlank(dataKey), SysConfigDO::getConfigKey, dataKey)
                 .eq(Objects.nonNull(queryParam.getId()), SysConfigDO::getId, queryParam.getId())));
 
         var vo = new SysConfigVO();
@@ -364,27 +368,37 @@ public class SysConfigServiceImpl implements SysConfigService {
     @Override
     public void batchUpdateConfigs(List<UpdateSysConfigReq> configs) throws BlinkException {
 
-        var sysConfigDO = new SysConfigDO();
-
         List<SysConfigDO> paramlist = BeanUtil.copyToList(configs, SysConfigDO.class);
         List<Integer> ids = paramlist.stream().map(SysConfigDO::getId).collect(Collectors.toList());
-        List<SysConfigDO> dataList =  sysConfigMapper.selectByIds(ids);
+        List<SysConfigDO> dataList = sysConfigMapper.selectByIds(ids);
         //存在不存在的参数 传递的key与数据库中的不符合
-        if(paramlist.size() != dataList.size()) {
+        if (paramlist.size() != dataList.size()) {
             BlinkException.throwBusinessException(CONFIG_NOT_EXIST);
         }
 
         sysConfigMapper.updateById(paramlist);
-        List<String> keys = paramlist.stream().map(conf -> BLINK_PREFIX + conf.getConfigKey()).collect(Collectors.toList());
 
-        redisClient.deleteKeys(keys);
+        // 统一构建缓存 Key 列表
+        List<String> cacheKeys = paramlist.stream()
+                .map(conf -> buildCacheKey(conf.getConfigKey()))
+                .collect(Collectors.toList());
+
+        // 立即删除所有单项缓存（Redis + 本地）
+        configCacheAsyncService.deleteConfigCaches(cacheKeys);
+
         //是否存在前端配置项
-        List<String> configList = keys.stream().filter(this::isSystemConfigChange).toList();
+        List<String> systemConfigKeys = cacheKeys.stream().filter(this::isSystemConfigChange).toList();
 
-        if(!configList.isEmpty()) {
-            //删除redis中保存的系统配置项
+        if (!systemConfigKeys.isEmpty()) {
+            //删除redis中保存的系统配置项聚合缓存
             redisClient.delete(RedisKeyConstants.SYSTEM_CONFIG);
+            //清除本地聚合缓存
+            cacheComponent.clearLocalCache(RedisKeyConstants.SYSTEM_CONFIG);
+            log.info("[SysConfig] 清除系统配置聚合缓存 | keys: {}", systemConfigKeys);
         }
+
+        // 异步延迟双删（通过独立 Service 调用，确保 @Async 生效）
+        configCacheAsyncService.asyncDelayedDeleteBatch(cacheKeys);
 
         log.info("[SysConfig] 批量更新参数配置成功 | count: {}, ids: {}", paramlist.size(), ids);
     }

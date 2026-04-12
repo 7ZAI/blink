@@ -309,7 +309,7 @@ public class UserAuthServiceImpl implements UserAuthService {
         // 从数据库获取
         LoginConfigRsp config = new LoginConfigRsp();
 
-        // 登录验证码开关
+        // 登录验证码开关 - 直接传入完整 key
         Boolean captchaEnabled = sysConfigService.getBooleanConfig(
                 CommonConstants.SysConfigKeys.LOGIN_CAPTCHA_ENABLED, true);
         config.setCaptchaEnabled(captchaEnabled);
@@ -318,8 +318,8 @@ public class UserAuthServiceImpl implements UserAuthService {
         config.setCaptchaType(captchaType);
 
         var queryParam = new QueryOneSysConfigReq();
-        queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_TITLE.replaceAll(RedisKeyConstants.BLINK_PREFIX, ""));
-        // 系统标题
+        // 系统标题 - 直接传入完整 key（buildCacheKey 会统一处理）
+        queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_TITLE);
         SysConfigVO titleConfig = sysConfigService.getOneConfigFromCacheOrDataBase(queryParam);
 
         if (titleConfig != null && titleConfig.getConfigValue() != null) {
@@ -328,9 +328,8 @@ public class UserAuthServiceImpl implements UserAuthService {
             config.setSystemTitle(CommonConstants.DEFAULT_SYSTEM_TITLE);
         }
 
-        queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_LOGO.replaceAll(RedisKeyConstants.BLINK_PREFIX, ""));
-
         // 系统Logo
+        queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_LOGO);
         SysConfigVO logoConfig = sysConfigService.getOneConfigFromCacheOrDataBase(queryParam);
 
         if (logoConfig != null && logoConfig.getConfigValue() != null) {
@@ -339,9 +338,8 @@ public class UserAuthServiceImpl implements UserAuthService {
             config.setSystemLogo(CommonConstants.DEFAULT_SYSTEM_LOGO);
         }
 
-        queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_FOOTER.replaceAll(RedisKeyConstants.BLINK_PREFIX, ""));
-
         // 页脚信息
+        queryParam.setConfigKey(CommonConstants.SysConfigKeys.SYSTEM_FOOTER);
         SysConfigVO footerConfig = sysConfigService.getOneConfigFromCacheOrDataBase(queryParam);
         if (footerConfig != null && footerConfig.getConfigValue() != null) {
             config.setSystemFooter(footerConfig.getConfigValue());
@@ -349,9 +347,8 @@ public class UserAuthServiceImpl implements UserAuthService {
             config.setSystemFooter(CommonConstants.DEFAULT_SYSTEM_FOOTER);
         }
 
-        queryParam.setConfigKey(CommonConstants.SysConfigKeys.USER_DEFAULT_AVATAR.replaceAll(RedisKeyConstants.BLINK_PREFIX, ""));
-
         // 用户默认头像
+        queryParam.setConfigKey(CommonConstants.SysConfigKeys.USER_DEFAULT_AVATAR);
         SysConfigVO avatarConfig = sysConfigService.getOneConfigFromCacheOrDataBase(queryParam);
         if (avatarConfig != null && avatarConfig.getConfigValue() != null) {
             config.setDefaultAvatar(avatarConfig.getConfigValue());
