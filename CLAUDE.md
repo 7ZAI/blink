@@ -276,6 +276,85 @@ public interface ErrCodeConstant {
 }
 ```
 
+### Magic Value Prohibition (Java Backend 重要)
+
+**禁止在代码中使用魔法值（Magic Value），所有业务相关的数字、字符串必须定义为常量。**
+
+魔法值是指在代码中直接出现的、含义不明的数字或字符串，阅读代码时无法直观理解其含义。
+
+**1. 数字魔法值**
+
+```java
+// Wrong - 数字含义不明
+if (user.getStatus() == 1) { }              // ❌ 1 是什么状态？
+if (order.getType() == 2) { }               // ❌ 2 是什么类型？
+if (retryTimes > 3) { }                     // ❌ 为什么是3次？
+return 0;                                   // ❌ 0 代表什么？
+List<User> subList = userList.subList(0, 10);  // ❌ 10 是什么限制？
+
+// Correct - 使用常量定义
+if (user.getStatus() == StatusConstant.ENABLED) { }
+if (order.getType() == OrderTypeConstant.NORMAL) { }
+if (retryTimes > ConfigValueConstant.MAX_RETRY_TIMES) { }
+return StatusConstant.SUCCESS;
+List<User> subList = userList.subList(0, PageConstant.DEFAULT_PAGE_SIZE);
+```
+
+**2. 字符串魔法值**
+
+```java
+// Wrong - 字符串含义不明
+if (role.equals("admin")) { }               // ❌ admin 是什么角色？
+if (config.getType().equals("redis")) { }   // ❌ redis 是什么配置类型？
+throw new BlinkException("用户不存在");      // ❌ 应使用错误码常量
+log.info("操作成功");                        // ❌ 缺少上下文信息
+
+// Correct - 使用常量定义
+if (role.equals(RoleConstant.SUPER_ADMIN)) { }
+if (config.getType().equals(ConfigTypeConstant.REDIS)) { }
+BlinkException.throwBusinessException(ErrCodeConstant.USER_NOT_EXIST);
+log.info("[SysUser] 用户保存成功 | userId: {}", userId);
+```
+
+**3. 允许使用的例外情况**
+
+以下情况可以使用直接值，无需定义为常量：
+
+| 场景 | 示例 | 说明 |
+|------|------|------|
+| 数组索引 | `arr[0]`、`arr[1]` | 索引本身具有明确含义 |
+| 数学运算 | `a * 2`、`b + 1` | 数学运算的固有逻辑 |
+| 时间单位换算 | `seconds * 1000` | 1000 毫秒是通用换算系数 |
+| 位运算 | `flags \| 0x01` | 位运算的标准写法 |
+| 循环初始化 | `for (int i = 0; i < n; i++)` | 循环变量初始化 |
+| 比较边界 | `if (age >= 18)` | 年龄限制等通用业务规则，但建议注释说明 |
+| 空值判断 | `if (count == 0)` | 零值判断含义明确 |
+
+**4. 常量命名规范**
+
+```java
+// 状态常量 - 使用描述性名称
+public interface StatusConstant {
+    Byte ENABLED = 1;       // 启用
+    Byte DISABLED = 0;      // 禁用
+    Byte DELETED = 2;       // 已删除
+}
+
+// 类型常量 - 使用业务含义命名
+public interface OrderTypeConstant {
+    Byte NORMAL = 1;        // 普通订单
+    Byte PROMOTION = 2;     // 促销订单
+    Byte RECURRING = 3;     // 订阅订单
+}
+
+// 配置常量 - 使用配置项名称
+public interface ConfigValueConstant {
+    Integer MAX_RETRY_TIMES = 3;        // 最大重试次数
+    Integer DEFAULT_PAGE_SIZE = 10;     // 默认分页大小
+    Integer TOKEN_EXPIRE_SECONDS = 7200; // Token过期时间（秒）
+}
+```
+
 ### Code Comments
 
 ### Logging Specification (重要)

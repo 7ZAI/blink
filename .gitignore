@@ -42,6 +42,9 @@ out/
 .claudeignore
 /.mcp.json
 
+### 知识文档目录 ###
+docs/knowledge/
+
 ### 前端 ###
 # Dependencies
 **/node_modules/
