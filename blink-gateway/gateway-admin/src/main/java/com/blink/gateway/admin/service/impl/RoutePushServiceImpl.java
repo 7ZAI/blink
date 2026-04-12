@@ -25,19 +25,24 @@ import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
 import com.blink.gateway.admin.entity.GaRoutePushLogDO;
+import com.blink.gateway.admin.entity.FilterConfig;
+import com.blink.gateway.admin.entity.PredicateConfig;
 import com.blink.gateway.admin.mapper.GaRouteMapper;
 import com.blink.gateway.admin.mapper.GaRoutePushLogMapper;
 import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
 import com.blink.gateway.admin.service.GatewayInstanceService;
 import com.blink.gateway.admin.service.RoutePushService;
+import com.blink.gateway.admin.component.NacosConfigComponent;
 import com.blink.gateway.dto.RouteSyncMsg;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -74,6 +79,16 @@ public class RoutePushServiceImpl implements RoutePushService {
     @Resource
     private GatewayInstanceService gatewayInstanceService;
 
+    /**
+     * Nacos 配置组件（可选注入）
+     */
+    private NacosConfigComponent nacosConfigComponent;
+
+    @Autowired(required = false)
+    public void setNacosConfigComponent(NacosConfigComponent nacosConfigComponent) {
+        this.nacosConfigComponent = nacosConfigComponent;
+    }
+
     @Override
     public ResponseDTO<EmptyBody> pushRoutes(PushRoutesReq req) {
         // 参数校验
@@ -107,22 +122,24 @@ public class RoutePushServiceImpl implements RoutePushService {
         pushLog.setOperatorName(operatorName);
         pushLog.setRemark(req.getRemark());
 
-        // 设置存储方式相关参数
+        // 设置存储方式相关参数并执行推送
         if (RouteConstant.STORAGE_MODE_REDIS.equals(req.getStorageMode())) {
             String routesGroup = StrUtil.isBlank(req.getRoutesGroup())
                 ? RouteConstant.DEFAULT_ROUTES_GROUP : req.getRoutesGroup();
             pushLog.setRoutesGroup(routesGroup);
 
-            // 推送到 Redis
-            String redisKey = GATEWAY_DYNAMIC_ROUTES + ":" + routesGroup;
-            for (GaRouteDO route : routes) {
-                String routeJson = JacksonUtil.toJson(route);
-                redisClient.hPutField(redisKey, route.getRouteId(), routeJson);
-            }
+            // 推送到 Redis Hash
+            pushRoutesToRedis(routes, routesGroup);
         } else if (RouteConstant.STORAGE_MODE_NACOS.equals(req.getStorageMode())) {
-            pushLog.setNacosDataId(req.getNacosDataId());
-            pushLog.setNacosGroup(req.getNacosGroup());
-            // Nacos 推送由 NacosRouteService 处理
+            String nacosDataId = StrUtil.isBlank(req.getNacosDataId())
+                ? RouteConstant.DEFAULT_NACOS_DATA_ID : req.getNacosDataId();
+            String nacosGroup = StrUtil.isBlank(req.getNacosGroup())
+                ? RouteConstant.DEFAULT_NACOS_GROUP : req.getNacosGroup();
+            pushLog.setNacosDataId(nacosDataId);
+            pushLog.setNacosGroup(nacosGroup);
+
+            // 推送到 Nacos 配置文件
+            pushRoutesToNacos(routes, nacosDataId, nacosGroup);
         }
 
         // 设置目标实例信息
@@ -212,42 +229,286 @@ public class RoutePushServiceImpl implements RoutePushService {
     @Override
     public ResponseDTO<QueryInstanceRoutesRsp> getInstanceRoutes(QueryInstanceRoutesReq req) {
         QueryInstanceRoutesRsp rsp = new QueryInstanceRoutesRsp();
-
-        if (StrUtil.isBlank(req.getStorageMode())) {
-            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
-        }
-
         List<GaRouteDO> routes = new ArrayList<>();
 
-        if (RouteConstant.STORAGE_MODE_REDIS.equals(req.getStorageMode())) {
-            // 从 Redis Hash 查询
-            String routesGroup = StrUtil.isBlank(req.getRoutesGroup())
-                ? RouteConstant.DEFAULT_ROUTES_GROUP : req.getRoutesGroup();
-            String redisKey = GATEWAY_DYNAMIC_ROUTES + ":" + routesGroup;
+        // 确定存储模式：优先使用请求参数，否则默认使用 nacos
+        String storageMode = StrUtil.isBlank(req.getStorageMode())
+            ? RouteConstant.STORAGE_MODE_NACOS : req.getStorageMode();
 
-            Map<String, Object> routeMap = redisClient.hGetStringMap(redisKey);
-            if (routeMap != null && !routeMap.isEmpty()) {
-                for (Map.Entry<String, Object> entry : routeMap.entrySet()) {
-                    try {
-                        GaRouteDO route = JacksonUtil.fromJson(entry.getValue().toString(), GaRouteDO.class);
-                        if (route != null) {
-                            routes.add(route);
-                        }
-                    } catch (Exception e) {
-                        log.warn("[RoutePush] 解析路由 JSON 失败 | routeId: {}", entry.getKey());
-                    }
-                }
-            }
+        if (RouteConstant.STORAGE_MODE_NACOS.equals(storageMode)) {
+            // 从 Nacos 配置文件查询
+            routes = getRoutesFromNacos(req.getNacosDataId(), req.getNacosGroup());
+        } else if (RouteConstant.STORAGE_MODE_REDIS.equals(storageMode)) {
+            // 从 Redis Hash 查询
+            routes = getRoutesFromRedis(req.getRoutesGroup());
         }
-        // Nacos 模式由 NacosRouteService 处理
 
         rsp.setRows(routes);
         rsp.setTotal(routes.size());
 
-        log.info("[RoutePush] 查询实例路由成功 | storageMode: {}, routesGroup: {}, count: {}",
-            req.getStorageMode(), req.getRoutesGroup(), routes.size());
+        log.info("[RoutePush] 查询实例路由成功 | storageMode: {}, count: {}", storageMode, routes.size());
 
         return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    /**
+     * 从 Nacos 配置文件获取路由
+     * Nacos 存储的是 Spring Cloud Gateway 的 RouteDefinition 格式
+     */
+    private List<GaRouteDO> getRoutesFromNacos(String dataId, String group) {
+        List<GaRouteDO> routes = new ArrayList<>();
+
+        if (nacosConfigComponent == null) {
+            log.warn("[RoutePush] NacosConfigComponent 未注入，无法查询 Nacos 路由");
+            return routes;
+        }
+
+        // 使用默认值
+        String nacosDataId = StrUtil.isBlank(dataId)
+            ? RouteConstant.DEFAULT_NACOS_DATA_ID : dataId;
+        String nacosGroup = StrUtil.isBlank(group)
+            ? RouteConstant.DEFAULT_NACOS_GROUP : group;
+
+        try {
+            String configContent = nacosConfigComponent.getConfig(nacosDataId, nacosGroup);
+            if (StrUtil.isNotBlank(configContent)) {
+                // Nacos 配置文件是 JSON 数组格式，使用 Map 解析以兼容不同字段名
+                List<Map<String, Object>> routeMapList = JacksonUtil.fromJson(configContent,
+                    new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+
+                if (routeMapList != null) {
+                    for (Map<String, Object> routeMap : routeMapList) {
+                        GaRouteDO route = convertNacosRouteToGaRouteDO(routeMap);
+                        if (route != null) {
+                            routes.add(route);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("[RoutePush] 从 Nacos 获取路由配置失败 | dataId: {}, group: {}", nacosDataId, nacosGroup, e);
+        }
+
+        return routes;
+    }
+
+    /**
+     * 将 Nacos 路由格式转换为 GaRouteDO
+     * Nacos 格式：id, uri, predicates, filters, order, metadata
+     * 数据库格式：routeId, routeName, uri, predicates, filters, orderNum, status
+     */
+    @SuppressWarnings("unchecked")
+    private GaRouteDO convertNacosRouteToGaRouteDO(Map<String, Object> routeMap) {
+        if (routeMap == null) {
+            return null;
+        }
+
+        GaRouteDO route = new GaRouteDO();
+
+        // id -> routeId
+        Object id = routeMap.get("id");
+        if (id != null) {
+            route.setRouteId(id.toString());
+        }
+
+        // uri
+        Object uri = routeMap.get("uri");
+        if (uri != null) {
+            route.setUri(uri.toString());
+        }
+
+        // order -> orderNum
+        Object order = routeMap.get("order");
+        if (order != null) {
+            route.setOrderNum(((Number) order).intValue());
+        }
+
+        // predicates - 转换为 List<PredicateConfig>
+        Object predicatesObj = routeMap.get("predicates");
+        if (predicatesObj instanceof List) {
+            List<PredicateConfig> predicates = convertToPredicateConfigList((List<?>) predicatesObj);
+            route.setPredicates(predicates);
+        }
+
+        // filters - 转换为 List<FilterConfig>
+        Object filtersObj = routeMap.get("filters");
+        if (filtersObj instanceof List) {
+            List<FilterConfig> filters = convertToFilterConfigList((List<?>) filtersObj);
+            route.setFilters(filters);
+        }
+
+        // metadata - 转换为 Map<String, Object>
+        Object metadataObj = routeMap.get("metadata");
+        if (metadataObj instanceof Map) {
+            Map<String, Object> metadata = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) metadataObj).entrySet()) {
+                if (entry.getKey() != null) {
+                    metadata.put(entry.getKey().toString(), entry.getValue());
+                }
+            }
+            route.setMetadata(metadata);
+        }
+
+        // 默认值
+        route.setStatus(RouteConstant.STATUS_ENABLE);
+        route.setRouteName(route.getRouteId());
+
+        return route;
+    }
+
+    /**
+     * 将 Nacos predicates 列表转换为 List<PredicateConfig>
+     */
+    @SuppressWarnings("unchecked")
+    private List<PredicateConfig> convertToPredicateConfigList(List<?> predicatesObj) {
+        List<PredicateConfig> predicates = new ArrayList<>();
+        for (Object item : predicatesObj) {
+            if (item instanceof Map) {
+                Map<?, ?> predMap = (Map<?, ?>) item;
+                PredicateConfig config = new PredicateConfig();
+                Object name = predMap.get("name");
+                if (name != null) {
+                    config.setName(name.toString());
+                }
+                Object args = predMap.get("args");
+                if (args instanceof Map) {
+                    Map<String, String> argsMap = new LinkedHashMap<>();
+                    for (Map.Entry<?, ?> entry : ((Map<?, ?>) args).entrySet()) {
+                        if (entry.getKey() != null && entry.getValue() != null) {
+                            argsMap.put(entry.getKey().toString(), entry.getValue().toString());
+                        }
+                    }
+                    config.setArgs(argsMap);
+                }
+                predicates.add(config);
+            }
+        }
+        return predicates;
+    }
+
+    /**
+     * 将 Nacos filters 列表转换为 List<FilterConfig>
+     */
+    @SuppressWarnings("unchecked")
+    private List<FilterConfig> convertToFilterConfigList(List<?> filtersObj) {
+        List<FilterConfig> filters = new ArrayList<>();
+        for (Object item : filtersObj) {
+            if (item instanceof Map) {
+                Map<?, ?> filterMap = (Map<?, ?>) item;
+                FilterConfig config = new FilterConfig();
+                Object name = filterMap.get("name");
+                if (name != null) {
+                    config.setName(name.toString());
+                }
+                Object args = filterMap.get("args");
+                if (args instanceof Map) {
+                    Map<String, String> argsMap = new LinkedHashMap<>();
+                    for (Map.Entry<?, ?> entry : ((Map<?, ?>) args).entrySet()) {
+                        if (entry.getKey() != null && entry.getValue() != null) {
+                            argsMap.put(entry.getKey().toString(), entry.getValue().toString());
+                        }
+                    }
+                    config.setArgs(argsMap);
+                }
+                filters.add(config);
+            }
+        }
+        return filters;
+    }
+
+    /**
+     * 从 Redis Hash 获取路由
+     */
+    private List<GaRouteDO> getRoutesFromRedis(String routesGroup) {
+        List<GaRouteDO> routes = new ArrayList<>();
+
+        String group = StrUtil.isBlank(routesGroup)
+            ? RouteConstant.DEFAULT_ROUTES_GROUP : routesGroup;
+        String redisKey = GATEWAY_DYNAMIC_ROUTES + ":" + group;
+
+        Map<String, Object> routeMap = redisClient.hGetStringMap(redisKey);
+        if (routeMap != null && !routeMap.isEmpty()) {
+            for (Map.Entry<String, Object> entry : routeMap.entrySet()) {
+                try {
+                    GaRouteDO route = JacksonUtil.fromJson(entry.getValue().toString(), GaRouteDO.class);
+                    if (route != null) {
+                        routes.add(route);
+                    }
+                } catch (Exception e) {
+                    log.warn("[RoutePush] 解析路由 JSON 失败 | routeId: {}", entry.getKey());
+                }
+            }
+        }
+
+        return routes;
+    }
+
+    /**
+     * 推送路由到 Redis Hash
+     *
+     * @param routes 路由列表
+     * @param routesGroup 路由分组
+     */
+    private void pushRoutesToRedis(List<GaRouteDO> routes, String routesGroup) {
+        String redisKey = GATEWAY_DYNAMIC_ROUTES + ":" + routesGroup;
+
+        for (GaRouteDO route : routes) {
+            String routeJson = JacksonUtil.toJson(route);
+            redisClient.hPutField(redisKey, route.getRouteId(), routeJson);
+        }
+
+        log.info("[RoutePush] 推送路由到 Redis 成功 | redisKey: {}, count: {}", redisKey, routes.size());
+    }
+
+    /**
+     * 推送路由到 Nacos 配置文件
+     *
+     * @param routes 路由列表
+     * @param dataId Nacos Data ID
+     * @param group Nacos Group
+     */
+    private void pushRoutesToNacos(List<GaRouteDO> routes, String dataId, String group) {
+        if (nacosConfigComponent == null) {
+            log.warn("[RoutePush] NacosConfigComponent 未注入，无法推送到 Nacos");
+            BlinkException.throwBusinessException("Nacos 配置组件未启用");
+        }
+
+        try {
+            // 获取当前 Nacos 中的路由配置
+            String currentConfig = nacosConfigComponent.getConfig(dataId, group);
+            List<GaRouteDO> existingRoutes = new ArrayList<>();
+
+            if (StrUtil.isNotBlank(currentConfig)) {
+                existingRoutes = JacksonUtil.fromJsonToList(currentConfig, GaRouteDO.class);
+                if (existingRoutes == null) {
+                    existingRoutes = new ArrayList<>();
+                }
+            }
+
+            // 合并路由：按 routeId 去重更新
+            Map<String, GaRouteDO> routeMap = existingRoutes.stream()
+                .collect(java.util.stream.Collectors.toMap(
+                    GaRouteDO::getRouteId,
+                    r -> r,
+                    (a, b) -> a
+                ));
+
+            // 更新或新增路由
+            for (GaRouteDO route : routes) {
+                routeMap.put(route.getRouteId(), route);
+            }
+
+            // 发布配置到 Nacos
+            List<GaRouteDO> mergedRoutes = new ArrayList<>(routeMap.values());
+            String newConfigContent = JacksonUtil.toJson(mergedRoutes);
+            nacosConfigComponent.configPublisher(dataId, group, newConfigContent);
+
+            log.info("[RoutePush] 推送路由到 Nacos 成功 | dataId: {}, group: {}, count: {}",
+                dataId, group, mergedRoutes.size());
+        } catch (Exception e) {
+            log.error("[RoutePush] 推送路由到 Nacos 失败 | dataId: {}, group: {}", dataId, group, e);
+            throw new BlinkException("推送到 Nacos 失败: " + e.getMessage(), e, "NACOS_PUSH_FAILED");
+        }
     }
 
     @Override

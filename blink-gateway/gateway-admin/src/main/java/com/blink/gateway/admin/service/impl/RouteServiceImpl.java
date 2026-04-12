@@ -194,8 +194,10 @@ public class RouteServiceImpl implements RouteService {
             BlinkException.throwBusinessException(ROUTE_NOT_EXIST);
         }
 
-        // 乐观锁校验：版本号必须匹配
-        if (ObjectUtil.isNotNull(req.getVersion()) && !ObjectUtil.equals(req.getVersion(), existingRoute.getVersion())) {
+        // 乐观锁校验：版本号必须匹配（仅在数据库中version不为null时校验）
+        if (ObjectUtil.isNotNull(existingRoute.getVersion())
+                && ObjectUtil.isNotNull(req.getVersion())
+                && !ObjectUtil.equals(req.getVersion(), existingRoute.getVersion())) {
             log.warn("[Route] 路由版本不匹配，拒绝更新 | routeId: {}, reqVersion: {}, dbVersion: {}",
                     req.getRouteId(), req.getVersion(), existingRoute.getVersion());
             BlinkException.throwBusinessException(ROUTE_VERSION_MISMATCH);
@@ -210,8 +212,9 @@ public class RouteServiceImpl implements RouteService {
         // 更新路由信息
         BeanUtil.copyProperties(req, existingRoute, "routeId", "createBy", "createTime");
 
-        // 版本号自增
-        existingRoute.setVersion(existingRoute.getVersion() + 1);
+        // 版本号自增（处理null情况）
+        Integer currentVersion = existingRoute.getVersion();
+        existingRoute.setVersion(currentVersion == null ? 1 : currentVersion + 1);
 
         gaRouteMapper.updateById(existingRoute);
 
