@@ -6,6 +6,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -174,5 +175,39 @@ public class CacheComponent {
     @SuppressWarnings("unchecked")
     private Cache<String, Object> getLocalCache() {
         return ApplicationContextUtil.getBean(Cache.class);
+    }
+
+    /**
+     * 清除本地缓存中的指定 key
+     * <p>
+     * 当修改配置后，需要清除本地缓存以确保数据一致性
+     * </p>
+     *
+     * @param key 要清除的缓存 key
+     */
+    public void clearLocalCache(String key) {
+        if (enableLocalCache) {
+            Cache<String, Object> localCache = getLocalCache();
+            localCache.invalidate(key);
+            log.info("Local cache invalidated for key: {}", key);
+        }
+    }
+
+    /**
+     * 批量清除本地缓存中的指定 keys
+     * <p>
+     * 当批量修改配置后，需要清除本地缓存以确保数据一致性
+     * </p>
+     *
+     * @param keys 要清除的缓存 key 列表
+     */
+    public void clearLocalCache(List<String> keys) {
+        if (enableLocalCache && keys != null && !keys.isEmpty()) {
+            Cache<String, Object> localCache = getLocalCache();
+            for (String key : keys) {
+                localCache.invalidate(key);
+            }
+            log.info("Local cache invalidated for keys: {}", keys);
+        }
     }
 }

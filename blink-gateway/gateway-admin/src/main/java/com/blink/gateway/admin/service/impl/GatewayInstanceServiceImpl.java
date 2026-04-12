@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.blink.gateway.admin.constants.ConfigValueConstant.HEALTH_CHECK_TIMEOUT_SECONDS;
 import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_OFFLINE;
 import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_ONLINE;
 import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_SHUTDOWN;
@@ -65,6 +66,8 @@ import static com.blink.gateway.admin.constants.ErrCodeConstant.ONLINE_INSTANCE_
 import static com.blink.gateway.admin.constants.ErrCodeConstant.QUERY_INSTANCE_LIST_FAILED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.SAVE_INSTANCE_FAILED;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_PREFIX;
+import static com.blink.gateway.admin.constants.ScheduleConstant.INSTANCE_SYNC_CRON;
+import static com.blink.gateway.admin.constants.ServiceConstant.GATEWAY_SERVICE_NAME;
 
 /**
  * 网关实例管理服务实现
@@ -89,8 +92,6 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     private final WebClient webClient = WebClient.builder()
             .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
             .build();
-
-    private static final String GATEWAY_SERVICE_NAME = "gateway-app";
 
     @Override
     public ResponseDTO<GatewayInstanceListRsp> getGatewayInstances() {
@@ -227,7 +228,7 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     }
 
     @Override
-    @Scheduled(cron = "0 */30 * * * ?")
+    @Scheduled(cron = INSTANCE_SYNC_CRON)
     @Transactional(rollbackFor = Exception.class)
     public void syncInstanceStatus() {
         try {
@@ -320,9 +321,9 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             return "未知";
         }
         return switch (status) {
-            case 0 -> "在线";
-            case 1 -> "离线";
-            case 2 -> "下线";
+            case 0 -> "在线";  // INSTANCE_STATUS_ONLINE
+            case 1 -> "离线";  // INSTANCE_STATUS_OFFLINE
+            case 2 -> "下线";  // INSTANCE_STATUS_SHUTDOWN
             default -> "未知";
         };
     }
@@ -673,7 +674,7 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
                     .uri(healthUrl)
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(5))
+                    .timeout(Duration.ofSeconds(HEALTH_CHECK_TIMEOUT_SECONDS))
                     .block();
 
             if (StrUtil.isBlank(response)) {

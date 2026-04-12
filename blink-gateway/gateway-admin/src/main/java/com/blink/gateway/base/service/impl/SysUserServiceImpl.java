@@ -491,12 +491,12 @@ public class SysUserServiceImpl implements SysUserService {
         if (CommonConstants.SUPER_ADMIN_YES.equals(user.getSuperFlag())) {
             // 查询所有角色
             List<SysRoleDO> allRoles = roleMapper.selectList(
-                    new LambdaQueryWrapper<SysRoleDO>().eq(SysRoleDO::getStatus, 0));
+                    new LambdaQueryWrapper<SysRoleDO>().eq(SysRoleDO::getStatus, CommonConstants.SWITCH_OPEN));
             rsp.setRoles(BeanUtil.copyToList(allRoles, SysRoleVO.class));
 
             // 查询所有菜单
             List<SysMenuDO> allMenus = sysMenuMapper.selectList(
-                    new LambdaQueryWrapper<SysMenuDO>().eq(SysMenuDO::getStatus, 0));
+                    new LambdaQueryWrapper<SysMenuDO>().eq(SysMenuDO::getStatus, CommonConstants.SWITCH_OPEN));
             rsp.setMenus(BeanUtil.copyToList(allMenus, SysMenuVO.class));
 
             // 查询所有权限
@@ -525,7 +525,7 @@ public class SysUserServiceImpl implements SysUserService {
         List<SysRoleDO> roles = roleMapper.selectList(
                 new LambdaQueryWrapper<SysRoleDO>()
                         .in(SysRoleDO::getRoleId, roleIds)
-                        .eq(SysRoleDO::getStatus, 0));
+                        .eq(SysRoleDO::getStatus, CommonConstants.SWITCH_OPEN));
         rsp.setRoles(BeanUtil.copyToList(roles, SysRoleVO.class));
 
         // 查询角色关联的菜单ID
@@ -543,7 +543,7 @@ public class SysUserServiceImpl implements SysUserService {
             List<SysMenuDO> menus = sysMenuMapper.selectList(
                     new LambdaQueryWrapper<SysMenuDO>()
                             .in(SysMenuDO::getMenuId, menuIds)
-                            .eq(SysMenuDO::getStatus, 0));
+                            .eq(SysMenuDO::getStatus, CommonConstants.SWITCH_OPEN));
             rsp.setMenus(BeanUtil.copyToList(menus, SysMenuVO.class));
         } else {
             rsp.setMenus(new ArrayList<>());

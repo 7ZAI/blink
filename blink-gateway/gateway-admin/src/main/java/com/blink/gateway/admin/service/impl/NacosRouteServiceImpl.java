@@ -19,6 +19,7 @@ import com.blink.gateway.admin.entity.PredicateDefinitionDO;
 import com.blink.gateway.admin.entity.RouteDefinitionDO;
 import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
 import com.blink.gateway.admin.service.NacosRouteService;
+import com.blink.gateway.admin.service.RouteValidator;
 import com.blink.gateway.dto.RouteSyncMsg;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +33,14 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.blink.gateway.admin.constants.ConfigValueConstant.NACOS_CONFIG_TIMEOUT_MS;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.*;
+import static com.blink.gateway.admin.constants.RouteConstant.DEFAULT_NACOS_GROUP;
+import static com.blink.gateway.admin.constants.RouteConstant.PUSH_MODE_BROADCAST;
+import static com.blink.gateway.admin.constants.RouteConstant.STORAGE_MODE_NACOS;
+import static com.blink.gateway.admin.constants.RouteConstant.URI_PREFIX_HTTP;
+import static com.blink.gateway.admin.constants.RouteConstant.URI_PREFIX_HTTPS;
+import static com.blink.gateway.admin.constants.RouteConstant.URI_PREFIX_LB;
 
 /**
  * Nacos 路由管理服务实现
@@ -49,8 +57,8 @@ public class NacosRouteServiceImpl implements NacosRouteService {
     @Resource
     private GateWayStreamMessageProducer messageProducer;
 
-    private static final String STORAGE_MODE_NACOS = "nacos";
-    private static final String PUSH_MODE_BROADCAST = "broadcast";
+    @Resource
+    private RouteValidator routeValidator;
 
     @Override
     public ResponseDTO<QueryGateWayRoutesRsp> getNacosRouteList(QueryNacosRouteReq req) {
@@ -63,12 +71,12 @@ public class NacosRouteServiceImpl implements NacosRouteService {
             BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
         }
         if (StrUtil.isBlank(group)) {
-            group = "DEFAULT_GROUP";
+            group = DEFAULT_NACOS_GROUP;
         }
 
         try {
             ConfigService configService = nacosConfigManager.getConfigService();
-            String configContent = configService.getConfig(dataId, group, 5000);
+            String configContent = configService.getConfig(dataId, group, NACOS_CONFIG_TIMEOUT_MS);
 
             if (StrUtil.isBlank(configContent)) {
                 log.warn("[NacosRoute] 未找到路由配置 | dataId: {}, group: {}", dataId, group);
@@ -104,7 +112,7 @@ public class NacosRouteServiceImpl implements NacosRouteService {
             BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
         }
         if (StrUtil.isBlank(group)) {
-            group = "DEFAULT_GROUP";
+            group = DEFAULT_NACOS_GROUP;
         }
         if (ObjectUtil.isNull(newRouteRequests) || newRouteRequests.isEmpty()) {
             BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
@@ -112,7 +120,7 @@ public class NacosRouteServiceImpl implements NacosRouteService {
 
         try {
             ConfigService configService = nacosConfigManager.getConfigService();
-            String currentConfig = configService.getConfig(dataId, group, 5000);
+            String currentConfig = configService.getConfig(dataId, group, NACOS_CONFIG_TIMEOUT_MS);
 
             List<RouteDefinitionDO> existingRoutes = new ArrayList<>();
             if (StrUtil.isNotBlank(currentConfig)) {
@@ -129,6 +137,20 @@ public class NacosRouteServiceImpl implements NacosRouteService {
             // 将请求 DTO 转换为实体并合并
             for (RouteDefinitionReq routeReq : newRouteRequests) {
                 if (StrUtil.isNotBlank(routeReq.getId())) {
+                    // 校验 URI 格式
+                    String uri = routeReq.getUri();
+                    if (StrUtil.isBlank(uri) ||
+                        (!uri.startsWith(URI_PREFIX_LB) && !uri.startsWith(URI_PREFIX_HTTP) && !uri.startsWith(URI_PREFIX_HTTPS))) {
+                        log.warn("[NacosRoute] URI格式无效，跳过 | routeId: {}, uri: {}", routeReq.getId(), uri);
+                        continue;
+                    }
+
+                    // 校验断言必填
+                    if (StrUtil.isBlank(routeReq.getPredicates())) {
+                        log.warn("[NacosRoute] 断言配置为空，跳过 | routeId: {}", routeReq.getId());
+                        continue;
+                    }
+
                     RouteDefinitionDO routeDO = convertToRouteDefinitionDO(routeReq);
                     routeMap.put(routeReq.getId(), routeDO);
                 }
@@ -166,7 +188,7 @@ public class NacosRouteServiceImpl implements NacosRouteService {
             BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
         }
         if (StrUtil.isBlank(group)) {
-            group = "DEFAULT_GROUP";
+            group = DEFAULT_NACOS_GROUP;
         }
         if (ObjectUtil.isNull(routeIds) || routeIds.isEmpty()) {
             return ResponseDTO.newSuccessInstance();
@@ -174,7 +196,7 @@ public class NacosRouteServiceImpl implements NacosRouteService {
 
         try {
             ConfigService configService = nacosConfigManager.getConfigService();
-            String currentConfig = configService.getConfig(dataId, group, 5000);
+            String currentConfig = configService.getConfig(dataId, group, NACOS_CONFIG_TIMEOUT_MS);
 
             if (StrUtil.isBlank(currentConfig)) {
                 log.warn("[NacosRoute] 配置不存在，无需删除 | dataId: {}, group: {}", dataId, group);

@@ -71,12 +71,15 @@ public class SysMenuServiceImpl implements SysMenuService {
 
         // 校验菜单类型
         Integer menuType = saveParam.getType();
-        if (menuType == null || (menuType != 1 && menuType != 2 && menuType != 3)) {
+        if (menuType == null || (!menuType.equals(CommonConstants.MENU_DIRECTORY)
+                && !menuType.equals(CommonConstants.MENU_PAGE)
+                && !menuType.equals(CommonConstants.MENU_FUNCTION))) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_OUT_RANGE);
         }
 
         // 目录和页面菜单URL必填
-        if ((menuType == 1 || menuType == 2) && StrUtil.isBlank(saveParam.getUrl())) {
+        if ((menuType.equals(CommonConstants.MENU_DIRECTORY) || menuType.equals(CommonConstants.MENU_PAGE))
+                && StrUtil.isBlank(saveParam.getUrl())) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
         }
 
@@ -85,11 +88,11 @@ public class SysMenuServiceImpl implements SysMenuService {
         // 统一处理 parentId：null 或 0 都表示根菜单
         Integer parentId = saveParam.getParentId();
         if (parentId == null) {
-            parentId = 0;
+            parentId = CommonConstants.ROOT_MENU_PARENT_ID;
         }
 
         //父节点存在（非根菜单）
-        if (parentId > 0) {
+        if (parentId > CommonConstants.ROOT_MENU_PARENT_ID) {
             SysMenuDO parentMenu = sysMenuMapper.selectById(parentId);
             if (ObjectUtil.isNull(parentMenu)) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.MENU_PARENT_NOT_EXIST);
@@ -98,7 +101,8 @@ public class SysMenuServiceImpl implements SysMenuService {
         }
 
         // 校验permId是否存在（仅页面和按钮菜单）
-        if ((menuType == 2 || menuType == 3) && ObjectUtil.isNotNull(saveParam.getPermId())) {
+        if ((menuType.equals(CommonConstants.MENU_PAGE) || menuType.equals(CommonConstants.MENU_FUNCTION))
+                && ObjectUtil.isNotNull(saveParam.getPermId())) {
             Long permCount = sysPermissionMapper.selectCount(
                     new LambdaQueryWrapper<SysPermissionDO>()
                             .eq(SysPermissionDO::getAcId, saveParam.getPermId()));
@@ -110,12 +114,12 @@ public class SysMenuServiceImpl implements SysMenuService {
         var sysMenuDO = new SysMenuDO();
         var sysMenuVO = new SysMenuVO();
         BeanUtil.copyProperties(saveParam, sysMenuDO);
-        // 统一设置 parentId，根菜单为 0
+        // 统一设置 parentId，根菜单为 ROOT_MENU_PARENT_ID
         sysMenuDO.setParentId(parentId);
         // 设置菜单层级
         sysMenuDO.setMenuLevel(menuLevel);
         // 处理关联权限（仅页面和按钮菜单）
-        if ((menuType == 2 || menuType == 3)
+        if ((menuType.equals(CommonConstants.MENU_PAGE) || menuType.equals(CommonConstants.MENU_FUNCTION))
                 && ObjectUtil.isNotNull(saveParam.getPermId())) {
             sysMenuDO.setPermId(saveParam.getPermId());
         }
@@ -239,17 +243,21 @@ public class SysMenuServiceImpl implements SysMenuService {
 
         // 校验菜单类型
         Integer menuType = updateParam.getType();
-        if (menuType == null || (menuType != 1 && menuType != 2 && menuType != 3)) {
+        if (menuType == null || (!menuType.equals(CommonConstants.MENU_DIRECTORY)
+                && !menuType.equals(CommonConstants.MENU_PAGE)
+                && !menuType.equals(CommonConstants.MENU_FUNCTION))) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_OUT_RANGE);
         }
 
         // 目录和页面菜单URL必填
-        if ((menuType == 1 || menuType == 2) && StrUtil.isBlank(updateParam.getUrl())) {
+        if ((menuType.equals(CommonConstants.MENU_DIRECTORY) || menuType.equals(CommonConstants.MENU_PAGE))
+                && StrUtil.isBlank(updateParam.getUrl())) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
         }
 
         // 校验permId是否存在（仅页面和按钮菜单）
-        if ((menuType == 2 || menuType == 3) && ObjectUtil.isNotNull(updateParam.getPermId())) {
+        if ((menuType.equals(CommonConstants.MENU_PAGE) || menuType.equals(CommonConstants.MENU_FUNCTION))
+                && ObjectUtil.isNotNull(updateParam.getPermId())) {
             Long permCount = sysPermissionMapper.selectCount(
                     new LambdaQueryWrapper<SysPermissionDO>()
                             .eq(SysPermissionDO::getAcId, updateParam.getPermId()));
@@ -262,10 +270,10 @@ public class SysMenuServiceImpl implements SysMenuService {
         Integer oldPermId = sysMenuDO.getPermId();
         Integer oldParentId = sysMenuDO.getParentId();
 
-        // 统一处理 parentId：null 转 0
+        // 统一处理 parentId：null 转 ROOT_MENU_PARENT_ID
         Integer newParentId = updateParam.getParentId();
         if (newParentId == null) {
-            newParentId = 0;
+            newParentId = CommonConstants.ROOT_MENU_PARENT_ID;
         }
 
         //更换父节点
@@ -274,8 +282,8 @@ public class SysMenuServiceImpl implements SysMenuService {
             if (newParentId.equals(updateParam.getMenuId())) {
                 BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_OUT_RANGE);
             }
-            // 根菜单（parentId=0）不需要查询父节点
-            if (newParentId > 0) {
+            // 根菜单（parentId=ROOT_MENU_PARENT_ID）不需要查询父节点
+            if (newParentId > CommonConstants.ROOT_MENU_PARENT_ID) {
                 SysMenuDO sysMenuParent = sysMenuMapper.selectById(newParentId);
                 //父节点不存在
                 if (ObjectUtil.isNull(sysMenuParent)) {
@@ -293,7 +301,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         // 确保 parentId 正确设置
         sysMenuDO.setParentId(newParentId);
         // 处理关联权限（仅页面和按钮菜单）
-        if (menuType == 2 || menuType == 3) {
+        if (menuType.equals(CommonConstants.MENU_PAGE) || menuType.equals(CommonConstants.MENU_FUNCTION)) {
             sysMenuDO.setPermId(updateParam.getPermId());
         } else {
             sysMenuDO.setPermId(null);
@@ -413,9 +421,9 @@ public class SysMenuServiceImpl implements SysMenuService {
         List<SysMenuVO> result = new ArrayList<>();
         for (SysMenuVO menu : menuList) {
             // 判断是否为当前父节点的子节点
-            // 根节点：parentId为null或0
-            boolean isRoot = (parentId == null || parentId == 0)
-                    && (menu.getParentId() == null || menu.getParentId() == 0);
+            // 根节点：parentId为null或ROOT_MENU_PARENT_ID
+            boolean isRoot = (parentId == null || parentId.equals(CommonConstants.ROOT_MENU_PARENT_ID))
+                    && (menu.getParentId() == null || menu.getParentId().equals(CommonConstants.ROOT_MENU_PARENT_ID));
             boolean isChild = isRoot
                     || (parentId != null && parentId.equals(menu.getParentId()));
 

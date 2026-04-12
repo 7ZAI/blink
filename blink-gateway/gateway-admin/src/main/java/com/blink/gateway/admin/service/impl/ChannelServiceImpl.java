@@ -19,8 +19,8 @@ import com.blink.framework.common.jwt.JwtConfig;
 import com.blink.framework.common.jwt.JwtProvider;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.component.SecretConfigComponent;
-import com.blink.gateway.admin.constants.ConfigValueConstant;
 import com.blink.gateway.admin.constants.ErrCodeConstant;
+import com.blink.gateway.base.constants.CommonConstants;
 import com.blink.gateway.admin.dto.req.AddChannelReq;
 import com.blink.gateway.admin.dto.req.DeleteChannelReq;
 import com.blink.gateway.admin.dto.req.GetChannelSecretReq;
@@ -226,7 +226,7 @@ public class ChannelServiceImpl implements ChannelService {
 
         GaChannelDO blinkChannelDO = optional.get();
         // 正在启用的渠道不允许删除
-        if (ConfigValueConstant.SWITCH_OPEN.equals(blinkChannelDO.getEnable())) {
+        if (CommonConstants.SWITCH_OPEN.equals(blinkChannelDO.getEnable())) {
             BlinkException.throwBusinessException(ErrCodeConstant.CHANNEL_NOT_ALLOW_DELETE);
         }
 
@@ -338,8 +338,8 @@ public class ChannelServiceImpl implements ChannelService {
             // 生成jwt token
             String token = jwtProvider.generateAccessToken(channel.getRelaUserId(), null, null);
             rsp.setToken(token);
-            rsp.setExpiresIn(ConfigValueConstant.LONG_MINUTES_15_OF_MILL);
-            rsp.setExpireTime(now.plusMinutes(ConfigValueConstant.LONG_MINUTES_15));
+            rsp.setExpiresIn(CommonConstants.LONG_MINUTES_15_OF_MILL);
+            rsp.setExpireTime(now.plusMinutes(CommonConstants.LONG_MINUTES_15));
 
             log.info("[Channel] 签发渠道Token成功 | appKey: {}", appKey);
 
@@ -367,7 +367,7 @@ public class ChannelServiceImpl implements ChannelService {
         jwtConfig.setAudience(channelSecretKey.getChannelName());
         jwtConfig.setIssuer("gateway-admin");
         // 15分钟过期 短期token 后续参数化配置
-        jwtConfig.setAccessTokenExpiration(ConfigValueConstant.LONG_MINUTES_15_OF_MILL);
+        jwtConfig.setAccessTokenExpiration(CommonConstants.LONG_MINUTES_15_OF_MILL);
 
         jwtProvider.setJwtConfig(jwtConfig);
         return jwtProvider;
@@ -383,7 +383,7 @@ public class ChannelServiceImpl implements ChannelService {
         GaChannelDO channel = new GaChannelDO();
         BeanUtils.copyProperties(req, channel);
 
-        channel.setEnable(ConfigValueConstant.SWITCH_OPEN);
+        channel.setEnable(CommonConstants.SWITCH_OPEN);
         channel.setChannelId(IdUtil.simpleUUID());
         channel.setAccessToken(IdUtil.simpleUUID());
         channel.setAppKey(SecureUtil.sha1().digestHex(RandomUtil.randomString(16)));

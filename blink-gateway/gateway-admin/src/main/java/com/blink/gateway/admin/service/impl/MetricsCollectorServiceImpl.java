@@ -28,9 +28,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.blink.gateway.admin.constants.ConfigValueConstant.CIRCUIT_BREAKER_CLOSED;
+import static com.blink.gateway.admin.constants.ConfigValueConstant.HEALTH_CHECK_TIMEOUT_SECONDS;
+import static com.blink.gateway.admin.constants.ConfigValueConstant.HEALTH_STATUS_UP;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_COLLECT_LOCK;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_PREFIX;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_SUMMARY;
+import static com.blink.gateway.admin.constants.ScheduleConstant.METRICS_HISTORY_CLEAN_CRON;
+import static com.blink.gateway.admin.constants.ServiceConstant.GATEWAY_SERVICE_NAME;
 
 /**
  * 网关指标采集服务实现
@@ -54,15 +59,13 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
     @Resource
     private DistributedLockClient distributedLockClient;
 
-    private static final String DEFAULT_GATEWAY_SERVICE_NAME = "gateway-app";
-
-    @Value("${blink.gateway.monitor.gateway-service-name:" + DEFAULT_GATEWAY_SERVICE_NAME + "}")
-    private String gatewayServiceName;
-
     /**
      * 采集任务分布式锁 Key
      */
     private static final String COLLECT_LOCK_KEY = GATEWAY_METRICS_COLLECT_LOCK;
+
+    @Value("${blink.gateway.monitor.gateway-service-name:" + GATEWAY_SERVICE_NAME + "}")
+    private String gatewayServiceName;
 
     @Value("${blink.gateway.monitor.actuator-username:admin}")
     private String actuatorUsername;
@@ -138,7 +141,7 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
                     saveToMySQL(instance, metrics);
 
                     // 汇总统计
-                    if ("UP".equals(metrics.healthStatus)) {
+                    if (HEALTH_STATUS_UP.equals(metrics.healthStatus)) {
                         healthyInstances++;
                     }
                     if (ObjectUtil.isNotNull(metrics.cpuUsage)) {
@@ -172,7 +175,7 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
     }
 
     @Override
-    @Scheduled(cron = "0 0 2 * * ?")
+    @Scheduled(cron = METRICS_HISTORY_CLEAN_CRON)
     public void cleanHistoryMetrics() {
         try {
             log.info("[MetricsCollector] 开始清理历史数据...");
@@ -302,7 +305,7 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
 
             // 8. 熔断器状态（暂不支持实时采集，默认 CLOSED）
             // TODO: 后续可通过 /actuator/circuitbreakers 端点获取实际状态
-            metrics.circuitBreakerState = "CLOSED";
+            metrics.circuitBreakerState = CIRCUIT_BREAKER_CLOSED;
 
             metrics.collectTime = System.currentTimeMillis();
 
@@ -333,7 +336,7 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
                     })
                     .retrieve()
                     .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(5))
+                    .timeout(Duration.ofSeconds(HEALTH_CHECK_TIMEOUT_SECONDS))
                     .block();
 
             if (StrUtil.isNotBlank(response)) {

@@ -22,6 +22,7 @@ import com.blink.gateway.admin.entity.SysNotificationReadDO;
 import com.blink.gateway.admin.mapper.SysNotificationMapper;
 import com.blink.gateway.admin.mapper.SysNotificationReadMapper;
 import com.blink.gateway.admin.service.NotificationService;
+import com.blink.gateway.base.constants.CommonConstants;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -122,8 +123,8 @@ public class NotificationServiceImpl implements NotificationService {
      * @param userId 用户ID
      */
     private void markAllRead(Integer userId) {
-        // 获取所有未读消息（最多1000条）
-        List<SysNotificationDO> unreadList = notificationMapper.selectUnreadByUserId(userId, 1000);
+        // 获取所有未读消息（最多 MAX_UNREAD_BATCH_SIZE 条）
+        List<SysNotificationDO> unreadList = notificationMapper.selectUnreadByUserId(userId, CommonConstants.MAX_UNREAD_BATCH_SIZE);
 
         if (CollUtil.isEmpty(unreadList)) {
             return;
@@ -205,7 +206,7 @@ public class NotificationServiceImpl implements NotificationService {
             // 缓存不存在，从数据库查询
             Integer dbCount = notificationMapper.countUnreadByUserId(userId);
             redisClient.set(key, dbCount);
-            redisClient.expire(key, 7 * 24 * 60 * 60L); // 7天，单位秒
+            redisClient.expire(key, CommonConstants.UNREAD_COUNT_EXPIRE_SECONDS);
             return dbCount;
         }
 

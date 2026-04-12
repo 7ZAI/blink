@@ -95,7 +95,7 @@ public interface CommonConstants {
     String SECRET_CONFIG_GROUP = "DEFAULT_GROUP";
 
     /**
-     * 15分钟
+     * 15分钟（毫秒）
      */
     Long LONG_MINUTES_15_OF_MILL = 900 * 1000L;
 
@@ -145,6 +145,64 @@ public interface CommonConstants {
      * 用户默认头像
      */
     String DEFAULT_USER_AVATAR = "adventurer-neutral";
+
+    // ============ 执行状态常量 ============
+
+    /**
+     * 执行状态 - 成功
+     */
+    Byte EXECUTE_STATUS_SUCCESS = 0;
+
+    /**
+     * 执行状态 - 失败
+     */
+    Byte EXECUTE_STATUS_FAILED = 1;
+
+    // ============ 同步类型常量 ============
+
+    /**
+     * 同步类型 - 全量同步
+     */
+    Byte SYNC_TYPE_FULL = 0;
+
+    /**
+     * 同步类型 - 增量同步
+     */
+    Byte SYNC_TYPE_INCREMENT = 1;
+
+    // ============ 菜单树根节点常量 ============
+
+    /**
+     * 根菜单父节点ID（0表示根节点）
+     */
+    Integer ROOT_MENU_PARENT_ID = 0;
+
+    // ============ Redis 操作常量 ============
+
+    /**
+     * Redis SCAN 命令每次迭代返回元素数量
+     */
+    Integer REDIS_SCAN_BATCH_SIZE = 100;
+
+    /**
+     * 旧 Token 过期时间（秒）
+     */
+    Long OLD_TOKEN_EXPIRE_SECONDS = 300L;
+
+    /**
+     * 未读消息计数缓存过期时间（秒）- 7天
+     */
+    Long UNREAD_COUNT_EXPIRE_SECONDS = 7 * 24 * 60 * 60L;
+
+    /**
+     * 未读消息批量处理最大数量
+     */
+    Integer MAX_UNREAD_BATCH_SIZE = 1000;
+
+    /**
+     * 缓存延迟删除等待时间（毫秒）
+     */
+    Long CACHE_DELAY_DELETE_MS = 300L;
 
     /**
      * 系统配置key常量

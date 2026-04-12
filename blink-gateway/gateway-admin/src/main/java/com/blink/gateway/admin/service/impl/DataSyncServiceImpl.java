@@ -21,6 +21,8 @@ import java.util.UUID;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.DATA_SYNC_FAILED;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.CHANNEL_INFO;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_STREAM_EVENT;
+import static com.blink.gateway.base.constants.CommonConstants.SYNC_TYPE_FULL;
+import static com.blink.gateway.base.constants.CommonConstants.SYNC_TYPE_INCREMENT;
 
 /**
  * 数据同步服务实现
@@ -49,13 +51,13 @@ public class DataSyncServiceImpl implements DataSyncService {
         String syncTaskId = UUID.randomUUID().toString();
 
         try {
-            Byte syncType = ObjectUtil.isNotNull(req.getSyncType()) ? req.getSyncType() : (byte) 0;
+            Byte syncType = ObjectUtil.isNotNull(req.getSyncType()) ? req.getSyncType() : SYNC_TYPE_FULL;
 
             // 判断是否指定了渠道ID列表
             if (CollUtil.isNotEmpty(req.getChannelIds())) {
                 // 批量同步指定渠道
                 log.info("[DataSync] 开始批量同步渠道数据 | syncType: {}, channelCount: {}",
-                    syncType == 0 ? "全量同步" : "增量同步", req.getChannelIds().size());
+                    syncType.equals(SYNC_TYPE_FULL) ? "全量同步" : "增量同步", req.getChannelIds().size());
 
                 // 针对每个渠道发送缓存变更通知
                 for (String channelId : req.getChannelIds()) {
@@ -67,7 +69,7 @@ public class DataSyncServiceImpl implements DataSyncService {
                 log.info("[DataSync] 批量渠道数据同步完成 | count: {}", req.getChannelIds().size());
             } else {
                 // 同步所有渠道
-                log.info("[DataSync] 开始同步所有渠道数据 | syncType: {}", syncType == 0 ? "全量同步" : "增量同步");
+                log.info("[DataSync] 开始同步所有渠道数据 | syncType: {}", syncType.equals(SYNC_TYPE_FULL) ? "全量同步" : "增量同步");
 
                 // 通过 Redis Stream 通知网关刷新渠道缓存
                 messageProducer.cacheOnChange("channel:*");
