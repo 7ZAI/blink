@@ -1,0 +1,12 @@
+# 单元测试配置
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+
+# 日志级别
+logging:
+  level:
+    com.blink: DEBUG
