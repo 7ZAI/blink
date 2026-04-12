@@ -140,11 +140,13 @@ public class SysConfigServiceImpl implements SysConfigService {
         if (isSystemConfigChange(cacheKey)) {
             //删除redis中保存的系统配置项
             redisClient.delete(RedisKeyConstants.SYSTEM_CONFIG);
+            //清除本地缓存
+            cacheComponent.clearLocalCache(RedisKeyConstants.SYSTEM_CONFIG);
         }
 
         // 延迟删除 延迟时间 > 请求时间 + redis 设置值的时间 也就是getOneConfig()接口花费时间
         try {
-            Thread.sleep(300);
+            Thread.sleep(CommonConstants.CACHE_DELAY_DELETE_MS);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("缓存延迟删除被中断", e);
@@ -386,6 +388,8 @@ public class SysConfigServiceImpl implements SysConfigService {
         if(!configList.isEmpty()) {
             //删除redis中保存的系统配置项
             redisClient.delete(RedisKeyConstants.SYSTEM_CONFIG);
+            //清除本地缓存
+            cacheComponent.clearLocalCache(RedisKeyConstants.SYSTEM_CONFIG);
         }
 
         log.info("[SysConfig] 批量更新参数配置成功 | count: {}, ids: {}", paramlist.size(), ids);

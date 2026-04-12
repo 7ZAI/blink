@@ -3,6 +3,7 @@ package com.blink.base.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.blink.base.constants.CommonConstants;
 import com.blink.base.dto.req.AddSysDictDataReq;
 import com.blink.base.dto.req.DeleteSysDictDataReq;
 import com.blink.base.dto.req.QuerySysDictDataReq;
@@ -60,7 +61,7 @@ public class SysDictDataServiceImpl implements SysDictDataService {
                 ? saveParam.getLocale()
                 : BlinkRequestContextHolder.getContext().getLanguage();
         if (StrUtil.isBlank(locale)) {
-            locale = "zh_cn";
+            locale = CommonConstants.DEFAULT_LANGUAGE;
         }
         sysDictDataDO.setLocale(locale);
 
@@ -209,7 +210,7 @@ public class SysDictDataServiceImpl implements SysDictDataService {
         // 从上下文获取当前语言
         String locale = BlinkRequestContextHolder.getContext().getLanguage();
         if (StrUtil.isBlank(locale)) {
-            locale = "zh_cn";
+            locale = CommonConstants.DEFAULT_LANGUAGE;
         }
 
         List<SysDictDataDO> dictDataList = sysDictDataMapper.selectDictDataByTypeAndLocale(dictType, locale);
@@ -236,7 +237,7 @@ public class SysDictDataServiceImpl implements SysDictDataService {
         // 从上下文获取当前语言
         String locale = BlinkRequestContextHolder.getContext().getLanguage();
         if (StrUtil.isBlank(locale)) {
-            locale = "zh_cn";
+            locale = CommonConstants.DEFAULT_LANGUAGE;
         }
 
         // 查询所有字典数据

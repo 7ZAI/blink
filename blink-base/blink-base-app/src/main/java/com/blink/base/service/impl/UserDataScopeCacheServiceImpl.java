@@ -185,7 +185,7 @@ public class UserDataScopeCacheServiceImpl implements UserDataScopeCacheService 
         String pattern = RedisKeyConstants.USER_TOKEN + "*";
         String oldTokenPrefix = RedisKeyConstants.USER_TOKEN_OLD;
 
-        try (Cursor<String> cursor = redisClient.scan(pattern, 100)) {
+        try (Cursor<String> cursor = redisClient.scan(pattern, CommonConstants.REDIS_SCAN_BATCH_SIZE)) {
             while (cursor.hasNext()) {
                 String key = cursor.next();
                 // 跳过被顶替的旧 token

@@ -5,6 +5,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constants.BaseErrCodeConstant;
+import com.blink.base.constants.CommonConstants;
 import com.blink.base.dto.req.QueryOperationLogReq;
 import com.blink.base.dto.rsp.OperationLogDetailRsp;
 import com.blink.base.dto.rsp.OperationLogRsp;
@@ -231,7 +232,7 @@ public class SysOperationLogServiceImpl implements SysOperationLogService {
         vo.setLogTypeDesc(logType.getDescription());
 
         // 设置执行状态描述
-        vo.setExecuteStatusDesc(logDO.getExecuteStatus() == 0 ? "成功" : "失败");
+        vo.setExecuteStatusDesc(CommonConstants.EXECUTE_STATUS_SUCCESS.equals(logDO.getExecuteStatus()) ? "成功" : "失败");
 
         return vo;
     }
@@ -251,7 +252,7 @@ public class SysOperationLogServiceImpl implements SysOperationLogService {
         rsp.setLogTypeDesc(logType.getDescription());
 
         // 设置执行状态描述
-        rsp.setExecuteStatusDesc(logDO.getExecuteStatus() == 0 ? "成功" : "失败");
+        rsp.setExecuteStatusDesc(CommonConstants.EXECUTE_STATUS_SUCCESS.equals(logDO.getExecuteStatus()) ? "成功" : "失败");
 
         return rsp;
     }

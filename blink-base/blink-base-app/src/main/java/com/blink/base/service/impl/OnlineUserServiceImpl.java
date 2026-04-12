@@ -3,6 +3,7 @@ package com.blink.base.service.impl;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.blink.base.constants.BaseErrCodeConstant;
+import com.blink.base.constants.CommonConstants;
 import com.blink.base.constants.RedisKeyConstants;
 import com.blink.base.dto.req.KickoutUserReq;
 import com.blink.base.dto.req.QueryOnlineUserReq;
@@ -50,7 +51,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
         // 注意：需要过滤掉 user:token:old: 前缀的 key，只扫描正常登录用户的 token
         String pattern = RedisKeyConstants.USER_TOKEN + "*";
         String oldTokenPrefix = RedisKeyConstants.USER_TOKEN_OLD;
-        Cursor<String> cursor = redisClient.scan(pattern, 100);
+        Cursor<String> cursor = redisClient.scan(pattern, CommonConstants.REDIS_SCAN_BATCH_SIZE);
         
         try {
             while (cursor.hasNext()) {
@@ -103,7 +104,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
         // 从 ZSet 移除
         redisClient.zRemove(RedisKeyConstants.USER_TOKENS + userId, token);
         // 设置旧 token 标记（用于提示）
-        redisClient.setEx(RedisKeyConstants.USER_TOKEN_OLD + token, userId, 300L);
+        redisClient.setEx(RedisKeyConstants.USER_TOKEN_OLD + token, userId, CommonConstants.OLD_TOKEN_EXPIRE_SECONDS);
 
         log.info("[OnlineUser] 强制用户下线 | userId: {}, token: {}", userId, token);
     }
@@ -120,7 +121,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
 
         String pattern = RedisKeyConstants.USER_TOKEN + "*";
         String oldTokenPrefix = RedisKeyConstants.USER_TOKEN_OLD;
-        Cursor<String> cursor = redisClient.scan(pattern, 100);
+        Cursor<String> cursor = redisClient.scan(pattern, CommonConstants.REDIS_SCAN_BATCH_SIZE);
 
         try {
             while (cursor.hasNext()) {

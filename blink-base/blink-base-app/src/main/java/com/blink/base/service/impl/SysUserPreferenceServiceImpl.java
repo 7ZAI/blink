@@ -2,6 +2,7 @@ package com.blink.base.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.blink.base.constants.CommonConstants;
 import com.blink.base.dto.req.SaveUserPreferenceReq;
 import com.blink.base.dto.vo.UserPreferenceVO;
 import com.blink.base.entity.SysUserPreferenceDO;
@@ -67,10 +68,10 @@ public class SysUserPreferenceServiceImpl implements SysUserPreferenceService {
             // 返回默认设置
             UserPreferenceVO vo = new UserPreferenceVO();
             vo.setUserId(userId);
-            vo.setTheme("light");
-            vo.setLanguage("zh_cn");
+            vo.setTheme(CommonConstants.DEFAULT_THEME);
+            vo.setLanguage(CommonConstants.DEFAULT_LANGUAGE);
             vo.setSidebarCollapsed(false);
-            vo.setFontSize(14);
+            vo.setFontSize(CommonConstants.DEFAULT_FONT_SIZE);
             return vo;
         }
 

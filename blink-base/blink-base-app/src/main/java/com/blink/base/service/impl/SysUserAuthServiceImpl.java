@@ -119,10 +119,10 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         // 使用标准 BCrypt 验证（salt 已包含在存储的 hash 中）
         if (!BCrypt.checkpw(password, loginUser.getPassword())) {
             retry++;
-            // 记录错误次数 超过3次锁定
+            // 记录错误次数 超过最大重试次数锁定
             Integer locked = null;
             LocalDateTime lockTime = null;
-            if (retry >= 3) {
+            if (retry >= CommonConstants.PASSWORD_MAX_RETRY) {
                 locked = CommonConstants.USER_LOCKED_ERR_PSW;
                 lockTime = LocalDateTime.now();
             }
@@ -236,8 +236,8 @@ public class SysUserAuthServiceImpl implements UserAuthService {
             }
 
             long loginTime = System.currentTimeMillis();
-            // 30分钟
-            long ttl = 1800L;
+            // 会话 TTL（30分钟）
+            long ttl = CommonConstants.SESSION_TTL_SECONDS;
 
             List<Object> args = Arrays.asList(
                 String.valueOf(maxDevices),
@@ -280,7 +280,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
      */
     private void
     fallbackStoreSession(String token, UserInfoRedisDO userInfo) {
-        long expireTime = 1800L;
+        long expireTime = CommonConstants.SESSION_TTL_SECONDS;
         // 直接使用 redisClient.setEx，它会使用 GenericJackson2JsonRedisSerializer 序列化
         // 这样存储的数据包含 @class 类型信息，读取时能正确反序列化
         redisClient.setEx(RedisKeyConstants.USER_TOKEN + token, userInfo, expireTime);
@@ -616,7 +616,7 @@ public class SysUserAuthServiceImpl implements UserAuthService {
         }
 
         // 缓存5分钟
-        redisClient.setEx(RedisKeyConstants.SYSTEM_CONFIG, config, 300L);
+        redisClient.setEx(RedisKeyConstants.SYSTEM_CONFIG, config, CommonConstants.SYSTEM_CONFIG_CACHE_TTL);
 
         return config;
     }

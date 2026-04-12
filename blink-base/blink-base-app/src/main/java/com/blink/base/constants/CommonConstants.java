@@ -105,6 +105,68 @@ public interface CommonConstants {
     Long LONG_MINUTES_15 = 15L;
 
     /**
+     * 缓存延迟删除时间（毫秒）
+     * 延迟时间 > 请求时间 + redis 设置值的时间
+     */
+    Long CACHE_DELAY_DELETE_MS = 300L;
+
+    /**
+     * Redis scan 批次大小
+     */
+    Integer REDIS_SCAN_BATCH_SIZE = 100;
+
+    /**
+     * 旧 token 过期时间（秒）
+     * 用于顶替登录提示
+     */
+    Long OLD_TOKEN_EXPIRE_SECONDS = 300L;
+
+    /**
+     * 执行状态 - 成功
+     */
+    Byte EXECUTE_STATUS_SUCCESS = 0;
+
+    /**
+     * 执行状态 - 失败
+     */
+    Byte EXECUTE_STATUS_FAILED = 1;
+
+    /**
+     * 密码最大重试次数
+     */
+    Integer PASSWORD_MAX_RETRY = 3;
+
+    /**
+     * 会话 TTL（秒） - 30分钟
+     */
+    Long SESSION_TTL_SECONDS = 1800L;
+
+    /**
+     * 系统配置缓存 TTL（秒） - 5分钟
+     */
+    Long SYSTEM_CONFIG_CACHE_TTL = 300L;
+
+    /**
+     * 默认语言
+     */
+    String DEFAULT_LANGUAGE = "zh_cn";
+
+    /**
+     * 默认主题
+     */
+    String DEFAULT_THEME = "light";
+
+    /**
+     * 默认字体大小
+     */
+    Integer DEFAULT_FONT_SIZE = 14;
+
+    /**
+     * 菜单层级 - 根级
+     */
+    Integer MENU_LEVEL_ROOT = 1;
+
+    /**
      * 系统默认标题
      */
     String DEFAULT_SYSTEM_TITLE = "Blink管理系统";

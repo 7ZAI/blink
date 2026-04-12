@@ -72,17 +72,20 @@ public class SysMenuServiceImpl implements SysMenuService {
 
         // 校验菜单类型
         Integer menuType = saveParam.getType();
-        if (menuType == null || (menuType != 1 && menuType != 2 && menuType != 3)) {
+        if (menuType == null || (!menuType.equals(CommonConstants.MENU_DIRECTORY)
+                && !menuType.equals(CommonConstants.MENU_PAGE)
+                && !menuType.equals(CommonConstants.MENU_FUNCTION))) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_OUT_RANGE);
         }
 
         // 目录和页面菜单URL必填
-        if ((menuType == 1 || menuType == 2) && StrUtil.isBlank(saveParam.getUrl())) {
+        if ((menuType.equals(CommonConstants.MENU_DIRECTORY) || menuType.equals(CommonConstants.MENU_PAGE))
+                && StrUtil.isBlank(saveParam.getUrl())) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
         }
 
         // 计算菜单层级
-        Integer menuLevel = 1;
+        Integer menuLevel = CommonConstants.MENU_LEVEL_ROOT;
         Integer parentId = saveParam.getParentId();
 
         //父节点不存在
@@ -95,7 +98,8 @@ public class SysMenuServiceImpl implements SysMenuService {
         }
 
         // 校验permId是否存在（仅页面和按钮菜单）
-        if ((menuType == 2 || menuType == 3) && ObjectUtil.isNotNull(saveParam.getPermId())) {
+        if ((menuType.equals(CommonConstants.MENU_PAGE) || menuType.equals(CommonConstants.MENU_FUNCTION))
+                && ObjectUtil.isNotNull(saveParam.getPermId())) {
             Long permCount = sysPermissionMapper.selectCount(
                     new LambdaQueryWrapper<SysPermissionDO>()
                             .eq(SysPermissionDO::getAcId, saveParam.getPermId()));
@@ -110,7 +114,7 @@ public class SysMenuServiceImpl implements SysMenuService {
         // 设置菜单层级
         sysMenuDO.setMenuLevel(menuLevel);
         // 处理关联权限（仅页面和按钮菜单）
-        if ((menuType == 2 || menuType == 3)
+        if ((menuType.equals(CommonConstants.MENU_PAGE) || menuType.equals(CommonConstants.MENU_FUNCTION))
                 && ObjectUtil.isNotNull(saveParam.getPermId())) {
             sysMenuDO.setPermId(saveParam.getPermId());
         }
@@ -234,17 +238,21 @@ public class SysMenuServiceImpl implements SysMenuService {
 
         // 校验菜单类型
         Integer menuType = updateParam.getType();
-        if (menuType == null || (menuType != 1 && menuType != 2 && menuType != 3)) {
+        if (menuType == null || (!menuType.equals(CommonConstants.MENU_DIRECTORY)
+                && !menuType.equals(CommonConstants.MENU_PAGE)
+                && !menuType.equals(CommonConstants.MENU_FUNCTION))) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_OUT_RANGE);
         }
 
         // 目录和页面菜单URL必填
-        if ((menuType == 1 || menuType == 2) && StrUtil.isBlank(updateParam.getUrl())) {
+        if ((menuType.equals(CommonConstants.MENU_DIRECTORY) || menuType.equals(CommonConstants.MENU_PAGE))
+                && StrUtil.isBlank(updateParam.getUrl())) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
         }
 
         // 校验permId是否存在（仅页面和按钮菜单）
-        if ((menuType == 2 || menuType == 3) && ObjectUtil.isNotNull(updateParam.getPermId())) {
+        if ((menuType.equals(CommonConstants.MENU_PAGE) || menuType.equals(CommonConstants.MENU_FUNCTION))
+                && ObjectUtil.isNotNull(updateParam.getPermId())) {
             Long permCount = sysPermissionMapper.selectCount(
                     new LambdaQueryWrapper<SysPermissionDO>()
                             .eq(SysPermissionDO::getAcId, updateParam.getPermId()));
@@ -274,7 +282,7 @@ public class SysMenuServiceImpl implements SysMenuService {
 
         BeanUtil.copyProperties(updateParam, sysMenuDO);
         // 处理关联权限（仅页面和按钮菜单）
-        if (menuType == 2 || menuType == 3) {
+        if (menuType.equals(CommonConstants.MENU_PAGE) || menuType.equals(CommonConstants.MENU_FUNCTION)) {
             sysMenuDO.setPermId(updateParam.getPermId());
         } else {
             sysMenuDO.setPermId(null);

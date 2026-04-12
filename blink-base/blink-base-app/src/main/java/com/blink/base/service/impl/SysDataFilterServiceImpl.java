@@ -7,6 +7,7 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.base.constants.BaseErrCodeConstant;
+import com.blink.base.constants.CommonConstants;
 
 import com.blink.base.dto.vo.DataFilterVO;
 import com.blink.base.dto.vo.EntityFieldVO;
@@ -118,7 +119,7 @@ public class SysDataFilterServiceImpl implements SysDataFilterService {
 
         // 构建实体
         SysDataFilterDO dataFilter = BeanUtil.copyProperties(req, SysDataFilterDO.class);
-        dataFilter.setStatus((byte) 0);
+        dataFilter.setStatus(CommonConstants.SWITCH_OPEN);
         dataFilter.setCreateBy(reqDto.getLoginName());
 
         sysDataFilterMapper.insert(dataFilter);
