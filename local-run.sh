@@ -17,7 +17,7 @@ if [ -z "$MODULE" ]; then
     echo "  后端服务:"
     echo "    blink-base-app         - RBAC 后台管理服务 (端口: 8001)"
     echo "    gateway-admin          - Gateway 管理服务 (端口: 8008)"
-    echo "    blink-gateway-reactive - 响应式网关 (端口: 8080)"
+    echo "    blink-gateway-reactive - 响应式网关 (端口: 8002)"
     echo ""
     echo "  前端服务:"
     echo "    base-admin-fe          - Base 管理前端"
