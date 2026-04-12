@@ -3,11 +3,14 @@ package com.blink.base.service;
 import com.blink.base.dto.req.CompleteTaskReq;
 import com.blink.base.dto.req.DelegateTaskReq;
 import com.blink.base.dto.req.DeployProcessReq;
+import com.blink.base.dto.req.ImportXmlProcessReq;
 import com.blink.base.dto.req.LeaveApprovalReq;
 import com.blink.base.dto.req.QueryProcessDefinitionReq;
 import com.blink.base.dto.req.QueryProcessInstanceReq;
 import com.blink.base.dto.req.QueryTaskReq;
+import com.blink.base.dto.req.RollbackProcessReq;
 import com.blink.base.dto.req.StartProcessReq;
+import com.blink.base.dto.req.WithdrawTaskReq;
 import com.blink.base.dto.rsp.HistoricTaskRsp;
 import com.blink.base.dto.rsp.ProcessDefinitionRsp;
 import com.blink.base.dto.rsp.ProcessHistoryRsp;
@@ -39,6 +42,15 @@ public interface FlowableProcessService {
      * @throws BlinkException 部署失败时抛出
      */
     String deployProcess(DeployProcessReq req) throws BlinkException;
+
+    /**
+     * 从BPMN XML导入流程定义
+     *
+     * @param req 导入请求（包含XML内容）
+     * @return 部署ID
+     * @throws BlinkException 导入失败时抛出
+     */
+    String importProcessFromXml(ImportXmlProcessReq req) throws BlinkException;
 
     /**
      * 分页查询流程定义列表
@@ -149,6 +161,14 @@ public interface FlowableProcessService {
      */
     void deleteProcessInstance(String processInstanceId, String reason) throws BlinkException;
 
+    /**
+     * 回退流程到指定节点
+     *
+     * @param req 回退请求
+     * @throws BlinkException 回退失败时抛出
+     */
+    void rollbackProcess(RollbackProcessReq req) throws BlinkException;
+
     // ==================== 任务管理 ====================
 
     /**
@@ -210,6 +230,14 @@ public interface FlowableProcessService {
      * @throws BlinkException 取消认领失败时抛出
      */
     void unclaimTask(String taskId) throws BlinkException;
+
+    /**
+     * 撤回任务（发起人撤回未处理的任务）
+     *
+     * @param req 撤回请求
+     * @throws BlinkException 撤回失败时抛出
+     */
+    void withdrawTask(WithdrawTaskReq req) throws BlinkException;
 
     // ==================== 流程历史 ====================
 
