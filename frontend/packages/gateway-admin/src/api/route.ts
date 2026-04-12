@@ -49,6 +49,10 @@ export interface RouteDefinition {
   createTime?: string
   updateBy?: string
   updateTime?: string
+  // 新增字段 - 乐观锁和推送状态
+  version?: number
+  pushStatus?: number // 0-未推送 1-已推送 2-推送失败
+  lastPushTime?: string
 }
 
 // 保存路由请求
@@ -83,6 +87,8 @@ export interface UpdateRouteReq {
   nacosGroup?: string
   status?: number
   remark?: string
+  // 新增字段 - 乐观锁版本号（必传）
+  version?: number
 }
 
 // 删除路由请求
@@ -344,6 +350,10 @@ export interface GaRoutePushLogDO {
   operatorName?: string
   pushTime: string
   remark?: string
+  // 新增字段 - 失败详情和确认状态
+  failedInstanceIds?: string // 失败实例ID列表(JSON数组)
+  instanceErrors?: Record<string, string> // 各实例错误信息(JSON对象)
+  confirmStatus?: number // 0-待确认 1-已确认 2-超时
 }
 
 /**
@@ -374,6 +384,102 @@ export const rollbackPush = (data: RollbackPushReq): Promise<void> => {
   return request.post('/route/rollbackPush', { body: data })
 }
 
+// ========== 新增接口 - 路由管理增强功能 ==========
+
+/** 全量推送请求 */
+export interface FullPushRoutesReq {
+  storageMode: string
+  routesGroup?: string
+  nacosDataId?: string
+  nacosGroup?: string
+}
+
+/** 批量状态更新请求 */
+export interface BatchUpdateStatusReq {
+  routeIds: string[]
+  status: number // 0-禁用 1-启用
+  routesGroup?: string
+}
+
+/** 路由分组统计响应 */
+export interface RoutesGroupStatsRsp {
+  groupTotal: number
+  enabledCount: number
+  disabledCount: number
+  notPushedCount: number
+  pushedCount: number
+  pushFailedCount: number
+}
+
+/** 导出路由请求 */
+export interface ExportRoutesReq {
+  routeIds?: string[]
+  routesGroup?: string
+}
+
+/** 导入路由请求 */
+export interface ImportRoutesReq {
+  routesData: string // JSON字符串
+  routesGroup?: string
+  overwrite?: boolean // 是否覆盖已存在的路由
+}
+
+/** 导入路由响应 */
+export interface ImportRoutesRsp {
+  successCount: number
+  failedCount: number
+  failedRoutes: Array<{ routeId: string; reason: string }>
+}
+
+/** 克隆路由请求 */
+export interface CloneRouteReq {
+  sourceRouteId: string
+  newRouteId?: string // 新路由ID，可选，不填则自动生成
+  newRouteName?: string
+}
+
+/**
+ * 全量推送 - 推送指定分组下所有启用状态路由
+ */
+export const fullPushRoutes = (data: FullPushRoutesReq): Promise<void> => {
+  return request.post('/route/fullPushRoutes', { body: data })
+}
+
+/**
+ * 批量更新路由状态（启用/禁用）
+ */
+export const batchUpdateStatus = (data: BatchUpdateStatusReq): Promise<void> => {
+  return request.post('/route/batchUpdateStatus', { body: data })
+}
+
+/**
+ * 查询路由分组统计信息
+ */
+export const getRoutesGroupStats = (routesGroup: string): Promise<RoutesGroupStatsRsp> => {
+  return request.post('/route/getRoutesGroupStats', { body: routesGroup })
+}
+
+/**
+ * 导出路由为JSON
+ */
+export const exportRoutes = (data: ExportRoutesReq): Promise<string> => {
+  return request.post('/route/exportRoutes', { body: data })
+}
+
+/**
+ * 导入路由
+ */
+export const importRoutes = (data: ImportRoutesReq): Promise<ImportRoutesRsp> => {
+  return request.post('/route/importRoutes', { body: data })
+}
+
+/**
+ * 克隆路由
+ */
+export const cloneRoute = (data: CloneRouteReq): Promise<RouteDefinition> => {
+  return request.post('/route/cloneRoute', { body: data })
+}
+
 // Route API object (for component using routeApi.xxx pattern)
 export const routeApi = {
   getList: getRouteList,
@@ -394,4 +500,11 @@ export const routeApi = {
   getPushHistory,
   getInstanceRoutes,
   rollbackPush,
+  // 新增接口方法
+  fullPushRoutes,
+  batchUpdateStatus,
+  getRoutesGroupStats,
+  exportRoutes,
+  importRoutes,
+  cloneRoute,
 }

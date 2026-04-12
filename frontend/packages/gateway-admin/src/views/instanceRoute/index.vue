@@ -285,6 +285,48 @@
                 </el-tag>
               </template>
             </el-table-column>
+            <!-- 新增：失败实例详情列 -->
+            <el-table-column :label="t('instanceRoute.failedInstancesColumn')" min-width="120">
+              <template #default="{ row }">
+                <template v-if="row.failedInstanceIds">
+                  <el-popover placement="top" trigger="hover" :width="450">
+                    <template #reference>
+                      <el-tag type="danger" effect="light" size="small" class="failed-tag">
+                        {{ parseFailedIds(row.failedInstanceIds).length }} {{ t('instanceRoute.failedInstances') }}
+                      </el-tag>
+                    </template>
+                    <div class="failed-detail-popover">
+                      <div class="failed-header">{{ t('instanceRoute.failedInstancesDetail') }}</div>
+                      <div class="failed-list">
+                        <div
+                          v-for="(id, idx) in parseFailedIds(row.failedInstanceIds)"
+                          :key="idx"
+                          class="failed-item"
+                        >
+                          <span class="instance-id-text">{{ id }}</span>
+                          <span class="error-msg-text">
+                            {{ row.instanceErrors?.[id] || t('instanceRoute.unknownError') }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </el-popover>
+                </template>
+                <span v-else class="no-failed">-</span>
+              </template>
+            </el-table-column>
+            <!-- 新增：确认状态列 -->
+            <el-table-column :label="t('instanceRoute.confirmStatusColumn')" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag
+                  :type="getConfirmStatusType(row.confirmStatus)"
+                  size="small"
+                  effect="plain"
+                >
+                  {{ getConfirmStatusText(row.confirmStatus) }}
+                </el-tag>
+              </template>
+            </el-table-column>
             <el-table-column prop="operatorName" :label="t('instanceRoute.operatorColumn')" width="100">
               <template #default="{ row }">
                 <span class="operator-cell">{{ row.operatorName || '-' }}</span>
@@ -741,6 +783,30 @@ function getPushResultText(result: number): string {
   return t('instanceRoute.pushResultFailed')
 }
 
+// 新增：解析失败实例ID列表
+function parseFailedIds(failedInstanceIdsJson: string): string[] {
+  if (!failedInstanceIdsJson) return []
+  try {
+    return JSON.parse(failedInstanceIdsJson)
+  } catch {
+    return []
+  }
+}
+
+// 新增：获取确认状态类型（用于Tag颜色）
+function getConfirmStatusType(confirmStatus: number | undefined): 'warning' | 'success' | 'info' {
+  if (confirmStatus === undefined || confirmStatus === 0) return 'warning' // 待确认
+  if (confirmStatus === 1) return 'success' // 已确认
+  return 'info' // 超时
+}
+
+// 新增：获取确认状态文本
+function getConfirmStatusText(confirmStatus: number | undefined): string {
+  if (confirmStatus === undefined || confirmStatus === 0) return t('instanceRoute.confirmPending')
+  if (confirmStatus === 1) return t('instanceRoute.confirmConfirmed')
+  return t('instanceRoute.confirmTimeout')
+}
+
 // 初始化
 onMounted(() => {
   loadInstances()
@@ -1047,6 +1113,52 @@ onMounted(() => {
 
   .uri-tag {
     font-family: 'SF Mono', 'Monaco', monospace;
+  }
+
+  // 新增：失败实例样式
+  .failed-tag {
+    cursor: pointer;
+  }
+
+  .no-failed {
+    color: var(--el-text-color-secondary);
+  }
+}
+
+// 新增：失败详情弹出框样式
+.failed-detail-popover {
+  .failed-header {
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--el-color-danger);
+  }
+
+  .failed-list {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  .failed-item {
+    padding: 8px 12px;
+    background: var(--el-fill-color-light);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .instance-id-text {
+      font-family: 'SF Mono', 'Monaco', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--el-text-color-primary);
+    }
+
+    .error-msg-text {
+      font-size: 12px;
+      color: var(--el-color-danger);
+      word-break: break-all;
+    }
   }
 }
 

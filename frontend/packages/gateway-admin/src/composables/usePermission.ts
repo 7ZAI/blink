@@ -162,5 +162,11 @@ export const ButtonPerms = {
     Edit: 'route:update',
     Delete: 'route:delete',
     Refresh: 'route:refresh',
+    // 新增按钮权限 - 对应数据库 menu_id 61-65
+    BatchStatus: 'route:batchStatus', // 批量状态
+    FullPush: 'route:fullPush', // 全量推送
+    Import: 'route:importRoutes', // 导入路由
+    Export: 'route:exportRoutes', // 导出路由
+    Clone: 'route:cloneRoute', // 克隆路由
   },
 } as const

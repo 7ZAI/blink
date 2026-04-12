@@ -105,6 +105,41 @@
             <el-icon><Promotion /></el-icon>
             {{ t('route.pushSelected') }} ({{ selectedRoutes.length }})
           </AuthButton>
+          <!-- 新增按钮 -->
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.Route.BatchStatus)"
+            type="default"
+            :disabled="selectedRoutes.length === 0"
+            @click="handleBatchStatus"
+          >
+            <el-icon><Switch /></el-icon>
+            {{ t('route.batchStatus') }} ({{ selectedRoutes.length }})
+          </AuthButton>
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.Route.FullPush)"
+            type="warning"
+            @click="handleFullPush"
+          >
+            <el-icon><Upload /></el-icon>
+            {{ t('route.fullPush') }}
+          </AuthButton>
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.Route.Import)"
+            type="default"
+            @click="handleImport"
+          >
+            <el-icon><Download /></el-icon>
+            {{ t('route.importRoutes') }}
+          </AuthButton>
+          <AuthButton
+            :has-permission="() => checkPermission(ButtonPerms.Route.Export)"
+            type="default"
+            :disabled="selectedRoutes.length === 0"
+            @click="handleExport"
+          >
+            <el-icon><UploadFilled /></el-icon>
+            {{ t('route.exportRoutes') }} ({{ selectedRoutes.length }})
+          </AuthButton>
           <AuthButton
             :has-permission="() => checkPermission(ButtonPerms.Route.Refresh)"
             type="warning"
@@ -192,7 +227,25 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="t('common.operation')" width="240" fixed="right">
+          <!-- 新增：推送状态列 -->
+          <el-table-column :label="t('route.pushStatus')" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag
+                :type="getPushStatusType(row.pushStatus)"
+                effect="plain"
+                size="small"
+              >
+                {{ getPushStatusText(row.pushStatus) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <!-- 新增：最后推送时间列 -->
+          <el-table-column :label="t('route.lastPushTime')" width="160">
+            <template #default="{ row }">
+              <span class="time-text">{{ row.lastPushTime || '-' }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column :label="t('common.operation')" width="280" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
                 <AuthButton
@@ -204,6 +257,16 @@
                 >
                   <el-icon><Edit /></el-icon>
                   {{ t('common.edit') }}
+                </AuthButton>
+                <AuthButton
+                  :has-permission="() => checkPermission(ButtonPerms.Route.Clone)"
+                  type="info"
+                  link
+                  size="small"
+                  @click="handleClone(row)"
+                >
+                  <el-icon><DocumentCopy /></el-icon>
+                  {{ t('route.cloneRoute') }}
                 </AuthButton>
                 <AuthButton
                   :has-permission="() => checkPermission(ButtonPerms.Route.Edit)"
@@ -290,7 +353,7 @@
             <el-form-item :label="t('route.uri')" prop="uri">
               <el-input
                 v-model="formData.uri"
-                placeholder="lb://service-name 或 https://example.com"
+                :placeholder="t('route.uriPlaceholder')"
               />
             </el-form-item>
           </el-col>
@@ -612,6 +675,94 @@
       :route-ids="selectedRouteIds"
       @success="handleSyncSuccess"
     />
+
+    <!-- 新增：批量状态更新弹窗 -->
+    <el-dialog
+      v-model="batchStatusDialogVisible"
+      :title="t('route.batchStatus')"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <div class="batch-status-tip">
+        {{ t('route.batchStatusTip', { count: selectedRoutes.length }) }}
+      </div>
+      <el-form label-width="80px">
+        <el-form-item :label="t('route.targetStatus')">
+          <el-radio-group v-model="batchStatusValue">
+            <el-radio :value="1">
+              <el-tag type="success" effect="plain" size="small">{{ t('route.statusEnable') }}</el-tag>
+            </el-radio>
+            <el-radio :value="0">
+              <el-tag type="danger" effect="plain" size="small">{{ t('route.statusDisable') }}</el-tag>
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchStatusDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="batchStatusLoading" @click="handleBatchStatusSubmit">
+          {{ t('common.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 新增：导入路由弹窗 -->
+    <el-dialog
+      v-model="importDialogVisible"
+      :title="t('route.importRoutes')"
+      width="600px"
+      :close-on-click-modal="false"
+    >
+      <div class="import-tip">{{ t('route.importTip') }}</div>
+      <el-form label-width="100px">
+        <el-form-item :label="t('route.routesGroup')">
+          <el-input v-model="importRoutesGroup" :placeholder="t('route.routeGroupPlaceholder')" />
+        </el-form-item>
+        <el-form-item :label="t('route.importData')">
+          <el-input
+            v-model="importJsonData"
+            type="textarea"
+            :rows="10"
+            placeholder="JSON format route array"
+          />
+        </el-form-item>
+        <el-form-item :label="t('route.overwrite')">
+          <el-switch v-model="importOverwrite" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="importDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="importLoading" @click="handleImportSubmit">
+          {{ t('common.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 新增：克隆路由弹窗 -->
+    <el-dialog
+      v-model="cloneDialogVisible"
+      :title="t('route.cloneRoute')"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <div class="clone-tip">
+        {{ t('route.cloneTip', { routeId: cloneSourceRouteId }) }}
+      </div>
+      <el-form label-width="100px">
+        <el-form-item :label="t('route.newRouteId')">
+          <el-input v-model="cloneNewRouteId" :placeholder="t('route.newRouteIdPlaceholder')" />
+        </el-form-item>
+        <el-form-item :label="t('route.newRouteName')">
+          <el-input v-model="cloneNewRouteName" :placeholder="t('route.newRouteNamePlaceholder')" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="cloneDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="cloneLoading" @click="handleCloneSubmit">
+          {{ t('common.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -627,7 +778,22 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Edit, Delete, Connection, Clock, Promotion } from '@element-plus/icons-vue'
+import {
+  Search,
+  Refresh,
+  Plus,
+  Edit,
+  Delete,
+  Connection,
+  Clock,
+  Promotion,
+  // 新增图标
+  Switch,
+  Upload,
+  UploadFilled,
+  Download,
+  DocumentCopy,
+} from '@element-plus/icons-vue'
 import {
   getRouteList,
   saveRoute,
@@ -639,6 +805,12 @@ import {
   getNacosRouteList,
   saveNacosRoute,
   deleteNacosRoute,
+  // 新增接口方法
+  fullPushRoutes,
+  batchUpdateStatus,
+  exportRoutes,
+  importRoutes,
+  cloneRoute,
   type RouteDefinition,
   type PredicateConfig,
   type FilterConfig,
@@ -649,6 +821,11 @@ import {
   type RollbackRouteReq,
   type RouteHistory,
   type SaveNacosRouteReq,
+  type BatchUpdateStatusReq,
+  type FullPushRoutesReq,
+  type ImportRoutesReq,
+  type ImportRoutesRsp,
+  type CloneRouteReq,
 } from '@/api/route'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
 import SyncInstanceDialog from './components/SyncInstanceDialog.vue'
@@ -1030,7 +1207,7 @@ const handleSubmit = async () => {
       try {
         submitData = JSON.parse(routeJson.value)
       } catch {
-        ElMessage.error('Invalid JSON format')
+        ElMessage.error(t('route.invalidJsonFormat'))
         submitting.value = false
         return
       }
@@ -1246,6 +1423,237 @@ const handlePushSelected = () => {
   syncDialogVisible.value = true
 }
 
+// ========== 新增功能：批量状态、全量推送、导入导出、克隆路由 ==========
+
+// 批量状态更新弹窗状态
+const batchStatusDialogVisible = ref(false)
+const batchStatusValue = ref(1) // 1-启用 0-禁用
+const batchStatusLoading = ref(false)
+
+// 导入路由弹窗状态
+const importDialogVisible = ref(false)
+const importRoutesGroup = ref('default')
+const importJsonData = ref('')
+const importOverwrite = ref(false)
+const importLoading = ref(false)
+
+// 克隆路由弹窗状态
+const cloneDialogVisible = ref(false)
+const cloneSourceRouteId = ref('')
+const cloneNewRouteId = ref('')
+const cloneNewRouteName = ref('')
+const cloneLoading = ref(false)
+
+/**
+ * 获取推送状态类型（用于Tag颜色）
+ */
+const getPushStatusType = (pushStatus: number | undefined): 'info' | 'success' | 'danger' | 'warning' => {
+  if (pushStatus === undefined || pushStatus === 0) return 'info'
+  if (pushStatus === 1) return 'success'
+  if (pushStatus === 2) return 'danger'
+  return 'warning'
+}
+
+/**
+ * 获取推送状态文本
+ */
+const getPushStatusText = (pushStatus: number | undefined): string => {
+  if (pushStatus === undefined || pushStatus === 0) return t('route.pushStatusNotPushed')
+  if (pushStatus === 1) return t('route.pushStatusPushed')
+  if (pushStatus === 2) return t('route.pushStatusFailed')
+  return t('route.pushStatusUnknown')
+}
+
+/**
+ * 处理批量状态更新按钮点击
+ */
+const handleBatchStatus = () => {
+  if (selectedRoutes.value.length === 0) {
+    ElMessage.warning(t('route.selectRouteToBatch'))
+    return
+  }
+  batchStatusValue.value = 1
+  batchStatusDialogVisible.value = true
+}
+
+/**
+ * 处理批量状态更新提交
+ */
+const handleBatchStatusSubmit = async () => {
+  batchStatusLoading.value = true
+  try {
+    const req: BatchUpdateStatusReq = {
+      routeIds: selectedRoutes.value.map((r) => r.routeId),
+      status: batchStatusValue.value,
+      routesGroup: searchForm.routesGroup || 'default',
+    }
+    await batchUpdateStatus(req)
+    ElMessage.success(t('message.success'))
+    batchStatusDialogVisible.value = false
+    loadData()
+  } catch (error) {
+    console.error('[RouteManagement] Failed to batch update status:', error)
+    ElMessage.error(t('message.operationFailed'))
+  } finally {
+    batchStatusLoading.value = false
+  }
+}
+
+/**
+ * 处理全量推送按钮点击
+ */
+const handleFullPush = async () => {
+  try {
+    await ElMessageBox.confirm(
+      t('route.fullPushConfirm'),
+      t('message.tips'),
+      { type: 'warning' }
+    )
+
+    const req: FullPushRoutesReq = {
+      storageMode: searchForm.storageMode,
+      routesGroup: searchForm.routesGroup || 'default',
+      nacosDataId: searchForm.nacosDataId,
+      nacosGroup: searchForm.nacosGroup,
+    }
+    await fullPushRoutes(req)
+    ElMessage.success(t('route.fullPushSuccess'))
+    loadData()
+  } catch {
+    // 用户取消
+  }
+}
+
+/**
+ * 处理导入路由按钮点击
+ */
+const handleImport = () => {
+  importRoutesGroup.value = searchForm.routesGroup || 'default'
+  importJsonData.value = ''
+  importOverwrite.value = false
+  importDialogVisible.value = true
+}
+
+/**
+ * 处理导入路由提交
+ */
+const handleImportSubmit = async () => {
+  if (!importJsonData.value.trim()) {
+    ElMessage.warning(t('route.importDataRequired'))
+    return
+  }
+
+  // 验证JSON格式
+  try {
+    JSON.parse(importJsonData.value)
+  } catch {
+    ElMessage.error(t('route.invalidJsonFormat'))
+    return
+  }
+
+  importLoading.value = true
+  try {
+    const req: ImportRoutesReq = {
+      routesData: importJsonData.value,
+      routesGroup: importRoutesGroup.value,
+      overwrite: importOverwrite.value,
+    }
+    const result: ImportRoutesRsp = await importRoutes(req)
+
+    if (result.failedCount > 0) {
+      ElMessage.warning(
+        t('route.importResultPartial', {
+          success: result.successCount,
+          failed: result.failedCount,
+        })
+      )
+    } else {
+      ElMessage.success(
+        t('route.importResultSuccess', { count: result.successCount })
+      )
+    }
+    importDialogVisible.value = false
+    loadData()
+  } catch (error) {
+    console.error('[RouteManagement] Failed to import routes:', error)
+    ElMessage.error(t('message.operationFailed'))
+  } finally {
+    importLoading.value = false
+  }
+}
+
+/**
+ * 处理导出路由按钮点击
+ */
+const handleExport = async () => {
+  if (selectedRoutes.value.length === 0) {
+    ElMessage.warning(t('route.selectRouteToExport'))
+    return
+  }
+
+  try {
+    const req: ExportRoutesReq = {
+      routeIds: selectedRoutes.value.map((r) => r.routeId),
+      routesGroup: searchForm.routesGroup,
+    }
+    const jsonData = await exportRoutes(req)
+
+    // 复制到剪贴板
+    await navigator.clipboard.writeText(jsonData)
+    ElMessage.success(t('route.exportSuccess'))
+
+    // 同时下载文件
+    const blob = new Blob([jsonData], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `routes-export-${new Date().toISOString().slice(0, 10)}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('[RouteManagement] Failed to export routes:', error)
+    ElMessage.error(t('message.operationFailed'))
+  }
+}
+
+/**
+ * 处理克隆路由按钮点击
+ */
+const handleClone = (row: RouteDefinition) => {
+  cloneSourceRouteId.value = row.routeId
+  cloneNewRouteId.value = `${row.routeId}-clone`
+  cloneNewRouteName.value = row.routeName ? `${row.routeName}${t('route.clonedSuffix')}` : ''
+  cloneDialogVisible.value = true
+}
+
+/**
+ * 处理克隆路由提交
+ */
+const handleCloneSubmit = async () => {
+  if (!cloneNewRouteId.value.trim()) {
+    ElMessage.warning(t('route.newRouteIdRequired'))
+    return
+  }
+
+  cloneLoading.value = true
+  try {
+    const req: CloneRouteReq = {
+      sourceRouteId: cloneSourceRouteId.value,
+      newRouteId: cloneNewRouteId.value,
+      newRouteName: cloneNewRouteName.value,
+    }
+    await cloneRoute(req)
+    ElMessage.success(t('route.cloneSuccess'))
+    cloneDialogVisible.value = false
+    loadData()
+  } catch (error) {
+    console.error('[RouteManagement] Failed to clone route:', error)
+    ElMessage.error(t('message.operationFailed'))
+  } finally {
+    cloneLoading.value = false
+  }
+}
+
 // 组件挂载时加载初始数据
 onMounted(() => {
   loadData()
@@ -1284,6 +1692,24 @@ onMounted(() => {
 .operation-buttons {
   display: flex;
   gap: 8px;
+}
+
+// 新增弹窗样式
+.batch-status-tip,
+.import-tip,
+.clone-tip {
+  padding: 12px 16px;
+  background: var(--el-color-primary-light-9);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  border-left: 3px solid var(--el-color-primary);
+}
+
+.time-text {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>
 
