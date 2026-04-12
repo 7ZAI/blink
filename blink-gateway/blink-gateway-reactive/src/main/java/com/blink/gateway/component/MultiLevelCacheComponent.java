@@ -3,6 +3,7 @@ package com.blink.gateway.component;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.ReactiveRedisClient;
+import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.service.RemoteService;
 import com.blink.gateway.util.ReactiveCacheUtil;
 import com.github.benmanes.caffeine.cache.AsyncCache;
@@ -16,6 +17,9 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.blink.gateway.constant.GatewayConstant.CACHE_POLLING_DELAY_MS;
+import static com.blink.gateway.constant.GatewayConstant.DISTRIBUTED_LOCK_EXPIRE_SECONDS;
 
 /**
  * 多级缓存基础组件封装
@@ -128,8 +132,8 @@ public class MultiLevelCacheComponent {
      * @return 是否获取成功
      */
     private Mono<Boolean> tryAcquireLock(String lockKey) {
-        // 使用 Redis SETNX 实现分布式锁，过期时间 5 秒
-        return redisClient.setIfAbsentWithExpire(lockKey, "1", Duration.ofSeconds(5))
+        // 使用 Redis SETNX 实现分布式锁
+        return redisClient.setIfAbsentWithExpire(lockKey, "1", Duration.ofSeconds(DISTRIBUTED_LOCK_EXPIRE_SECONDS))
                 .onErrorResume(e -> {
                     log.error("[MultiLevelCache] 获取锁失败 | lockKey: {}, error: {}", lockKey, e.getMessage());
                     return Mono.just(false);
@@ -157,9 +161,9 @@ public class MultiLevelCacheComponent {
      * @return 数据结果
      */
     private <T> Mono<T> waitForRedisValue(String key, Class<T> clazz) {
-        // 轮询等待 Redis 有值，最多等待 3 秒
+        // 轮询等待 Redis 有值，最多等待 LOCK_WAIT_TIMEOUT
         return Mono.defer(() -> getFromRedis(key, clazz))
-                .repeatWhenEmpty(10, flux -> flux.delayElements(Duration.ofMillis(300)))
+                .repeatWhenEmpty(10, flux -> flux.delayElements(Duration.ofMillis(CACHE_POLLING_DELAY_MS)))
                 .timeout(LOCK_WAIT_TIMEOUT)
                 .onErrorResume(e -> {
                     log.warn("[MultiLevelCache] 等待 Redis 值超时 | key: {}", key);

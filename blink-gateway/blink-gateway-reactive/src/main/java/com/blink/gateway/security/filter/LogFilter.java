@@ -1,5 +1,6 @@
 package com.blink.gateway.security.filter;
 
+import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.util.GateWayUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.reactivestreams.Publisher;
@@ -78,7 +79,7 @@ public class LogFilter implements WebFilter {
 
                         log.info("响应头: {}", rspHeaders);
                         // 可选：记录响应体（注意大小）
-                        if (responseBody.length() < 3000) {
+                        if (responseBody.length() < GatewayConstant.LOG_RESPONSE_BODY_MAX_LENGTH) {
                             log.debug("响应体: {}", responseBody);
                         } else {
                             log.debug("响应体大小: {} bytes (内容过大，已省略)", responseBody.length());

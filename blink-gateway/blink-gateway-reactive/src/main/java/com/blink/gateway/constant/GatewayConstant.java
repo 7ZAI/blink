@@ -221,6 +221,29 @@ public interface GatewayConstant {
      */
     String CACHE_OPERATOR_MODIFY = "M";
 
+    /**
+     * Nacos 配置获取超时时间（毫秒）
+     */
+    Long NACOS_CONFIG_TIMEOUT_MS = 5000L;
 
+    /**
+     * Nacos 密钥配置获取超时时间（毫秒）- 密钥配置较大，需要更长超时
+     */
+    Long NACOS_SECRET_CONFIG_TIMEOUT_MS = 50000L;
+
+    /**
+     * 日志响应体最大打印长度（字节）
+     */
+    Integer LOG_RESPONSE_BODY_MAX_LENGTH = 3000;
+
+    /**
+     * 分布式锁过期时间（秒）
+     */
+    Integer DISTRIBUTED_LOCK_EXPIRE_SECONDS = 5;
+
+    /**
+     * 缓存轮询等待延迟（毫秒）
+     */
+    Long CACHE_POLLING_DELAY_MS = 300L;
 
 }

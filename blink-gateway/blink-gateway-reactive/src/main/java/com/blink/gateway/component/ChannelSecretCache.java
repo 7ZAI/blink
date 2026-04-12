@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.blink.gateway.constant.GatewayConstant.NACOS_SECRET_CONFIG_TIMEOUT_MS;
 import static com.blink.gateway.constant.GatewayConstant.SECRET_CONFIG_DATA_ID;
 import static com.blink.gateway.constant.GatewayConstant.SECRET_CONFIG_GROUP;
 
@@ -46,7 +47,7 @@ public class ChannelSecretCache  {
         String configStr = "";
         String json = "";
         try{
-            configStr = nacosConfigManager.getConfigService().getConfig(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP,50000);
+            configStr = nacosConfigManager.getConfigService().getConfig(SECRET_CONFIG_DATA_ID, SECRET_CONFIG_GROUP, NACOS_SECRET_CONFIG_TIMEOUT_MS);
         } catch (Exception e) {
             log.error("获取渠道密钥配置文件失败{}",e.getMessage(),e);
             throw new BlinkException(e,e.getMessage());
