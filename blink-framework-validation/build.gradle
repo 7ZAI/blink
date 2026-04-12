@@ -2,6 +2,10 @@ plugins {
     id 'org.springframework.boot'
 }
 
+// 作为库模块，不需要生成可执行JAR
+bootJar {
+    enabled = false
+}
 
 // 任务：生成源码JAR
 java {
