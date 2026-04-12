@@ -62,4 +62,12 @@ public interface FlowableQueryHelper {
      * @return 是否为管理员
      */
     boolean isProcessAdmin(String userId);
+
+    /**
+     * 获取任务审批意见
+     *
+     * @param taskId 任务ID
+     * @return 审批意见
+     */
+    String getTaskComment(String taskId);
 }

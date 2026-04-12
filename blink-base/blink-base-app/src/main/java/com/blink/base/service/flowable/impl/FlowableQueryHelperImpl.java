@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.engine.RepositoryService;
 import org.flowable.engine.RuntimeService;
+import org.flowable.engine.TaskService;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.springframework.stereotype.Service;
@@ -29,11 +30,14 @@ public class FlowableQueryHelperImpl implements FlowableQueryHelper {
 
     private final RepositoryService repositoryService;
     private final RuntimeService runtimeService;
+    private final TaskService taskService;
 
     public FlowableQueryHelperImpl(RepositoryService repositoryService,
-                                    RuntimeService runtimeService) {
+                                    RuntimeService runtimeService,
+                                    TaskService taskService) {
         this.repositoryService = repositoryService;
         this.runtimeService = runtimeService;
+        this.taskService = taskService;
     }
 
     @Override
@@ -113,5 +117,22 @@ public class FlowableQueryHelperImpl implements FlowableQueryHelper {
         // TODO: 检查用户是否拥有流程管理权限
         // 实际应从sysUserService.getSysUserDetail查询superFlag
         return false;
+    }
+
+    @Override
+    public String getTaskComment(String taskId) {
+        try {
+            if (taskId == null) {
+                return null;
+            }
+            var comments = taskService.getTaskComments(taskId);
+            if (CollUtil.isNotEmpty(comments)) {
+                // 返回最新的审批意见
+                return comments.get(comments.size() - 1).getFullMessage();
+            }
+        } catch (Exception e) {
+            log.warn("[Workflow] 获取任务审批意见失败 | taskId: {}", taskId);
+        }
+        return null;
     }
 }
