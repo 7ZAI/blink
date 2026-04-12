@@ -14,11 +14,19 @@ public class IPAddressUtils {
     // ===================== 基础格式校验 =====================
     /**
      * 判断字符串是否为合法的 IPv4 地址（纯地址，不含网段前缀）
+     * <p>
+     * 要求必须是标准的4段格式，如 "192.168.1.1"，
+     * 不接受简写形式如 "192.168.1"（inet.ipaddr库会将其解析为192.168.0.1）
+     *
      * @param ip 待校验的 IP 字符串
      * @return true=合法 IPv4，false=非法
      */
     public static boolean isIPv4Valid(String ip) {
         if (isEmpty(ip)) {
+            return false;
+        }
+        // 先校验标准格式：必须是4段数字，每段1-3位
+        if (!ip.matches("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$")) {
             return false;
         }
         IPAddressString ipStr = new IPAddressString(ip);
