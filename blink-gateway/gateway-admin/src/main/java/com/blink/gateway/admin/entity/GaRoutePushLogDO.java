@@ -113,4 +113,26 @@ public class GaRoutePushLogDO implements Serializable {
      * 备注说明
      */
     private String remark;
+
+    /**
+     * 失败实例ID列表(JSON数组)
+     * 记录推送失败的网关实例ID
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private List<String> failedInstanceIds;
+
+    /**
+     * 各实例错误信息(JSON对象)
+     * key: instanceId, value: errorMsg
+     */
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private Map<String, String> instanceErrors;
+
+    /**
+     * 确认状态
+     * 0: 待确认
+     * 1: 已确认
+     * 2: 超时
+     */
+    private Byte confirmStatus;
 }

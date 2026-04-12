@@ -4,7 +4,9 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.blink.gateway.admin.handler.PredicateConfigListTypeHandler;
+import com.blink.gateway.admin.handler.FilterConfigListTypeHandler;
+import com.blink.gateway.admin.handler.MapTypeHandler;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -52,14 +54,14 @@ public class GaRouteDO implements Serializable {
      * 断言配置JSON数组
      * 格式: [{"name": "Path", "args": {"pattern": "/api/**"}}]
      */
-    @TableField(value = "predicates", typeHandler = JacksonTypeHandler.class)
+    @TableField(value = "predicates", typeHandler = PredicateConfigListTypeHandler.class)
     private List<PredicateConfig> predicates;
 
     /**
      * 过滤器配置JSON数组
      * 格式: [{"name": "StripPrefix", "args": {"parts": "1"}}]
      */
-    @TableField(value = "filters", typeHandler = JacksonTypeHandler.class)
+    @TableField(value = "filters", typeHandler = FilterConfigListTypeHandler.class)
     private List<FilterConfig> filters;
 
     /**
@@ -72,7 +74,7 @@ public class GaRouteDO implements Serializable {
     /**
      * 元数据JSON对象
      */
-    @TableField(value = "metadata", typeHandler = JacksonTypeHandler.class)
+    @TableField(value = "metadata", typeHandler = MapTypeHandler.class)
     private Map<String, Object> metadata;
 
     /**
@@ -141,4 +143,27 @@ public class GaRouteDO implements Serializable {
      */
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
+
+    /**
+     * 乐观锁版本号
+     * 用于防止并发更新冲突
+     */
+    @TableField("version")
+    private Integer version;
+
+    /**
+     * 最后推送时间
+     * 记录最后一次成功推送的时间
+     */
+    @TableField("last_push_time")
+    private LocalDateTime lastPushTime;
+
+    /**
+     * 推送状态
+     * 0: 未推送
+     * 1: 已推送
+     * 2: 推送失败
+     */
+    @TableField("push_status")
+    private Byte pushStatus;
 }

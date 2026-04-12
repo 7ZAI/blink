@@ -5,10 +5,16 @@ import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.gateway.admin.dto.req.DeleteNacosRouteReq;
 import com.blink.gateway.admin.dto.req.DeleteRouteReq;
+import com.blink.gateway.admin.dto.req.BatchUpdateStatusReq;
+import com.blink.gateway.admin.dto.req.CloneRouteReq;
+import com.blink.gateway.admin.dto.req.ExportRoutesReq;
+import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
+import com.blink.gateway.admin.dto.req.ImportRoutesReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryNacosRouteReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
+import com.blink.gateway.admin.dto.req.QueryPushStatusReq;
 import com.blink.gateway.admin.dto.req.QueryRouteReq;
 import com.blink.gateway.admin.dto.req.QueryRouteHistoryReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
@@ -19,9 +25,12 @@ import com.blink.gateway.admin.dto.req.SyncRoutesReq;
 import com.blink.gateway.admin.dto.req.UpdateRouteReq;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.ImportRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
+import com.blink.gateway.admin.dto.rsp.QueryPushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
+import com.blink.gateway.admin.dto.rsp.RoutesGroupStatsRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
@@ -182,6 +191,72 @@ public class RouteController {
         return routeService.syncRoutesToInstances(reqDto.getBody());
     }
 
+    /**
+     * 查询路由推送状态
+     *
+     * @param reqDto 请求参数
+     * @return 推送状态列表
+     */
+    @PostMapping("/getPushStatus")
+    public ResponseDTO<QueryPushStatusRsp> getPushStatus(@RequestBody RequestDTO<QueryPushStatusReq> reqDto) {
+        return routeService.getPushStatus(reqDto.getBody());
+    }
+
+    /**
+     * 批量更新路由状态
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @PostMapping("/batchUpdateStatus")
+    public ResponseDTO<EmptyBody> batchUpdateStatus(@RequestBody @Validated RequestDTO<BatchUpdateStatusReq> reqDto) {
+        return routeService.batchUpdateStatus(reqDto.getBody());
+    }
+
+    /**
+     * 查询路由分组统计
+     *
+     * @param reqDto 请求参数
+     * @return 分组统计列表
+     */
+    @PostMapping("/getRoutesGroupStats")
+    public ResponseDTO<RoutesGroupStatsRsp> getRoutesGroupStats(@RequestBody RequestDTO<EmptyBody> reqDto) {
+        return routeService.getRoutesGroupStats();
+    }
+
+    /**
+     * 导出路由配置
+     *
+     * @param reqDto 请求参数
+     * @return JSON格式路由配置
+     */
+    @PostMapping("/exportRoutes")
+    public ResponseDTO<String> exportRoutes(@RequestBody RequestDTO<ExportRoutesReq> reqDto) {
+        return routeService.exportRoutes(reqDto.getBody());
+    }
+
+    /**
+     * 导入路由配置
+     *
+     * @param reqDto 请求参数
+     * @return 导入结果
+     */
+    @PostMapping("/importRoutes")
+    public ResponseDTO<ImportRoutesRsp> importRoutes(@RequestBody @Validated RequestDTO<ImportRoutesReq> reqDto) {
+        return routeService.importRoutes(reqDto.getBody());
+    }
+
+    /**
+     * 克隆路由
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @PostMapping("/cloneRoute")
+    public ResponseDTO<EmptyBody> cloneRoute(@RequestBody @Validated RequestDTO<CloneRouteReq> reqDto) {
+        return routeService.cloneRoute(reqDto.getBody());
+    }
+
     // ========== Nacos 路由管理 ==========
 
     /**
@@ -228,6 +303,18 @@ public class RouteController {
     @PostMapping("/pushRoutes")
     public ResponseDTO<EmptyBody> pushRoutes(@RequestBody @Validated RequestDTO<PushRoutesReq> reqDto) {
         return routePushService.pushRoutes(reqDto.getBody());
+    }
+
+    /**
+     * 全量推送路由
+     * 一键推送指定分组下所有启用状态路由
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @PostMapping("/fullPushRoutes")
+    public ResponseDTO<EmptyBody> fullPushRoutes(@RequestBody @Validated RequestDTO<FullPushRoutesReq> reqDto) {
+        return routePushService.fullPushRoutes(reqDto.getBody());
     }
 
     /**

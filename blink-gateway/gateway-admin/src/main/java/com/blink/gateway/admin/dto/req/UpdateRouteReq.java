@@ -86,4 +86,17 @@ public class UpdateRouteReq implements Serializable {
      * 备注
      */
     private String remark;
+
+    /**
+     * 乐观锁版本号
+     * 更新时必须传入当前版本号，版本不匹配则拒绝更新
+     */
+    private Integer version;
+
+    /**
+     * 是否自动同步到运行时存储
+     * true: 更新后自动推送
+     * false: 仅更新数据库，需手动推送
+     */
+    private Boolean autoSync;
 }

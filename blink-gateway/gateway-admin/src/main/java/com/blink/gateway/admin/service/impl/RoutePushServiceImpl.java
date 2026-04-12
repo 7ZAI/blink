@@ -5,6 +5,8 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.blink.datasource.utils.PageUtils;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
@@ -12,6 +14,7 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.constants.RouteConstant;
+import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
@@ -38,9 +41,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_ONLINE;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.PARAMETER_NOT_NULL;
-import static com.blink.gateway.admin.constants.ErrCodeConstant.ROUTE_NOT_EXIST;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.PUSH_LOG_NOT_EXIST;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.ROUTE_NOT_EXIST;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_DYNAMIC_ROUTES;
 
 /**
@@ -133,7 +137,7 @@ public class RoutePushServiceImpl implements RoutePushService {
             ResponseDTO<GatewayInstanceListRsp> instancesRsp = gatewayInstanceService.getGatewayInstances();
             if (instancesRsp.getBody() != null && instancesRsp.getBody().getInstances() != null) {
                 targetInstanceIds = instancesRsp.getBody().getInstances().stream()
-                    .filter(inst -> inst.getStatus() == 0)
+                    .filter(inst -> inst.getStatus().equals(INSTANCE_STATUS_ONLINE))
                     .map(GatewayInstanceVO::getInstanceId)
                     .toList();
                 pushLog.setInstanceCount(targetInstanceIds.size());
@@ -157,10 +161,25 @@ public class RoutePushServiceImpl implements RoutePushService {
             messageProducer.routesOnChangeWithTarget(syncMsg);
             pushLog.setPushResult(RouteConstant.PUSH_RESULT_SUCCESS);
             pushLog.setSuccessCount(pushLog.getInstanceCount());
+            pushLog.setConfirmStatus(RouteConstant.CONFIRM_STATUS_PENDING);
+
+            // 更新路由推送状态为已推送
+            updateRoutePushStatus(req.getRouteIds(), RouteConstant.PUSH_STATUS_PUSHED);
         } catch (Exception e) {
             log.error("[RoutePush] 发送推送消息失败 | error: {}", e.getMessage(), e);
             pushLog.setPushResult(RouteConstant.PUSH_RESULT_FAILED);
             pushLog.setSuccessCount(0);
+            pushLog.setFailedInstanceIds(targetInstanceIds);
+
+            // 记录失败详情
+            Map<String, String> instanceErrors = new HashMap<>();
+            for (String instanceId : targetInstanceIds) {
+                instanceErrors.put(instanceId, e.getMessage());
+            }
+            pushLog.setInstanceErrors(instanceErrors);
+
+            // 更新路由推送状态为失败
+            updateRoutePushStatus(req.getRouteIds(), RouteConstant.PUSH_STATUS_PUSH_FAILED);
         }
 
         // 保存推送记录
@@ -262,7 +281,7 @@ public class RoutePushServiceImpl implements RoutePushService {
         pushReq.setTargetInstanceIds(CollUtil.isEmpty(req.getTargetInstanceIds())
             ? parseTargetInstanceIds(pushLog.getTargetInstanceIds())
             : req.getTargetInstanceIds());
-        pushReq.setRemark("回滚推送，原 pushId: " + req.getPushId());
+        pushReq.setRemark(RouteConstant.REMARK_ROLLBACK_PUSH_PREFIX + req.getPushId());
 
         // 执行推送
         return pushRoutes(pushReq);
@@ -280,5 +299,68 @@ public class RoutePushServiceImpl implements RoutePushService {
         } catch (Exception e) {
             return new ArrayList<>();
         }
+    }
+
+    /**
+     * 批量更新路由推送状态
+     *
+     * @param routeIds 路由ID列表
+     * @param pushStatus 推送状态
+     */
+    private void updateRoutePushStatus(List<String> routeIds, Byte pushStatus) {
+        if (CollUtil.isEmpty(routeIds)) {
+            return;
+        }
+
+        LambdaUpdateWrapper<GaRouteDO> updateWrapper = new LambdaUpdateWrapper<GaRouteDO>()
+            .in(GaRouteDO::getRouteId, routeIds)
+            .set(GaRouteDO::getPushStatus, pushStatus);
+
+        if (RouteConstant.PUSH_STATUS_PUSHED.equals(pushStatus)) {
+            updateWrapper.set(GaRouteDO::getLastPushTime, java.time.LocalDateTime.now());
+        }
+
+        gaRouteMapper.update(null, updateWrapper);
+        log.debug("[RoutePush] 更新路由推送状态 | routeIds: {}, pushStatus: {}", routeIds, pushStatus);
+    }
+
+    @Override
+    public ResponseDTO<EmptyBody> fullPushRoutes(FullPushRoutesReq req) {
+        // 参数校验
+        if (StrUtil.isBlank(req.getStorageMode())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 查询所有启用状态路由
+        LambdaQueryWrapper<GaRouteDO> queryWrapper = new LambdaQueryWrapper<GaRouteDO>()
+            .eq(GaRouteDO::getStatus, RouteConstant.STATUS_ENABLE);
+
+        // 按分组筛选
+        if (StrUtil.isNotBlank(req.getRoutesGroup())) {
+            queryWrapper.eq(GaRouteDO::getRoutesGroup, req.getRoutesGroup());
+        }
+
+        List<GaRouteDO> enabledRoutes = gaRouteMapper.selectList(queryWrapper);
+        if (CollUtil.isEmpty(enabledRoutes)) {
+            log.warn("[RoutePush] 无启用状态路由可推送 | routesGroup: {}", req.getRoutesGroup());
+            return ResponseDTO.newSuccessInstance();
+        }
+
+        // 构建推送请求
+        PushRoutesReq pushReq = new PushRoutesReq();
+        pushReq.setStorageMode(req.getStorageMode());
+        pushReq.setRoutesGroup(req.getRoutesGroup());
+        pushReq.setNacosDataId(req.getNacosDataId());
+        pushReq.setNacosGroup(req.getNacosGroup());
+        pushReq.setRouteIds(enabledRoutes.stream().map(GaRouteDO::getRouteId).toList());
+        pushReq.setPushMode(RouteConstant.PUSH_MODE_BROADCAST);
+        pushReq.setRemark(RouteConstant.REMARK_FULL_PUSH);
+
+        // 执行推送
+        ResponseDTO<EmptyBody> result = pushRoutes(pushReq);
+
+        log.info("[RoutePush] 全量推送路由完成 | routesGroup: {}, count: {}", req.getRoutesGroup(), enabledRoutes.size());
+
+        return result;
     }
 }

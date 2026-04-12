@@ -3,6 +3,8 @@ package com.blink.gateway.admin.dto.req;
 import lombok.Data;
 
 import java.io.Serial;
+import java.io.Serializable;
+import java.util.List;
 
 /**
  * 回滚推送请求
@@ -11,7 +13,7 @@ import java.io.Serial;
  * @since 2026-04-11
  */
 @Data
-public class RollbackPushReq {
+public class RollbackPushReq implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -29,5 +31,5 @@ public class RollbackPushReq {
     /**
      * 目标实例ID列表（指定实例模式）
      */
-    private java.util.List<String> targetInstanceIds;
+    private List<String> targetInstanceIds;
 }

@@ -4,13 +4,15 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.blink.gateway.admin.handler.GaRouteDOTypeHandler;
+import com.blink.gateway.admin.handler.StringListTypeHandler;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 网关路由历史审计实体类
@@ -59,14 +61,14 @@ public class GaRouteHistoryDO implements Serializable {
      * 变更前数据快照
      * 修改/删除时记录
      */
-    @TableField(value = "before_data", typeHandler = JacksonTypeHandler.class)
+    @TableField(value = "before_data", typeHandler = GaRouteDOTypeHandler.class)
     private GaRouteDO beforeData;
 
     /**
      * 变更后数据快照
      * 新增/修改时记录
      */
-    @TableField(value = "after_data", typeHandler = JacksonTypeHandler.class)
+    @TableField(value = "after_data", typeHandler = GaRouteDOTypeHandler.class)
     private GaRouteDO afterData;
 
     /**
@@ -92,4 +94,12 @@ public class GaRouteHistoryDO implements Serializable {
      */
     @TableField("remark")
     private String remark;
+
+    /**
+     * 变更字段列表(JSON数组)
+     * 记录本次操作变更的具体字段名列表
+     * 如：["uri", "predicates", "status"]
+     */
+    @TableField(value = "changed_fields", typeHandler = StringListTypeHandler.class)
+    private List<String> changedFields;
 }

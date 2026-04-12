@@ -341,4 +341,46 @@ public interface ErrCodeConstant {
      * 在线实例不允许删除
      */
     String INSTANCE_ONLINE_CANNOT_DELETE = "GATE0164";
+
+    // ============ 路由校验错误码 GATE0170-GATE0179 ============
+
+    /**
+     * URI格式无效
+     */
+    String URI_FORMAT_INVALID = "GATE0170";
+
+    /**
+     * 断言必填
+     */
+    String PREDICATE_REQUIRED = "GATE0171";
+
+    /**
+     * 断言语法错误
+     */
+    String PREDICATE_SYNTAX_ERROR = "GATE0172";
+
+    /**
+     * 过滤器语法错误
+     */
+    String FILTER_SYNTAX_ERROR = "GATE0173";
+
+    /**
+     * 路由路径冲突
+     */
+    String ROUTE_PATH_CONFLICT = "GATE0174";
+
+    /**
+     * 路由版本不匹配（乐观锁）
+     */
+    String ROUTE_VERSION_MISMATCH = "GATE0175";
+
+    /**
+     * 不支持的断言类型
+     */
+    String UNSUPPORTED_PREDICATE_TYPE = "GATE0176";
+
+    /**
+     * 不支持的过滤器类型
+     */
+    String UNSUPPORTED_FILTER_TYPE = "GATE0177";
 }

@@ -2,6 +2,7 @@ package com.blink.gateway.admin.service;
 
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
+import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
@@ -52,4 +53,13 @@ public interface RoutePushService {
      * @return 操作结果
      */
     ResponseDTO<EmptyBody> rollbackPush(RollbackPushReq req);
+
+    /**
+     * 全量推送路由
+     * 一键推送指定分组下所有启用状态路由
+     *
+     * @param req 全量推送请求
+     * @return 操作结果
+     */
+    ResponseDTO<EmptyBody> fullPushRoutes(FullPushRoutesReq req);
 }

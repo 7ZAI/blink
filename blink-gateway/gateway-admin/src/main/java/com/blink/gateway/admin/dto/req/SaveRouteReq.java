@@ -81,4 +81,11 @@ public class SaveRouteReq implements Serializable {
      * 备注
      */
     private String remark;
+
+    /**
+     * 是否自动同步到运行时存储
+     * true: 保存后自动推送
+     * false: 仅保存到数据库，需手动推送
+     */
+    private Boolean autoSync;
 }

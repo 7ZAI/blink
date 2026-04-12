@@ -2,9 +2,14 @@ package com.blink.gateway.admin.service;
 
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
+import com.blink.gateway.admin.dto.req.CloneRouteReq;
 import com.blink.gateway.admin.dto.req.DeleteNacosRouteReq;
 import com.blink.gateway.admin.dto.req.DeleteRouteReq;
+import com.blink.gateway.admin.dto.req.BatchUpdateStatusReq;
+import com.blink.gateway.admin.dto.req.ExportRoutesReq;
+import com.blink.gateway.admin.dto.req.ImportRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryNacosRouteReq;
+import com.blink.gateway.admin.dto.req.QueryPushStatusReq;
 import com.blink.gateway.admin.dto.req.QueryRouteReq;
 import com.blink.gateway.admin.dto.req.QueryRouteHistoryReq;
 import com.blink.gateway.admin.dto.req.RollbackRouteReq;
@@ -13,8 +18,11 @@ import com.blink.gateway.admin.dto.req.SaveRouteReq;
 import com.blink.gateway.admin.dto.req.SyncRoutesReq;
 import com.blink.gateway.admin.dto.req.UpdateRouteReq;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.QueryPushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
+import com.blink.gateway.admin.dto.rsp.ImportRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.RoutesGroupStatsRsp;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
@@ -108,4 +116,51 @@ public interface RouteService {
      * 同步路由到指定实例
      */
     ResponseDTO<EmptyBody> syncRoutesToInstances(SyncRoutesReq req);
+
+    /**
+     * 查询路由推送状态
+     *
+     * @param req 查询请求
+     * @return 推送状态列表
+     */
+    ResponseDTO<QueryPushStatusRsp> getPushStatus(QueryPushStatusReq req);
+
+    /**
+     * 批量更新路由状态
+     *
+     * @param req 批量更新请求
+     * @return 操作结果
+     */
+    ResponseDTO<EmptyBody> batchUpdateStatus(BatchUpdateStatusReq req);
+
+    /**
+     * 查询路由分组统计
+     *
+     * @return 分组统计列表
+     */
+    ResponseDTO<RoutesGroupStatsRsp> getRoutesGroupStats();
+
+    /**
+     * 导出路由配置
+     *
+     * @param req 导出请求
+     * @return JSON格式路由配置
+     */
+    ResponseDTO<String> exportRoutes(ExportRoutesReq req);
+
+    /**
+     * 导入路由配置
+     *
+     * @param req 导入请求
+     * @return 导入结果
+     */
+    ResponseDTO<ImportRoutesRsp> importRoutes(ImportRoutesReq req);
+
+    /**
+     * 克隆路由
+     *
+     * @param req 克隆请求
+     * @return 操作结果
+     */
+    ResponseDTO<EmptyBody> cloneRoute(CloneRouteReq req);
 }
