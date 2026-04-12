@@ -6,6 +6,7 @@ import com.blink.base.dto.req.DelegateTaskReq;
 import com.blink.base.dto.req.DeleteProcessInstanceReq;
 import com.blink.base.dto.req.DeployProcessReq;
 import com.blink.base.dto.req.DeploymentIdReq;
+import com.blink.base.dto.req.ImportXmlProcessReq;
 import com.blink.base.dto.req.LeaveApprovalReq;
 import com.blink.base.dto.req.ProcessDefinitionIdReq;
 import com.blink.base.dto.req.ProcessInstanceIdReq;
@@ -13,9 +14,11 @@ import com.blink.base.dto.req.QueryMyProcessReq;
 import com.blink.base.dto.req.QueryProcessDefinitionReq;
 import com.blink.base.dto.req.QueryProcessInstanceReq;
 import com.blink.base.dto.req.QueryTaskReq;
+import com.blink.base.dto.req.RollbackProcessReq;
 import com.blink.base.dto.req.StartProcessReq;
 import com.blink.base.dto.req.TaskIdReq;
 import com.blink.base.dto.req.UserIdReq;
+import com.blink.base.dto.req.WithdrawTaskReq;
 import com.blink.base.dto.rsp.HistoricTaskRsp;
 import com.blink.base.dto.rsp.ProcessDefinitionRsp;
 import com.blink.base.dto.rsp.ProcessHistoryRsp;
@@ -325,5 +328,43 @@ public class FlowableProcessController {
         List<ProcessHistoryRsp> history = flowableProcessService.getProcessHistory(
                 reqDto.getBody().getProcessInstanceId());
         return ResponseDTO.newSuccessInstance(history);
+    }
+
+    // ==================== 新增功能 ====================
+
+    /**
+     * 导入BPMN XML流程定义
+     *
+     * @param reqDto 导入请求（包含XML内容）
+     * @return {@link ResponseDTO<String>} 部署ID
+     */
+    @PostMapping("/importProcessFromXml")
+    public ResponseDTO<String> importProcessFromXml(@RequestBody @Valid RequestDTO<ImportXmlProcessReq> reqDto) {
+        String deploymentId = flowableProcessService.importProcessFromXml(reqDto.getBody());
+        return ResponseDTO.newSuccessInstance(deploymentId);
+    }
+
+    /**
+     * 回退流程到指定节点
+     *
+     * @param reqDto 回退请求
+     * @return {@link ResponseDTO<EmptyBody>}
+     */
+    @PostMapping("/rollbackProcess")
+    public ResponseDTO<EmptyBody> rollbackProcess(@RequestBody @Valid RequestDTO<RollbackProcessReq> reqDto) {
+        flowableProcessService.rollbackProcess(reqDto.getBody());
+        return ResponseDTO.newSuccessInstance();
+    }
+
+    /**
+     * 撤回任务（发起人撤回未处理的任务）
+     *
+     * @param reqDto 撤回请求
+     * @return {@link ResponseDTO<EmptyBody>}
+     */
+    @PostMapping("/withdrawTask")
+    public ResponseDTO<EmptyBody> withdrawTask(@RequestBody @Valid RequestDTO<WithdrawTaskReq> reqDto) {
+        flowableProcessService.withdrawTask(reqDto.getBody());
+        return ResponseDTO.newSuccessInstance();
     }
 }
