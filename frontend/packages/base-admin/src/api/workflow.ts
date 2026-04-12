@@ -160,6 +160,27 @@ export interface DelegateTaskParams {
   targetUserId: string
 }
 
+/** 回退流程参数 */
+export interface RollbackProcessParams {
+  processInstanceId: string
+  targetActivityId: string
+  reason: string
+}
+
+/** 撤回任务参数 */
+export interface WithdrawTaskParams {
+  taskId: string
+  userId: string
+  reason?: string
+}
+
+/** 导入XML流程参数 */
+export interface ImportXmlProcessParams {
+  processName: string
+  bpmnXmlContent: string
+  description?: string
+}
+
 // ==================== 流程定义管理 API ====================
 
 /**
@@ -289,6 +310,22 @@ export const deleteProcessInstance = (
   }) as Promise<void>
 }
 
+/**
+ * 回退流程到指定节点
+ */
+export const rollbackProcess = (params: RollbackProcessParams): Promise<void> => {
+  return request.post('/workflow/rollbackProcess', { body: params }) as Promise<void>
+}
+
+// ==================== 流程导入 API ====================
+
+/**
+ * 导入BPMN XML流程定义
+ */
+export const importProcessFromXml = (params: ImportXmlProcessParams): Promise<string> => {
+  return request.post('/workflow/importProcessFromXml', { body: params }) as Promise<string>
+}
+
 // ==================== 任务管理 API ====================
 
 /**
@@ -346,6 +383,13 @@ export const claimTask = (taskId: string, userId: string): Promise<void> => {
  */
 export const unclaimTask = (taskId: string): Promise<void> => {
   return request.post('/workflow/unclaimTask', { body: { taskId } }) as Promise<void>
+}
+
+/**
+ * 撤回任务（发起人撤回未处理的任务）
+ */
+export const withdrawTask = (params: WithdrawTaskParams): Promise<void> => {
+  return request.post('/workflow/withdrawTask', { body: params }) as Promise<void>
 }
 
 // ==================== 流程历史 API ====================

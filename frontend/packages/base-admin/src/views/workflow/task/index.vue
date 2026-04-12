@@ -73,6 +73,10 @@
                   <el-icon><User /></el-icon>
                   {{ t('workflow.delegate') }}
                 </el-button>
+                <el-button link type="warning" @click="handleWithdraw(row)">
+                  <el-icon><RefreshLeft /></el-icon>
+                  {{ t('workflow.withdraw') }}
+                </el-button>
               </template>
               <el-button link type="primary" @click="handleViewHistory(row)">
                 <el-icon><Clock /></el-icon>
@@ -177,8 +181,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage } from 'element-plus'
-import { Search, Refresh, Check, User, Clock } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Refresh, Check, User, Clock, RefreshLeft } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import {
   getPendingTasks,
@@ -186,6 +190,7 @@ import {
   getMyProcessInstances,
   completeTask,
   delegateTask,
+  withdrawTask,
   getProcessHistory,
   type TaskInfo,
   type HistoricTaskInfo,
@@ -261,6 +266,8 @@ const loadTaskList = async () => {
       total.value = taskList.value.length
     }
   } catch (error) {
+    console.error('[WorkflowTask] 加载任务列表失败', error)
+    ElMessage.error(t('message.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -324,6 +331,8 @@ const confirmComplete = async () => {
     completeDialogVisible.value = false
     loadTaskList()
   } catch (error) {
+    console.error('[WorkflowTask] 完成任务失败', error)
+    ElMessage.error(t('message.operationFailed'))
   } finally {
     completeLoading.value = false
   }
@@ -352,8 +361,28 @@ const confirmDelegate = async () => {
     delegateDialogVisible.value = false
     loadTaskList()
   } catch (error) {
+    console.error('[WorkflowTask] 委托任务失败', error)
+    ElMessage.error(t('message.operationFailed'))
   } finally {
     delegateLoading.value = false
+  }
+}
+
+const handleWithdraw = async (row: TaskInfo) => {
+  try {
+    await ElMessageBox.confirm(t('workflow.withdrawConfirm'), t('message.tips'), { type: 'warning' })
+    await withdrawTask({
+      taskId: row.taskId,
+      userId: String(userStore.userInfo?.userId || ''),
+    })
+    ElMessage.success(t('message.success'))
+    loadTaskList()
+  } catch (error) {
+    // 用户取消操作不显示错误
+    if (error !== 'cancel') {
+      console.error('[WorkflowTask] 撤回任务失败', error)
+      ElMessage.error(t('message.operationFailed'))
+    }
   }
 }
 

@@ -24,6 +24,18 @@
               <el-icon><Refresh /></el-icon>
               {{ t('common.reset') }}
             </el-button>
+            <el-upload
+              ref="uploadRef"
+              :auto-upload="false"
+              :show-file-list="false"
+              accept=".bpmn20.xml,.bpmn"
+              :on-change="handleXmlFileChange"
+            >
+              <el-button type="success">
+                <el-icon><Upload /></el-icon>
+                {{ t('workflow.importXml') }}
+              </el-button>
+            </el-upload>
           </div>
         </div>
       </template>
@@ -121,14 +133,40 @@
         <el-empty v-else :description="t('common.noData')" />
       </div>
     </el-dialog>
+
+    <!-- 导入XML流程对话框 -->
+    <el-dialog v-model="importDialogVisible" :title="t('workflow.importXml')" width="500px">
+      <el-form :model="importForm" label-width="100px">
+        <el-form-item :label="t('workflow.processName')" required>
+          <el-input
+            v-model.trim="importForm.processName"
+            :placeholder="t('workflow.processNamePlaceholder')"
+          />
+        </el-form-item>
+        <el-form-item :label="t('workflow.description')">
+          <el-input
+            v-model.trim="importForm.description"
+            type="textarea"
+            :rows="3"
+            :placeholder="t('workflow.descriptionPlaceholder')"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="importDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="confirmImport" :loading="importLoading">
+          {{ t('common.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, VideoPlay, View, VideoPause, Delete } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox, type UploadFile } from 'element-plus'
+import { Search, Refresh, VideoPlay, View, VideoPause, Delete, Upload } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import {
   getProcessDefinitionList,
@@ -137,6 +175,7 @@ import {
   deleteProcessDefinition,
   startProcess,
   getProcessDiagramXml,
+  importProcessFromXml,
   type ProcessDefinitionInfo,
 } from '@/api/workflow'
 
@@ -164,6 +203,14 @@ const startForm = ref({
 const diagramDialogVisible = ref(false)
 const diagramXml = ref('')
 
+const importDialogVisible = ref(false)
+const importLoading = ref(false)
+const importForm = ref({
+  processName: '',
+  bpmnXmlContent: '',
+  description: '',
+})
+
 onMounted(() => {
   loadProcessList()
 })
@@ -180,6 +227,8 @@ const loadProcessList = async () => {
     processList.value = res.rows || []
     total.value = res.total || 0
   } catch (error) {
+    console.error('[WorkflowProcess] 加载流程定义列表失败', error)
+    ElMessage.error(t('message.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -218,6 +267,8 @@ const confirmStart = async () => {
     ElMessage.success(t('workflow.startSuccess'))
     startDialogVisible.value = false
   } catch (error) {
+    console.error('[WorkflowProcess] 启动流程失败', error)
+    ElMessage.error(t('message.operationFailed'))
   } finally {
     startLoading.value = false
   }
@@ -227,7 +278,44 @@ const handleViewDiagram = async (row: ProcessDefinitionInfo) => {
   try {
     diagramXml.value = await getProcessDiagramXml(row.processDefinitionId)
     diagramDialogVisible.value = true
-  } catch (error) {}
+  } catch (error) {
+    console.error('[WorkflowProcess] 获取流程图XML失败', error)
+    ElMessage.error(t('message.operationFailed'))
+  }
+}
+
+const handleXmlFileChange = async (file: UploadFile) => {
+  if (!file.raw) return
+
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    const xmlContent = e.target?.result as string
+    importForm.value.bpmnXmlContent = xmlContent
+    importForm.value.processName = ''
+    importForm.value.description = ''
+    importDialogVisible.value = true
+  }
+  reader.readAsText(file.raw)
+}
+
+const confirmImport = async () => {
+  if (!importForm.value.processName) {
+    ElMessage.warning(t('workflow.processNameRequired'))
+    return
+  }
+
+  importLoading.value = true
+  try {
+    await importProcessFromXml(importForm.value)
+    ElMessage.success(t('workflow.importSuccess'))
+    importDialogVisible.value = false
+    loadProcessList()
+  } catch (error) {
+    console.error('[WorkflowProcess] 导入流程失败', error)
+    ElMessage.error(t('workflow.importFailed'))
+  } finally {
+    importLoading.value = false
+  }
 }
 
 const handleToggleSuspend = async (row: ProcessDefinitionInfo) => {

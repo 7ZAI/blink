@@ -798,6 +798,21 @@ export default {
     activityName: '节点名称',
     activityType: '节点类型',
     noProcessInstance: '未找到流程实例信息',
+
+    // 新增功能
+    withdraw: '撤回',
+    withdrawConfirm: '确定要撤回该任务吗？撤回后流程将退回至上一节点',
+    rollback: '回退',
+    rollbackConfirm: '确定要将流程回退到指定节点吗？',
+    importXml: '导入XML',
+    importSuccess: '流程导入成功',
+    importFailed: '流程导入失败',
+    processNameRequired: '请输入流程名称',
+    processNamePlaceholder: '请输入流程名称',
+    descriptionPlaceholder: '请输入流程描述（可选）',
+    selectTargetNode: '请选择目标节点',
+    rollbackReason: '回退原因',
+    withdrawReason: '撤回原因',
   },
   operationLog: {
     // 页面标题

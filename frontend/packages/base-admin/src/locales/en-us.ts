@@ -793,6 +793,21 @@ export default {
     activityName: 'Activity Name',
     activityType: 'Activity Type',
     noProcessInstance: 'Process instance not found',
+
+    // New Features
+    withdraw: 'Withdraw',
+    withdrawConfirm: 'Are you sure you want to withdraw this task? The process will rollback to the previous node',
+    rollback: 'Rollback',
+    rollbackConfirm: 'Are you sure you want to rollback the process to the specified node?',
+    importXml: 'Import XML',
+    importSuccess: 'Process imported successfully',
+    importFailed: 'Process import failed',
+    processNameRequired: 'Please enter process name',
+    processNamePlaceholder: 'Please enter process name',
+    descriptionPlaceholder: 'Enter description (optional)',
+    selectTargetNode: 'Please select target node',
+    rollbackReason: 'Rollback reason',
+    withdrawReason: 'Withdraw reason',
   },
   operationLog: {
     // Page titles
