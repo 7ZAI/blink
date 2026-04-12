@@ -59,8 +59,8 @@ app.component('DictTag', DictTag)
 app.component('AuthButton', AuthButton)
 
 // 注册指令
-app.use(dataFadeDirective)
 app.use(authDirective)
+app.directive('data-fade', dataFadeDirective)
 app.directive('ripple', rippleDirective)
 
 const pinia = createPinia()

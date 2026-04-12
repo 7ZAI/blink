@@ -385,26 +385,26 @@ const getSeverityClass = (severity: string) => {
 }
 
 // 获取严重程度标签类型
-const getSeverityTagType = (severity: string) => {
-  const types: Record<string, string> = {
-    INFO: '',
+const getSeverityTagType = (severity: string): 'success' | 'warning' | 'danger' | 'info' | 'primary' => {
+  const types: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'> = {
+    INFO: 'info',
     WARNING: 'warning',
     ERROR: 'danger',
     SUCCESS: 'success',
   }
-  return types[severity] || ''
+  return types[severity] || 'info'
 }
 
 // 获取类型标签类型
-const getTypeTagType = (type: string) => {
+const getTypeTagType = (type: string): 'success' | 'warning' | 'danger' | 'info' | 'primary' => {
   if (type?.startsWith('cache_sync')) return 'success'
   if (type?.startsWith('instance_sync')) return 'info'
-  const types: Record<string, string> = {
-    SYSTEM: '',
+  const types: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'> = {
+    SYSTEM: 'primary',
     OPERATION: 'success',
     ALERT: 'warning',
   }
-  return types[type] || ''
+  return types[type] || 'info'
 }
 
 // 获取类型标签文本

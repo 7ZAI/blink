@@ -78,6 +78,7 @@ const isValidIpFormat = (ip: string): boolean => {
 
   if (cidrRegex.test(ip)) {
     const [ipPart, mask] = ip.split('/')
+    if (!ipPart || !mask) return false
     const parts = ipPart.split('.')
     return parts.every(part => parseInt(part) >= 0 && parseInt(part) <= 255) &&
            parseInt(mask) >= 0 && parseInt(mask) <= 32

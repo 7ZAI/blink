@@ -884,7 +884,7 @@ const handleSubmit = async () => {
         // 更新列表中对应的数据
         const index = tableData.value.findIndex((item) => item.channelId === formData.channelId)
         if (index > -1) {
-          tableData.value[index] = { ...tableData.value[index], ...formData }
+          tableData.value[index] = { ...tableData.value[index], ...formData } as ChannelInfo
         }
       } else {
         const addParams: AddChannelParams = {

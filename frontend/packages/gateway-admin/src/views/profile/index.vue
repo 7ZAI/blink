@@ -313,7 +313,8 @@ const loadUserInfo = () => {
     form.sex = userStore.userInfo.sex || 3
     form.phone = userStore.userInfo.phone || ''
     form.email = userStore.userInfo.email || ''
-    form.remark = userStore.userInfo.remark || ''
+    // remark 字段不在 UserInfoVO 中，保持为空
+    form.remark = ''
   }
 }
 
