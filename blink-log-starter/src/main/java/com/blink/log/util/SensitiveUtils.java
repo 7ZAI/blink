@@ -13,8 +13,19 @@ import java.util.Map;
 
 /**
  * 敏感数据脱敏工具类
- * 
+ * <p>
+ * 提供常用敏感数据的脱敏处理，包括手机号、身份证号、银行卡号、邮箱、姓名、地址等。
+ * <p>
+ * <b>边界条件说明：</b>
+ * <ul>
+ *   <li>当 prefixKeep 或 suffixKeep 为负数时，自动转为 0</li>
+ *   <li>当字符串长度 ≤ prefixKeep + suffixKeep 时，返回原值不做脱敏</li>
+ *   <li>空值或空白字符串返回原值</li>
+ *   <li>maskEmail 方法：前缀长度 ≤ 3 时保留前1字符，否则保留前3字符</li>
+ * </ul>
+ *
  * @author binblink
+ * @see SensitiveType
  */
 @Slf4j
 public final class SensitiveUtils {
@@ -44,12 +55,12 @@ public final class SensitiveUtils {
     }
 
     /**
-     * 对字符串进行脱敏处理（自定义保留位数）
+     * 对字符串进行脱敏处理
      *
      * @param source     原始字符串
-     * @param prefixKeep 保留前缀字符数
-     * @param suffixKeep 保留后缀字符数
-     * @return 脱敏后的字符串
+     * @param prefixKeep 保留前缀字符数，负数会被处理为0
+     * @param suffixKeep 保留后缀字符数，负数会被处理为0
+     * @return 脱敏后的字符串，如果前后缀保留长度之和大于等于字符串长度则返回原值
      */
     public static String mask(String source, int prefixKeep, int suffixKeep) {
         return mask(source, prefixKeep, suffixKeep, '*');
@@ -59,10 +70,10 @@ public final class SensitiveUtils {
      * 对字符串进行脱敏处理
      *
      * @param source     原始字符串
-     * @param prefixKeep 保留前缀字符数
-     * @param suffixKeep 保留后缀字符数
+     * @param prefixKeep 保留前缀字符数，负数会被处理为0
+     * @param suffixKeep 保留后缀字符数，负数会被处理为0
      * @param maskChar   脱敏字符
-     * @return 脱敏后的字符串
+     * @return 脱敏后的字符串，如果前后缀保留长度之和大于等于字符串长度则返回原值
      */
     public static String mask(String source, int prefixKeep, int suffixKeep, char maskChar) {
         if (StrUtil.isBlank(source)) {
@@ -100,7 +111,12 @@ public final class SensitiveUtils {
 
     /**
      * 对手机号脱敏
-     * 138****8888
+     * <p>
+     * 保留前3后4，中间用*替代。
+     * 示例：138****8888
+     *
+     * @param phone 手机号，长度小于7时返回原值
+     * @return 脱敏后的手机号
      */
     public static String maskPhone(String phone) {
         return mask(phone, SensitiveType.PHONE);
@@ -108,7 +124,12 @@ public final class SensitiveUtils {
 
     /**
      * 对身份证号脱敏
-     * 110***********1234
+     * <p>
+     * 保留前6后4，中间用*替代。
+     * 示例：110101********1234
+     *
+     * @param idCard 身份证号，长度小于10时返回原值
+     * @return 脱敏后的身份证号
      */
     public static String maskIdCard(String idCard) {
         return mask(idCard, SensitiveType.ID_CARD);
@@ -116,7 +137,12 @@ public final class SensitiveUtils {
 
     /**
      * 对银行卡号脱敏
-     * 6222****1234
+     * <p>
+     * 保留前4后4，中间用*替代。
+     * 示例：6222********1234
+     *
+     * @param bankCard 银行卡号，长度小于8时返回原值
+     * @return 脱敏后的银行卡号
      */
     public static String maskBankCard(String bankCard) {
         return mask(bankCard, SensitiveType.BANK_CARD);
@@ -124,7 +150,12 @@ public final class SensitiveUtils {
 
     /**
      * 对邮箱脱敏
-     * abc****@qq.com
+     * <p>
+     * 前缀长度大于3时保留前3字符，否则保留前1字符。
+     * 示例：zha****@qq.com
+     *
+     * @param email 邮箱，不包含@符号时返回原值
+     * @return 脱敏后的邮箱
      */
     public static String maskEmail(String email) {
         if (StrUtil.isBlank(email) || !email.contains("@")) {
@@ -144,7 +175,12 @@ public final class SensitiveUtils {
 
     /**
      * 对姓名脱敏
-     * 张*、张**
+     * <p>
+     * 保留前1后1，中间用*替代。
+     * 示例：张*丰
+     *
+     * @param name 姓名，长度小于等于2时返回原值
+     * @return 脱敏后的姓名
      */
     public static String maskName(String name) {
         return mask(name, SensitiveType.NAME);
@@ -152,7 +188,12 @@ public final class SensitiveUtils {
 
     /**
      * 对地址脱敏
-     * 北京市海淀****
+     * <p>
+     * 保留前6字符，后面用*替代。
+     * 示例：北京市海淀区*******
+     *
+     * @param address 地址，长度小于等于6时返回原值
+     * @return 脱敏后的地址
      */
     public static String maskAddress(String address) {
         return mask(address, SensitiveType.ADDRESS);
@@ -160,7 +201,16 @@ public final class SensitiveUtils {
 
     /**
      * 对对象进行脱敏处理并返回有效的 JSON 字符串
-     * 使用 Jackson 直接序列化，让 Jackson 处理对象转换
+     * <p>
+     * 会自动识别并脱敏以下敏感字段：
+     * <ul>
+     *   <li>password/pwd/secret - 替换为 ******</li>
+     *   <li>phone/mobile - 手机号脱敏（保留前3后4）</li>
+     *   <li>email - 邮箱脱敏（保留前3字符）</li>
+     *   <li>idcard/id_card - 身份证脱敏（保留前6后4）</li>
+     * </ul>
+     * <p>
+     * 如果字段标注了 {@link SensitiveField} 注解，也会进行脱敏处理。
      *
      * @param obj 待脱敏对象
      * @return 脱敏后的 JSON 字符串
@@ -170,26 +220,34 @@ public final class SensitiveUtils {
             return "null";
         }
 
-        try {
-            // 直接使用 Jackson 序列化为 JSON
-            // Jackson 会自动处理字段访问和敏感注解（如果配置了）
-            String json = JacksonUtil.toJson(obj);
-            return json;
-        } catch (Exception e) {
-            log.warn("JSON序列化失败，尝试简化处理: {}", e.getMessage());
-            // 如果序列化失败，尝试转换为 Map 再序列化
+        // 对于简单类型，直接序列化（无需脱敏）
+        if (isSimpleType(obj.getClass())) {
             try {
-                Map<String, Object> map = JacksonUtil.toMap(obj);
-                if (map != null) {
-                    // 脱敏敏感字段
-                    maskMapValues(map);
-                    return JacksonUtil.toJson(map);
-                }
-            } catch (Exception ex) {
-                log.warn("Map转换也失败: {}", ex.getMessage());
+                return JacksonUtil.toJson(obj);
+            } catch (Exception e) {
+                log.debug("简单类型序列化失败: {}", e.getMessage());
+                return "null";
             }
-            // 最终 fallback 返回 null
-            return "null";
+        }
+
+        try {
+            // 先转换为 Map，再进行脱敏处理
+            Map<String, Object> map = JacksonUtil.toMap(obj);
+            if (map != null && !map.isEmpty()) {
+                // 脱敏敏感字段
+                maskMapValues(map);
+                return JacksonUtil.toJson(map);
+            }
+            // 如果无法转换为 Map，直接序列化
+            return JacksonUtil.toJson(obj);
+        } catch (Exception e) {
+            log.debug("JSON序列化失败: {}", e.getMessage());
+            // 降级：尝试直接序列化
+            try {
+                return JacksonUtil.toJson(obj);
+            } catch (Exception ex) {
+                return "null";
+            }
         }
     }
 
