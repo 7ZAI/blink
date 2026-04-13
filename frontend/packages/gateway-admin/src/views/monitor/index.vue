@@ -247,6 +247,7 @@ import {
   type InstanceInfo,
   type StatisticsInfo,
 } from '@/api/monitor'
+import { useInstanceStatus } from '@/composables/useInstanceStatus'
 
 defineOptions({ name: 'MonitorManagement' })
 
@@ -263,6 +264,49 @@ const statistics = ref<StatisticsInfo>({
   avgResponseTime: 0,
 })
 
+// ==================== SSE 实时状态 ====================
+
+const {
+  isConnected: sseConnected,
+  connect: connectSse,
+  disconnect: disconnectSse,
+} = useInstanceStatus({
+  onStatusChange: (data) => {
+    // SSE 状态变化时更新统计数据
+    if (data.stats) {
+      statistics.value.totalInstances = data.stats.total
+      statistics.value.healthyInstances = data.stats.healthy
+    }
+
+    // 更新列表中已存在实例的状态
+    if (data.hasChange && data.changedInstanceIds?.length) {
+      updateInstanceStatusFromSse(data)
+    }
+  },
+})
+
+/**
+ * 从 SSE 数据更新实例列表中的状态
+ */
+const updateInstanceStatusFromSse = (data: { instances: Array<{ instanceId: string; status: number; healthStatus: string }>; changedInstanceIds?: string[] }) => {
+  if (!data.changedInstanceIds?.length) return
+
+  const changedIds = new Set(data.changedInstanceIds)
+  instances.value = instances.value.map((instance) => {
+    if (changedIds.has(instance.instanceId)) {
+      const sseInstance = data.instances.find((i) => i.instanceId === instance.instanceId)
+      if (sseInstance) {
+        return {
+          ...instance,
+          status: sseInstance.status,
+          statusDesc: getStatusText(sseInstance.status),
+        }
+      }
+    }
+    return instance
+  })
+}
+
 const detailDialogVisible = ref(false)
 const offlineDialogVisible = ref(false)
 const currentInstance = ref<InstanceInfo | null>(null)
@@ -271,8 +315,6 @@ const offlineForm = reactive({
   instanceId: '',
   reason: '',
 })
-
-let refreshTimer: number | null = null
 
 /**
  * 计算健康率
@@ -409,14 +451,12 @@ const handleOnline = (row: InstanceInfo) => {
 
 onMounted(() => {
   loadData()
-  // Auto refresh every 30 seconds
-  refreshTimer = window.setInterval(loadData, 30000)
+  // 使用 SSE 实时更新替代轮询
+  connectSse()
 })
 
 onUnmounted(() => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-  }
+  disconnectSse()
 })
 </script>
 

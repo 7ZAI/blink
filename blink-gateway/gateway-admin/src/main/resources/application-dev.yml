@@ -89,6 +89,19 @@ dubbo:
 
 # Actuator 监控配置
 blink:
+  redis:
+    distributed-lock:
+      enabled: true
+      key-prefix: "blink:lock:"
+      watchdog-enabled: true
   gateway:
     monitor:
-      actuator-password: 123456
+      # HTTP 采集已废弃，改用 Redis Stream 推模式
+      # gateway-reactive 通过 MetricsReporter 主动上报指标
+      # gateway-admin 通过 MetricsStreamConsumer 消费并存储
+      history-retention-days: 7        # 历史数据保留天数
+      # Stream 消费配置
+      stream:
+        enabled: true                  # 是否启用 Stream 消费
+        stream-key: "blink:gateway:metrics:stream"  # Redis Stream Key
+        consumer-group: "gateway-admin"  # 消费者组名称

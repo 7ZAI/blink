@@ -151,6 +151,11 @@ blink:
   gateway:
     eventStreamEnable: true
     instance-id: 00
+    # 指标上报配置
+    metrics:
+      enabled: true                    # 是否启用指标上报
+      report-interval-ms: 30000        # 上报间隔（毫秒）
+      stream-key: "blink:gateway:metrics:stream"  # Redis Stream Key
 
 # Dubbo 配置
 dubbo:

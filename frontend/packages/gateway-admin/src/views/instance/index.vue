@@ -69,7 +69,7 @@
               <el-icon><Plus /></el-icon>
               {{ t('instance.addInstance') }}
             </el-button>
-            <el-button @click="loadData">
+            <el-button :loading="refreshing" @click="handleRefresh">
               <el-icon><Refresh /></el-icon>
               {{ t('common.refresh') }}
             </el-button>
@@ -118,58 +118,66 @@
 
       <!-- 表格 -->
       <el-table :data="instanceList" v-loading="loading" stripe class="instance-table">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="instanceId" :label="t('instance.instanceId')" min-width="180" show-overflow-tooltip>
+        <el-table-column prop="id" label="ID" width="70" align="center" />
+        <el-table-column prop="instanceId" :label="t('instance.instanceId')" min-width="200" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="instance-id">{{ row.instanceId }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="serviceId" :label="t('instance.serviceId')" width="150" show-overflow-tooltip>
+        <el-table-column prop="serviceId" :label="t('instance.serviceId')" min-width="130" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tag size="small" effect="plain">{{ row.serviceId }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="host" :label="t('instance.host')" width="140" />
-        <el-table-column prop="port" :label="t('instance.port')" width="80" align="center" />
-        <el-table-column :label="t('common.status')" width="100" align="center">
+        <el-table-column prop="host" :label="t('instance.host')" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="port" :label="t('instance.port')" width="90" align="center" />
+        <el-table-column :label="t('common.status')" width="90" align="center">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)" effect="light">
+            <el-tag :type="getStatusType(row.status)" effect="light" size="small">
               {{ row.statusDesc || getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="onlineTime" :label="t('instance.onlineTime')" width="170">
+        <el-table-column prop="onlineTime" :label="t('instance.onlineTime')" min-width="150" show-overflow-tooltip>
           <template #default="{ row }">
             <span v-if="row.onlineTime">{{ formatTime(row.onlineTime) }}</span>
             <span v-else class="empty-text">-</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('common.operation')" width="220" fixed="right">
+        <el-table-column :label="t('common.operation')" width="180" fixed="right">
           <template #default="{ row }">
             <div class="operation-buttons">
               <el-button type="primary" link size="small" @click="handleViewDetail(row)">
                 <el-icon><View /></el-icon>
                 {{ t('common.detail') }}
               </el-button>
-              <template v-if="row.status === 0">
-                <el-button type="warning" link size="small" @click="handleOffline(row)">
-                  <el-icon><SwitchButton /></el-icon>
-                  {{ t('instance.offlineInstance') }}
-                </el-button>
-              </template>
-              <template v-else-if="row.status === 2">
-                <el-button type="success" link size="small" @click="handleOnline(row)">
-                  <el-icon><CircleCheck /></el-icon>
-                  {{ t('instance.onlineInstance') }}
-                </el-button>
-              </template>
               <el-button type="primary" link size="small" @click="handleEdit(row)">
                 <el-icon><Edit /></el-icon>
                 {{ t('common.edit') }}
               </el-button>
+              <el-button
+                v-if="row.status === INSTANCE_STATUS.ONLINE"
+                type="warning"
+                link
+                size="small"
+                @click="handleOffline(row)"
+              >
+                <el-icon><SwitchButton /></el-icon>
+                {{ t('instance.offlineInstance') }}
+              </el-button>
+              <el-button
+                v-else-if="row.status === INSTANCE_STATUS.SHUTDOWN"
+                type="success"
+                link
+                size="small"
+                @click="handleOnline(row)"
+              >
+                <el-icon><CircleCheck /></el-icon>
+                {{ t('instance.onlineInstance') }}
+              </el-button>
               <el-button type="danger" link size="small" @click="handleDelete(row)">
                 <el-icon><Delete /></el-icon>
-                {{ t('instance.deleteInstance') }}
+                {{ t('common.delete') }}
               </el-button>
             </div>
           </template>
@@ -452,7 +460,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
@@ -476,18 +484,70 @@ import {
   getInstanceDetailWithMetrics,
   onlineInstance,
   offlineInstance,
+  refreshInstanceStatus,
   type InstanceInfo,
   type InstanceDetail,
   INSTANCE_STATUS,
 } from '@/api/instance'
+import { usePermission } from '@/composables/usePermission'
+import { useInstanceStatus } from '@/composables/useInstanceStatus'
 
 defineOptions({ name: 'InstanceManagement' })
 
 const { t } = useI18n()
+const { hasPermission: checkPermission } = usePermission()
+
+// ==================== SSE 实时状态 ====================
+
+const {
+  instances: sseInstances,
+  stats: sseStats,
+  isConnected: sseConnected,
+  connect: connectSse,
+  disconnect: disconnectSse,
+} = useInstanceStatus({
+  onStatusChange: (data) => {
+    // SSE 状态变化时更新统计数据
+    if (data.stats) {
+      statistics.totalInstances = data.stats.total
+      statistics.onlineInstances = data.stats.online
+      statistics.healthyInstances = data.stats.healthy
+      statistics.avgCpuUsage = Math.round(data.stats.avgCpuUsage)
+    }
+
+    // 更新列表中已存在实例的状态
+    if (data.hasChange && data.changedInstanceIds?.length) {
+      updateInstanceStatusFromSse(data)
+    }
+  },
+})
+
+/**
+ * 从 SSE 数据更新实例列表中的状态
+ */
+const updateInstanceStatusFromSse = (data: { instances: Array<{ instanceId: string; status: number; healthStatus: string; cpuUsage?: number; heapUsagePercent?: number }>; changedInstanceIds?: string[] }) => {
+  if (!data.changedInstanceIds?.length) return
+
+  const changedIds = new Set(data.changedInstanceIds)
+  instanceList.value = instanceList.value.map((instance) => {
+    if (changedIds.has(instance.instanceId)) {
+      const sseInstance = data.instances.find((i) => i.instanceId === instance.instanceId)
+      if (sseInstance) {
+        return {
+          ...instance,
+          status: sseInstance.status,
+          statusDesc: getStatusText(sseInstance.status),
+        }
+      }
+    }
+    return instance
+  })
+}
 
 // ==================== 数据状态 ====================
 
 const loading = ref(false)
+const refreshing = ref(false)
 const submitting = ref(false)
 const instanceList = ref<InstanceInfo[]>([])
 
@@ -540,8 +600,6 @@ const formRules = computed<FormRules>(() => ({
   host: [{ required: true, message: t('common.pleaseInput') + t('instance.host'), trigger: 'blur' }],
   port: [{ required: true, message: t('common.pleaseInput') + t('instance.port'), trigger: 'change' }],
 }))
-
-let refreshTimer: number | null = null
 
 // ==================== 辅助方法 ====================
 
@@ -618,6 +676,24 @@ const loadData = async () => {
     ElMessage.error(t('common.loadFailed'))
   } finally {
     loading.value = false
+  }
+}
+
+// ==================== 刷新（从Nacos同步状态） ====================
+
+const handleRefresh = async () => {
+  refreshing.value = true
+  try {
+    // 先从 Nacos 同步实例状态到数据库
+    await refreshInstanceStatus()
+    // 再加载列表
+    await loadData()
+    ElMessage.success(t('common.success'))
+  } catch (error) {
+    console.error('Refresh error:', error)
+    ElMessage.error(t('common.loadFailed'))
+  } finally {
+    refreshing.value = false
   }
 }
 
@@ -757,13 +833,12 @@ const handleOnline = (row: InstanceInfo) => {
 
 onMounted(() => {
   loadData()
-  refreshTimer = window.setInterval(loadData, 60000)
+  // 使用 SSE 实时更新替代轮询
+  connectSse()
 })
 
 onUnmounted(() => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-  }
+  disconnectSse()
 })
 </script>
 
@@ -895,8 +970,12 @@ onUnmounted(() => {
 
   .operation-buttons {
     display: flex;
-    gap: 8px;
     flex-wrap: wrap;
+    gap: 4px 8px;
+
+    :deep(.el-button) {
+      margin: 0;
+    }
   }
 }
 
