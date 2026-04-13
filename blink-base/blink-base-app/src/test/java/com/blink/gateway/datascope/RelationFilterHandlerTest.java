@@ -128,7 +128,7 @@ class RelationFilterHandlerTest {
     }
 
     @Test
-    @DisplayName("测试无表别名 - 使用默认别名t")
+    @DisplayName("测试无表别名 - 直接使用字段名")
     void testDefaultTableAlias() {
         // 准备测试数据
         RuleConfig config = createValidConfig();
@@ -144,9 +144,10 @@ class RelationFilterHandlerTest {
         // 执行测试
         relationFilterHandler.apply(sql, config, context);
 
-        // 验证结果
+        // 验证结果 - 无表别名时直接使用字段名
         String result = sql.toString();
-        assertTrue(result.contains("r.user_id = t.user_id"));
+        assertTrue(result.contains("EXISTS"));
+        assertTrue(result.contains("r.user_id = user_id"));
     }
 
     // ==================== 配置校验测试 ====================

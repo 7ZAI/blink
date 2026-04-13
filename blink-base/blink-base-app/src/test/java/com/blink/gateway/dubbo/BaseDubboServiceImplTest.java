@@ -13,6 +13,7 @@ import com.blink.base.dto.vo.SysConfigVO;
 import com.blink.base.dubbo.BaseDubboServiceImpl;
 // import com.blink.base.service.BlinkChannelService;  // TODO: Class not found, commented out
 import com.blink.base.service.SysConfigService;
+import com.blink.base.service.SysErrorMsgService;
 import com.blink.base.service.SysPermissionService;
 import com.blink.framework.common.data.ChannelInfoRedisDO;
 import com.blink.framework.common.data.RequestDTO;
@@ -53,6 +54,9 @@ class BaseDubboServiceImplTest {
     @Mock
     private SysPermissionService sysPermissionService;
 
+    @Mock
+    private SysErrorMsgService sysErrorMsgService;
+
     @InjectMocks
     private BaseDubboServiceImpl baseDubboServiceImpl;
 
@@ -77,7 +81,7 @@ class BaseDubboServiceImplTest {
         configVO.setConfigName("测试配置");
 
         // 模拟服务调用
-        when(sysConfigService.getOneConfigFromCacheOrDataBase(any())).thenReturn(configVO);
+        when(sysConfigService.getOneConfigFromDataBase(any())).thenReturn(configVO);
 
         // 执行测试
         ResponseDTO<SysConfigCacheDO> response = baseDubboServiceImpl.getOneConfig(requestDTO);
@@ -85,12 +89,12 @@ class BaseDubboServiceImplTest {
         // 验证结果
         assertNotNull(response);
         assertNotNull(response.getBody());
-        assertEquals("test.key", response.getBody().getConfigKey());
+        assertEquals("site_name", response.getBody().getConfigKey());
         assertEquals("test.value", response.getBody().getConfigValue());
         assertEquals("测试配置", response.getBody().getConfigName());
 
         // 验证服务调用次数
-        verify(sysConfigService, times(1)).getOneConfigFromCacheOrDataBase(any());
+        verify(sysConfigService, times(1)).getOneConfigFromDataBase(any());
     }
 
     @Test
@@ -104,16 +108,14 @@ class BaseDubboServiceImplTest {
         requestDTO.setBody(req);
 
         // 模拟返回 null
-        when(sysConfigService.getOneConfigFromCacheOrDataBase(any())).thenReturn(null);
+        when(sysConfigService.getOneConfigFromDataBase(any())).thenReturn(null);
 
-        // 执行测试
-        ResponseDTO<SysConfigCacheDO> response = baseDubboServiceImpl.getOneConfig(requestDTO);
+        // 执行测试并验证异常
+        assertThrows(BlinkException.class, () -> {
+            baseDubboServiceImpl.getOneConfig(requestDTO);
+        });
 
-        // 验证结果
-        assertNotNull(response);
-        assertNull(response.getBody());
-
-        verify(sysConfigService, times(1)).getOneConfigFromCacheOrDataBase(any());
+        verify(sysConfigService, times(1)).getOneConfigFromDataBase(any());
     }
 
     @Test
@@ -127,7 +129,7 @@ class BaseDubboServiceImplTest {
         requestDTO.setBody(req);
 
         // 模拟异常
-        when(sysConfigService.getOneConfigFromCacheOrDataBase(any()))
+        when(sysConfigService.getOneConfigFromDataBase(any()))
                 .thenThrow(new RuntimeException("数据库连接失败"));
 
         // 执行测试并验证异常
@@ -136,7 +138,7 @@ class BaseDubboServiceImplTest {
         });
 
         assertEquals("数据库连接失败", exception.getMessage());
-        verify(sysConfigService, times(1)).getOneConfigFromCacheOrDataBase(any());
+        verify(sysConfigService, times(1)).getOneConfigFromDataBase(any());
     }
 
     // TODO: BlinkChannelService class not found, tests commented out
@@ -169,12 +171,20 @@ class BaseDubboServiceImplTest {
         RequestDTO<QueryErrMsgReq> requestDTO = new RequestDTO<>();
         requestDTO.setBody(req);
 
+        // 模拟返回数据
+        QueryErrMsgRsp mockRsp = new QueryErrMsgRsp();
+        mockRsp.setMsgCode("TEST001");
+        mockRsp.setMsgInfo("测试错误消息");
+        when(sysErrorMsgService.getErrorMsg(any())).thenReturn(mockRsp);
+
         // 执行测试
         ResponseDTO<QueryErrMsgRsp> response = baseDubboServiceImpl.getErrorMsgInfo(requestDTO);
 
         // 验证结果
         assertNotNull(response);
         assertNotNull(response.getBody());
+        assertEquals("TEST001", response.getBody().getMsgCode());
+        assertEquals("测试错误消息", response.getBody().getMsgInfo());
     }
 
     @Test
