@@ -119,9 +119,37 @@ public class ProcessDefinitionServiceImpl implements ProcessDefinitionService {
             // 获取最新版本映射
             Map<String, String> latestVersionKeys = getLatestVersionKeys();
 
-            ProcessDefinitionRsp rsp = new ProcessDefinitionRsp();
+            // 获取总数（Flowable 自带 count 方法）
+            long total = query.count();
 
-            return PageUtils.queryPage(req, () -> executeProcessDefinitionQuery(query, latestVersionKeys), rsp);
+            ProcessDefinitionRsp rsp = new ProcessDefinitionRsp();
+            rsp.setTotal((int) total);
+
+            if (total == 0) {
+                rsp.setRows(Collections.emptyList());
+                rsp.setPages(0);
+                return rsp;
+            }
+
+            // 使用 Flowable 的分页查询
+            int offset = (req.getPageNum() - 1) * req.getPageSize();
+            List<ProcessDefinition> processDefinitions = query
+                    .orderByProcessDefinitionVersion()
+                    .desc()
+                    .listPage(offset, req.getPageSize());
+
+            // 转换为 VO
+            List<ProcessDefinitionVO> voList = processDefinitions.stream()
+                    .map(pd -> convertToProcessDefinitionVO(pd, latestVersionKeys))
+                    .collect(Collectors.toList());
+
+            // 设置分页结果
+            rsp.setRows(voList);
+            rsp.setPageNum(req.getPageNum());
+            rsp.setPageSize(req.getPageSize());
+            rsp.setPages((int) ((total + req.getPageSize() - 1) / req.getPageSize()));
+
+            return rsp;
 
         } catch (Exception e) {
             log.error("[Workflow] 查询流程定义列表失败 | error: {}", e.getMessage(), e);

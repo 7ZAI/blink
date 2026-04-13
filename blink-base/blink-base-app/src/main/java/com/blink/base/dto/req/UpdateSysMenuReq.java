@@ -49,7 +49,7 @@ public class UpdateSysMenuReq implements Serializable {
      */
     @NotNull
     @FieldConstraint(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
-    private Integer type;
+    private Byte type;
 
 
     /**

@@ -70,8 +70,8 @@ public class SysMenuServiceImpl implements SysMenuService {
     @Override
     public SysMenuVO saveSysMenu(AddSysMenuReq saveParam) throws BlinkException {
 
-        // 校验菜单类型
-        Integer menuType = saveParam.getType();
+        // 校验菜单类型 - 使用 Byte 类型与常量匹配
+        Byte menuType = saveParam.getType();
         if (menuType == null || (!menuType.equals(CommonConstants.MENU_DIRECTORY)
                 && !menuType.equals(CommonConstants.MENU_PAGE)
                 && !menuType.equals(CommonConstants.MENU_FUNCTION))) {
@@ -236,8 +236,8 @@ public class SysMenuServiceImpl implements SysMenuService {
             BlinkException.throwBusinessException(BaseErrCodeConstant.MENU_NOT_EXIST);
         }
 
-        // 校验菜单类型
-        Integer menuType = updateParam.getType();
+        // 校验菜单类型 - 使用 Byte 类型与常量匹配
+        Byte menuType = updateParam.getType();
         if (menuType == null || (!menuType.equals(CommonConstants.MENU_DIRECTORY)
                 && !menuType.equals(CommonConstants.MENU_PAGE)
                 && !menuType.equals(CommonConstants.MENU_FUNCTION))) {

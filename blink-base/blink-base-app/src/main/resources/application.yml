@@ -74,13 +74,13 @@ flowable:
   # 自动部署流程定义（开发环境开启，生产环境建议关闭）
   check-process-definitions: false
   # 异步执行器配置
-  async-executor-activate: true
+  async-executor-activate: false
   # 数据库表结构自动更新（开发环境true，生产环境false）
   database-schema-update: true
   # IDM引擎配置
   idm:
-    # 启用IDM引擎
-    enabled: true
+    # 禁用IDM引擎（使用系统自带的用户体系）
+    enabled: false
   # 流程定义缓存配置
   process-definition-cache-limit: 512
 

@@ -43,6 +43,9 @@ dependencies {
     // Flowable核心引擎，提供流程引擎的基础功能（包含IDM身份管理模块）
     implementation 'org.flowable:flowable-spring-boot-starter:7.0.1'
 
+    // Druid 数据源（用于多数据源配置）
+    implementation 'com.alibaba:druid-spring-boot-starter:1.2.23'
+
 //    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
