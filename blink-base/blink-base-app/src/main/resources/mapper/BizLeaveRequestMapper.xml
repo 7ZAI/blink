@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.base.mapper.BizLeaveRequestMapper">
+
+    <resultMap id="LeaveRequestVOMap" type="com.blink.base.dto.vo.LeaveRequestVO">
+        <id column="id" property="id"/>
+        <result column="process_instance_id" property="processInstanceId"/>
+        <result column="applicant_id" property="applicantId"/>
+        <result column="applicant_name" property="applicantName"/>
+        <result column="dept_id" property="deptId"/>
+        <result column="dept_name" property="deptName"/>
+        <result column="leave_type" property="leaveType"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="days" property="days"/>
+        <result column="reason" property="reason"/>
+        <result column="status" property="status"/>
+        <result column="current_task" property="currentTask"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 查询申请人的请假列表 -->
+    <select id="selectByApplicantId" resultMap="LeaveRequestVOMap">
+        SELECT
+            id, process_instance_id, applicant_id, applicant_name,
+            dept_id, dept_name, leave_type, start_date, end_date,
+            days, reason, status, current_task, create_time, update_time
+        FROM biz_leave_request
+        WHERE applicant_id = #{applicantId}
+        <if test="req.status != null and req.status != ''">
+            AND status = #{req.status}
+        </if>
+        <if test="req.leaveType != null and req.leaveType != ''">
+            AND leave_type = #{req.leaveType}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询待审批列表（基于用户角色） -->
+    <select id="selectPendingApproval" resultMap="LeaveRequestVOMap">
+        SELECT
+            r.id, r.process_instance_id, r.applicant_id, r.applicant_name,
+            r.dept_id, r.dept_name, r.leave_type, r.start_date, r.end_date,
+            r.days, r.reason, r.status, r.current_task, r.create_time, r.update_time
+        FROM biz_leave_request r
+        WHERE r.status = 'pending'
+        AND EXISTS (
+            SELECT 1 FROM sys_user_role_rela ur
+            INNER JOIN sys_role_perm_rela rp ON ur.role_id = rp.role_id
+            INNER JOIN sys_permission p ON rp.ac_id = p.ac_id
+            INNER JOIN sys_user u ON ur.user_id = u.user_id
+            WHERE u.login_name = #{loginName}
+            AND p.ac_url LIKE '%/leave/approval%'
+        )
+        <if test="req.leaveType != null and req.leaveType != ''">
+            AND r.leave_type = #{req.leaveType}
+        </if>
+        ORDER BY r.create_time DESC
+    </select>
+
+    <!-- 查询请假详情 -->
+    <select id="selectDetailById" resultMap="LeaveRequestVOMap">
+        SELECT
+            id, process_instance_id, applicant_id, applicant_name,
+            dept_id, dept_name, leave_type, start_date, end_date,
+            days, reason, status, current_task, create_time, update_time
+        FROM biz_leave_request
+        WHERE id = #{id}
+    </select>
+
+    <!-- 管理员查询所有请假列表 -->
+    <select id="selectAllList" resultMap="LeaveRequestVOMap">
+        SELECT
+            id, process_instance_id, applicant_id, applicant_name,
+            dept_id, dept_name, leave_type, start_date, end_date,
+            days, reason, status, current_task, create_time, update_time
+        FROM biz_leave_request
+        WHERE 1=1
+        <if test="req.status != null and req.status != ''">
+            AND status = #{req.status}
+        </if>
+        <if test="req.leaveType != null and req.leaveType != ''">
+            AND leave_type = #{req.leaveType}
+        </if>
+        <if test="req.applicantId != null">
+            AND applicant_id = #{req.applicantId}
+        </if>
+        <if test="req.applicantName != null and req.applicantName != ''">
+            AND applicant_name LIKE CONCAT('%', #{req.applicantName}, '%')
+        </if>
+        <if test="req.deptId != null">
+            AND dept_id = #{req.deptId}
+        </if>
+        <if test="req.startDateBegin != null and req.startDateBegin != ''">
+            AND start_date &gt;= #{req.startDateBegin}
+        </if>
+        <if test="req.startDateEnd != null and req.startDateEnd != ''">
+            AND start_date &lt;= #{req.startDateEnd}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             targetNamespace="http://blink.com/leave">
+
+    <process id="leaveRequest" name="请假申请流程" isExecutable="true">
+
+        <!-- 开始节点 -->
+        <startEvent id="startEvent" name="开始"/>
+
+        <!-- 部门主管审批 - 使用候选人，运行时动态设置 -->
+        <userTask id="deptManagerApproval" name="部门主管审批"
+                  flowable:candidateUsers="${approver}">
+            <documentation>部门主管审批请假申请</documentation>
+        </userTask>
+
+        <!-- 网关：判断请假天数 -->
+        <exclusiveGateway id="dayGateway" name="天数判断"/>
+
+        <!-- HR 审批（3天以上需要） -->
+        <userTask id="hrApproval" name="HR审批"
+                  flowable:candidateUsers="${hrApprover}">
+            <documentation>HR审批3天以上的请假申请</documentation>
+        </userTask>
+
+        <!-- 结束节点 -->
+        <endEvent id="endEvent" name="结束"/>
+
+        <!-- 连线定义：开始直接进入部门主管审批 -->
+        <sequenceFlow id="flow1" name="提交申请" sourceRef="startEvent" targetRef="deptManagerApproval"/>
+
+        <sequenceFlow id="flow2" name="主管审批" sourceRef="deptManagerApproval" targetRef="dayGateway"/>
+
+        <!-- 3天以下直接结束 -->
+        <sequenceFlow id="flow3" name="小于等于3天通过" sourceRef="dayGateway" targetRef="endEvent">
+            <conditionExpression xsi:type="tFormalExpression">
+                <![CDATA[${days <= 3}]]>
+            </conditionExpression>
+        </sequenceFlow>
+
+        <!-- 3天以上需HR审批 -->
+        <sequenceFlow id="flow4" name="大于3天转HR" sourceRef="dayGateway" targetRef="hrApproval">
+            <conditionExpression xsi:type="tFormalExpression">
+                <![CDATA[${days > 3}]]>
+            </conditionExpression>
+        </sequenceFlow>
+
+        <sequenceFlow id="flow5" name="HR审批完成" sourceRef="hrApproval" targetRef="endEvent"/>
+
+    </process>
+
+    <!-- 图形信息 -->
+    <bpmndi:BPMNDiagram id="BPMNDiagram_leaveRequest">
+        <bpmndi:BPMNPlane bpmnElement="leaveRequest" id="BPMNPlane_leaveRequest">
+            <bpmndi:BPMNShape bpmnElement="startEvent" id="BPMNShape_startEvent">
+                <omgdc:Bounds height="30.0" width="30.0" x="100.0" y="163.0"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="deptManagerApproval" id="BPMNShape_deptManagerApproval">
+                <omgdc:Bounds height="80.0" width="100.0" x="180.0" y="138.0"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="dayGateway" id="BPMNShape_dayGateway">
+                <omgdc:Bounds height="40.0" width="40.0" x="330.0" y="158.0"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="hrApproval" id="BPMNShape_hrApproval">
+                <omgdc:Bounds height="80.0" width="100.0" x="420.0" y="238.0"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="endEvent" id="BPMNShape_endEvent">
+                <omgdc:Bounds height="30.0" width="30.0" x="580.0" y="163.0"/>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNEdge bpmnElement="flow1" id="BPMNEdge_flow1">
+                <omgdi:waypoint x="130.0" y="178.0"/>
+                <omgdi:waypoint x="180.0" y="178.0"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge bpmnElement="flow2" id="BPMNEdge_flow2">
+                <omgdi:waypoint x="280.0" y="178.0"/>
+                <omgdi:waypoint x="330.0" y="178.0"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge bpmnElement="flow3" id="BPMNEdge_flow3">
+                <omgdi:waypoint x="370.0" y="178.0"/>
+                <omgdi:waypoint x="580.0" y="178.0"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge bpmnElement="flow4" id="BPMNEdge_flow4">
+                <omgdi:waypoint x="350.0" y="198.0"/>
+                <omgdi:waypoint x="350.0" y="278.0"/>
+                <omgdi:waypoint x="420.0" y="278.0"/>
+            </bpmndi:BPMNEdge>
+            <bpmndi:BPMNEdge bpmnElement="flow5" id="BPMNEdge_flow5">
+                <omgdi:waypoint x="520.0" y="278.0"/>
+                <omgdi:waypoint x="595.0" y="278.0"/>
+                <omgdi:waypoint x="595.0" y="193.0"/>
+            </bpmndi:BPMNEdge>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+
+</definitions>

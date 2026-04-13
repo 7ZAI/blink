@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.blink.base.mapper.BizLeaveApprovalMapper">
+
+    <resultMap id="LeaveApprovalVOMap" type="com.blink.base.dto.vo.LeaveApprovalVO">
+        <id column="id" property="id"/>
+        <result column="task_name" property="taskName"/>
+        <result column="approver_id" property="approverId"/>
+        <result column="approver_name" property="approverName"/>
+        <result column="approval_result" property="approvalResult"/>
+        <result column="approval_comment" property="approvalComment"/>
+        <result column="approval_time" property="approvalTime"/>
+    </resultMap>
+
+    <!-- 根据请假申请ID查询审批记录 -->
+    <select id="selectByLeaveRequestId" resultMap="LeaveApprovalVOMap">
+        SELECT
+            id, task_name, approver_id, approver_name,
+            approval_result, approval_comment, approval_time
+        FROM biz_leave_approval
+        WHERE leave_request_id = #{leaveRequestId}
+        ORDER BY approval_time ASC
+    </select>
+
+</mapper>

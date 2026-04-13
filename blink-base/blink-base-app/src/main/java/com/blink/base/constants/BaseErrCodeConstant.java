@@ -473,6 +473,33 @@ public interface BaseErrCodeConstant {
      */
     String USER_PERMISSION_DETAIL_QUERY_FAILED = "BUSS0061";
 
+    // ==================== 请假管理错误码 ====================
+
+    /**
+     * 请假申请不存在
+     */
+    String LEAVE_REQUEST_NOT_EXIST = "LEAVE0001";
+
+    /**
+     * 请假申请已处理，无法再次审批
+     */
+    String LEAVE_ALREADY_PROCESSED = "LEAVE0002";
+
+    /**
+     * 无权审批该请假申请
+     */
+    String NO_LEAVE_APPROVAL_PERMISSION = "LEAVE0003";
+
+    /**
+     * 只有申请人可以取消请假申请
+     */
+    String ONLY_APPLICANT_CAN_CANCEL = "LEAVE0004";
+
+    /**
+     * 只有待审批状态的请假申请可以取消
+     */
+    String LEAVE_CANNOT_CANCEL = "LEAVE0005";
+
 
     /***************************错误码---end ********************************/
 
