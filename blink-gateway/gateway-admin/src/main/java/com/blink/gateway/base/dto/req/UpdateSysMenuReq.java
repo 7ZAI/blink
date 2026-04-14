@@ -45,11 +45,11 @@ public class UpdateSysMenuReq implements Serializable {
 
 
     /**
-     * 菜单类型
+     * 菜单类型 1-目录 2-页面 3-按钮
      */
     @NotNull
     @FieldConstraint(name = "flag1", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
-    private Integer type;
+    private Byte type;
 
 
     /**

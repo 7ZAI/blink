@@ -16,6 +16,7 @@ import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.constants.RouteConstant;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
+import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
@@ -623,5 +624,38 @@ public class RoutePushServiceImpl implements RoutePushService {
         log.info("[RoutePush] 全量推送路由完成 | routesGroup: {}, count: {}", req.getRoutesGroup(), enabledRoutes.size());
 
         return result;
+    }
+
+    @Override
+    public ResponseDTO<QueryPushLogRsp> getInstancePushHistory(QueryInstancePushHistoryReq req) {
+        QueryPushLogRsp rsp = new QueryPushLogRsp();
+
+        // 参数校验
+        if (StrUtil.isBlank(req.getInstanceId())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 查询推送历史，筛选包含该实例的记录
+        // targetInstanceIds 和 failedInstanceIds 都是 JSON 数组格式
+        LambdaQueryWrapper<GaRoutePushLogDO> queryWrapper = new LambdaQueryWrapper<GaRoutePushLogDO>()
+            .and(wrapper -> wrapper
+                // 广播模式（targetInstanceIds 为空或 null）所有实例都相关
+                .or(w -> w.isNull(GaRoutePushLogDO::getTargetInstanceIds)
+                    .or()
+                    .eq(GaRoutePushLogDO::getTargetInstanceIds, "")
+                    .or()
+                    .like(GaRoutePushLogDO::getTargetInstanceIds, req.getInstanceId()))
+                // 指定模式：targetInstanceIds 包含该实例
+                .or(w -> w.like(GaRoutePushLogDO::getTargetInstanceIds, req.getInstanceId()))
+                // 失败实例中包含该实例
+                .or(w -> w.like(GaRoutePushLogDO::getFailedInstanceIds, req.getInstanceId()))
+            )
+            .orderByDesc(GaRoutePushLogDO::getPushTime);
+
+        PageUtils.queryPage(req, () -> gaRoutePushLogMapper.selectList(queryWrapper), rsp);
+
+        log.info("[RoutePush] 查询实例推送历史成功 | instanceId: {}, count: {}", req.getInstanceId(), rsp.getTotal());
+
+        return ResponseDTO.newSuccessInstance(rsp);
     }
 }

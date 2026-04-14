@@ -11,6 +11,7 @@ import com.blink.gateway.admin.dto.req.ExportRoutesReq;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.ImportRoutesReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
+import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryNacosRouteReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
@@ -337,6 +338,17 @@ public class RouteController {
     @PostMapping("/getInstanceRoutes")
     public ResponseDTO<QueryInstanceRoutesRsp> getInstanceRoutes(@RequestBody RequestDTO<QueryInstanceRoutesReq> reqDto) {
         return routePushService.getInstanceRoutes(reqDto.getBody());
+    }
+
+    /**
+     * 查询实例推送历史
+     *
+     * @param reqDto 请求参数
+     * @return 推送历史列表
+     */
+    @PostMapping("/getInstancePushHistory")
+    public ResponseDTO<QueryPushLogRsp> getInstancePushHistory(@RequestBody @Validated RequestDTO<QueryInstancePushHistoryReq> reqDto) {
+        return routePushService.getInstancePushHistory(reqDto.getBody());
     }
 
     /**

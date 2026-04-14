@@ -4,6 +4,7 @@ import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
+import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
@@ -62,4 +63,13 @@ public interface RoutePushService {
      * @return 操作结果
      */
     ResponseDTO<EmptyBody> fullPushRoutes(FullPushRoutesReq req);
+
+    /**
+     * 查询实例推送历史
+     * 根据实例ID查询相关的推送记录
+     *
+     * @param req 查询请求
+     * @return 推送历史列表
+     */
+    ResponseDTO<QueryPushLogRsp> getInstancePushHistory(QueryInstancePushHistoryReq req);
 }
