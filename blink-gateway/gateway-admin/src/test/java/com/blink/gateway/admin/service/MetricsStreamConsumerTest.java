@@ -81,8 +81,8 @@ class MetricsStreamConsumerTest {
 
         // 默认 mock：hGetStringMap 返回空 Map，避免 updateSummary 和 triggerStatusCheck 的 NPE
         when(redisClient.hGetStringMap(anyString())).thenReturn(Collections.emptyMap());
-        // 默认 mock：数据库中不存在实例
-        when(gatewayInstanceMapper.selectById(anyString())).thenReturn(null);
+        // 默认 mock：数据库中不存在实例（使用 selectOne + LambdaQueryWrapper）
+        when(gatewayInstanceMapper.selectOne(any())).thenReturn(null);
     }
 
     @Nested
@@ -98,7 +98,7 @@ class MetricsStreamConsumerTest {
             message.put("type", "METRICS");
 
             GatewayInstanceDO existingInstance = createOnlineInstance();
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(existingInstance);
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(existingInstance);
 
             // When: 处理消息
             metricsStreamConsumer.processMessage(message);
@@ -119,7 +119,7 @@ class MetricsStreamConsumerTest {
             // Given: 数据库中不存在实例
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(null);
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(null);
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -136,7 +136,7 @@ class MetricsStreamConsumerTest {
             message.put("type", "METRICS");
 
             GatewayInstanceDO shutdownInstance = createShutdownInstance();
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(shutdownInstance);
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(shutdownInstance);
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -151,7 +151,7 @@ class MetricsStreamConsumerTest {
             // Given
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -171,7 +171,7 @@ class MetricsStreamConsumerTest {
             Map<String, Object> instanceList = new HashMap<>();
             instanceList.put(INSTANCE_ID, String.valueOf(System.currentTimeMillis()));
             when(redisClient.hGetStringMap(INSTANCE_LIST_KEY)).thenReturn(instanceList);
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
@@ -196,7 +196,7 @@ class MetricsStreamConsumerTest {
             metricsData.put("healthStatus", "UP");
             metricsData.put("cpuUsage", 15.5);
             when(redisClient.hGetStringMap(METRICS_KEY)).thenReturn(metricsData);
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
@@ -225,7 +225,7 @@ class MetricsStreamConsumerTest {
             message.put("timestamp", String.valueOf(System.currentTimeMillis()));
             message.put("type", "REGISTER");
             message.put("healthStatus", "UP");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(null);
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(null);
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -248,7 +248,7 @@ class MetricsStreamConsumerTest {
             message.put("host", "192.168.1.100");
             message.put("port", "8080");
             message.put("type", "REGISTER");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -275,7 +275,7 @@ class MetricsStreamConsumerTest {
             message.put("serviceId", "gateway-reactive");
             message.put("type", "UNREGISTER");
             message.put("healthStatus", "DOWN");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -295,7 +295,7 @@ class MetricsStreamConsumerTest {
             message.put("instanceId", INSTANCE_ID);
             message.put("serviceId", "gateway-reactive");
             message.put("type", "UNREGISTER");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -315,7 +315,7 @@ class MetricsStreamConsumerTest {
             Map<String, String> message = new HashMap<>();
             message.put("instanceId", INSTANCE_ID);
             message.put("type", "UNREGISTER");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -331,7 +331,7 @@ class MetricsStreamConsumerTest {
             Map<String, String> message = new HashMap<>();
             message.put("instanceId", INSTANCE_ID);
             message.put("type", "UNREGISTER");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -349,7 +349,7 @@ class MetricsStreamConsumerTest {
             Map<String, String> message = new HashMap<>();
             message.put("instanceId", INSTANCE_ID);
             message.put("type", "UNREGISTER");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createShutdownInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createShutdownInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -386,7 +386,7 @@ class MetricsStreamConsumerTest {
             // Given: 缺少 type 的消息
             Map<String, String> message = createMetricsMessage();
             message.remove("type");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -402,7 +402,7 @@ class MetricsStreamConsumerTest {
             // Given
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
-            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+            when(gatewayInstanceMapper.selectOne(any())).thenReturn(createOnlineInstance());
 
             doThrow(new RuntimeException("Redis connection failed"))
                     .when(redisClient).hSet(anyString(), any(Map.class));

@@ -1,5 +1,6 @@
 package com.blink.gateway.admin.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -55,13 +57,19 @@ class NotificationControllerTest {
         @Test
         @DisplayName("SSE连接 - 正常场景")
         void testConnect_Success() {
-            SseEmitter emitter = new SseEmitter();
-            when(sseConnectionPool.createConnection(any(String.class), any(Integer.class))).thenReturn(emitter);
+            // Mock Sa-Token 静态方法
+            try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
+                stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(1001);
+                stpUtilMock.when(StpUtil::getTokenValue).thenReturn("test-token-abc123");
 
-            SseEmitter result = notificationController.connect();
+                SseEmitter emitter = new SseEmitter();
+                when(sseConnectionPool.createConnection(any(String.class), any(Integer.class))).thenReturn(emitter);
 
-            assertNotNull(result);
-            verify(sseConnectionPool, times(1)).createConnection(any(String.class), any(Integer.class));
+                SseEmitter result = notificationController.connect();
+
+                assertNotNull(result);
+                verify(sseConnectionPool, times(1)).createConnection(any(String.class), any(Integer.class));
+            }
         }
     }
 

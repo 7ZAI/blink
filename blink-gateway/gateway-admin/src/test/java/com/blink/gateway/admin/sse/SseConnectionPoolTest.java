@@ -49,6 +49,9 @@ class SseConnectionPoolTest {
     @Mock
     private SseInstanceIdentifier instanceIdentifier;
 
+    @Mock
+    private SseConfig sseConfig;
+
     @InjectMocks
     private SseConnectionPool sseConnectionPool;
 
@@ -60,6 +63,11 @@ class SseConnectionPoolTest {
     void setUp() {
         when(instanceIdentifier.getInstanceId()).thenReturn(TEST_INSTANCE_ID);
         when(redisClient.hGetField(anyString(), anyString())).thenReturn(null);
+        // 配置 SSE 参数
+        when(sseConfig.getMaxConnectionsPerUser()).thenReturn(5);
+        when(sseConfig.getMaxTotalConnections()).thenReturn(1000);
+        when(sseConfig.getConnectionTimeout()).thenReturn(30 * 60_000L);
+        when(sseConfig.getRegistryTtl()).thenReturn(120L);
     }
 
     @Nested
@@ -89,17 +97,19 @@ class SseConnectionPoolTest {
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
-                // 创建达到上限的连接数
-                for (int i = 0; i < SseConfig.MAX_CONNECTIONS_PER_USER; i++) {
-                    sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                int maxPerUser = sseConfig.getMaxConnectionsPerUser();
+                // 使用不同的 connectionKey 创建多个连接（模拟多设备/多标签页）
+                for (int i = 0; i < maxPerUser; i++) {
+                    String connectionKey = TEST_USER_ID + ":token-" + i;
+                    sseConnectionPool.createConnection(connectionKey, TEST_USER_ID);
                 }
 
-                // When: 尝试创建超限连接
-                SseEmitter emitter = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                // When: 尝试创建超限连接（使用新的 connectionKey）
+                SseEmitter emitter = sseConnectionPool.createConnection(TEST_USER_ID + ":token-extra", TEST_USER_ID);
 
                 // Then: 应返回 null 表示拒绝连接
                 assertNull(emitter);
-                assertEquals(SseConfig.MAX_CONNECTIONS_PER_USER, sseConnectionPool.getUserConnectionCount(TEST_USER_ID));
+                assertEquals(maxPerUser, sseConnectionPool.getUserConnectionCount(TEST_USER_ID));
             }
         }
     }
@@ -131,24 +141,26 @@ class SseConnectionPoolTest {
         @DisplayName("总连接数达到上限时应拒绝新连接")
         void shouldRejectConnectionWhenTotalLimitReached() {
             // Given: 模拟大量用户达到总连接数上限
-            // 为了测试性能，使用较小的限制值进行测试
-            // 实际测试中我们验证连接数限制逻辑
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 int connectionsCreated = 0;
                 int userId = 1;
                 int userConnectionCount = 0;
+                int maxPerUser = sseConfig.getMaxConnectionsPerUser();
+                int maxTotal = sseConfig.getMaxTotalConnections();
 
                 // 创建直到接近上限（测试时使用较小的数量）
-                int testLimit = Math.min(50, SseConfig.MAX_TOTAL_CONNECTIONS);
+                int testLimit = Math.min(50, maxTotal);
                 while (connectionsCreated < testLimit) {
                     stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(userId);
-                    SseEmitter emitter = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                    // 使用不同的 connectionKey（模拟同一用户的多设备登录）
+                    String connectionKey = userId + ":token-" + userConnectionCount;
+                    SseEmitter emitter = sseConnectionPool.createConnection(connectionKey, userId);
                     if (emitter != null) {
                         connectionsCreated++;
                         userConnectionCount++;
                     }
-                    // 每个用户最多创建 MAX_CONNECTIONS_PER_USER 个连接
-                    if (userConnectionCount >= SseConfig.MAX_CONNECTIONS_PER_USER) {
+                    // 每个用户最多创建 maxPerUser 个连接
+                    if (userConnectionCount >= maxPerUser) {
                         userId++;
                         userConnectionCount = 0;
                     }
@@ -207,10 +219,10 @@ class SseConnectionPoolTest {
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
-                // When: 创建多个连接
-                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
-                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
-                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                // When: 使用不同的 connectionKey 创建多个连接
+                sseConnectionPool.createConnection(TEST_USER_ID + ":token-1", TEST_USER_ID);
+                sseConnectionPool.createConnection(TEST_USER_ID + ":token-2", TEST_USER_ID);
+                sseConnectionPool.createConnection(TEST_USER_ID + ":token-3", TEST_USER_ID);
 
                 // Then
                 assertEquals(3, sseConnectionPool.getUserConnectionCount(TEST_USER_ID));
@@ -300,8 +312,9 @@ class SseConnectionPoolTest {
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
-                SseEmitter emitter1 = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
-                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                // 使用不同的 connectionKey 创建多个连接
+                SseEmitter emitter1 = sseConnectionPool.createConnection(TEST_USER_ID + ":token-1", TEST_USER_ID);
+                sseConnectionPool.createConnection(TEST_USER_ID + ":token-2", TEST_USER_ID);
 
                 // 重置 mock 以清除之前的调用
                 reset(redisClient);
@@ -327,16 +340,16 @@ class SseConnectionPoolTest {
         void shouldCorrectlyCountTotalConnections() {
             // Given
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
-                // 用户1创建2个连接
+                // 用户1创建2个连接（使用不同的 connectionKey）
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(1);
-                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
-                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                sseConnectionPool.createConnection("1:token-1", 1);
+                sseConnectionPool.createConnection("1:token-2", 1);
 
-                // 用户2创建3个连接
+                // 用户2创建3个连接（使用不同的 connectionKey）
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(2);
-                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
-                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
-                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                sseConnectionPool.createConnection("2:token-1", 2);
+                sseConnectionPool.createConnection("2:token-2", 2);
+                sseConnectionPool.createConnection("2:token-3", 2);
 
                 // When
                 int totalCount = sseConnectionPool.getTotalConnectionCount();

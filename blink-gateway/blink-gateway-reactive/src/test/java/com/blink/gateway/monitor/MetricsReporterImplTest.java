@@ -46,6 +46,7 @@ class MetricsReporterImplTest {
     private MeterRegistry meterRegistry;
     private ReactiveStringRedisTemplate redisTemplate;
     private ReactiveStreamOperations<String, Object, Object> streamOperations;
+    private MonitorConfigHolder monitorConfigHolder;
     private MetricsReporterImpl metricsReporter;
 
     @SuppressWarnings("unchecked")
@@ -55,23 +56,27 @@ class MetricsReporterImplTest {
         redisTemplate = mock(ReactiveStringRedisTemplate.class);
         streamOperations = mock(ReactiveStreamOperations.class);
         BuildProperties buildProperties = mock(BuildProperties.class);
+        monitorConfigHolder = mock(MonitorConfigHolder.class);
 
         // Mock Redis Stream 操作
         when(redisTemplate.opsForStream()).thenReturn(streamOperations);
         when(streamOperations.add(any(Record.class)))
                 .thenReturn(Mono.just(mock(org.springframework.data.redis.connection.stream.RecordId.class)));
 
+        // Mock MonitorConfigHolder
+        when(monitorConfigHolder.isEnabled()).thenReturn(true);
+
         // 创建 MetricsReporterImpl 实例
         metricsReporter = new MetricsReporterImpl(
                 meterRegistry,
                 redisTemplate,
-                buildProperties
+                buildProperties,
+                monitorConfigHolder
         );
 
         // 使用反射设置私有字段
         ReflectionTestUtils.setField(metricsReporter, "serviceId", "test-gateway");
         ReflectionTestUtils.setField(metricsReporter, "port", 8080);
-        ReflectionTestUtils.setField(metricsReporter, "configPushEnabled", true);
     }
 
     @Nested
@@ -407,7 +412,7 @@ class MetricsReporterImplTest {
         @DisplayName("禁用上报时应跳过")
         void shouldSkipWhenReportDisabled() {
             // Given: 禁用上报
-            ReflectionTestUtils.setField(metricsReporter, "configPushEnabled", false);
+            when(monitorConfigHolder.isEnabled()).thenReturn(false);
 
             // When: 调用 reportMetrics
             metricsReporter.reportMetrics();
