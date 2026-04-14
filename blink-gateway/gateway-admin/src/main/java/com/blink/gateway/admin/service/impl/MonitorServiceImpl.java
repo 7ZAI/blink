@@ -67,6 +67,7 @@ public class MonitorServiceImpl implements MonitorService {
                 vo.setUri(instance.getUri().toString());
                 vo.setStatus((byte) 0);
                 vo.setStatusDesc("在线");
+                vo.setHealthy(true); // 从注册中心获取的实例默认健康
                 instanceList.add(vo);
             }
 
@@ -94,15 +95,16 @@ public class MonitorServiceImpl implements MonitorService {
             GatewayStatisticsRsp statistics = new GatewayStatisticsRsp();
 
             if (MapUtil.isNotEmpty(summary)) {
-                // 从 Redis 缓存读取
-                statistics.setTotalInstances(getIntValue(summary, "totalInstances"));
-                statistics.setHealthyInstances(getIntValue(summary, "healthyInstances"));
+                // 从 Redis 缓存读取（适配 MetricsStreamConsumer 写入的字段名）
+                statistics.setTotalInstances(getIntValue(summary, "total"));
+                statistics.setHealthyInstances(getIntValue(summary, "healthy"));
                 statistics.setTotalRequests(getLongValue(summary, "totalRequests"));
                 statistics.setSuccessRequests(getLongValue(summary, "totalSuccessRequests"));
                 statistics.setFailedRequests(getLongValue(summary, "totalFailedRequests"));
                 statistics.setAvgResponseTime(getLongValue(summary, "avgResponseTime"));
 
-                log.debug("[Monitor] 从 Redis 读取统计数据成功");
+                log.debug("[Monitor] 从 Redis 读取统计数据成功 | total: {}, healthy: {}, requests: {}",
+                        statistics.getTotalInstances(), statistics.getHealthyInstances(), statistics.getTotalRequests());
             } else {
                 // Redis 无数据时，从注册中心获取基础信息
                 List<ServiceInstance> instances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);

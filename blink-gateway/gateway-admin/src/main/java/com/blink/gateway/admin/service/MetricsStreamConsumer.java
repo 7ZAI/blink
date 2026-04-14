@@ -1,12 +1,17 @@
 package com.blink.gateway.admin.service;
 
 import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.framework.redis.component.RedisClient;
+import com.blink.gateway.admin.entity.GatewayInstanceDO;
+import com.blink.gateway.admin.mapper.GatewayInstanceMapper;
 import com.blink.gateway.admin.sse.InstanceStatusPayload;
 import com.blink.gateway.admin.sse.NotificationPayload;
 import com.blink.gateway.admin.sse.SseConnectionPool;
 import com.blink.gateway.admin.sse.SseMessage;
+import com.blink.gateway.admin.service.DashboardPushService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +22,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_OFFLINE;
+import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_ONLINE;
+import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_SHUTDOWN;
 
 /**
  * Redis Stream 指标消息消费者
@@ -41,13 +50,22 @@ public class MetricsStreamConsumer {
     private final RedisClient redisClient;
     private final SseConnectionPool sseConnectionPool;
     private final InstanceStatusPushService instanceStatusPushService;
+    private final GatewayInstanceMapper gatewayInstanceMapper;
+    private final DashboardPushService dashboardPushService;
+    private final TrafficIncrementService trafficIncrementService;
 
     public MetricsStreamConsumer(RedisClient redisClient,
                                   SseConnectionPool sseConnectionPool,
-                                  InstanceStatusPushService instanceStatusPushService) {
+                                  InstanceStatusPushService instanceStatusPushService,
+                                  GatewayInstanceMapper gatewayInstanceMapper,
+                                  DashboardPushService dashboardPushService,
+                                  TrafficIncrementService trafficIncrementService) {
         this.redisClient = redisClient;
         this.sseConnectionPool = sseConnectionPool;
         this.instanceStatusPushService = instanceStatusPushService;
+        this.gatewayInstanceMapper = gatewayInstanceMapper;
+        this.dashboardPushService = dashboardPushService;
+        this.trafficIncrementService = trafficIncrementService;
     }
 
     /**
@@ -86,6 +104,12 @@ public class MetricsStreamConsumer {
     private void handleMetrics(Map<String, String> message) {
         String instanceId = message.get("instanceId");
 
+        // 校验实例是否在数据库中存在
+        if (!ensureInstanceExists(message)) {
+            log.warn("[MetricsStreamConsumer] 实例校验失败或被手动下线，跳过指标处理 | instanceId: {}", instanceId);
+            return;
+        }
+
         // 存储实例指标到 Redis Hash
         String metricsKey = METRICS_KEY_PREFIX + instanceId;
         Map<String, Object> metricsData = convertToMetricsData(message);
@@ -95,13 +119,124 @@ public class MetricsStreamConsumer {
         // 更新实例列表（使用 hPutField 设置单个字段）
         redisClient.hPutField(INSTANCE_LIST_KEY, instanceId, String.valueOf(System.currentTimeMillis()));
 
+        // 计算流量增量并存储（用于趋势图）
+        calculateTrafficIncrement(message);
+
         // 更新汇总统计
         updateSummary();
 
         // 触发状态变化检测
         triggerStatusCheck();
 
+        // 推送仪表盘数据给前端
+        dashboardPushService.pushDashboardData();
+
         log.debug("[MetricsStreamConsumer] METRICS 消息处理完成 | instanceId: {}", instanceId);
+    }
+
+    /**
+     * 计算流量增量
+     */
+    private void calculateTrafficIncrement(Map<String, String> message) {
+        String instanceId = message.get("instanceId");
+
+        // 解析请求数指标
+        long totalRequests = parseMessageLong(message.get("totalRequests"));
+        long successRequests = parseMessageLong(message.get("successRequests"));
+        long failedRequests = parseMessageLong(message.get("failedRequests"));
+
+        // 计算并存储增量
+        trafficIncrementService.calculateAndStoreIncrement(
+                instanceId, totalRequests, successRequests, failedRequests);
+    }
+
+    /**
+     * 解析消息中的 Long 值
+     */
+    private long parseMessageLong(String value) {
+        if (value == null || value.isEmpty()) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
+    }
+
+    /**
+     * 确保实例在数据库中存在
+     *
+     * @param message 消息内容
+     * @return true-可以处理指标，false-跳过处理
+     */
+    private boolean ensureInstanceExists(Map<String, String> message) {
+        String instanceId = message.get("instanceId");
+        String serviceId = message.get("serviceId");
+        String host = message.get("host");
+        String portStr = message.get("port");
+
+        // 根据 instanceId 字段查询数据库（注意：不能用 selectById，因为主键是 id 不是 instance_id）
+        LambdaQueryWrapper<GatewayInstanceDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(GatewayInstanceDO::getInstanceId, instanceId);
+        GatewayInstanceDO dbInstance = gatewayInstanceMapper.selectOne(queryWrapper);
+
+        if (ObjectUtil.isNull(dbInstance)) {
+            // 数据库中不存在，自动注册新实例
+            Integer port = parsePort(portStr);
+            if (StrUtil.isBlank(host) || port == null) {
+                log.warn("[MetricsStreamConsumer] 消息缺少必要字段，无法自动注册 | instanceId: {}", instanceId);
+                return false;
+            }
+
+            GatewayInstanceDO newInstance = new GatewayInstanceDO();
+            newInstance.setInstanceId(instanceId);
+            newInstance.setServiceId(StrUtil.isNotBlank(serviceId) ? serviceId : "unknown");
+            newInstance.setHost(host);
+            newInstance.setPort(port);
+            newInstance.setUri("http://" + host + ":" + port);
+            newInstance.setStatus(INSTANCE_STATUS_ONLINE);
+            newInstance.setOnlineTime(LocalDateTime.now());
+            gatewayInstanceMapper.insert(newInstance);
+
+            log.info("[MetricsStreamConsumer] 自动注册新实例 | instanceId: {}, host: {}, port: {}", instanceId, host, port);
+
+            // 广播新实例上线通知
+            broadcastInstanceNotification(instanceId, serviceId, "实例自动注册上线", "success");
+
+            return true;
+        }
+
+        // 实例已存在，检查是否被手动下线
+        if (INSTANCE_STATUS_SHUTDOWN.equals(dbInstance.getStatus())) {
+            // 手动下线的实例不处理指标，但记录日志
+            log.info("[MetricsStreamConsumer] 实例已被手动下线，忽略指标上报 | instanceId: {}", instanceId);
+            return false;
+        }
+
+        // 更新数据库状态为在线（如果之前是离线）
+        if (!INSTANCE_STATUS_ONLINE.equals(dbInstance.getStatus())) {
+            dbInstance.setStatus(INSTANCE_STATUS_ONLINE);
+            dbInstance.setOnlineTime(LocalDateTime.now());
+            gatewayInstanceMapper.updateById(dbInstance);
+            log.info("[MetricsStreamConsumer] 实例状态更新为在线 | instanceId: {}", instanceId);
+        }
+
+        return true;
+    }
+
+    /**
+     * 解析端口号
+     */
+    private Integer parsePort(String portStr) {
+        if (StrUtil.isBlank(portStr)) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(portStr);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     /**
@@ -110,6 +245,12 @@ public class MetricsStreamConsumer {
     private void handleRegister(Map<String, String> message) {
         String instanceId = message.get("instanceId");
         String serviceId = message.get("serviceId");
+
+        // 校验并确保实例在数据库中存在
+        if (!ensureInstanceExists(message)) {
+            log.warn("[MetricsStreamConsumer] 实例注册校验失败 | instanceId: {}", instanceId);
+            return;
+        }
 
         // 注册实例到列表
         redisClient.hPutField(INSTANCE_LIST_KEY, instanceId, String.valueOf(System.currentTimeMillis()));
@@ -125,6 +266,9 @@ public class MetricsStreamConsumer {
 
         // 触发状态变化检测
         triggerStatusCheck();
+
+        // 推送仪表盘数据给前端
+        dashboardPushService.pushDashboardData();
 
         log.info("[MetricsStreamConsumer] 实例注册 | instanceId: {}, serviceId: {}", instanceId, serviceId);
     }
@@ -142,11 +286,26 @@ public class MetricsStreamConsumer {
         // 删除实例指标缓存
         redisClient.delete(METRICS_KEY_PREFIX + instanceId);
 
+        // 根据 instanceId 字段查询并更新数据库状态为离线
+        LambdaQueryWrapper<GatewayInstanceDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(GatewayInstanceDO::getInstanceId, instanceId);
+        GatewayInstanceDO dbInstance = gatewayInstanceMapper.selectOne(queryWrapper);
+
+        if (ObjectUtil.isNotNull(dbInstance) && !INSTANCE_STATUS_SHUTDOWN.equals(dbInstance.getStatus())) {
+            dbInstance.setStatus(INSTANCE_STATUS_OFFLINE);
+            dbInstance.setOfflineTime(LocalDateTime.now());
+            gatewayInstanceMapper.updateById(dbInstance);
+            log.info("[MetricsStreamConsumer] 更新实例状态为离线 | instanceId: {}", instanceId);
+        }
+
         // 广播实例下线通知
         broadcastInstanceNotification(instanceId, serviceId, "实例下线", "warning");
 
         // 触发状态变化检测
         triggerStatusCheck();
+
+        // 推送仪表盘数据给前端
+        dashboardPushService.pushDashboardData();
 
         log.info("[MetricsStreamConsumer] 实例注销 | instanceId: {}, serviceId: {}", instanceId, serviceId);
     }
@@ -233,6 +392,11 @@ public class MetricsStreamConsumer {
         int onlineCount = 0;
         int healthyCount = 0;
         double totalCpu = 0;
+        long totalRequests = 0;
+        long totalSuccessRequests = 0;
+        long totalFailedRequests = 0;
+        long totalResponseTime = 0;
+        int responseTimeCount = 0;
 
         for (String instanceId : instanceList.keySet()) {
             Map<String, Object> metrics = redisClient.hGetStringMap(METRICS_KEY_PREFIX + instanceId);
@@ -250,7 +414,29 @@ public class MetricsStreamConsumer {
 
             Object cpuUsage = metrics.get("cpuUsage");
             if (cpuUsage != null) {
-                totalCpu += ((Number) cpuUsage).doubleValue();
+                totalCpu += toDoubleValue(cpuUsage);
+            }
+
+            // 统计请求数
+            Object reqTotal = metrics.get("totalRequests");
+            if (reqTotal != null) {
+                totalRequests += toLongValue(reqTotal);
+            }
+
+            Object reqSuccess = metrics.get("successRequests");
+            if (reqSuccess != null) {
+                totalSuccessRequests += toLongValue(reqSuccess);
+            }
+
+            Object reqFailed = metrics.get("failedRequests");
+            if (reqFailed != null) {
+                totalFailedRequests += toLongValue(reqFailed);
+            }
+
+            Object avgRespTime = metrics.get("avgResponseTime");
+            if (avgRespTime != null && toLongValue(avgRespTime) > 0) {
+                totalResponseTime += toLongValue(avgRespTime);
+                responseTimeCount++;
             }
         }
 
@@ -260,6 +446,12 @@ public class MetricsStreamConsumer {
         summary.put("healthy", healthyCount);
         summary.put("avgCpuUsage", onlineCount > 0 ?
                 BigDecimal.valueOf(totalCpu / onlineCount).setScale(2, RoundingMode.HALF_UP).doubleValue() : 0.0);
+        // 请求数统计
+        summary.put("totalRequests", totalRequests);
+        summary.put("totalSuccessRequests", totalSuccessRequests);
+        summary.put("totalFailedRequests", totalFailedRequests);
+        summary.put("avgResponseTime", responseTimeCount > 0 ?
+                BigDecimal.valueOf(totalResponseTime / responseTimeCount).setScale(0, RoundingMode.HALF_UP).longValue() : 0L);
         summary.put("timestamp", System.currentTimeMillis());
 
         redisClient.hSet(SUMMARY_KEY, summary);
@@ -287,24 +479,24 @@ public class MetricsStreamConsumer {
             if (CollUtil.isNotEmpty(metrics)) {
                 Object status = metrics.get("status");
                 if (status != null) {
-                    summary.setStatus(((Number) status).intValue());
+                    summary.setStatus(toIntValue(status));
                 }
 
                 summary.setHealthStatus((String) metrics.get("healthStatus"));
 
                 Object cpuUsage = metrics.get("cpuUsage");
                 if (cpuUsage != null) {
-                    summary.setCpuUsage(((Number) cpuUsage).doubleValue());
+                    summary.setCpuUsage(toDoubleValue(cpuUsage));
                 }
 
                 Object heapUsagePercent = metrics.get("heapUsagePercent");
                 if (heapUsagePercent != null) {
-                    summary.setHeapUsagePercent(((Number) heapUsagePercent).doubleValue());
+                    summary.setHeapUsagePercent(toDoubleValue(heapUsagePercent));
                 }
 
                 Object timestamp = metrics.get("timestamp");
                 if (timestamp != null) {
-                    summary.setTimestamp(((Number) timestamp).longValue());
+                    summary.setTimestamp(toLongValue(timestamp));
                 }
             }
 
@@ -312,6 +504,57 @@ public class MetricsStreamConsumer {
         }
 
         instanceStatusPushService.checkAndPush(summaries);
+    }
+
+    /**
+     * 将 Object 转换为 Long 值（支持 String 和 Number 类型）
+     */
+    private Long toLongValue(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Long.parseLong((String) value);
+            } catch (NumberFormatException e) {
+                return 0L;
+            }
+        }
+        return 0L;
+    }
+
+    /**
+     * 将 Object 转换为 Double 值（支持 String 和 Number 类型）
+     */
+    private Double toDoubleValue(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Double.parseDouble((String) value);
+            } catch (NumberFormatException e) {
+                return 0.0;
+            }
+        }
+        return 0.0;
+    }
+
+    /**
+     * 将 Object 转换为 Integer 值（支持 String 和 Number 类型）
+     */
+    private Integer toIntValue(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        return 0;
     }
 
     /**

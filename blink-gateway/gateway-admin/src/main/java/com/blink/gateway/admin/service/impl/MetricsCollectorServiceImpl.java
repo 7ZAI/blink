@@ -2,12 +2,12 @@ package com.blink.gateway.admin.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.blink.framework.redis.component.RedisClient;
+import com.blink.gateway.admin.config.MonitorProperties;
 import com.blink.gateway.admin.entity.GatewayMetricsHistoryDO;
 import com.blink.gateway.admin.mapper.GatewayMetricsHistoryMapper;
 import com.blink.gateway.admin.service.MetricsCollectorService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -42,8 +42,8 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
     @Resource
     private GatewayMetricsHistoryMapper metricsHistoryMapper;
 
-    @Value("${blink.gateway.monitor.history-retention-days:7}")
-    private int historyRetentionDays;
+    @Resource
+    private MonitorProperties monitorProperties;
 
     /**
      * Redis 指标 Key 前缀
@@ -55,7 +55,7 @@ public class MetricsCollectorServiceImpl implements MetricsCollectorService {
     public void cleanHistoryMetrics() {
         try {
             log.info("[MetricsCollector] 开始清理历史数据...");
-            LocalDateTime beforeTime = LocalDateTime.now().minusDays(historyRetentionDays);
+            LocalDateTime beforeTime = LocalDateTime.now().minusDays(monitorProperties.getHistoryRetentionDays());
             int deleted = metricsHistoryMapper.deleteBeforeTime(beforeTime);
             log.info("[MetricsCollector] 清理历史数据完成 | 删除记录数: {}", deleted);
         } catch (Exception e) {

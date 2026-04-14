@@ -126,4 +126,15 @@ public class GatewayInstanceController {
     public ResponseDTO<InstanceDetailRsp> getInstanceDetailWithMetrics(@RequestBody @Validated RequestDTO<GetInstanceDetailReq> reqDto) {
         return gatewayInstanceService.getInstanceDetailWithMetrics(reqDto.getBody());
     }
+
+    /**
+     * 手动刷新实例状态（从Nacos实时获取）
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @PostMapping("/refreshInstanceStatus")
+    public ResponseDTO<EmptyBody> refreshInstanceStatus(@RequestBody RequestDTO<EmptyBody> reqDto) {
+        return gatewayInstanceService.refreshInstanceStatus();
+    }
 }

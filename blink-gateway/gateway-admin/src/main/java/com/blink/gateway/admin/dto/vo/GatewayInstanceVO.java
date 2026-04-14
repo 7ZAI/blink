@@ -53,6 +53,11 @@ public class GatewayInstanceVO implements Serializable {
     private String statusDesc;
 
     /**
+     * 健康状态：true-健康，false-不健康
+     */
+    private Boolean healthy;
+
+    /**
      * 上线时间
      */
     private LocalDateTime onlineTime;

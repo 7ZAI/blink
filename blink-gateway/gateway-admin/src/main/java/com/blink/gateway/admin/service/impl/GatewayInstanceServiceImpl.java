@@ -4,6 +4,9 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.NamingMaintainService;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.blink.framework.common.data.EmptyBody;
@@ -33,6 +36,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.ServiceInstance;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -86,6 +90,15 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
 
     @Resource
     private RedisClient redisClient;
+
+    @Resource
+    private NamingMaintainService namingMaintainService;
+
+    @Value("${spring.cloud.nacos.discovery.namespace:public}")
+    private String namespaceId;
+
+    @Value("${spring.cloud.nacos.discovery.group:DEFAULT_GROUP}")
+    private String groupName;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -183,7 +196,10 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
                 }
             }
 
-            // 更新状态为下线
+            // 通过 Nacos API 设置实例 enabled=false
+            updateInstanceEnabled(instanceDO.getHost(), instanceDO.getPort(), false);
+
+            // 更新数据库状态为下线
             instanceDO.setStatus(INSTANCE_STATUS_SHUTDOWN);
             instanceDO.setOfflineTime(LocalDateTime.now());
             gatewayInstanceMapper.updateById(instanceDO);
@@ -211,7 +227,10 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
                 BlinkException.throwBusinessException(GATEWAY_INSTANCE_NOT_EXIST);
             }
 
-            // 更新状态为在线
+            // 通过 Nacos API 设置实例 enabled=true
+            updateInstanceEnabled(instanceDO.getHost(), instanceDO.getPort(), true);
+
+            // 更新数据库状态为在线
             instanceDO.setStatus(INSTANCE_STATUS_ONLINE);
             instanceDO.setOnlineTime(LocalDateTime.now());
             gatewayInstanceMapper.updateById(instanceDO);
@@ -227,63 +246,112 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
         }
     }
 
+    /**
+     * 通过 Nacos API 更新实例的 enabled 状态
+     *
+     * @param ip      实例IP
+     * @param port    实例端口
+     * @param enabled 是否启用
+     */
+    private void updateInstanceEnabled(String ip, Integer port, boolean enabled) {
+        try {
+            Instance instance = new Instance();
+            instance.setIp(ip);
+            instance.setPort(port);
+            instance.setEnabled(enabled);
+            instance.setEphemeral(true);
+
+            namingMaintainService.updateInstance(groupName, GATEWAY_SERVICE_NAME, instance);
+
+            log.info("[GatewayInstance] Nacos 实例状态更新成功 | ip: {}, port: {}, enabled: {}", ip, port, enabled);
+        } catch (NacosException e) {
+            log.error("[GatewayInstance] Nacos 实例状态更新失败 | ip: {}, port: {}, enabled: {}, error: {}",
+                    ip, port, enabled, e.getMessage(), e);
+            throw new BlinkException("Nacos 实例状态更新失败：" + e.getMessage(), e,
+                    enabled ? ONLINE_INSTANCE_FAILED : OFFLINE_INSTANCE_FAILED);
+        }
+    }
+
     @Override
-    @Scheduled(cron = INSTANCE_SYNC_CRON)
+    public ResponseDTO<EmptyBody> refreshInstanceStatus() {
+        try {
+            log.info("[GatewayInstance] 手动刷新实例状态...");
+
+            // 执行同步逻辑
+            doSyncInstanceStatus();
+
+            log.info("[GatewayInstance] 实例状态刷新完成");
+
+            return ResponseDTO.newSuccessInstance();
+        } catch (Exception e) {
+            log.error("[GatewayInstance] 刷新实例状态失败 | error: {}", e.getMessage(), e);
+            throw new BlinkException("刷新实例状态失败：" + e.getMessage(), e, GET_INSTANCE_LIST_FAILED);
+        }
+    }
+
+    @Override
+    // 已移除自动定时调度，改为通过 SSE 监控消息实时同步
+    // @Scheduled(cron = INSTANCE_SYNC_CRON)
     @Transactional(rollbackFor = Exception.class)
     public void syncInstanceStatus() {
         try {
             log.info("[GatewayInstance] 开始同步网关实例状态...");
-
-            // 获取注册中心的所有实例
-            List<ServiceInstance> registryInstances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);
-            Map<String, ServiceInstance> registryMap = registryInstances.stream()
-                    .collect(Collectors.toMap(ServiceInstance::getInstanceId, i -> i));
-
-            // 查询数据库中的所有实例
-            List<GatewayInstanceDO> dbInstances = gatewayInstanceMapper.selectList(null);
-
-            // 更新数据库中在线实例的状态
-            for (GatewayInstanceDO instanceDO : dbInstances) {
-                if (instanceDO.getStatus().equals(INSTANCE_STATUS_SHUTDOWN)) {
-                    // 已手动下线的实例不处理
-                    continue;
-                }
-
-                if (registryMap.containsKey(instanceDO.getInstanceId())) {
-                    // 实例在注册中心，标记为在线
-                    if (!instanceDO.getStatus().equals(INSTANCE_STATUS_ONLINE)) {
-                        instanceDO.setStatus(INSTANCE_STATUS_ONLINE);
-                        instanceDO.setOnlineTime(LocalDateTime.now());
-                        gatewayInstanceMapper.updateById(instanceDO);
-                    }
-                    registryMap.remove(instanceDO.getInstanceId());
-                } else {
-                    // 实例不在注册中心，标记为离线
-                    if (!instanceDO.getStatus().equals(INSTANCE_STATUS_OFFLINE)) {
-                        instanceDO.setStatus(INSTANCE_STATUS_OFFLINE);
-                        instanceDO.setOfflineTime(LocalDateTime.now());
-                        gatewayInstanceMapper.updateById(instanceDO);
-                    }
-                }
-            }
-
-            // 新增注册中心有但数据库没有的实例
-            for (ServiceInstance instance : registryMap.values()) {
-                GatewayInstanceDO newInstance = new GatewayInstanceDO();
-                newInstance.setInstanceId(instance.getInstanceId());
-                newInstance.setServiceId(instance.getServiceId());
-                newInstance.setHost(instance.getHost());
-                newInstance.setPort(instance.getPort());
-                newInstance.setUri(instance.getUri().toString());
-                newInstance.setStatus(INSTANCE_STATUS_ONLINE);
-                newInstance.setOnlineTime(LocalDateTime.now());
-                gatewayInstanceMapper.insert(newInstance);
-                log.info("[GatewayInstance] 新增网关实例 | instanceId: {}", instance.getInstanceId());
-            }
-
+            doSyncInstanceStatus();
             log.info("[GatewayInstance] 网关实例状态同步完成");
         } catch (Exception e) {
             log.error("[GatewayInstance] 同步网关实例状态失败 | error: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 执行实例状态同步逻辑
+     */
+    private void doSyncInstanceStatus() {
+        // 获取注册中心的所有实例
+        List<ServiceInstance> registryInstances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);
+        Map<String, ServiceInstance> registryMap = registryInstances.stream()
+                .collect(Collectors.toMap(ServiceInstance::getInstanceId, i -> i));
+
+        // 查询数据库中的所有实例
+        List<GatewayInstanceDO> dbInstances = gatewayInstanceMapper.selectList(null);
+
+        // 更新数据库中在线实例的状态
+        for (GatewayInstanceDO instanceDO : dbInstances) {
+            if (instanceDO.getStatus().equals(INSTANCE_STATUS_SHUTDOWN)) {
+                // 已手动下线的实例不处理
+                continue;
+            }
+
+            if (registryMap.containsKey(instanceDO.getInstanceId())) {
+                // 实例在注册中心，标记为在线
+                if (!instanceDO.getStatus().equals(INSTANCE_STATUS_ONLINE)) {
+                    instanceDO.setStatus(INSTANCE_STATUS_ONLINE);
+                    instanceDO.setOnlineTime(LocalDateTime.now());
+                    gatewayInstanceMapper.updateById(instanceDO);
+                }
+                registryMap.remove(instanceDO.getInstanceId());
+            } else {
+                // 实例不在注册中心，标记为离线
+                if (!instanceDO.getStatus().equals(INSTANCE_STATUS_OFFLINE)) {
+                    instanceDO.setStatus(INSTANCE_STATUS_OFFLINE);
+                    instanceDO.setOfflineTime(LocalDateTime.now());
+                    gatewayInstanceMapper.updateById(instanceDO);
+                }
+            }
+        }
+
+        // 新增注册中心有但数据库没有的实例
+        for (ServiceInstance instance : registryMap.values()) {
+            GatewayInstanceDO newInstance = new GatewayInstanceDO();
+            newInstance.setInstanceId(instance.getInstanceId());
+            newInstance.setServiceId(instance.getServiceId());
+            newInstance.setHost(instance.getHost());
+            newInstance.setPort(instance.getPort());
+            newInstance.setUri(instance.getUri().toString());
+            newInstance.setStatus(INSTANCE_STATUS_ONLINE);
+            newInstance.setOnlineTime(LocalDateTime.now());
+            gatewayInstanceMapper.insert(newInstance);
+            log.info("[GatewayInstance] 新增网关实例 | instanceId: {}", instance.getInstanceId());
         }
     }
 
@@ -543,73 +611,102 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             String key = GATEWAY_METRICS_PREFIX + instanceId;
             Map<String, Object> metrics = redisClient.hGetStringMap(key);
 
+            log.info("[GatewayInstance] 从 Redis 获取 JVM 指标 | key: {}, metrics size: {}", key, metrics != null ? metrics.size() : 0);
+
             if (CollUtil.isEmpty(metrics)) {
+                log.warn("[GatewayInstance] Redis 中未找到 JVM 指标 | key: {}", key);
                 return null;
             }
 
             JvmMetricsVO vo = new JvmMetricsVO();
 
             // 堆内存
-            Object heapUsed = metrics.get("heapUsed");
-            Object heapMax = metrics.get("heapMax");
-            if (ObjectUtil.isNotNull(heapUsed) && ObjectUtil.isNotNull(heapMax)) {
-                vo.setHeapUsed(((Number) heapUsed).longValue());
-                vo.setHeapMax(((Number) heapMax).longValue());
-                if (vo.getHeapMax() > 0) {
-                    double percent = (double) vo.getHeapUsed() / vo.getHeapMax() * 100;
+            Long heapUsed = parseLongValue(metrics.get("heapUsed"));
+            Long heapMax = parseLongValue(metrics.get("heapMax"));
+            if (heapUsed != null && heapMax != null) {
+                vo.setHeapUsed(heapUsed);
+                vo.setHeapMax(heapMax);
+                if (heapMax > 0) {
+                    double percent = (double) heapUsed / heapMax * 100;
                     vo.setHeapUsagePercent(BigDecimal.valueOf(percent).setScale(2, RoundingMode.HALF_UP).doubleValue());
                 }
             }
 
             // 非堆内存
-            Object nonHeapUsed = metrics.get("nonHeapUsed");
-            if (ObjectUtil.isNotNull(nonHeapUsed)) {
-                vo.setNonHeapUsed(((Number) nonHeapUsed).longValue());
+            Long nonHeapUsed = parseLongValue(metrics.get("nonHeapUsed"));
+            if (nonHeapUsed != null) {
+                vo.setNonHeapUsed(nonHeapUsed);
             }
 
             // GC 指标
-            Object youngGcCount = metrics.get("youngGcCount");
-            Object youngGcTime = metrics.get("youngGcTime");
-            Object oldGcCount = metrics.get("oldGcCount");
-            Object oldGcTime = metrics.get("oldGcTime");
-            if (ObjectUtil.isNotNull(youngGcCount)) {
-                vo.setYoungGcCount(((Number) youngGcCount).longValue());
-            }
-            if (ObjectUtil.isNotNull(youngGcTime)) {
-                vo.setYoungGcTime(((Number) youngGcTime).longValue());
-            }
-            if (ObjectUtil.isNotNull(oldGcCount)) {
-                vo.setOldGcCount(((Number) oldGcCount).longValue());
-            }
-            if (ObjectUtil.isNotNull(oldGcTime)) {
-                vo.setOldGcTime(((Number) oldGcTime).longValue());
-            }
+            vo.setYoungGcCount(parseLongValue(metrics.get("youngGcCount")));
+            vo.setYoungGcTime(parseLongValue(metrics.get("youngGcTime")));
+            vo.setOldGcCount(parseLongValue(metrics.get("oldGcCount")));
+            vo.setOldGcTime(parseLongValue(metrics.get("oldGcTime")));
 
             // 线程指标
-            Object liveThreads = metrics.get("liveThreads");
-            Object peakThreads = metrics.get("peakThreads");
-            Object daemonThreads = metrics.get("daemonThreads");
-            if (ObjectUtil.isNotNull(liveThreads)) {
-                vo.setLiveThreads(((Number) liveThreads).intValue());
-            }
-            if (ObjectUtil.isNotNull(peakThreads)) {
-                vo.setPeakThreads(((Number) peakThreads).intValue());
-            }
-            if (ObjectUtil.isNotNull(daemonThreads)) {
-                vo.setDaemonThreads(((Number) daemonThreads).intValue());
-            }
+            vo.setLiveThreads(parseIntValue(metrics.get("liveThreads")));
+            vo.setPeakThreads(parseIntValue(metrics.get("peakThreads")));
+            vo.setDaemonThreads(parseIntValue(metrics.get("daemonThreads")));
 
             // 时间戳
-            Object timestamp = metrics.get("timestamp");
-            if (ObjectUtil.isNotNull(timestamp)) {
-                vo.setTimestamp(((Number) timestamp).longValue());
-            }
+            vo.setTimestamp(parseLongValue(metrics.get("timestamp")));
+
+            log.info("[GatewayInstance] JVM 指标解析完成 | heapUsed: {}, heapMax: {}, heapUsage: {}%",
+                    heapUsed, heapMax, vo.getHeapUsagePercent());
 
             return vo;
         } catch (Exception e) {
             log.warn("[GatewayInstance] 从 Redis 获取 JVM 指标失败 | instanceId: {}, error: {}", instanceId, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * 解析 Long 类型值（支持字符串和数字类型）
+     */
+    private Long parseLongValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof String) {
+            String strValue = (String) value;
+            // 去除可能的引号
+            strValue = strValue.replace("\"", "");
+            try {
+                return Long.parseLong(strValue);
+            } catch (NumberFormatException e) {
+                log.warn("[GatewayInstance] 解析 Long 值失败 | value: {}", value);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 解析 Integer 类型值（支持字符串和数字类型）
+     */
+    private Integer parseIntValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            String strValue = (String) value;
+            strValue = strValue.replace("\"", "");
+            try {
+                return Integer.parseInt(strValue);
+            } catch (NumberFormatException e) {
+                log.warn("[GatewayInstance] 解析 Integer 值失败 | value: {}", value);
+                return null;
+            }
+        }
+        return null;
     }
 
     /**
@@ -626,36 +723,23 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
 
             HttpMetricsVO vo = new HttpMetricsVO();
 
-            Object totalRequests = metrics.get("totalRequests");
-            Object successRequests = metrics.get("successRequests");
-            Object failedRequests = metrics.get("failedRequests");
-            Object avgResponseTime = metrics.get("avgResponseTime");
-
-            if (ObjectUtil.isNotNull(totalRequests)) {
-                vo.setTotalRequests(((Number) totalRequests).longValue());
-            }
-            if (ObjectUtil.isNotNull(successRequests)) {
-                vo.setSuccessRequests(((Number) successRequests).longValue());
-            }
-            if (ObjectUtil.isNotNull(failedRequests)) {
-                vo.setFailedRequests(((Number) failedRequests).longValue());
-            }
-            if (ObjectUtil.isNotNull(avgResponseTime)) {
-                vo.setAvgResponseTime(((Number) avgResponseTime).longValue());
-            }
+            vo.setTotalRequests(parseLongValue(metrics.get("totalRequests")));
+            vo.setSuccessRequests(parseLongValue(metrics.get("successRequests")));
+            vo.setFailedRequests(parseLongValue(metrics.get("failedRequests")));
+            vo.setAvgResponseTime(parseLongValue(metrics.get("avgResponseTime")));
 
             // 计算成功率
-            if (ObjectUtil.isNotNull(vo.getTotalRequests()) && vo.getTotalRequests() > 0) {
-                long success = ObjectUtil.isNotNull(vo.getSuccessRequests()) ? vo.getSuccessRequests() : 0;
+            if (vo.getTotalRequests() != null && vo.getTotalRequests() > 0) {
+                long success = vo.getSuccessRequests() != null ? vo.getSuccessRequests() : 0;
                 double rate = (double) success / vo.getTotalRequests() * 100;
                 vo.setSuccessRate(BigDecimal.valueOf(rate).setScale(2, RoundingMode.HALF_UP).doubleValue());
             }
 
             // 时间戳
-            Object timestamp = metrics.get("timestamp");
-            if (ObjectUtil.isNotNull(timestamp)) {
-                vo.setTimestamp(((Number) timestamp).longValue());
-            }
+            vo.setTimestamp(parseLongValue(metrics.get("timestamp")));
+
+            log.info("[GatewayInstance] HTTP 指标解析完成 | totalRequests: {}, avgResponseTime: {} ms",
+                    vo.getTotalRequests(), vo.getAvgResponseTime());
 
             return vo;
         } catch (Exception e) {

@@ -37,7 +37,7 @@ public interface GatewayInstanceService {
     ResponseDTO<GatewayInstanceVO> getGatewayInstanceDetail(GetGatewayInstanceDetailReq req);
 
     /**
-     * 下线网关实例
+     * 下线网关实例（通过Nacos设置enabled=false）
      *
      * @param req 请求参数
      * @return 操作结果
@@ -45,7 +45,7 @@ public interface GatewayInstanceService {
     ResponseDTO<EmptyBody> offlineInstance(OfflineGatewayInstanceReq req);
 
     /**
-     * 上线网关实例
+     * 上线网关实例（通过Nacos设置enabled=true）
      *
      * @param req 请求参数
      * @return 操作结果
@@ -56,6 +56,13 @@ public interface GatewayInstanceService {
      * 同步网关实例状态（定时任务调用）
      */
     void syncInstanceStatus();
+
+    /**
+     * 手动刷新实例状态（从Nacos实时获取并同步到数据库）
+     *
+     * @return 同步结果
+     */
+    ResponseDTO<EmptyBody> refreshInstanceStatus();
 
     /**
      * 分页查询实例列表（从数据库）
