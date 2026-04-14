@@ -43,8 +43,9 @@ public class SseConfig implements Serializable {
 
     /**
      * 单用户最大连接数（多标签页限制）
+     * 开发环境设置为 10，避免频繁触发限制
      */
-    public static final int MAX_CONNECTIONS_PER_USER = 5;
+    public static final int MAX_CONNECTIONS_PER_USER = 10;
 
     /**
      * 实例最大总连接数

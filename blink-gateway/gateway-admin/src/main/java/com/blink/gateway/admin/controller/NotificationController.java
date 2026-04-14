@@ -1,5 +1,6 @@
 package com.blink.gateway.admin.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.data.EmptyBody;
@@ -14,14 +15,17 @@ import com.blink.gateway.admin.service.NotificationService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
  * 消息通知控制器
+ *
+ * SSE 连接管理策略：
+ * - 连接标识 = userId + token（支持多设备登录）
+ * - 同一 userId+token 组合只允许一个 SSE 连接
+ * - 页面刷新/重连时，相同组合会替换旧连接
+ * - 多设备登录：同一 userId 不同 token = 不同连接
  *
  * @author binblink
  * @since 2026-04-06
@@ -38,12 +42,23 @@ public class NotificationController {
     private NotificationService notificationService;
 
     /**
-     * SSE连接端点（POST请求，支持在header中传递token）
+     * SSE连接端点（POST请求）
      */
     @PostMapping("/sse/connect")
     public SseEmitter connect() {
-        log.info("[SSE] 收到连接请求");
-        return sseConnectionPool.createConnection();
+        Integer userId = StpUtil.getLoginIdAsInt();
+        String tokenValue = StpUtil.getTokenValue();
+
+        if (tokenValue == null) {
+            log.warn("[SSE] Token 不存在，拒绝连接 | userId: {}", userId);
+            throw new IllegalStateException("Token 无效，请重新登录");
+        }
+
+        // 连接标识 = userId + token，支持多设备登录
+        String connectionKey = userId + ":" + tokenValue;
+
+        log.info("[SSE] 收到连接请求 | userId: {}, connectionKey: {}", userId, maskConnectionKey(connectionKey));
+        return sseConnectionPool.createConnection(connectionKey, userId);
     }
 
     /**
@@ -96,5 +111,20 @@ public class NotificationController {
         @RequestBody @Validated RequestDTO<QueryHistoryReq> reqDto) {
         NotificationHistoryRsp rsp = notificationService.getHistory(reqDto.getBody());
         return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    /**
+     * 连接标识脱敏显示
+     */
+    private String maskConnectionKey(String connectionKey) {
+        if (connectionKey == null) {
+            return null;
+        }
+        // userId:token -> userId:前8位...
+        int colonIndex = connectionKey.indexOf(':');
+        if (colonIndex > 0 && connectionKey.length() > colonIndex + 8) {
+            return connectionKey.substring(0, colonIndex + 8) + "...";
+        }
+        return connectionKey;
     }
 }

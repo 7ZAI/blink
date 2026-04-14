@@ -1,33 +1,30 @@
 package com.blink.gateway.admin.sse;
 
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.constants.RedisKeyConstant;
 import com.blink.gateway.admin.dto.SseConfig;
 import jakarta.annotation.Resource;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * SSE连接池管理器
- * 支持用户多标签页连接，支持多实例部署
  *
- * 功能特性：
- * - 单用户连接数限制（默认5个）
- * - 总连接数限制（默认1000个）
- * - 心跳保活机制
- * - 多实例部署支持
+ * 连接标识策略：
+ * - connectionKey = userId + token（如 "21:abc123..."）
+ * - 同一 connectionKey 只允许一个连接（替换而非累积）
+ * - 多设备登录：同一 userId 不同 token = 不同 connectionKey = 多个连接
+ * - 页面刷新/重连：相同 token = 相同 connectionKey = 替换旧连接
  *
  * @author binblink
  * @since 2026-04-06
@@ -37,12 +34,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class SseConnectionPool {
 
     /**
-     * 本地连接存储
+     * 连接存储：Map<connectionKey, ConnectionWrapper>
      */
-    private final Map<Integer, CopyOnWriteArrayList<SseEmitter>> userConnections = new ConcurrentHashMap<>();
+    private final Map<String, ConnectionWrapper> connections = new ConcurrentHashMap<>();
 
     /**
-     * 总连接数计数器
+     * 用户连接索引：用于广播时快速查找
+     */
+    private final Map<Integer, Set<String>> userConnectionIndex = new ConcurrentHashMap<>();
+
+    /**
+     * 总连接数计数
      */
     private final AtomicInteger totalConnectionCount = new AtomicInteger(0);
 
@@ -53,62 +55,126 @@ public class SseConnectionPool {
     private SseInstanceIdentifier instanceIdentifier;
 
     /**
-     * 创建SSE连接
-     *
-     * @return SSE连接对象，如果超过限制返回 null
+     * 连接包装类
      */
-    public SseEmitter createConnection() {
-        Integer userId = StpUtil.getLoginIdAsInt();
+    @Getter
+    private static class ConnectionWrapper {
+        private final Integer userId;
+        private final String token;
+        private final SseEmitter emitter;
+        private final String instanceId;
+        private final long createTime;
+
+        public ConnectionWrapper(Integer userId, String token, SseEmitter emitter, String instanceId) {
+            this.userId = userId;
+            this.token = token;
+            this.emitter = emitter;
+            this.instanceId = instanceId;
+            this.createTime = System.currentTimeMillis();
+        }
+    }
+
+    /**
+     * 创建 SSE 连接
+     *
+     * @param connectionKey userId:token 组合
+     * @param userId 用户ID
+     * @return SSE连接对象
+     */
+    public SseEmitter createConnection(String connectionKey, Integer userId) {
         String instanceId = instanceIdentifier.getInstanceId();
 
-        // 检查单用户连接数限制
-        int currentUserCount = getUserConnectionCount(userId);
-        if (currentUserCount >= SseConfig.MAX_CONNECTIONS_PER_USER) {
-            log.warn("[SSE] 单用户连接数超限，拒绝连接 | userId: {}, 当前连接数: {}, 上限: {}",
-                    userId, currentUserCount, SseConfig.MAX_CONNECTIONS_PER_USER);
-            return null;
+        // 解析 token（用于日志脱敏）
+        String token = extractToken(connectionKey);
+
+        // 关键：相同 connectionKey 替换旧连接，而非累积
+        ConnectionWrapper existing = connections.get(connectionKey);
+        if (existing != null) {
+            log.info("[SSE] 替换旧连接 | connectionKey: {}, userId: {}", maskKey(connectionKey), userId);
+            forceRemove(connectionKey);
         }
 
-        // 检查总连接数限制
-        int currentTotal = totalConnectionCount.get();
-        if (currentTotal >= SseConfig.MAX_TOTAL_CONNECTIONS) {
-            log.warn("[SSE] 总连接数超限，拒绝连接 | 当前总连接数: {}, 上限: {}",
-                    currentTotal, SseConfig.MAX_TOTAL_CONNECTIONS);
-            return null;
-        }
-
-        // 注册到Redis连接注册表
+        // 注册到 Redis
         registerConnection(userId, instanceId);
 
+        // 创建 emitter（30分钟超时）
         SseEmitter emitter = new SseEmitter(SseConfig.CONNECTION_TIMEOUT);
 
+        // 设置回调
         emitter.onCompletion(() -> {
-            log.info("[SSE] 连接完成 | userId: {}", userId);
-            remove(userId, emitter);
+            log.info("[SSE] 连接完成 | connectionKey: {}", maskKey(connectionKey));
+            remove(connectionKey);
         });
-
         emitter.onTimeout(() -> {
-            log.warn("[SSE] 连接超时 | userId: {}", userId);
-            remove(userId, emitter);
+            log.warn("[SSE] 连接超时 | connectionKey: {}", maskKey(connectionKey));
+            remove(connectionKey);
         });
-
         emitter.onError(e -> {
-            log.error("[SSE] 连接异常 | userId: {}", userId, e);
-            remove(userId, emitter);
+            log.error("[SSE] 连接异常 | connectionKey: {}", maskKey(connectionKey), e);
+            remove(connectionKey);
         });
 
-        add(userId, emitter);
-        log.info("[SSE] 新连接建立 | userId: {}, instanceId: {}, 当前用户连接数: {}, 总连接数: {}",
-            userId, instanceId, getUserConnectionCount(userId), getTotalConnectionCount());
+        // 存储
+        ConnectionWrapper wrapper = new ConnectionWrapper(userId, token, emitter, instanceId);
+        connections.put(connectionKey, wrapper);
+        userConnectionIndex.computeIfAbsent(userId, k -> ConcurrentHashMap.newKeySet()).add(connectionKey);
+        totalConnectionCount.incrementAndGet();
+
+        log.info("[SSE] 新连接建立 | userId: {}, 用户连接数: {}, 总连接数: {}",
+                userId, getUserConnectionCount(userId), getTotalConnectionCount());
 
         return emitter;
     }
 
     /**
-     * 注册连接到Redis
-     *
-     * @param userId     用户ID
-     * @param instanceId 实例ID
+     * 从 connectionKey 提取 token
+     */
+    private String extractToken(String connectionKey) {
+        if (StrUtil.isBlank(connectionKey)) return "";
+        int idx = connectionKey.indexOf(':');
+        return idx > 0 ? connectionKey.substring(idx + 1) : connectionKey;
+    }
+
+    /**
+     * 连接标识脱敏
+     */
+    private String maskKey(String connectionKey) {
+        if (connectionKey == null) return null;
+        int idx = connectionKey.indexOf(':');
+        if (idx > 0 && connectionKey.length() > idx + 8) {
+            return connectionKey.substring(0, idx + 8) + "...";
+        }
+        return connectionKey;
+    }
+
+    /**
+     * 强制移除连接（主动断开）
+     */
+    private void forceRemove(String connectionKey) {
+        ConnectionWrapper wrapper = connections.remove(connectionKey);
+        if (wrapper == null) return;
+
+        Integer userId = wrapper.getUserId();
+        userConnectionIndex.computeIfPresent(userId, (k, keys) -> {
+            keys.remove(connectionKey);
+            if (keys.isEmpty()) {
+                unregisterConnection(userId);
+                return null;
+            }
+            return keys;
+        });
+        totalConnectionCount.decrementAndGet();
+    }
+
+    /**
+     * 正常移除连接（回调触发）
+     */
+    private void remove(String connectionKey) {
+        forceRemove(connectionKey);
+    }
+
+    /**
+     * 注册到 Redis
      */
     private void registerConnection(Integer userId, String instanceId) {
         String registryKey = RedisKeyConstant.SSE_CONNECTION_REGISTRY;
@@ -117,196 +183,98 @@ public class SseConnectionPool {
     }
 
     /**
-     * 添加连接到本地存储
-     *
-     * @param userId  用户ID
-     * @param emitter SSE连接对象
-     */
-    private void add(Integer userId, SseEmitter emitter) {
-        userConnections.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>()).add(emitter);
-        totalConnectionCount.incrementAndGet();
-    }
-
-    /**
-     * 移除连接
-     * 使用 computeIfPresent 保证原子性操作
-     *
-     * @param userId  用户ID
-     * @param emitter SSE连接对象
-     */
-    private void remove(Integer userId, SseEmitter emitter) {
-        userConnections.computeIfPresent(userId, (k, connections) -> {
-            if (connections.remove(emitter)) {
-                totalConnectionCount.decrementAndGet();
-            }
-            // 如果用户无任何连接，从Redis移除注册
-            if (connections.isEmpty()) {
-                unregisterConnection(userId);
-                return null;
-            }
-            return connections;
-        });
-    }
-
-    /**
-     * 从Redis移除连接注册
-     *
-     * @param userId 用户ID
+     * 从 Redis 移除
      */
     private void unregisterConnection(Integer userId) {
-        String registryKey = RedisKeyConstant.SSE_CONNECTION_REGISTRY;
-        redisClient.hDeleteFields(registryKey, String.valueOf(userId));
-        log.info("[SSE] 连接注册已移除 | userId: {}", userId);
+        redisClient.hDeleteFields(RedisKeyConstant.SSE_CONNECTION_REGISTRY, String.valueOf(userId));
+        log.info("[SSE] Redis 注册已移除 | userId: {}", userId);
     }
 
     /**
      * 获取用户连接数
-     *
-     * @param userId 用户ID
-     * @return 连接数量
      */
     public int getUserConnectionCount(Integer userId) {
-        CopyOnWriteArrayList<SseEmitter> connections = userConnections.get(userId);
-        return CollUtil.isEmpty(connections) ? 0 : connections.size();
+        Set<String> keys = userConnectionIndex.get(userId);
+        return CollUtil.isEmpty(keys) ? 0 : keys.size();
     }
 
     /**
      * 获取总连接数
-     *
-     * @return 总连接数
      */
     public int getTotalConnectionCount() {
         return totalConnectionCount.get();
     }
 
     /**
-     * 推送消息给指定用户
-     * 通过Redis注册表判断是否应由本实例处理
-     *
-     * @param userId 用户ID
-     * @param msg    SSE消息
+     * 推送给指定用户
      */
     public <T> void sendToUser(Integer userId, SseMessage<T> msg) {
-        // 检查Redis注册表，判断消息是否应由本实例处理
-        String registryKey = RedisKeyConstant.SSE_CONNECTION_REGISTRY;
-        Object registeredInstance = redisClient.hGetField(registryKey, String.valueOf(userId));
+        Set<String> keys = userConnectionIndex.get(userId);
+        if (CollUtil.isEmpty(keys)) return;
 
-        if (ObjectUtil.isNull(registeredInstance)) {
-            log.debug("[SSE] 用户无在线连接 | userId: {}", userId);
-            return;
-        }
+        for (String key : keys) {
+            ConnectionWrapper wrapper = connections.get(key);
+            if (wrapper == null) continue;
 
-        String targetInstance = registeredInstance.toString();
-        String currentInstance = instanceIdentifier.getInstanceId();
-
-        // 只有注册在本实例的用户才处理推送
-        if (!targetInstance.equals(currentInstance)) {
-            log.debug("[SSE] 用户连接在其他实例 | userId: {}, targetInstance: {}", userId, targetInstance);
-            return;
-        }
-
-        // 执行本地推送
-        CopyOnWriteArrayList<SseEmitter> connections = userConnections.get(userId);
-        if (CollUtil.isEmpty(connections)) {
-            log.warn("[SSE] 本地连接不存在但Redis有注册 | userId: {}", userId);
-            // 清理脏数据
-            unregisterConnection(userId);
-            return;
-        }
-
-        for (SseEmitter emitter : connections) {
             try {
-                emitter.send(SseEmitter.event()
-                    .name(msg.getType())
-                    .data(msg));
+                wrapper.getEmitter().send(SseEmitter.event().name(msg.getType()).data(msg));
             } catch (IOException e) {
-                log.error("[SSE] 推送失败 | userId: {}", userId, e);
-                remove(userId, emitter);
+                log.error("[SSE] 推送失败 | connectionKey: {}", maskKey(key), e);
+                forceRemove(key);
             }
         }
         log.debug("[SSE] 推送成功 | userId: {}, type: {}", userId, msg.getType());
     }
 
     /**
-     * 推送广播消息给所有连接
-     *
-     * @param msg SSE消息
+     * 广播消息
      */
     public <T> void broadcast(SseMessage<T> msg) {
-        // 遍历本地连接进行推送
-        userConnections.forEach((userId, connections) -> sendToUser(userId, msg));
-        log.debug("[SSE] 广播完成 | type: {}, 本地用户数: {}", msg.getType(), userConnections.size());
+        userConnectionIndex.keySet().forEach(userId -> sendToUser(userId, msg));
+        log.debug("[SSE] 广播完成 | type: {}, 用户数: {}", msg.getType(), userConnectionIndex.size());
     }
 
-    /**
-     * 推送通知消息给指定用户（兼容旧接口）
-     *
-     * @param userId 用户ID
-     * @param msg    通知消息
-     */
+    // ==================== 兼容旧接口 ====================
+
     public void sendToUser(Integer userId, NotificationMsg msg) {
-        SseMessage<NotificationPayload> sseMsg = SseMessage.notification(NotificationPayload.from(msg));
-        sendToUser(userId, sseMsg);
+        sendToUser(userId, SseMessage.notification(NotificationPayload.from(msg)));
     }
 
-    /**
-     * 推送广播通知消息（兼容旧接口）
-     *
-     * @param msg 通知消息
-     */
     public void broadcast(NotificationMsg msg) {
-        SseMessage<NotificationPayload> sseMsg = SseMessage.notification(NotificationPayload.from(msg));
-        broadcast(sseMsg);
+        broadcast(SseMessage.notification(NotificationPayload.from(msg)));
     }
 
-    /**
-     * 检查用户是否有连接
-     *
-     * @param userId 用户ID
-     * @return 是否有连接
-     */
     public boolean hasConnection(Integer userId) {
-        CopyOnWriteArrayList<SseEmitter> connections = userConnections.get(userId);
-        return CollUtil.isNotEmpty(connections);
+        return CollUtil.isNotEmpty(userConnectionIndex.get(userId));
     }
 
-    /**
-     * 心跳保活定时任务
-     * 每30秒执行一次：发送心跳消息、刷新Redis注册表TTL
-     */
+    // ==================== 心跳保活 ====================
+
     @Scheduled(fixedRate = SseConfig.HEARTBEAT_INTERVAL)
     public void heartbeat() {
-        // 获取本地所有在线用户
-        Set<Integer> onlineUsers = userConnections.keySet();
-        if (CollUtil.isEmpty(onlineUsers)) {
-            return;
-        }
+        if (connections.isEmpty()) return;
 
         String currentInstance = instanceIdentifier.getInstanceId();
-        String registryKey = RedisKeyConstant.SSE_CONNECTION_REGISTRY;
-
-        // 向所有本地连接发送心跳
         SseMessage<String> heartbeatMsg = SseMessage.heartbeat();
-        for (Map.Entry<Integer, CopyOnWriteArrayList<SseEmitter>> entry : userConnections.entrySet()) {
-            Integer userId = entry.getKey();
-            for (SseEmitter emitter : entry.getValue()) {
-                try {
-                    emitter.send(SseEmitter.event().name(SseMessageType.HEARTBEAT).data(heartbeatMsg));
-                } catch (IOException e) {
-                    log.warn("[SSE] 心跳发送失败，移除连接 | userId: {}", userId);
-                    remove(userId, emitter);
-                }
+
+        for (String key : connections.keySet()) {
+            ConnectionWrapper wrapper = connections.get(key);
+            if (wrapper == null) continue;
+
+            try {
+                wrapper.getEmitter().send(SseEmitter.event()
+                    .name(SseMessageType.HEARTBEAT)
+                    .data(heartbeatMsg));
+            } catch (IOException e) {
+                log.warn("[SSE] 心跳失败，移除连接 | connectionKey: {}", maskKey(key));
+                forceRemove(key);
             }
         }
 
-        // 刷新Redis注册表TTL
-        redisClient.expire(registryKey, SseConfig.REGISTRY_TTL);
+        // 刷新 Redis TTL
+        redisClient.expire(RedisKeyConstant.SSE_CONNECTION_REGISTRY, SseConfig.REGISTRY_TTL);
+        redisClient.setEx(RedisKeyConstant.SSE_INSTANCE_HEARTBEAT + currentInstance, "alive", SseConfig.REGISTRY_TTL);
 
-        // 更新实例心跳
-        String heartbeatKey = RedisKeyConstant.SSE_INSTANCE_HEARTBEAT + currentInstance;
-        redisClient.setEx(heartbeatKey, "alive", SseConfig.REGISTRY_TTL);
-
-        log.debug("[SSE] 心跳完成 | instanceId: {}, 在线用户数: {}, 总连接数: {}",
-                currentInstance, onlineUsers.size(), getTotalConnectionCount());
+        log.debug("[SSE] 心跳完成 | 用户数: {}, 连接数: {}", userConnectionIndex.size(), getTotalConnectionCount());
     }
 }

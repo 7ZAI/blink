@@ -59,6 +59,17 @@ public class SseMessage<T> implements Serializable {
     }
 
     /**
+     * 创建仪表盘数据推送消息
+     */
+    public static SseMessage<DashboardDataPayload> dashboardData(DashboardDataPayload payload) {
+        SseMessage<DashboardDataPayload> msg = new SseMessage<>();
+        msg.setType(SseMessageType.DASHBOARD_DATA);
+        msg.setData(payload);
+        msg.setTimestamp(LocalDateTime.now());
+        return msg;
+    }
+
+    /**
      * 创建心跳消息
      */
     public static SseMessage<String> heartbeat() {

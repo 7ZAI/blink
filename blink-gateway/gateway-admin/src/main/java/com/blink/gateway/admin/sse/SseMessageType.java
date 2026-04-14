@@ -22,4 +22,9 @@ public interface SseMessageType {
      * 实例状态推送（在线/离线/健康状态变化）
      */
     String INSTANCE_STATUS = "instance_status";
+
+    /**
+     * 仪表盘数据推送（统计信息、实例列表、流量数据）
+     */
+    String DASHBOARD_DATA = "dashboard_data";
 }

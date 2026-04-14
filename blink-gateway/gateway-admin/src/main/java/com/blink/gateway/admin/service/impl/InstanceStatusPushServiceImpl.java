@@ -3,6 +3,7 @@ package com.blink.gateway.admin.service.impl;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.blink.framework.redis.component.RedisClient;
+import com.blink.gateway.admin.config.MonitorProperties;
 import com.blink.gateway.admin.dto.InstanceStatusSnapshot;
 import com.blink.gateway.admin.dto.InstanceStatusSnapshot.StatusChangeType;
 import com.blink.gateway.admin.sse.InstanceStatusPayload;
@@ -12,7 +13,6 @@ import com.blink.gateway.admin.sse.SseMessageType;
 import com.blink.gateway.admin.service.InstanceStatusPushService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -41,11 +41,8 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
     @Resource
     private SseConnectionPool sseConnectionPool;
 
-    @Value("${blink.gateway.monitor.cpu-change-threshold:10}")
-    private int cpuChangeThreshold;
-
-    @Value("${blink.gateway.monitor.heap-change-threshold:10}")
-    private int heapChangeThreshold;
+    @Resource
+    private MonitorProperties monitorProperties;
 
     private static final String SNAPSHOT_KEY_PREFIX = "blink:gateway:instance:snapshot:";
 
@@ -64,7 +61,9 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
             InstanceStatusSnapshot previousSnapshot = getSnapshot(current.getInstanceId());
 
             StatusChangeType changeType = currentSnapshot.detectChange(
-                    previousSnapshot, cpuChangeThreshold, heapChangeThreshold);
+                    previousSnapshot,
+                    monitorProperties.getCpuChangeThreshold(),
+                    monitorProperties.getHeapChangeThreshold());
 
             if (changeType != null) {
                 changedInstanceIds.add(current.getInstanceId());
@@ -115,12 +114,12 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
 
             Object cpuUsage = metrics.get("cpuUsage");
             if (cpuUsage != null) {
-                summary.setCpuUsage(((Number) cpuUsage).doubleValue());
+                summary.setCpuUsage(toDoubleValue(cpuUsage));
             }
 
             Object timestamp = metrics.get("timestamp");
             if (timestamp != null) {
-                summary.setTimestamp(((Number) timestamp).longValue());
+                summary.setTimestamp(toLongValue(timestamp));
             }
         }
 
@@ -166,8 +165,9 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
             // 解析指标数据
             Object status = metrics.get("status");
             if (status != null) {
-                summary.setStatus(((Number) status).intValue());
-                if (((Number) status).intValue() == 0) {
+                int statusValue = toIntValue(status);
+                summary.setStatus(statusValue);
+                if (statusValue == 0) {
                     onlineCount++;
                 }
             }
@@ -182,14 +182,14 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
 
             Object cpuUsage = metrics.get("cpuUsage");
             if (cpuUsage != null) {
-                double cpu = ((Number) cpuUsage).doubleValue();
+                double cpu = toDoubleValue(cpuUsage);
                 summary.setCpuUsage(cpu);
                 totalCpu += cpu;
             }
 
             Object timestamp = metrics.get("timestamp");
             if (timestamp != null) {
-                summary.setTimestamp(((Number) timestamp).longValue());
+                summary.setTimestamp(toLongValue(timestamp));
             }
 
             summaries.add(summary);
@@ -233,24 +233,24 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
 
         Object status = data.get("status");
         if (status != null) {
-            snapshot.setStatus(((Number) status).intValue());
+            snapshot.setStatus(toIntValue(status));
         }
 
         snapshot.setHealthStatus((String) data.get("healthStatus"));
 
         Object cpuUsageInt = data.get("cpuUsageInt");
         if (cpuUsageInt != null) {
-            snapshot.setCpuUsageInt(((Number) cpuUsageInt).intValue());
+            snapshot.setCpuUsageInt(toIntValue(cpuUsageInt));
         }
 
         Object heapUsageInt = data.get("heapUsageInt");
         if (heapUsageInt != null) {
-            snapshot.setHeapUsageInt(((Number) heapUsageInt).intValue());
+            snapshot.setHeapUsageInt(toIntValue(heapUsageInt));
         }
 
         Object timestamp = data.get("timestamp");
         if (timestamp != null) {
-            snapshot.setTimestamp(((Number) timestamp).longValue());
+            snapshot.setTimestamp(toLongValue(timestamp));
         }
 
         return snapshot;
@@ -294,6 +294,57 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
         }
 
         return snapshot;
+    }
+
+    /**
+     * 将 Object 转换为 Long 值（支持 String 和 Number 类型）
+     */
+    private Long toLongValue(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Long.parseLong((String) value);
+            } catch (NumberFormatException e) {
+                return 0L;
+            }
+        }
+        return 0L;
+    }
+
+    /**
+     * 将 Object 转换为 Double 值（支持 String 和 Number 类型）
+     */
+    private Double toDoubleValue(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Double.parseDouble((String) value);
+            } catch (NumberFormatException e) {
+                return 0.0;
+            }
+        }
+        return 0.0;
+    }
+
+    /**
+     * 将 Object 转换为 Integer 值（支持 String 和 Number 类型）
+     */
+    private Integer toIntValue(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Integer.parseInt((String) value);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+        return 0;
     }
 
     /**
