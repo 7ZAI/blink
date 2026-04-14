@@ -243,6 +243,27 @@ const router = createRouter({
             },
           ],
         },
+        {
+          path: 'leave',
+          name: 'Leave',
+          component: () => import('@/views/leave/layout.vue'),
+          meta: { title: 'menu.leave', icon: 'Calendar' },
+          redirect: '/leave/my',
+          children: [
+            {
+              path: 'my',
+              name: 'LeaveMy',
+              component: () => import('@/views/leave/my/index.vue'),
+              meta: { title: 'menu.leaveMy', icon: 'User' },
+            },
+            {
+              path: 'record',
+              name: 'LeaveRecord',
+              component: () => import('@/views/leave/record/index.vue'),
+              meta: { title: 'menu.leaveRecord', icon: 'List' },
+            },
+          ],
+        },
       ],
     },
     {
