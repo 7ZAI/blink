@@ -12,6 +12,7 @@ import com.blink.gateway.admin.sse.NotificationPayload;
 import com.blink.gateway.admin.sse.SseConnectionPool;
 import com.blink.gateway.admin.sse.SseMessage;
 import com.blink.gateway.admin.service.DashboardPushService;
+import com.blink.gateway.admin.util.GatewayAdminUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -414,28 +415,28 @@ public class MetricsStreamConsumer {
 
             Object cpuUsage = metrics.get("cpuUsage");
             if (cpuUsage != null) {
-                totalCpu += toDoubleValue(cpuUsage);
+                totalCpu += GatewayAdminUtil.toDoubleValue(cpuUsage);
             }
 
             // 统计请求数
             Object reqTotal = metrics.get("totalRequests");
             if (reqTotal != null) {
-                totalRequests += toLongValue(reqTotal);
+                totalRequests += GatewayAdminUtil.toLongValue(reqTotal);
             }
 
             Object reqSuccess = metrics.get("successRequests");
             if (reqSuccess != null) {
-                totalSuccessRequests += toLongValue(reqSuccess);
+                totalSuccessRequests += GatewayAdminUtil.toLongValue(reqSuccess);
             }
 
             Object reqFailed = metrics.get("failedRequests");
             if (reqFailed != null) {
-                totalFailedRequests += toLongValue(reqFailed);
+                totalFailedRequests += GatewayAdminUtil.toLongValue(reqFailed);
             }
 
             Object avgRespTime = metrics.get("avgResponseTime");
-            if (avgRespTime != null && toLongValue(avgRespTime) > 0) {
-                totalResponseTime += toLongValue(avgRespTime);
+            if (avgRespTime != null && GatewayAdminUtil.toLongValue(avgRespTime) > 0) {
+                totalResponseTime += GatewayAdminUtil.toLongValue(avgRespTime);
                 responseTimeCount++;
             }
         }
@@ -479,24 +480,24 @@ public class MetricsStreamConsumer {
             if (CollUtil.isNotEmpty(metrics)) {
                 Object status = metrics.get("status");
                 if (status != null) {
-                    summary.setStatus(toIntValue(status));
+                    summary.setStatus(GatewayAdminUtil.toIntValue(status));
                 }
 
                 summary.setHealthStatus((String) metrics.get("healthStatus"));
 
                 Object cpuUsage = metrics.get("cpuUsage");
                 if (cpuUsage != null) {
-                    summary.setCpuUsage(toDoubleValue(cpuUsage));
+                    summary.setCpuUsage(GatewayAdminUtil.toDoubleValue(cpuUsage));
                 }
 
                 Object heapUsagePercent = metrics.get("heapUsagePercent");
                 if (heapUsagePercent != null) {
-                    summary.setHeapUsagePercent(toDoubleValue(heapUsagePercent));
+                    summary.setHeapUsagePercent(GatewayAdminUtil.toDoubleValue(heapUsagePercent));
                 }
 
                 Object timestamp = metrics.get("timestamp");
                 if (timestamp != null) {
-                    summary.setTimestamp(toLongValue(timestamp));
+                    summary.setTimestamp(GatewayAdminUtil.toLongValue(timestamp));
                 }
             }
 
@@ -504,57 +505,6 @@ public class MetricsStreamConsumer {
         }
 
         instanceStatusPushService.checkAndPush(summaries);
-    }
-
-    /**
-     * 将 Object 转换为 Long 值（支持 String 和 Number 类型）
-     */
-    private Long toLongValue(Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        if (value instanceof String) {
-            try {
-                return Long.parseLong((String) value);
-            } catch (NumberFormatException e) {
-                return 0L;
-            }
-        }
-        return 0L;
-    }
-
-    /**
-     * 将 Object 转换为 Double 值（支持 String 和 Number 类型）
-     */
-    private Double toDoubleValue(Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
-        }
-        if (value instanceof String) {
-            try {
-                return Double.parseDouble((String) value);
-            } catch (NumberFormatException e) {
-                return 0.0;
-            }
-        }
-        return 0.0;
-    }
-
-    /**
-     * 将 Object 转换为 Integer 值（支持 String 和 Number 类型）
-     */
-    private Integer toIntValue(Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
-        }
-        if (value instanceof String) {
-            try {
-                return Integer.parseInt((String) value);
-            } catch (NumberFormatException e) {
-                return 0;
-            }
-        }
-        return 0;
     }
 
     /**

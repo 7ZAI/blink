@@ -54,6 +54,9 @@ public class SseConnectionPool {
     @Resource
     private SseInstanceIdentifier instanceIdentifier;
 
+    @Resource
+    private SseConfig sseConfig;
+
     /**
      * 连接包装类
      */
@@ -87,6 +90,24 @@ public class SseConnectionPool {
         // 解析 token（用于日志脱敏）
         String token = extractToken(connectionKey);
 
+        // 检查单用户连接数限制
+        int currentUserCount = getUserConnectionCount(userId);
+        int maxPerUser = sseConfig.getMaxConnectionsPerUser();
+        if (currentUserCount >= maxPerUser) {
+            log.warn("[SSE] 单用户连接数超限，拒绝连接 | userId: {}, 当前连接数: {}, 上限: {}",
+                    userId, currentUserCount, maxPerUser);
+            return null;
+        }
+
+        // 检查总连接数限制
+        int currentTotal = totalConnectionCount.get();
+        int maxTotal = sseConfig.getMaxTotalConnections();
+        if (currentTotal >= maxTotal) {
+            log.warn("[SSE] 总连接数超限，拒绝连接 | 当前总连接数: {}, 上限: {}",
+                    currentTotal, maxTotal);
+            return null;
+        }
+
         // 关键：相同 connectionKey 替换旧连接，而非累积
         ConnectionWrapper existing = connections.get(connectionKey);
         if (existing != null) {
@@ -97,8 +118,8 @@ public class SseConnectionPool {
         // 注册到 Redis
         registerConnection(userId, instanceId);
 
-        // 创建 emitter（30分钟超时）
-        SseEmitter emitter = new SseEmitter(SseConfig.CONNECTION_TIMEOUT);
+        // 创建 emitter（使用配置的超时时间）
+        SseEmitter emitter = new SseEmitter(sseConfig.getConnectionTimeout());
 
         // 设置回调
         emitter.onCompletion(() -> {
@@ -179,7 +200,7 @@ public class SseConnectionPool {
     private void registerConnection(Integer userId, String instanceId) {
         String registryKey = RedisKeyConstant.SSE_CONNECTION_REGISTRY;
         redisClient.hPutField(registryKey, String.valueOf(userId), instanceId);
-        redisClient.expire(registryKey, SseConfig.REGISTRY_TTL);
+        redisClient.expire(registryKey, sseConfig.getRegistryTtl());
     }
 
     /**
@@ -272,8 +293,8 @@ public class SseConnectionPool {
         }
 
         // 刷新 Redis TTL
-        redisClient.expire(RedisKeyConstant.SSE_CONNECTION_REGISTRY, SseConfig.REGISTRY_TTL);
-        redisClient.setEx(RedisKeyConstant.SSE_INSTANCE_HEARTBEAT + currentInstance, "alive", SseConfig.REGISTRY_TTL);
+        redisClient.expire(RedisKeyConstant.SSE_CONNECTION_REGISTRY, sseConfig.getRegistryTtl());
+        redisClient.setEx(RedisKeyConstant.SSE_INSTANCE_HEARTBEAT + currentInstance, "alive", sseConfig.getRegistryTtl());
 
         log.debug("[SSE] 心跳完成 | 用户数: {}, 连接数: {}", userConnectionIndex.size(), getTotalConnectionCount());
     }

@@ -11,6 +11,7 @@ import com.blink.gateway.admin.sse.SseConnectionPool;
 import com.blink.gateway.admin.sse.SseMessage;
 import com.blink.gateway.admin.sse.SseMessageType;
 import com.blink.gateway.admin.service.InstanceStatusPushService;
+import com.blink.gateway.admin.util.GatewayAdminUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -114,12 +115,12 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
 
             Object cpuUsage = metrics.get("cpuUsage");
             if (cpuUsage != null) {
-                summary.setCpuUsage(toDoubleValue(cpuUsage));
+                summary.setCpuUsage(GatewayAdminUtil.toDoubleValue(cpuUsage));
             }
 
             Object timestamp = metrics.get("timestamp");
             if (timestamp != null) {
-                summary.setTimestamp(toLongValue(timestamp));
+                summary.setTimestamp(GatewayAdminUtil.toLongValue(timestamp));
             }
         }
 
@@ -165,7 +166,7 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
             // 解析指标数据
             Object status = metrics.get("status");
             if (status != null) {
-                int statusValue = toIntValue(status);
+                int statusValue = GatewayAdminUtil.toIntValue(status);
                 summary.setStatus(statusValue);
                 if (statusValue == 0) {
                     onlineCount++;
@@ -182,14 +183,14 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
 
             Object cpuUsage = metrics.get("cpuUsage");
             if (cpuUsage != null) {
-                double cpu = toDoubleValue(cpuUsage);
+                double cpu = GatewayAdminUtil.toDoubleValue(cpuUsage);
                 summary.setCpuUsage(cpu);
                 totalCpu += cpu;
             }
 
             Object timestamp = metrics.get("timestamp");
             if (timestamp != null) {
-                summary.setTimestamp(toLongValue(timestamp));
+                summary.setTimestamp(GatewayAdminUtil.toLongValue(timestamp));
             }
 
             summaries.add(summary);
@@ -233,24 +234,24 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
 
         Object status = data.get("status");
         if (status != null) {
-            snapshot.setStatus(toIntValue(status));
+            snapshot.setStatus(GatewayAdminUtil.toIntValue(status));
         }
 
         snapshot.setHealthStatus((String) data.get("healthStatus"));
 
         Object cpuUsageInt = data.get("cpuUsageInt");
         if (cpuUsageInt != null) {
-            snapshot.setCpuUsageInt(toIntValue(cpuUsageInt));
+            snapshot.setCpuUsageInt(GatewayAdminUtil.toIntValue(cpuUsageInt));
         }
 
         Object heapUsageInt = data.get("heapUsageInt");
         if (heapUsageInt != null) {
-            snapshot.setHeapUsageInt(toIntValue(heapUsageInt));
+            snapshot.setHeapUsageInt(GatewayAdminUtil.toIntValue(heapUsageInt));
         }
 
         Object timestamp = data.get("timestamp");
         if (timestamp != null) {
-            snapshot.setTimestamp(toLongValue(timestamp));
+            snapshot.setTimestamp(GatewayAdminUtil.toLongValue(timestamp));
         }
 
         return snapshot;
@@ -294,57 +295,6 @@ public class InstanceStatusPushServiceImpl implements InstanceStatusPushService 
         }
 
         return snapshot;
-    }
-
-    /**
-     * 将 Object 转换为 Long 值（支持 String 和 Number 类型）
-     */
-    private Long toLongValue(Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        if (value instanceof String) {
-            try {
-                return Long.parseLong((String) value);
-            } catch (NumberFormatException e) {
-                return 0L;
-            }
-        }
-        return 0L;
-    }
-
-    /**
-     * 将 Object 转换为 Double 值（支持 String 和 Number 类型）
-     */
-    private Double toDoubleValue(Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
-        }
-        if (value instanceof String) {
-            try {
-                return Double.parseDouble((String) value);
-            } catch (NumberFormatException e) {
-                return 0.0;
-            }
-        }
-        return 0.0;
-    }
-
-    /**
-     * 将 Object 转换为 Integer 值（支持 String 和 Number 类型）
-     */
-    private Integer toIntValue(Object value) {
-        if (value instanceof Number) {
-            return ((Number) value).intValue();
-        }
-        if (value instanceof String) {
-            try {
-                return Integer.parseInt((String) value);
-            } catch (NumberFormatException e) {
-                return 0;
-            }
-        }
-        return 0;
     }
 
     /**

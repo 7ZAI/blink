@@ -95,6 +95,14 @@ blink:
       key-prefix: "blink:lock:"
       watchdog-enabled: true
   gateway:
+    # SSE 连接配置
+    sse:
+      # 开发环境允许更多连接，避免频繁触发限制
+      max-connections-per-user: 10
+      max-total-connections: 1000
+      connection-timeout: 1800000  # 30 分钟
+      heartbeat-interval: 30000    # 30 秒
+      registry-ttl: 120            # 120 秒
     monitor:
       # 监控消息推送/消费总开关（配置文件默认值）
       # 实际开关由 Nacos 配置中心动态控制
