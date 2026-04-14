@@ -334,24 +334,93 @@ public class MetricsReporterImpl implements MetricsReporter {
         // 从 http.server.requests 指标中提取统计信息
         long totalCount = 0;
         double totalTime = 0;
+        long error4xx = 0;
+        long error5xx = 0;
+        double p50Sum = 0;
+        double p95Sum = 0;
+        double p99Sum = 0;
+        long maxTime = 0;
+        int timerCount = 0;
 
         for (Meter meter : meterRegistry.getMeters()) {
             if ("http.server.requests".equals(meter.getId().getName())) {
                 if (meter instanceof Timer timer) {
-                    totalCount += timer.count();
+                    long count = timer.count();
+                    totalCount += count;
                     totalTime += timer.totalTime(TimeUnit.MILLISECONDS);
+
+                    // 获取 percentile 值
+                    io.micrometer.core.instrument.distribution.HistogramSnapshot snapshot = timer.takeSnapshot();
+                    io.micrometer.core.instrument.distribution.ValueAtPercentile[] percentileValues = snapshot.percentileValues();
+                    for (io.micrometer.core.instrument.distribution.ValueAtPercentile vap : percentileValues) {
+                        double percentile = vap.percentile();
+                        double value = vap.value(TimeUnit.MILLISECONDS);
+                        if (percentile <= 0.51) {
+                            p50Sum += value;
+                        } else if (percentile <= 0.96) {
+                            p95Sum += value;
+                        } else if (percentile <= 0.995) {
+                            p99Sum += value;
+                        }
+                    }
+
+                    // 获取最大值
+                    maxTime = Math.max(maxTime, (long) snapshot.max(TimeUnit.MILLISECONDS));
+                    timerCount++;
+
+                    // 根据状态码统计错误
+                    String status = meter.getId().getTag("status");
+                    if (status != null) {
+                        try {
+                            int statusCode = Integer.parseInt(status);
+                            if (statusCode >= 400 && statusCode < 500) {
+                                error4xx += count;
+                            } else if (statusCode >= 500) {
+                                error5xx += count;
+                            }
+                        } catch (NumberFormatException e) {
+                            // 状态码解析失败，忽略
+                        }
+                    }
                 }
             }
         }
 
         message.setTotalRequests(totalCount);
-        // 简化处理：成功请求 = 总请求 - 失败请求（实际应该根据状态码统计）
-        message.setSuccessRequests(totalCount);
-        message.setFailedRequests(0L);
+        message.setSuccessRequests(totalCount - error4xx - error5xx);
+        message.setFailedRequests(error4xx + error5xx);
+        message.setError4xxCount(error4xx);
+        message.setError5xxCount(error5xx);
 
+        // 计算错误率
+        if (totalCount > 0) {
+            double errorRateValue = (double) (error4xx + error5xx) / totalCount * 100;
+            message.setErrorRate(BigDecimal.valueOf(errorRateValue).setScale(2, RoundingMode.HALF_UP).doubleValue());
+        }
+
+        // 响应时间分布（毫秒）
+        if (timerCount > 0) {
+            message.setP50ResponseTime((long) p50Sum);
+            message.setP95ResponseTime((long) p95Sum);
+            message.setP99ResponseTime((long) p99Sum);
+        }
+        message.setMaxResponseTime(maxTime);
+
+        // 平均响应时间
         if (totalCount > 0 && totalTime > 0) {
             message.setAvgResponseTime((long) (totalTime / totalCount));
         }
+
+        // 计算实时 QPS（基于上报间隔配置）
+        // 上报间隔由 MonitorConfigHolder 配置，默认 5 秒
+        long intervalMs = configHolder.getIntervalMs();
+        int reportIntervalSeconds = (int) (intervalMs / 1000);
+        if (reportIntervalSeconds <= 0) {
+            reportIntervalSeconds = 5;
+        }
+        // 使用当前采集的请求数作为增量计算 QPS
+        int currentQps = Math.max(0, (int) (totalCount / reportIntervalSeconds));
+        message.setCurrentQps(currentQps);
     }
 
     /**
@@ -458,6 +527,36 @@ public class MetricsReporterImpl implements MetricsReporter {
         }
         if (message.getAvgResponseTime() != null) {
             data.put("avgResponseTime", String.valueOf(message.getAvgResponseTime()));
+        }
+
+        // 响应时间分布
+        if (message.getP50ResponseTime() != null) {
+            data.put("p50ResponseTime", String.valueOf(message.getP50ResponseTime()));
+        }
+        if (message.getP95ResponseTime() != null) {
+            data.put("p95ResponseTime", String.valueOf(message.getP95ResponseTime()));
+        }
+        if (message.getP99ResponseTime() != null) {
+            data.put("p99ResponseTime", String.valueOf(message.getP99ResponseTime()));
+        }
+        if (message.getMaxResponseTime() != null) {
+            data.put("maxResponseTime", String.valueOf(message.getMaxResponseTime()));
+        }
+
+        // 错误分类
+        if (message.getError4xxCount() != null) {
+            data.put("error4xxCount", String.valueOf(message.getError4xxCount()));
+        }
+        if (message.getError5xxCount() != null) {
+            data.put("error5xxCount", String.valueOf(message.getError5xxCount()));
+        }
+        if (message.getErrorRate() != null) {
+            data.put("errorRate", String.valueOf(message.getErrorRate()));
+        }
+
+        // 实时 QPS
+        if (message.getCurrentQps() != null) {
+            data.put("currentQps", String.valueOf(message.getCurrentQps()));
         }
 
         return data;

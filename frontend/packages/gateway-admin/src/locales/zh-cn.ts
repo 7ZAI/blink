@@ -210,6 +210,22 @@ export default {
     last24Hours: '最近24小时',
     loadHistory: '加载历史',
     trafficLoading: '流量数据加载中...',
+    // 响应时间分布
+    responseTimeDistribution: '响应时间分布',
+    p50ResponseTime: 'P50 响应时间',
+    p95ResponseTime: 'P95 响应时间',
+    p99ResponseTime: 'P99 响应时间',
+    maxResponseTime: '最大响应时间',
+    // 错误分类
+    errorClassification: '错误分类',
+    error4xxCount: '4xx 错误数',
+    error5xxCount: '5xx 错误数',
+    errorRate: '错误率',
+    clientError: '客户端错误',
+    serverError: '服务端错误',
+    // 实时指标
+    currentQps: '实时 QPS',
+    peakQps: '峰值 QPS',
   },
   channel: {
     title: '渠道管理',

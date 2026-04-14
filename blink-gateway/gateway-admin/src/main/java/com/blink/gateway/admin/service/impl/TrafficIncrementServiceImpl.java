@@ -44,6 +44,24 @@ public class TrafficIncrementServiceImpl implements TrafficIncrementService {
     @Override
     public long calculateAndStoreIncrement(String instanceId, long currentTotalRequests,
                                             long currentSuccessRequests, long currentFailedRequests) {
+        // 使用扩展方法的默认值
+        return calculateAndStoreIncrementExtended(instanceId, currentTotalRequests,
+                currentSuccessRequests, currentFailedRequests, 0, 0, 0, 0, 0, 0, 0, 0);
+    }
+
+    @Override
+    public long calculateAndStoreIncrementExtended(String instanceId,
+                                                     long currentTotalRequests,
+                                                     long currentSuccessRequests,
+                                                     long currentFailedRequests,
+                                                     long avgResponseTime,
+                                                     long p50ResponseTime,
+                                                     long p95ResponseTime,
+                                                     long p99ResponseTime,
+                                                     long maxResponseTime,
+                                                     long error4xxCount,
+                                                     long error5xxCount,
+                                                     int currentQps) {
         if (instanceId == null || instanceId.isEmpty()) {
             log.warn("[TrafficIncrement] instanceId 为空，跳过计算");
             return 0;
@@ -92,8 +110,11 @@ public class TrafficIncrementServiceImpl implements TrafficIncrementService {
         redisClient.hPutField(LAST_VALUES_KEY, instanceId + ":failed", currentFailedRequests);
 
         // 存储增量数据到 Sorted Set
-        // 格式：timestamp:increment:success:failed
-        String dataPoint = String.format("%d:%d:%d:%d", increment, successIncrement, failedIncrement, timestamp);
+        // 扩展格式：increment:success:failed:avgTime:p50:p95:p99:maxTime:4xx:5xx:qps:timestamp
+        String dataPoint = String.format("%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d",
+                increment, successIncrement, failedIncrement,
+                avgResponseTime, p50ResponseTime, p95ResponseTime, p99ResponseTime, maxResponseTime,
+                error4xxCount, error5xxCount, currentQps, timestamp);
         redisClient.zAdd(RedisKeyConstant.TRAFFIC_REALTIME_KEY, dataPoint, timestamp);
 
         // 设置过期时间

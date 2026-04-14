@@ -140,6 +140,52 @@ public class MetricsMessage implements Serializable {
      */
     private Long avgResponseTime;
 
+    // ==================== HTTP 响应时间分布 ====================
+
+    /**
+     * P50 响应时间（ms）
+     */
+    private Long p50ResponseTime;
+
+    /**
+     * P95 响应时间（ms）
+     */
+    private Long p95ResponseTime;
+
+    /**
+     * P99 响应时间（ms）
+     */
+    private Long p99ResponseTime;
+
+    /**
+     * 最大响应时间（ms）
+     */
+    private Long maxResponseTime;
+
+    // ==================== HTTP 错误分类 ====================
+
+    /**
+     * 4xx 错误数（客户端错误）
+     */
+    private Long error4xxCount;
+
+    /**
+     * 5xx 错误数（服务端错误）
+     */
+    private Long error5xxCount;
+
+    /**
+     * 错误率（%）
+     */
+    private Double errorRate;
+
+    // ==================== 实时 QPS ====================
+
+    /**
+     * 当前 QPS（增量/上报间隔）
+     */
+    private Integer currentQps;
+
     // ==================== 健康状态 ====================
 
     /**

@@ -146,9 +146,39 @@ public class MetricsStreamConsumer {
         long successRequests = parseMessageLong(message.get("successRequests"));
         long failedRequests = parseMessageLong(message.get("failedRequests"));
 
-        // 计算并存储增量
-        trafficIncrementService.calculateAndStoreIncrement(
-                instanceId, totalRequests, successRequests, failedRequests);
+        // 解析响应时间指标
+        long avgResponseTime = parseMessageLong(message.get("avgResponseTime"));
+        long p50ResponseTime = parseMessageLong(message.get("p50ResponseTime"));
+        long p95ResponseTime = parseMessageLong(message.get("p95ResponseTime"));
+        long p99ResponseTime = parseMessageLong(message.get("p99ResponseTime"));
+        long maxResponseTime = parseMessageLong(message.get("maxResponseTime"));
+
+        // 解析错误分类指标
+        long error4xxCount = parseMessageLong(message.get("error4xxCount"));
+        long error5xxCount = parseMessageLong(message.get("error5xxCount"));
+
+        // 解析 QPS 指标
+        int currentQps = parseMessageInt(message.get("currentQps"));
+
+        // 计算并存储增量（使用扩展方法）
+        trafficIncrementService.calculateAndStoreIncrementExtended(
+                instanceId, totalRequests, successRequests, failedRequests,
+                avgResponseTime, p50ResponseTime, p95ResponseTime, p99ResponseTime,
+                maxResponseTime, error4xxCount, error5xxCount, currentQps);
+    }
+
+    /**
+     * 解析消息中的 Int 值
+     */
+    private int parseMessageInt(String value) {
+        if (value == null || value.isEmpty()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     /**
@@ -349,6 +379,20 @@ public class MetricsStreamConsumer {
         copyIfPresent(data, message, "successRequests", Long.class);
         copyIfPresent(data, message, "failedRequests", Long.class);
         copyIfPresent(data, message, "avgResponseTime", Long.class);
+
+        // HTTP 响应时间分布
+        copyIfPresent(data, message, "p50ResponseTime", Long.class);
+        copyIfPresent(data, message, "p95ResponseTime", Long.class);
+        copyIfPresent(data, message, "p99ResponseTime", Long.class);
+        copyIfPresent(data, message, "maxResponseTime", Long.class);
+
+        // HTTP 错误分类
+        copyIfPresent(data, message, "error4xxCount", Long.class);
+        copyIfPresent(data, message, "error5xxCount", Long.class);
+        copyIfPresent(data, message, "errorRate", Double.class);
+
+        // 实时 QPS
+        copyIfPresent(data, message, "currentQps", Integer.class);
 
         // 实例状态
         data.put("status", 0); // 默认在线

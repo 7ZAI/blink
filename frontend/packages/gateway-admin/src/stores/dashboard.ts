@@ -13,6 +13,17 @@ export interface StatisticsInfo {
   failedRequests: number
   avgResponseTime: number
   successRate?: string
+  // 响应时间分布
+  p50ResponseTime: number
+  p95ResponseTime: number
+  p99ResponseTime: number
+  maxResponseTime: number
+  // 错误分类
+  error4xxCount: number
+  error5xxCount: number
+  errorRate: number
+  // 实时 QPS
+  currentQps: number
 }
 
 /**
@@ -67,6 +78,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
     failedRequests: 0,
     avgResponseTime: 0,
     successRate: '0%',
+    // 响应时间分布
+    p50ResponseTime: 0,
+    p95ResponseTime: 0,
+    p99ResponseTime: 0,
+    maxResponseTime: 0,
+    // 错误分类
+    error4xxCount: 0,
+    error5xxCount: 0,
+    errorRate: 0,
+    // 实时 QPS
+    currentQps: 0,
   })
 
   // 实例列表（由 API 查询）
@@ -291,6 +313,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
       failedRequests: 0,
       avgResponseTime: 0,
       successRate: '0%',
+      // 响应时间分布
+      p50ResponseTime: 0,
+      p95ResponseTime: 0,
+      p99ResponseTime: 0,
+      maxResponseTime: 0,
+      // 错误分类
+      error4xxCount: 0,
+      error5xxCount: 0,
+      errorRate: 0,
+      // 实时 QPS
+      currentQps: 0,
     }
     instances.value = []
     trafficHistory.value = []

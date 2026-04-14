@@ -61,6 +61,84 @@
       </el-col>
     </el-row>
 
+    <!-- Response Time & Error Classification Cards -->
+    <el-row :gutter="20" class="stats-row">
+      <el-col :xs="24" :sm="12" :md="8">
+        <el-card class="stat-card response-time-card">
+          <template #header>
+            <div class="card-header-inline">
+              <el-icon><Timer /></el-icon>
+              <span>{{ t('dashboard.responseTimeDistribution') }}</span>
+            </div>
+          </template>
+          <div class="response-time-grid">
+            <div class="time-item">
+              <span class="time-label">{{ t('dashboard.p50ResponseTime') }}</span>
+              <span class="time-value">{{ statistics.p50ResponseTime || 0 }} ms</span>
+            </div>
+            <div class="time-item">
+              <span class="time-label">{{ t('dashboard.p95ResponseTime') }}</span>
+              <span class="time-value">{{ statistics.p95ResponseTime || 0 }} ms</span>
+            </div>
+            <div class="time-item">
+              <span class="time-label">{{ t('dashboard.p99ResponseTime') }}</span>
+              <span class="time-value">{{ statistics.p99ResponseTime || 0 }} ms</span>
+            </div>
+            <div class="time-item highlight">
+              <span class="time-label">{{ t('dashboard.maxResponseTime') }}</span>
+              <span class="time-value">{{ statistics.maxResponseTime || 0 }} ms</span>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :md="8">
+        <el-card class="stat-card error-card">
+          <template #header>
+            <div class="card-header-inline">
+              <el-icon><Warning /></el-icon>
+              <span>{{ t('dashboard.errorClassification') }}</span>
+            </div>
+          </template>
+          <div class="error-grid">
+            <div class="error-item">
+              <span class="error-label">{{ t('dashboard.errorRate') }}</span>
+              <span class="error-value">{{ statistics.errorRate || 0 }}%</span>
+            </div>
+            <div class="error-item client">
+              <span class="error-label">{{ t('dashboard.error4xxCount') }}</span>
+              <span class="error-value">{{ formatNumber(statistics.error4xxCount || 0) }}</span>
+              <span class="error-desc">{{ t('dashboard.clientError') }}</span>
+            </div>
+            <div class="error-item server">
+              <span class="error-label">{{ t('dashboard.error5xxCount') }}</span>
+              <span class="error-value">{{ formatNumber(statistics.error5xxCount || 0) }}</span>
+              <span class="error-desc">{{ t('dashboard.serverError') }}</span>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :sm="12" :md="8">
+        <el-card class="stat-card qps-card">
+          <template #header>
+            <div class="card-header-inline">
+              <el-icon><Odometer /></el-icon>
+              <span>{{ t('dashboard.currentQps') }}</span>
+            </div>
+          </template>
+          <div class="qps-content">
+            <div class="qps-main">
+              <span class="qps-value">{{ statistics.currentQps || 0 }}</span>
+              <span class="qps-unit">req/s</span>
+            </div>
+            <div class="qps-peak">
+              <span class="peak-label">{{ t('dashboard.peakQps') }}</span>
+              <span class="peak-value">{{ statistics.peakQps || trafficHistory.reduce((max, p) => Math.max(max, p.peakQps || 0), 0) }}</span>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <!-- Charts Section -->
     <el-row :gutter="20" class="charts-row">
       <el-col :xs="24" :md="16">
@@ -297,7 +375,26 @@ const lineChartOption = computed(() => ({
       const data = params[0]
       const point = trafficHistory.value[data.dataIndex]
       if (!point) return `${data.name}<br/>请求: ${data.value}`
-      return `${data.name}<br/>请求: ${data.value}<br/>成功: ${point.successCount}<br/>失败: ${point.failedCount}<br/>峰值QPS: ${point.peakQps}`
+      // 构建 tooltip 内容
+      let content = `${data.name}<br/>请求: ${data.value}`
+      content += `<br/>成功: ${point.successCount || 0}<br/>失败: ${point.failedCount || 0}`
+      // 响应时间分布
+      if (point.p95ResponseTime || point.avgResponseTime) {
+        content += `<br/>P95: ${point.p95ResponseTime || point.avgResponseTime || 0}ms`
+      }
+      if (point.p99ResponseTime) {
+        content += `<br/>P99: ${point.p99ResponseTime}ms`
+      }
+      // 错误率
+      if (point.errorRate) {
+        content += `<br/>错误率: ${point.errorRate.toFixed(2)}%`
+      }
+      // QPS
+      content += `<br/>峰值QPS: ${point.peakQps || 0}`
+      if (point.currentQps) {
+        content += `<br/>实时QPS: ${point.currentQps}`
+      }
+      return content
     },
   },
   grid: {
@@ -578,6 +675,149 @@ onUnmounted(() => {
         font-size: 13px;
         color: var(--text-color-secondary);
         margin-top: 4px;
+      }
+    }
+
+    // Response Time Card
+    .response-time-card {
+      :deep(.el-card__header) {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border-color-base);
+      }
+      .card-header-inline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        color: var(--text-color-primary);
+      }
+      .response-time-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        .time-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          .time-label {
+            font-size: 12px;
+            color: var(--text-color-secondary);
+          }
+          .time-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+          }
+          &.highlight {
+            .time-value {
+              color: #e6a23c;
+            }
+          }
+        }
+      }
+    }
+
+    // Error Classification Card
+    .error-card {
+      :deep(.el-card__header) {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border-color-base);
+      }
+      .card-header-inline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        color: var(--text-color-primary);
+      }
+      .error-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        .error-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 12px;
+          border-radius: var(--radius-sm);
+          background: var(--neutral-100);
+          .error-label {
+            font-size: 12px;
+            color: var(--text-color-secondary);
+          }
+          .error-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+          }
+          .error-desc {
+            font-size: 11px;
+            color: var(--text-color-placeholder);
+          }
+          &.client {
+            background: rgba(#e6a23c, 0.1);
+            .error-value {
+              color: #e6a23c;
+            }
+          }
+          &.server {
+            background: rgba(#f56c6c, 0.1);
+            .error-value {
+              color: #f56c6c;
+            }
+          }
+        }
+      }
+    }
+
+    // QPS Card
+    .qps-card {
+      :deep(.el-card__header) {
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--border-color-base);
+      }
+      .card-header-inline {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        color: var(--text-color-primary);
+      }
+      .qps-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        .qps-main {
+          display: flex;
+          align-items: baseline;
+          gap: 8px;
+          .qps-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #409eff;
+          }
+          .qps-unit {
+            font-size: 14px;
+            color: var(--text-color-secondary);
+          }
+        }
+        .qps-peak {
+          margin-top: 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          .peak-label {
+            font-size: 12px;
+            color: var(--text-color-secondary);
+          }
+          .peak-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+          }
+        }
       }
     }
   }

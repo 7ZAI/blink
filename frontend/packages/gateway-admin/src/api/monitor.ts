@@ -75,6 +75,18 @@ export interface TrafficHistoryPoint {
   successCount: number // 成功请求数
   failedCount: number // 失败请求数
   peakQps: number // 峰值 QPS
+  // 响应时间分布
+  avgResponseTime?: number // 平均响应时间（ms）
+  p50ResponseTime?: number // P50 响应时间（ms）
+  p95ResponseTime?: number // P95 响应时间（ms）
+  p99ResponseTime?: number // P99 响应时间（ms）
+  maxResponseTime?: number // 最大响应时间（ms）
+  // 错误分类
+  error4xxCount?: number // 4xx 错误数
+  error5xxCount?: number // 5xx 错误数
+  errorRate?: number // 错误率（%）
+  // 实时指标
+  currentQps?: number // 实时 QPS
 }
 
 /**
@@ -84,6 +96,15 @@ export interface TrafficHistoryResult {
   points: TrafficHistoryPoint[] // 流量数据点列表
   totalRequests: number // 总请求数（时间范围内）
   peakQps: number // 峰值 QPS
+  // 响应时间分布汇总
+  avgP50ResponseTime?: number // 平均 P50 响应时间
+  avgP95ResponseTime?: number // 平均 P95 响应时间
+  avgP99ResponseTime?: number // 平均 P99 响应时间
+  maxResponseTime?: number // 最大响应时间
+  // 错误分类汇总
+  totalError4xx?: number // 总 4xx 错误数
+  totalError5xx?: number // 总 5xx 错误数
+  avgErrorRate?: number // 平均错误率
 }
 
 // Get gateway instances

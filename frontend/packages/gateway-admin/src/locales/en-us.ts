@@ -206,6 +206,22 @@ export default {
     last24Hours: 'Last 24 Hours',
     loadHistory: 'Load History',
     trafficLoading: 'Loading traffic data...',
+    // Response time distribution
+    responseTimeDistribution: 'Response Time Distribution',
+    p50ResponseTime: 'P50 Response Time',
+    p95ResponseTime: 'P95 Response Time',
+    p99ResponseTime: 'P99 Response Time',
+    maxResponseTime: 'Max Response Time',
+    // Error classification
+    errorClassification: 'Error Classification',
+    error4xxCount: '4xx Error Count',
+    error5xxCount: '5xx Error Count',
+    errorRate: 'Error Rate',
+    clientError: 'Client Error',
+    serverError: 'Server Error',
+    // Realtime metrics
+    currentQps: 'Current QPS',
+    peakQps: 'Peak QPS',
   },
   channel: {
     title: 'Channel Management',

@@ -77,6 +77,16 @@ public class TrafficAggregationServiceImpl implements TrafficAggregationService 
             int peakQps = 0;
             int dataPointCount = 0;
 
+            // 新增指标的聚合变量
+            long totalAvgResponseTime = 0;
+            long totalP50ResponseTime = 0;
+            long totalP95ResponseTime = 0;
+            long totalP99ResponseTime = 0;
+            long maxResponseTime = 0;
+            long totalError4xx = 0;
+            long totalError5xx = 0;
+            int maxCurrentQps = 0;
+
             for (Object pointObj : dataPoints) {
                 if (pointObj == null) {
                     continue;
@@ -84,7 +94,7 @@ public class TrafficAggregationServiceImpl implements TrafficAggregationService 
 
                 String point = pointObj.toString();
                 try {
-                    // 数据格式：increment:success:failed:timestamp
+                    // 扩展数据格式：increment:success:failed:avgTime:p50:p95:p99:maxTime:4xx:5xx:qps:timestamp
                     String[] parts = point.split(":");
                     if (parts.length >= 4) {
                         long increment = Long.parseLong(parts[0]);
@@ -100,6 +110,31 @@ public class TrafficAggregationServiceImpl implements TrafficAggregationService 
                             peakQps = (int) increment;
                         }
                         dataPointCount++;
+
+                        // 解析新增指标（兼容旧数据格式）
+                        if (parts.length >= 12) {
+                            long avgTime = Long.parseLong(parts[3]);
+                            long p50 = Long.parseLong(parts[4]);
+                            long p95 = Long.parseLong(parts[5]);
+                            long p99 = Long.parseLong(parts[6]);
+                            long maxTime = Long.parseLong(parts[7]);
+                            long error4xx = Long.parseLong(parts[8]);
+                            long error5xx = Long.parseLong(parts[9]);
+                            int qps = Integer.parseInt(parts[10]);
+
+                            totalAvgResponseTime += avgTime;
+                            totalP50ResponseTime += p50;
+                            totalP95ResponseTime += p95;
+                            totalP99ResponseTime += p99;
+                            if (maxTime > maxResponseTime) {
+                                maxResponseTime = maxTime;
+                            }
+                            totalError4xx += error4xx;
+                            totalError5xx += error5xx;
+                            if (qps > maxCurrentQps) {
+                                maxCurrentQps = qps;
+                            }
+                        }
                     }
                 } catch (NumberFormatException e) {
                     log.warn("[TrafficAggregation] 数据点解析失败 | point: {}", point);
@@ -115,8 +150,35 @@ public class TrafficAggregationServiceImpl implements TrafficAggregationService 
             history.setRequestCount(totalRequestIncrement);
             history.setSuccessCount(totalSuccessIncrement);
             history.setFailedCount(totalFailedIncrement);
-            history.setAvgResponseTime(0L); // 暂不计算
+
+            // 计算平均响应时间
+            if (dataPointCount > 0 && totalAvgResponseTime > 0) {
+                history.setAvgResponseTime(totalAvgResponseTime / dataPointCount);
+            } else {
+                history.setAvgResponseTime(0L);
+            }
+
+            // 响应时间分布
+            if (dataPointCount > 0) {
+                history.setP50ResponseTime(totalP50ResponseTime / dataPointCount);
+                history.setP95ResponseTime(totalP95ResponseTime / dataPointCount);
+                history.setP99ResponseTime(totalP99ResponseTime / dataPointCount);
+            }
+            history.setMaxResponseTime(maxResponseTime);
+
+            // 错误分类
+            history.setError4xxCount(totalError4xx);
+            history.setError5xxCount(totalError5xx);
+
+            // 计算错误率
+            if (totalRequestIncrement > 0) {
+                double errorRateValue = (double) (totalError4xx + totalError5xx) / totalRequestIncrement * 100;
+                history.setErrorRate(errorRateValue);
+            }
+
+            // QPS 指标
             history.setPeakQps(peakQps);
+            history.setCurrentQps(maxCurrentQps);
 
             trafficHistoryMapper.insert(history);
 
@@ -169,6 +231,17 @@ public class TrafficAggregationServiceImpl implements TrafficAggregationService 
             long totalFailedCount = 0;
             int peakQps = 0;
 
+            // 新增指标聚合变量
+            long totalAvgResponseTime = 0;
+            long totalP50ResponseTime = 0;
+            long totalP95ResponseTime = 0;
+            long totalP99ResponseTime = 0;
+            long maxResponseTime = 0;
+            long totalError4xx = 0;
+            long totalError5xx = 0;
+            int maxCurrentQps = 0;
+            int minuteCount = 0;
+
             for (GatewayTrafficHistoryDO minute : minuteDataList) {
                 totalRequestCount += minute.getRequestCount();
                 totalSuccessCount += minute.getSuccessCount();
@@ -176,6 +249,33 @@ public class TrafficAggregationServiceImpl implements TrafficAggregationService 
 
                 if (minute.getPeakQps() != null && minute.getPeakQps() > peakQps) {
                     peakQps = minute.getPeakQps();
+                }
+                minuteCount++;
+
+                // 聚合新增指标
+                if (minute.getAvgResponseTime() != null) {
+                    totalAvgResponseTime += minute.getAvgResponseTime();
+                }
+                if (minute.getP50ResponseTime() != null) {
+                    totalP50ResponseTime += minute.getP50ResponseTime();
+                }
+                if (minute.getP95ResponseTime() != null) {
+                    totalP95ResponseTime += minute.getP95ResponseTime();
+                }
+                if (minute.getP99ResponseTime() != null) {
+                    totalP99ResponseTime += minute.getP99ResponseTime();
+                }
+                if (minute.getMaxResponseTime() != null && minute.getMaxResponseTime() > maxResponseTime) {
+                    maxResponseTime = minute.getMaxResponseTime();
+                }
+                if (minute.getError4xxCount() != null) {
+                    totalError4xx += minute.getError4xxCount();
+                }
+                if (minute.getError5xxCount() != null) {
+                    totalError5xx += minute.getError5xxCount();
+                }
+                if (minute.getCurrentQps() != null && minute.getCurrentQps() > maxCurrentQps) {
+                    maxCurrentQps = minute.getCurrentQps();
                 }
             }
 
@@ -186,8 +286,35 @@ public class TrafficAggregationServiceImpl implements TrafficAggregationService 
             history.setRequestCount(totalRequestCount);
             history.setSuccessCount(totalSuccessCount);
             history.setFailedCount(totalFailedCount);
-            history.setAvgResponseTime(0L);
+
+            // 计算平均响应时间
+            if (minuteCount > 0 && totalAvgResponseTime > 0) {
+                history.setAvgResponseTime(totalAvgResponseTime / minuteCount);
+            } else {
+                history.setAvgResponseTime(0L);
+            }
+
+            // 响应时间分布
+            if (minuteCount > 0) {
+                history.setP50ResponseTime(totalP50ResponseTime / minuteCount);
+                history.setP95ResponseTime(totalP95ResponseTime / minuteCount);
+                history.setP99ResponseTime(totalP99ResponseTime / minuteCount);
+            }
+            history.setMaxResponseTime(maxResponseTime);
+
+            // 错误分类
+            history.setError4xxCount(totalError4xx);
+            history.setError5xxCount(totalError5xx);
+
+            // 计算错误率
+            if (totalRequestCount > 0) {
+                double errorRateValue = (double) (totalError4xx + totalError5xx) / totalRequestCount * 100;
+                history.setErrorRate(errorRateValue);
+            }
+
+            // QPS 指标
             history.setPeakQps(peakQps);
+            history.setCurrentQps(maxCurrentQps);
 
             trafficHistoryMapper.insert(history);
 

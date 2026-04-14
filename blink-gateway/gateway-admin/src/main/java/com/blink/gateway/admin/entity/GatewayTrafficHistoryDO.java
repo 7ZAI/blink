@@ -70,6 +70,54 @@ public class GatewayTrafficHistoryDO implements Serializable {
     private Integer peakQps;
 
     /**
+     * P50响应时间（毫秒）
+     */
+    @TableField("p50_response_time")
+    private Long p50ResponseTime;
+
+    /**
+     * P95响应时间（毫秒）
+     */
+    @TableField("p95_response_time")
+    private Long p95ResponseTime;
+
+    /**
+     * P99响应时间（毫秒）
+     */
+    @TableField("p99_response_time")
+    private Long p99ResponseTime;
+
+    /**
+     * 最大响应时间（毫秒）
+     */
+    @TableField("max_response_time")
+    private Long maxResponseTime;
+
+    /**
+     * 4xx错误数
+     */
+    @TableField("error_4xx_count")
+    private Long error4xxCount;
+
+    /**
+     * 5xx错误数
+     */
+    @TableField("error_5xx_count")
+    private Long error5xxCount;
+
+    /**
+     * 错误率（%）
+     */
+    @TableField("error_rate")
+    private Double errorRate;
+
+    /**
+     * 实时QPS
+     */
+    @TableField("current_qps")
+    private Integer currentQps;
+
+    /**
      * 创建时间
      */
     @TableField(value = "create_time", fill = FieldFill.INSERT)
