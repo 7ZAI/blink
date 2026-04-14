@@ -66,7 +66,24 @@
       <el-col :xs="24" :md="16">
         <el-card class="chart-card">
           <template #header>
-            <span>{{ t('dashboard.trafficTrend') }}</span>
+            <div class="chart-header">
+              <span>{{ t('dashboard.trafficTrend') }}</span>
+              <div class="chart-controls">
+                <el-date-picker
+                  v-model="timeRangeValue"
+                  type="datetimerange"
+                  :shortcuts="timeShortcuts"
+                  :placeholder="t('dashboard.selectTimeRange')"
+                  value-format="x"
+                  :clearable="true"
+                  @change="handleTimeRangeChange"
+                />
+                <el-radio-group v-model="granularityValue" size="small" @change="handleGranularityChange">
+                  <el-radio-button value="MINUTE">{{ t('dashboard.minute') }}</el-radio-button>
+                  <el-radio-button value="HOUR">{{ t('dashboard.hour') }}</el-radio-button>
+                </el-radio-group>
+              </div>
+            </div>
           </template>
           <v-chart :option="lineChartOption" autoresize style="height: 300px" />
         </el-card>
@@ -122,53 +139,18 @@
       </div>
     </el-card>
 
-    <!-- Instance Health Grid -->
-    <el-card class="page-card">
-      <template #header>
-        <div class="card-header">
-          <span>{{ t('dashboard.instanceHealth') }}</span>
-          <el-button type="primary" link @click="router.push('/monitor')">
-            {{ t('common.viewAll') }}
-          </el-button>
-        </div>
-      </template>
-      <div class="instance-grid">
-        <div
-          v-for="instance in instances"
-          :key="instance.instanceId"
-          class="instance-card"
-          :class="{ unhealthy: !instance.healthy }"
-          @click="router.push('/monitor')"
-        >
-          <div class="instance-status" :class="instance.healthy ? 'healthy' : 'unhealthy'"></div>
-          <div class="instance-info">
-            <div class="instance-id">{{ instance.instanceId }}</div>
-            <div class="instance-address">{{ instance.host }}:{{ instance.port }}</div>
-          </div>
-          <div class="instance-weight">
-            <el-tag size="small" :type="instance.healthy ? 'success' : 'danger'">
-              {{ instance.healthy ? t('monitor.up') : t('monitor.down') }}
-            </el-tag>
-          </div>
-        </div>
-        <div v-if="instances.length === 0" class="no-instances">
-          {{ t('common.noData') }}
-        </div>
-      </div>
-    </el-card>
-
     <!-- Instance List -->
     <el-card class="page-card">
       <template #header>
         <div class="card-header">
           <span>{{ t('dashboard.instanceList') }}</span>
-          <el-button type="primary" @click="loadData">
+          <el-button type="primary" @click="handleManualRefresh">
             <el-icon><Refresh /></el-icon>
             {{ t('common.refresh') }}
           </el-button>
         </div>
       </template>
-      <el-table :data="instances" v-loading="loading" stripe>
+      <el-table :data="instances" v-loading="instancesLoading" stripe>
         <el-table-column prop="instanceId" :label="t('monitor.instanceId')" />
         <el-table-column prop="host" :label="t('monitor.ip')" />
         <el-table-column prop="port" :label="t('monitor.port')" />
@@ -194,12 +176,8 @@ import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart, PieChart } from 'echarts/charts'
 import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
-import {
-  getGatewayInstances,
-  getStatistics,
-  type InstanceInfo,
-  type StatisticsInfo,
-} from '@/api/monitor'
+import { useDashboardStore } from '@/stores/dashboard'
+import { useNotificationStore } from '@/stores/notification'
 import { refreshRoutes } from '@/api/route'
 import { syncConfig } from '@/api/config'
 
@@ -208,7 +186,82 @@ use([CanvasRenderer, LineChart, PieChart, GridComponent, TooltipComponent, Legen
 
 const { t } = useI18n()
 const router = useRouter()
-const loading = ref(false)
+
+// 使用 dashboard store
+const dashboardStore = useDashboardStore()
+const notificationStore = useNotificationStore()
+
+// 从 store 获取数据（computed 响应式）
+const statistics = computed(() => dashboardStore.statistics)
+const instances = computed(() => dashboardStore.instances)
+const instancesLoading = computed(() => dashboardStore.instancesLoading)
+const trafficHistory = computed(() => dashboardStore.trafficHistory)
+const trafficHistoryLoading = computed(() => dashboardStore.trafficHistoryLoading)
+const trafficGranularity = computed(() => dashboardStore.trafficGranularity)
+
+// ==================== 流量趋势控制状态 ====================
+
+/**
+ * 时间范围选择器绑定值
+ */
+const timeRangeValue = ref<[number, number] | null>(null)
+
+/**
+ * 粒度选择器绑定值
+ */
+const granularityValue = ref<'MINUTE' | 'HOUR'>('MINUTE')
+
+/**
+ * 时间范围快捷选项
+ */
+const timeShortcuts = computed(() => [
+  {
+    text: t('dashboard.last1Hour'),
+    value: () => {
+      const end = Date.now()
+      const start = end - 3600000
+      return [start, end]
+    },
+  },
+  {
+    text: t('dashboard.last6Hours'),
+    value: () => {
+      const end = Date.now()
+      const start = end - 21600000
+      return [start, end]
+    },
+  },
+  {
+    text: t('dashboard.last24Hours'),
+    value: () => {
+      const end = Date.now()
+      const start = end - 86400000
+      return [start, end]
+    },
+  },
+])
+
+/**
+ * 处理时间范围变化
+ */
+const handleTimeRangeChange = (val: [number, number] | null) => {
+  if (val) {
+    dashboardStore.setTimeRange({ startTime: val[0], endTime: val[1] })
+  } else {
+    // 清空时间范围，恢复实时模式
+    dashboardStore.setTimeRange({})
+    dashboardStore.loadTrafficHistory({ granularity: granularityValue.value })
+  }
+}
+
+/**
+ * 处理粒度变化
+ */
+const handleGranularityChange = (val: 'MINUTE' | 'HOUR') => {
+  dashboardStore.setGranularity(val)
+}
+
+// ==================== 快捷操作状态 ====================
 
 // 快捷操作加载状态
 const actionsLoading = reactive({
@@ -217,41 +270,15 @@ const actionsLoading = reactive({
   clearCache: false,
 })
 
-const statistics = reactive<StatisticsInfo>({
-  totalInstances: 0,
-  healthyInstances: 0,
-  totalRequests: 0,
-  successRequests: 0,
-  failedRequests: 0,
-  avgResponseTime: 0,
-})
-
-const instances = ref<InstanceInfo[]>([])
-
-// 流量历史数据（保留最近10条）
-const trafficHistory = ref<{ time: string; count: number }[]>([])
-
-let refreshInterval: number | null = null
+/**
+ * 计算成功率（使用 store 提供的计算）
+ */
+const successRate = computed(() => dashboardStore.successRateDisplay)
 
 /**
- * 计算成功率
+ * 计算健康实例比例（使用 store 提供的计算）
  */
-const successRate = computed(() => {
-  if (!statistics.totalRequests || statistics.totalRequests === 0) {
-    return '0%'
-  }
-  return Math.round((statistics.successRequests / statistics.totalRequests) * 100) + '%'
-})
-
-/**
- * 计算健康实例比例
- */
-const healthyRatio = computed(() => {
-  if (!statistics.totalInstances || statistics.totalInstances === 0) {
-    return '0/0'
-  }
-  return `${statistics.healthyInstances}/${statistics.totalInstances}`
-})
+const healthyRatio = computed(() => dashboardStore.healthyRatioDisplay)
 
 /**
  * 折线图配置 - 简约风格
@@ -265,6 +292,13 @@ const lineChartOption = computed(() => ({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderColor: 'var(--border-color-base)',
     borderWidth: 1,
+    formatter: (params: any) => {
+      if (!params || params.length === 0) return ''
+      const data = params[0]
+      const point = trafficHistory.value[data.dataIndex]
+      if (!point) return `${data.name}<br/>请求: ${data.value}`
+      return `${data.name}<br/>请求: ${data.value}<br/>成功: ${point.successCount}<br/>失败: ${point.failedCount}<br/>峰值QPS: ${point.peakQps}`
+    },
   },
   grid: {
     left: '3%',
@@ -326,7 +360,7 @@ const lineChartOption = computed(() => ({
  * 饼图配置 - 简约风格
  */
 const pieChartOption = computed(() => {
-  const unhealthyCount = statistics.totalInstances - statistics.healthyInstances
+  const unhealthyCount = statistics.value.totalInstances - statistics.value.healthyInstances
   return {
     tooltip: {
       trigger: 'item',
@@ -358,7 +392,7 @@ const pieChartOption = computed(() => {
           show: true,
           position: 'center',
           formatter: () => {
-            const total = statistics.totalInstances || 0
+            const total = statistics.value.totalInstances || 0
             return `{total|${total}}\n{label|${t('dashboard.instanceCount')}}`
           },
           rich: {
@@ -389,7 +423,7 @@ const pieChartOption = computed(() => {
         },
         data: [
           {
-            value: statistics.healthyInstances,
+            value: statistics.value.healthyInstances,
             name: t('monitor.healthy'),
             itemStyle: { color: '#10b981' },
           },
@@ -405,51 +439,23 @@ const pieChartOption = computed(() => {
 })
 
 /**
- * 格式化数字（添加千位分隔符）
+ * 格式化数字（使用 store 提供的方法）
  */
 const formatNumber = (num: number): string => {
-  if (!num) return '0'
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return dashboardStore.formatNumber(num)
 }
 
 /**
- * 加载数据
+ * 手动刷新实例列表
+ * 实例数据通过 API 查询获取，点击刷新按钮主动请求
  */
-const loadData = async () => {
-  loading.value = true
-  try {
-    const [statsRes, instancesRes] = await Promise.all([getStatistics({}), getGatewayInstances({})])
-
-    // 统计数据
-    if (statsRes) {
-      statistics.totalInstances = statsRes.totalInstances || 0
-      statistics.healthyInstances = statsRes.healthyInstances || 0
-      statistics.totalRequests = statsRes.totalRequests || 0
-      statistics.successRequests = statsRes.successRequests || 0
-      statistics.avgResponseTime = statsRes.avgResponseTime || 0
-
-      // 记录流量历史
-      trafficHistory.value.push({
-        time: new Date().toLocaleTimeString(),
-        count: statsRes.totalRequests || 0,
-      })
-      // 保留最近10条记录
-      if (trafficHistory.value.length > 10) {
-        trafficHistory.value.shift()
-      }
-    }
-
-    // 实例列表
-    instances.value = instancesRes?.instances || []
-  } catch (error) {
-    console.error('Load data error:', error)
-  } finally {
-    loading.value = false
-  }
+const handleManualRefresh = async () => {
+  await dashboardStore.fetchInstances()
+  ElMessage.success(t('common.refreshSuccess'))
 }
 
 /**
- * 刷新路由
+ * 快捷操作：刷新路由
  */
 const handleRefreshRoutes = async () => {
   actionsLoading.refreshRoutes = true
@@ -495,17 +501,15 @@ const handleClearCache = async () => {
 }
 
 onMounted(() => {
-  loadData()
-  // 设置自动刷新，每5秒刷新一次
-  refreshInterval = window.setInterval(loadData, 5000)
+  // 组件挂载时获取实例列表（通过 API 查询）
+  dashboardStore.fetchInstances()
+  // 初始化加载流量历史数据（默认最近 1 小时分钟级数据）
+  dashboardStore.loadTrafficHistory({ granularity: 'MINUTE' })
+  // 统计信息由 SSE 推送，无需手动初始化
 })
 
 onUnmounted(() => {
-  // 组件卸载时清除定时器
-  if (refreshInterval) {
-    clearInterval(refreshInterval)
-    refreshInterval = null
-  }
+  // SSE 连接由 notification store 统一管理，dashboard 组件不需要断开
 })
 </script>
 
@@ -591,6 +595,21 @@ onUnmounted(() => {
       border-bottom: 1px solid var(--border-color-base);
       font-weight: 500;
     }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      .chart-controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+    }
   }
 
   .page-card {
@@ -639,75 +658,6 @@ onUnmounted(() => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-
-  .instance-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-  }
-
-  .instance-card {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px;
-    background-color: var(--bg-color-page);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-color-light);
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-medium);
-      border-color: var(--primary-color-light-9);
-    }
-
-    &.unhealthy {
-      background-color: rgba(239, 68, 68, 0.04);
-      border-color: rgba(239, 68, 68, 0.15);
-    }
-  }
-
-  .instance-status {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-
-    &.healthy {
-      background-color: var(--success-color);
-    }
-
-    &.unhealthy {
-      background-color: var(--danger-color);
-    }
-  }
-
-  .instance-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .instance-id {
-    font-weight: 500;
-    color: var(--text-color-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .instance-address {
-    font-size: 13px;
-    color: var(--text-color-secondary);
-    margin-top: 2px;
-  }
-
-  .no-instances {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 40px 0;
-    color: var(--text-color-secondary);
   }
 }
 </style>

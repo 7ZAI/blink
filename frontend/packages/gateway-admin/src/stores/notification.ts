@@ -4,11 +4,47 @@ import { ElMessage } from 'element-plus'
 import { useSseConnection } from '@/composables/useSseConnection'
 import { notificationApi } from '@/api/notification'
 import type { NotificationItem } from '@/api/notification'
+import type { InstanceStatusData } from '@/composables/useInstanceStatus'
+import type { DashboardDataPayload } from '@/stores/dashboard'
+import { useDashboardStore } from '@/stores/dashboard'
 
 export interface NotificationStoreItem extends NotificationItem {
   read: boolean
 }
 
+// 实例状态更新回调列表（用于通知 useInstanceStatus composable）
+const instanceStatusCallbacks: ((data: InstanceStatusData) => void)[] = []
+
+/**
+ * 注册实例状态更新回调
+ */
+export function registerInstanceStatusCallback(callback: (data: InstanceStatusData) => void) {
+  instanceStatusCallbacks.push(callback)
+}
+
+/**
+ * 移除实例状态更新回调
+ */
+export function unregisterInstanceStatusCallback(callback: (data: InstanceStatusData) => void) {
+  const index = instanceStatusCallbacks.indexOf(callback)
+  if (index > -1) {
+    instanceStatusCallbacks.splice(index, 1)
+  }
+}
+
+/**
+ * Notification Store - SSE 消息总线
+ *
+ * 职责：
+ * 1. 统一管理 SSE 连接（由 MainLayout 调用 connectSse/disconnectSse）
+ * 2. 接收 SSE 消息并分发到对应的 Store
+ * 3. 其他页面/组件不应直接操作 SSE，只监听对应的 Store 数据变化
+ *
+ * 消息分发机制：
+ * - instance_status -> useInstanceStatus (通过回调列表)
+ * - dashboard_data -> dashboardStore (直接调用)
+ * - notification -> 本 store 管理
+ */
 export const useNotificationStore = defineStore('notification', () => {
   const notifications = ref<NotificationStoreItem[]>([])
   const unreadCount = ref(0)
@@ -111,9 +147,21 @@ export const useNotificationStore = defineStore('notification', () => {
     requestNotificationPermission()
   }
 
+  /**
+   * SSE 连接状态管理
+   * 遵循消息总线模式：顶层统一管理连接，其他页面只监听数据
+   */
   const connectSse = () => {
+    // 防重复连接：如果已连接或正在连接，直接返回
+    if (sseStatus.value === 'connected' || sseStatus.value === 'connecting') {
+      console.log('[Notification] SSE 已连接，跳过重复连接')
+      return
+    }
+
+    // 清理旧连接（仅在 disconnected 状态下）
     if (sseConnection) {
       sseConnection.disconnect()
+      sseConnection = null
     }
 
     const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
@@ -154,8 +202,66 @@ export const useNotificationStore = defineStore('notification', () => {
     sseStatus.value = 'disconnected'
   }
 
-  const handleSseMessage = (msg: NotificationItem) => {
-    // 区分进度通知和汇总通知
+  /**
+   * 强制重新连接 SSE
+   * 用于网络恢复后或需要强制刷新连接的场景
+   * 注意：通常由 MainLayout 管理，其他组件不应调用此方法
+   */
+  const reconnectSse = () => {
+    // 先断开现有连接
+    disconnectSse()
+    // 重置状态后重新连接
+    sseStatus.value = 'disconnected'
+    connectSse()
+  }
+
+  /**
+   * SSE 消息类型常量（与后端 SseMessageType 保持一致）
+   */
+  const SSE_MESSAGE_TYPE = {
+    HEARTBEAT: 'heartbeat',
+    NOTIFICATION: 'notification',
+    INSTANCE_STATUS: 'instance_status',
+    DASHBOARD_DATA: 'dashboard_data',
+  }
+
+  const handleSseMessage = (rawMsg: any) => {
+    // 先检查 SSE 消息类型（后端 SseMessage 的 type 字段）
+    const sseType = rawMsg.type
+
+    // 心跳消息：忽略
+    if (sseType === SSE_MESSAGE_TYPE.HEARTBEAT) {
+      return
+    }
+
+    // 实例状态推送：不计入未读数，通知 useInstanceStatus 的订阅者
+    if (sseType === SSE_MESSAGE_TYPE.INSTANCE_STATUS) {
+      // 实例状态数据，用于实时监控更新
+      const statusData = rawMsg.data as InstanceStatusData
+      console.log('[Notification] 收到实例状态推送 | data:', statusData)
+
+      // 通知所有注册的实例状态回调
+      for (const callback of instanceStatusCallbacks) {
+        callback(statusData)
+      }
+      return
+    }
+
+    // 仪表盘数据推送：更新 dashboard store
+    if (sseType === SSE_MESSAGE_TYPE.DASHBOARD_DATA) {
+      const dashboardData = rawMsg.data as DashboardDataPayload
+      console.log('[Notification] 收到仪表盘数据推送 | 实例数:', dashboardData.instances?.length)
+
+      // 获取 dashboard store 并更新数据
+      const dashboardStore = useDashboardStore()
+      dashboardStore.handleDashboardData(dashboardData)
+      return
+    }
+
+    // 以下处理真正的通知消息（sseType === 'notification' 或无 type 字段）
+    const msg: NotificationItem = sseType === SSE_MESSAGE_TYPE.NOTIFICATION ? rawMsg.data : rawMsg
+
+    // 区分进度通知和汇总通知（基于通知内容的 type 字段）
     const isProgressNotification = msg.type?.startsWith('instance_sync')
     const isSummaryNotification = msg.type?.startsWith('cache_sync_summary')
 
@@ -298,6 +404,7 @@ export const useNotificationStore = defineStore('notification', () => {
     sseStatus,
     connectSse,
     disconnectSse,
+    reconnectSse, // 强制重连（仅供特殊情况使用）
     fetchOfflineMessages,
     fetchUnreadCount,
     markAsRead,

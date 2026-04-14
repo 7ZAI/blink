@@ -314,6 +314,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'instance.title' },
       },
       {
+        path: 'instance/detail',
+        name: 'InstanceDetail',
+        component: () => import('@/views/instance/detail/index.vue'),
+        meta: { title: 'instance.detailTitle', hidden: true },
+      },
+      {
         path: 'dataSync',
         name: 'DataSync',
         component: () => import('@/views/dataSync/index.vue'),

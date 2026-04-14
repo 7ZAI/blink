@@ -54,6 +54,38 @@ export interface OnlineInstanceParams {
   instanceId: string
 }
 
+// ==================== 流量历史查询相关类型 ====================
+
+/**
+ * 流量历史查询参数
+ */
+export interface TrafficHistoryQuery {
+  startTime?: number // 开始时间（毫秒时间戳）
+  endTime?: number // 结束时间（毫秒时间戳）
+  granularity?: 'MINUTE' | 'HOUR' // 数据粒度
+}
+
+/**
+ * 流量数据点（历史查询返回）
+ */
+export interface TrafficHistoryPoint {
+  time: string // 时间（格式化字符串）
+  timestamp: number // 时间戳（毫秒）
+  count: number // 请求数量（增量）
+  successCount: number // 成功请求数
+  failedCount: number // 失败请求数
+  peakQps: number // 峰值 QPS
+}
+
+/**
+ * 流量历史查询结果
+ */
+export interface TrafficHistoryResult {
+  points: TrafficHistoryPoint[] // 流量数据点列表
+  totalRequests: number // 总请求数（时间范围内）
+  peakQps: number // 峰值 QPS
+}
+
 // Get gateway instances
 export const getGatewayInstances = (params: MonitorQuery = {}): Promise<InstanceListResult> => {
   return request.post('/monitor/getGatewayInstances', { body: params })
@@ -102,6 +134,14 @@ export const onlineInstance = (params: OnlineInstanceParams): Promise<void> => {
   return request.post('/gatewayInstance/onlineInstance', { body: params })
 }
 
+/**
+ * 查询流量历史数据
+ * @param params 查询参数（时间范围、粒度）
+ */
+export const getTrafficHistory = (params: TrafficHistoryQuery = {}): Promise<TrafficHistoryResult> => {
+  return request.post('/monitor/getTrafficHistory', { body: params })
+}
+
 // Monitor API object (for component using monitorApi.xxx pattern)
 export const monitorApi = {
   getGatewayInstances,
@@ -111,4 +151,5 @@ export const monitorApi = {
   getInstanceDetail,
   offlineInstance,
   onlineInstance,
+  getTrafficHistory,
 }

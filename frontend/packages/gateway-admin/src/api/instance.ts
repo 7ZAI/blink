@@ -198,6 +198,13 @@ export const offlineInstance = (params: OfflineInstanceParams): Promise<void> =>
   return request.post('/gatewayInstance/offlineInstance', { body: params })
 }
 
+/**
+ * 手动刷新实例状态（从Nacos实时获取）
+ */
+export const refreshInstanceStatus = (): Promise<void> => {
+  return request.post('/gatewayInstance/refreshInstanceStatus', { body: {} })
+}
+
 // ==================== API 对象导出 ====================
 
 export const instanceApi = {
@@ -207,4 +214,5 @@ export const instanceApi = {
   getInstanceDetailWithMetrics,
   onlineInstance,
   offlineInstance,
+  refreshInstanceStatus,
 }

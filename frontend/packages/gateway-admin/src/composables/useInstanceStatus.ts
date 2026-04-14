@@ -1,23 +1,19 @@
 /**
  * 实例状态实时更新 Composable
  *
- * 通过 SSE 监听实例状态变化，替代轮询获取实例列表
+ * 通过复用 notification store 的 SSE 连接监听实例状态变化
+ * 遵循消息总线模式：SSE 连接由 MainLayout 统一管理，组件只监听数据
  *
  * @example
  * ```ts
- * const { instances, stats, isConnected, connect, disconnect } = useInstanceStatus()
+ * const { instances, stats, isConnected } = useInstanceStatus()
  *
- * // 在组件挂载时连接
- * onMounted(() => connect())
- *
- * // 在组件卸载时断开
- * onUnmounted(() => disconnect())
+ * // SSE 连接由 MainLayout 统一管理，无需在组件中手动 connect/disconnect
  * ```
  */
 
-import { ref, onUnmounted, readonly } from 'vue'
-import { useSseConnection } from './useSseConnection'
-import { useUserStore } from '@/stores/user'
+import { ref, readonly, watch, onUnmounted } from 'vue'
+import { useNotificationStore, registerInstanceStatusCallback, unregisterInstanceStatusCallback } from '@/stores/notification'
 
 /**
  * 实例摘要
@@ -66,62 +62,36 @@ const DEFAULT_STATS: InstanceStats = {
   avgCpuUsage: 0,
 }
 
+// 全局实例状态缓存（所有组件共享）
+const globalInstances = ref<InstanceSummary[]>([])
+const globalStats = ref<InstanceStats>({ ...DEFAULT_STATS })
+
 /**
  * 实例状态实时更新 Composable
  *
+ * 复用 notification store 的 SSE 连接，不再独立创建连接
+ *
  * @param options 配置选项
- * @returns 实例状态和连接控制方法
+ * @returns 实例状态
  */
 export function useInstanceStatus(options?: {
   /** 状态变化回调 */
   onStatusChange?: InstanceStatusCallback
-  /** 连接成功回调 */
-  onConnect?: () => void
-  /** 断开连接回调 */
-  onDisconnect?: () => void
-  /** 连接错误回调 */
-  onError?: (error: Error) => void
 }) {
-  const { onStatusChange, onConnect, onDisconnect, onError } = options || {}
+  const { onStatusChange } = options || {}
 
-  // 实例列表
-  const instances = ref<InstanceSummary[]>([])
+  // 使用全局缓存，避免每个组件重复创建状态
+  const instances = globalInstances
+  const stats = globalStats
 
-  // 统计数据
-  const stats = ref<InstanceStats>({ ...DEFAULT_STATS })
+  // 监听 notification store 的 SSE 状态
+  const notificationStore = useNotificationStore()
 
-  // 连接状态
-  const isConnected = ref(false)
-
-  // SSE 连接
-  let sseConnection: ReturnType<typeof useSseConnection> | null = null
+  // 返回 SSE 连接状态（来自 notification store）
+  const isConnected = readonly(ref(notificationStore.sseStatus === 'connected'))
 
   /**
-   * 处理 SSE 消息
-   */
-  const handleMessage = (data: unknown) => {
-    // 处理不同类型的消息
-    if (data && typeof data === 'object') {
-      const message = data as Record<string, unknown>
-
-      // 处理 instance_status 类型消息
-      if (message.type === 'instance_status' && message.data) {
-        const statusData = message.data as InstanceStatusData
-        updateStatus(statusData)
-        onStatusChange?.(statusData)
-      }
-
-      // 处理直接发送的 instance_status 数据（不带 type 包装）
-      if ('instances' in data && 'stats' in data) {
-        const statusData = data as InstanceStatusData
-        updateStatus(statusData)
-        onStatusChange?.(statusData)
-      }
-    }
-  }
-
-  /**
-   * 更新实例状态
+   * 更新实例状态（由 SSE 消息触发）
    */
   const updateStatus = (data: InstanceStatusData) => {
     if (data.hasChange || instances.value.length === 0) {
@@ -139,50 +109,13 @@ export function useInstanceStatus(options?: {
         return instance
       })
     }
+
+    // 触发回调
+    onStatusChange?.(data)
   }
 
-  /**
-   * 建立 SSE 连接
-   */
-  const connect = () => {
-    if (sseConnection) {
-      sseConnection.disconnect()
-    }
-
-    const userStore = useUserStore()
-    const token = userStore.token
-
-    sseConnection = useSseConnection({
-      url: '/api/gateway-admin/sse/connect',
-      token: token || undefined,
-      onMessage: handleMessage,
-      onConnect: () => {
-        isConnected.value = true
-        onConnect?.()
-      },
-      onDisconnect: () => {
-        isConnected.value = false
-        onDisconnect?.()
-      },
-      onError: (error) => {
-        isConnected.value = false
-        onError?.(error)
-      },
-    })
-
-    sseConnection.connect()
-  }
-
-  /**
-   * 断开 SSE 连接
-   */
-  const disconnect = () => {
-    if (sseConnection) {
-      sseConnection.disconnect()
-      sseConnection = null
-    }
-    isConnected.value = false
-  }
+  // 注册到 notification store 的回调列表
+  registerInstanceStatusCallback(updateStatus)
 
   /**
    * 重置状态
@@ -192,21 +125,36 @@ export function useInstanceStatus(options?: {
     stats.value = { ...DEFAULT_STATS }
   }
 
-  // 组件卸载时断开连接
+  // 不再需要 connect/disconnect，由 notification store 统一管理
+  // 提供空方法以保持向后兼容（如果有组件仍在调用）
+  // 遵循消息总线模式：SSE 连接由 MainLayout 统一管理
+  const connect = () => {
+    // SSE 连接由 MainLayout 管理，组件不应直接操作
+    // 如果 SSE 未连接，组件应该等待而不是主动连接
+    console.warn('[useInstanceStatus] SSE 连接由 MainLayout 统一管理，组件不应调用 connect()')
+  }
+
+  const disconnect = () => {
+    // 不主动断开连接，由 MainLayout 在退出时统一断开
+    console.warn('[useInstanceStatus] SSE 连接由 MainLayout 统一管理，组件不应调用 disconnect()')
+  }
+
+  // 组件卸载时移除回调注册
   onUnmounted(() => {
-    disconnect()
+    unregisterInstanceStatusCallback(updateStatus)
   })
 
   return {
     // 状态
     instances: readonly(instances),
     stats: readonly(stats),
-    isConnected: readonly(isConnected),
+    isConnected,
 
-    // 方法
+    // 方法（向后兼容，但不再独立管理连接）
     connect,
     disconnect,
     reset,
+    updateStatus,
   }
 }
 

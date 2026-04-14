@@ -99,25 +99,35 @@
     <!-- 同步日志区 -->
     <el-card class="log-card shrink-0" shadow="never">
       <template #header>
-        <span class="card-title">{{ t('dataSync.syncLog') }}</span>
+        <div class="log-header">
+          <span class="card-title">{{ t('dataSync.syncLog') }}</span>
+          <el-button link type="primary" @click="loadSyncLogs">
+            <el-icon><Refresh /></el-icon>
+            {{ t('common.refresh') }}
+          </el-button>
+        </div>
       </template>
-      <el-table v-loading="loadingLogs" :data="syncLogs" max-height="300" stripe>
-        <el-table-column :label="t('dataSync.syncTime')" prop="createTime" width="180" />
-        <el-table-column :label="t('dataSync.syncType')" prop="syncType" width="100">
+      <el-table v-loading="loadingLogs" :data="syncLogs" max-height="280" stripe>
+        <el-table-column :label="t('dataSync.syncTime')" prop="createTime" min-width="160" show-overflow-tooltip />
+        <el-table-column :label="t('dataSync.syncType')" width="100" align="center">
           <template #default="{ row }">
-            <el-tag>{{ t(`dataSync.${row.syncType}`) }}</el-tag>
+            <el-tag size="small" effect="plain">{{ t(`dataSync.${row.syncType}`) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('dataSync.operator')" prop="operator" width="100" />
-        <el-table-column :label="t('dataSync.status')" width="100" align="center">
+        <el-table-column :label="t('dataSync.operator')" prop="operator" min-width="100" show-overflow-tooltip />
+        <el-table-column :label="t('dataSync.status')" width="80" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 0 ? 'success' : 'danger'">
+            <el-tag :type="row.status === 0 ? 'success' : 'danger'" size="small" effect="light">
               {{ row.status === 0 ? t('common.success') : t('common.failed') }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('dataSync.instanceCount')" width="120">
-          <template #default="{ row }">{{ row.successCount }} / {{ row.instanceCount }}</template>
+        <el-table-column :label="t('dataSync.instanceCount')" min-width="120" align="center">
+          <template #default="{ row }">
+            <span :class="row.successCount === row.instanceCount ? 'success-count' : 'partial-count'">
+              {{ row.successCount }} / {{ row.instanceCount }}
+            </span>
+          </template>
         </el-table-column>
       </el-table>
     </el-card>
@@ -292,6 +302,22 @@ onMounted(() => {
 
 .log-card {
   max-height: 380px;
+
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.success-count {
+  color: var(--el-color-success);
+  font-weight: 500;
+}
+
+.partial-count {
+  color: var(--el-color-warning);
+  font-weight: 500;
 }
 
 .card-title {

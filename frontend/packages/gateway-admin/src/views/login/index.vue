@@ -209,8 +209,8 @@ let typingTimeout: ReturnType<typeof setTimeout> | null = null
 let observer: MutationObserver | null = null
 
 const loginForm = reactive({
-  loginName: '',
-  password: '',
+  loginName: 'admin',  // 开发环境默认用户名
+  password: '123456',  // 开发环境默认密码
   rememberMe: false,
 })
 

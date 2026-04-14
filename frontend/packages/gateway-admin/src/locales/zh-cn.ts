@@ -48,6 +48,7 @@ export default {
     minutesAgo: '{n}分钟前',
     hoursAgo: '{n}小时前',
     goBack: '返回',
+    back: '返回',
     retry: '重试',
     allSystemsOperational: '系统正常运行',
     degraded: '系统降级',
@@ -69,6 +70,9 @@ export default {
     to: '至',
     hide: '隐藏',
     selectAll: '全选',
+    paramError: '参数错误',
+    refreshSuccess: '刷新成功',
+    sseDisconnected: '实时推送未连接，请检查网络',
   },
   loading: {
     loadingData: '正在加载数据...',
@@ -197,6 +201,15 @@ export default {
     recentActivity: '最近活动',
     noActivity: '暂无活动记录',
     activityNote: '活动日志功能即将上线',
+    // 流量趋势控制相关
+    selectTimeRange: '选择时间范围',
+    minute: '分钟',
+    hour: '小时',
+    last1Hour: '最近1小时',
+    last6Hours: '最近6小时',
+    last24Hours: '最近24小时',
+    loadHistory: '加载历史',
+    trafficLoading: '流量数据加载中...',
   },
   channel: {
     title: '渠道管理',
@@ -1285,6 +1298,7 @@ export default {
   instance: {
     // 页面标题
     title: '实例管理',
+    detailTitle: '实例详情',
 
     // 基本信息字段
     instanceId: '实例ID',

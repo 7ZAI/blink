@@ -228,7 +228,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -268,8 +268,6 @@ const statistics = ref<StatisticsInfo>({
 
 const {
   isConnected: sseConnected,
-  connect: connectSse,
-  disconnect: disconnectSse,
 } = useInstanceStatus({
   onStatusChange: (data) => {
     // SSE 状态变化时更新统计数据
@@ -451,12 +449,7 @@ const handleOnline = (row: InstanceInfo) => {
 
 onMounted(() => {
   loadData()
-  // 使用 SSE 实时更新替代轮询
-  connectSse()
-})
-
-onUnmounted(() => {
-  disconnectSse()
+  // SSE 连接由 MainLayout 统一管理，无需在组件中手动连接
 })
 </script>
 

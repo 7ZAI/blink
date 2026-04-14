@@ -7,22 +7,52 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, inject, type ComputedRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { getStatistics, type StatisticsInfo } from '@/api/monitor'
 
 defineOptions({ name: 'StatusBanner' })
 
 const { t } = useI18n()
 
-const statistics = ref<StatisticsInfo | null>(null)
-let refreshInterval: number | null = null
+/**
+ * 统计信息接口
+ */
+interface StatisticsInfo {
+  totalInstances: number
+  healthyInstances: number
+}
+
+/**
+ * Props - 可选的外部统计数据传入
+ */
+const props = defineProps<{
+  /** 外部传入的统计数据（可选） */
+  statistics?: StatisticsInfo
+}>()
+
+/**
+ * 从父组件注入的统计数据（可选）
+ * 父组件可通过 provide('statistics', computed(() => dashboardStore.statistics)) 注入
+ */
+const injectedStatistics = inject<ComputedRef<StatisticsInfo> | null>('statistics', null)
+
+/**
+ * 获取统计数据
+ * 优先级：props > inject > 默认空值
+ */
+const statistics = computed<StatisticsInfo>(() => {
+  if (props.statistics) {
+    return props.statistics
+  }
+  if (injectedStatistics?.value) {
+    return injectedStatistics.value
+  }
+  return { totalInstances: 0, healthyInstances: 0 }
+})
 
 const status = computed(() => {
-  if (!statistics.value) return null
-
   const { totalInstances, healthyInstances } = statistics.value
-  if (totalInstances === 0) return 'unknown'
+  if (totalInstances === 0) return null
 
   const healthyRate = healthyInstances / totalInstances
   if (healthyRate >= 0.9) return 'operational'
@@ -57,29 +87,9 @@ const statusText = computed(() => {
 })
 
 const statusDetail = computed(() => {
-  if (!statistics.value) return ''
   const { totalInstances, healthyInstances } = statistics.value
+  if (totalInstances === 0) return ''
   return `${healthyInstances}/${totalInstances} ${t('common.instancesHealthy')}`
-})
-
-const fetchStatistics = async () => {
-  try {
-    statistics.value = await getStatistics({})
-  } catch (error) {
-    console.error('Failed to fetch statistics:', error)
-  }
-}
-
-onMounted(() => {
-  fetchStatistics()
-  // Refresh every 10 seconds
-  refreshInterval = window.setInterval(fetchStatistics, 10000)
-})
-
-onUnmounted(() => {
-  if (refreshInterval) {
-    clearInterval(refreshInterval)
-  }
 })
 </script>
 

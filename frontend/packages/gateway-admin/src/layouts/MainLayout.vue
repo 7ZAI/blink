@@ -155,15 +155,17 @@ const themeConfig = computed(() => ({
   system: {},
 }))
 
-// SSE 连接初始化
-onMounted(() => {
-  // Initialize SSE connection after user is logged in
-  notificationStore.connectSse()
-})
+// SSE 连接初始化 - MainLayout 作为 SSE 连接的唯一管理者
+  // 遵循消息总线模式：顶层统一管理连接，其他页面只监听数据
+  onMounted(() => {
+    // Initialize SSE connection after user is logged in
+    notificationStore.connectSse()
+  })
 
-onUnmounted(() => {
-  notificationStore.disconnectSse()
-})
+  onUnmounted(() => {
+    // 用户退出时断开 SSE 连接
+    notificationStore.disconnectSse()
+  })
 
 // Logo SVG - 从系统配置动态获取
 const logoSvg = computed(() => systemConfigStore.systemLogo)

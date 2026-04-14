@@ -42,6 +42,7 @@
           <IconSelector
             v-model="form.icon"
             :placeholder="t('menu.selectIcon')"
+            :groups="menuIconGroups"
             class="icon-selector"
           />
           <el-button
@@ -125,7 +126,8 @@ import {
   type MenuInfo,
   type PermissionInfo,
 } from '@/api/menu'
-import { IconSelector } from '@blink/components'
+import { IconSelector, createMenuIconGroups } from '@blink/components'
+import type { IconGroup } from '@blink/components'
 import PermissionSelectDialog from './PermissionSelectDialog.vue'
 import { useSubmitGuard } from '@/composables/useSubmitGuard'
 
@@ -153,6 +155,9 @@ const { isSubmitting, submitGuard } = useSubmitGuard()
 const menuTreeData = ref<MenuInfo[]>([])
 const permDialogVisible = ref(false)
 const selectedPerm = ref<PermissionInfo | null>(null)
+
+// 菜单专用图标分组
+const menuIconGroups: IconGroup[] = createMenuIconGroups()
 
 const form = reactive({
   menuId: undefined as number | undefined,

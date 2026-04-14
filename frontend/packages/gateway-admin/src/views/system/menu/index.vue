@@ -202,6 +202,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete } from '@element-plus/icons-vue'
 import { getMenuList, deleteMenu, checkMenuRoleAssignment, type MenuInfo } from '@/api/menu'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
+import { useUserStore } from '@/stores/user'
 
 defineOptions({
   name: 'SystemMenu',
@@ -209,6 +210,7 @@ defineOptions({
 import MenuFormDialog from './components/MenuFormDialog.vue'
 
 const { hasPermission: checkPermission } = usePermission()
+const userStore = useUserStore()
 
 const { t } = useI18n()
 
@@ -331,6 +333,9 @@ const handleFormSuccess = async (parentId?: number) => {
   const expandParentId = parentId ?? parentMenu.value?.menuId ?? 0
 
   await fetchMenuList()
+
+  // 刷新侧边栏菜单数据
+  await userStore.fetchUserInfo()
 
   // 如果是新增子菜单，展开父节点
   if (expandParentId > 0 && !expandedKeys.value.includes(expandParentId)) {

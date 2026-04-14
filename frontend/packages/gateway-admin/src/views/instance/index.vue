@@ -198,206 +198,6 @@
       </div>
     </el-card>
 
-    <!-- 详情弹窗 -->
-    <el-dialog
-      v-model="detailDialogVisible"
-      :title="t('instance.instanceDetail') + ' - ' + (currentInstance?.instanceId || '')"
-      width="800px"
-      :close-on-click-modal="false"
-      :lock-scroll="false"
-      class="detail-dialog"
-    >
-      <el-tabs v-model="detailActiveTab" class="detail-tabs">
-        <!-- 基本信息 -->
-        <el-tab-pane :label="t('instance.basicInfo')" name="basic">
-          <el-descriptions :column="2" border v-if="currentInstance">
-            <el-descriptions-item :label="t('instance.instanceId')">
-              {{ currentInstance.instanceId }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('instance.serviceId')">
-              {{ currentInstance.serviceId }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('instance.host')">
-              {{ currentInstance.host }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('instance.port')">
-              {{ currentInstance.port }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('route.uri')" :span="2">
-              {{ currentInstance.uri }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('common.status')">
-              <el-tag :type="getStatusType(currentInstance.status)" effect="light">
-                {{ currentInstance.statusDesc || getStatusText(currentInstance.status) }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('instance.onlineTime')">
-              {{ currentInstance.onlineTime ? formatTime(currentInstance.onlineTime) : '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item :label="t('instance.metadata')" :span="2">
-              <el-input v-if="currentInstance.metadata" :model-value="currentInstance.metadata" type="textarea" :rows="3" readonly />
-              <span v-else>-</span>
-            </el-descriptions-item>
-          </el-descriptions>
-        </el-tab-pane>
-
-        <!-- 健康状态 -->
-        <el-tab-pane :label="t('instance.healthStatus')" name="health">
-          <div v-if="instanceDetail?.healthDetail" class="health-section">
-            <div class="health-overall">
-              <span class="health-label">{{ t('instance.healthStatus') }}:</span>
-              <el-tag :type="instanceDetail.healthDetail.status === 'UP' ? 'success' : 'danger'">
-                {{ instanceDetail.healthDetail.status }}
-              </el-tag>
-            </div>
-            <el-table
-              v-if="instanceDetail.healthDetail.components?.length"
-              :data="instanceDetail.healthDetail.components"
-              stripe
-              size="small"
-            >
-              <el-table-column prop="name" :label="t('instance.componentName')" width="150" />
-              <el-table-column prop="status" :label="t('common.status')" width="100">
-                <template #default="{ row }">
-                  <el-tag :type="row.status === 'UP' ? 'success' : 'danger'" size="small">
-                    {{ row.status }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column :label="t('common.detail')">
-                <template #default="{ row }">
-                  <span v-if="row.details">{{ JSON.stringify(row.details) }}</span>
-                  <span v-else>-</span>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-          <el-empty v-else :description="t('common.noData')" />
-        </el-tab-pane>
-
-        <!-- JVM 监控 -->
-        <el-tab-pane :label="t('instance.jvmMetrics')" name="jvm">
-          <div v-if="instanceDetail?.jvmMetrics" class="jvm-section">
-            <!-- 堆内存 -->
-            <div class="metric-group">
-              <h4>{{ t('instance.heapMemory') }}</h4>
-              <el-row :gutter="20">
-                <el-col :span="8">
-                  <div class="metric-item">
-                    <div class="metric-label">{{ t('instance.used') }}</div>
-                    <div class="metric-value">{{ formatBytes(instanceDetail.jvmMetrics.heapUsed) }}</div>
-                  </div>
-                </el-col>
-                <el-col :span="8">
-                  <div class="metric-item">
-                    <div class="metric-label">{{ t('instance.max') }}</div>
-                    <div class="metric-value">{{ formatBytes(instanceDetail.jvmMetrics.heapMax) }}</div>
-                  </div>
-                </el-col>
-                <el-col :span="8">
-                  <div class="metric-item">
-                    <div class="metric-label">{{ t('instance.usage') }}</div>
-                    <div class="metric-value">
-                      {{ instanceDetail.jvmMetrics.heapUsagePercent?.toFixed(2) || 0 }}%
-                    </div>
-                  </div>
-                </el-col>
-              </el-row>
-            </div>
-            <!-- GC 统计 -->
-            <div class="metric-group">
-              <h4>{{ t('instance.gcStatistics') }}</h4>
-              <el-row :gutter="20">
-                <el-col :span="12">
-                  <div class="metric-item">
-                    <div class="metric-label">{{ t('instance.youngGc') }}</div>
-                    <div class="metric-value">
-                      {{ instanceDetail.jvmMetrics.youngGcCount || 0 }} 次 /
-                      {{ instanceDetail.jvmMetrics.youngGcTime || 0 }} ms
-                    </div>
-                  </div>
-                </el-col>
-                <el-col :span="12">
-                  <div class="metric-item">
-                    <div class="metric-label">{{ t('instance.oldGc') }}</div>
-                    <div class="metric-value">
-                      {{ instanceDetail.jvmMetrics.oldGcCount || 0 }} 次 /
-                      {{ instanceDetail.jvmMetrics.oldGcTime || 0 }} ms
-                    </div>
-                  </div>
-                </el-col>
-              </el-row>
-            </div>
-            <!-- 线程信息 -->
-            <div class="metric-group">
-              <h4>{{ t('instance.threadInfo') }}</h4>
-              <el-row :gutter="20">
-                <el-col :span="8">
-                  <div class="metric-item">
-                    <div class="metric-label">{{ t('instance.liveThreads') }}</div>
-                    <div class="metric-value">{{ instanceDetail.jvmMetrics.liveThreads || 0 }}</div>
-                  </div>
-                </el-col>
-                <el-col :span="8">
-                  <div class="metric-item">
-                    <div class="metric-label">{{ t('instance.peakThreads') }}</div>
-                    <div class="metric-value">{{ instanceDetail.jvmMetrics.peakThreads || 0 }}</div>
-                  </div>
-                </el-col>
-                <el-col :span="8">
-                  <div class="metric-item">
-                    <div class="metric-label">{{ t('instance.daemonThreads') }}</div>
-                    <div class="metric-value">{{ instanceDetail.jvmMetrics.daemonThreads || 0 }}</div>
-                  </div>
-                </el-col>
-              </el-row>
-            </div>
-          </div>
-          <el-empty v-else :description="t('common.noData')" />
-        </el-tab-pane>
-
-        <!-- HTTP 统计 -->
-        <el-tab-pane :label="t('instance.httpStatistics')" name="http">
-          <div v-if="instanceDetail?.httpMetrics" class="http-section">
-            <el-row :gutter="20">
-              <el-col :span="6">
-                <div class="metric-item">
-                  <div class="metric-label">{{ t('instance.totalRequests') }}</div>
-                  <div class="metric-value">{{ formatNumber(instanceDetail.httpMetrics.totalRequests || 0) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="metric-item">
-                  <div class="metric-label">{{ t('instance.successRequests') }}</div>
-                  <div class="metric-value success">{{ formatNumber(instanceDetail.httpMetrics.successRequests || 0) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="metric-item">
-                  <div class="metric-label">{{ t('instance.failedRequests') }}</div>
-                  <div class="metric-value danger">{{ formatNumber(instanceDetail.httpMetrics.failedRequests || 0) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="metric-item">
-                  <div class="metric-label">{{ t('instance.successRate') }}</div>
-                  <div class="metric-value">{{ instanceDetail.httpMetrics.successRate?.toFixed(2) || 0 }}%</div>
-                </div>
-              </el-col>
-            </el-row>
-            <div class="metric-item center">
-              <div class="metric-label">{{ t('instance.avgResponseTime') }}</div>
-              <div class="metric-value">{{ instanceDetail.httpMetrics.avgResponseTime || 0 }} ms</div>
-            </div>
-          </div>
-          <el-empty v-else :description="t('common.noData')" />
-        </el-tab-pane>
-      </el-tabs>
-      <template #footer>
-        <el-button @click="detailDialogVisible = false">{{ t('common.close') }}</el-button>
-      </template>
-    </el-dialog>
-
     <!-- 新增/编辑弹窗 -->
     <el-dialog
       v-model="formDialogVisible"
@@ -460,7 +260,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
@@ -481,12 +282,10 @@ import {
   queryInstanceList,
   saveInstance,
   deleteInstance,
-  getInstanceDetailWithMetrics,
   onlineInstance,
   offlineInstance,
   refreshInstanceStatus,
   type InstanceInfo,
-  type InstanceDetail,
   INSTANCE_STATUS,
 } from '@/api/instance'
 import { usePermission } from '@/composables/usePermission'
@@ -495,6 +294,7 @@ import { useInstanceStatus } from '@/composables/useInstanceStatus'
 defineOptions({ name: 'InstanceManagement' })
 
 const { t } = useI18n()
+const router = useRouter()
 const { hasPermission: checkPermission } = usePermission()
 
 // ==================== SSE 实时状态 ====================
@@ -503,8 +303,6 @@ const {
   instances: sseInstances,
   stats: sseStats,
   isConnected: sseConnected,
-  connect: connectSse,
-  disconnect: disconnectSse,
 } = useInstanceStatus({
   onStatusChange: (data) => {
     // SSE 状态变化时更新统计数据
@@ -572,13 +370,10 @@ const statistics = reactive({
 
 // ==================== 弹窗状态 ====================
 
-const detailDialogVisible = ref(false)
 const formDialogVisible = ref(false)
 const offlineDialogVisible = ref(false)
-const detailActiveTab = ref('basic')
 
 const currentInstance = ref<InstanceInfo | null>(null)
-const instanceDetail = ref<InstanceDetail | null>(null)
 
 const formRef = ref<FormInstance>()
 const formType = ref<'add' | 'edit'>('add')
@@ -726,18 +521,15 @@ const handleCurrentChange = (page: number) => {
 
 // ==================== 详情 ====================
 
-const handleViewDetail = async (row: InstanceInfo) => {
-  currentInstance.value = row
-  detailActiveTab.value = 'basic'
-  detailDialogVisible.value = true
-
-  try {
-    const detail = await getInstanceDetailWithMetrics({ id: row.id })
-    instanceDetail.value = detail
-  } catch (error) {
-    console.error('Get instance detail error:', error)
-    instanceDetail.value = null
-  }
+const handleViewDetail = (row: InstanceInfo) => {
+  // 跳转到详情页面，作为新标签页打开
+  router.push({
+    path: '/instance/detail',
+    query: {
+      id: row.id,
+      instanceId: row.instanceId,
+    },
+  })
 }
 
 // ==================== 新增/编辑 ====================
@@ -833,13 +625,10 @@ const handleOnline = (row: InstanceInfo) => {
 
 onMounted(() => {
   loadData()
-  // 使用 SSE 实时更新替代轮询
-  connectSse()
+  // SSE 连接由 MainLayout 统一管理，无需在组件中手动连接
 })
 
-onUnmounted(() => {
-  disconnectSse()
-})
+// onUnmounted 不再需要，SSE 连接由 MainLayout 管理
 </script>
 
 <style scoped lang="scss">
@@ -976,72 +765,6 @@ onUnmounted(() => {
     :deep(.el-button) {
       margin: 0;
     }
-  }
-}
-
-.detail-dialog {
-  .detail-tabs {
-    :deep(.el-tabs__content) {
-      padding: 16px 0;
-    }
-  }
-
-  .health-section {
-    .health-overall {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 16px;
-
-      .health-label {
-        font-weight: 500;
-      }
-    }
-  }
-
-  .jvm-section,
-  .http-section {
-    .metric-group {
-      margin-bottom: 20px;
-
-      h4 {
-        margin-bottom: 12px;
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--text-color-primary);
-      }
-    }
-
-    .metric-item {
-      text-align: center;
-      padding: 12px;
-      background: var(--bg-color);
-      border-radius: 8px;
-
-      .metric-label {
-        font-size: 12px;
-        color: var(--text-color-secondary);
-        margin-bottom: 8px;
-      }
-
-      .metric-value {
-        font-size: 18px;
-        font-weight: 600;
-        color: var(--text-color-primary);
-
-        &.success { color: var(--success-color); }
-        &.danger { color: var(--danger-color); }
-      }
-
-      &.center {
-        max-width: 200px;
-        margin: 16px auto 0;
-      }
-    }
-  }
-
-  :deep(.el-descriptions__label) {
-    width: 100px;
   }
 }
 </style>

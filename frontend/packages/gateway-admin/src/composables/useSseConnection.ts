@@ -1,5 +1,6 @@
 import { ref, onUnmounted } from 'vue'
 import { fetchEventSource } from '@microsoft/fetch-event-source'
+import { ElMessage } from 'element-plus'
 
 interface SseOptions {
   url: string
@@ -18,6 +19,19 @@ interface SseConnection {
   disconnect: () => void
 }
 
+/**
+ * SSE 连接管理
+ *
+ * 连接标识策略（后端实现）：
+ * - connectionKey = userId:token
+ * - 相同 token 的重连请求会替换旧连接
+ * - 多设备登录：不同 token = 不同连接
+ *
+ * 前端职责：
+ * - 携带 token 请求头
+ * - 断开时 abort 连接
+ * - 后端会自动处理连接替换，前端无需主动通知
+ */
 export function useSseConnection(options: SseOptions): SseConnection {
   const {
     url,
@@ -33,21 +47,17 @@ export function useSseConnection(options: SseOptions): SseConnection {
   const status = ref<SseConnection['status']>('disconnected')
   let abortController: AbortController | null = null
   let retryCount = 0
-  let retryTimer: ReturnType<typeof setTimeout> | null = null
   let isManualDisconnect = false
+  let hasShownError = false
 
   const connect = () => {
     if (abortController) {
       abortController.abort()
     }
 
-    // 清除之前的重连定时器
-    if (retryTimer) {
-      clearTimeout(retryTimer)
-      retryTimer = null
-    }
-
     isManualDisconnect = false
+    hasShownError = false
+    retryCount = 0
     status.value = 'connecting'
     abortController = new AbortController()
 
@@ -55,7 +65,7 @@ export function useSseConnection(options: SseOptions): SseConnection {
       'Content-Type': 'application/json',
     }
 
-    // 添加认证 header
+    // 携带 token，后端用 userId:token 作为连接标识
     if (token) {
       headers['x-blink-token'] = token
     }
@@ -70,91 +80,59 @@ export function useSseConnection(options: SseOptions): SseConnection {
         if (response.ok) {
           status.value = 'connected'
           retryCount = 0
-          if (onConnect) {
-            onConnect()
-          }
+          console.log('[SSE] 连接成功')
+          onConnect?.()
         } else if (response.status >= 400 && response.status < 500 && response.status !== 429) {
-          // 客户端错误，不重试
-          const error = new Error(`HTTP ${response.status}`)
           status.value = 'error'
-          if (onError) {
-            onError(error)
-          }
-          if (onDisconnect) {
-            onDisconnect()
-          }
+          onError?.(new Error(`HTTP ${response.status}`))
+          onDisconnect?.()
         } else {
-          // 服务器错误，稍后重试
           throw new Error(`HTTP ${response.status}`)
         }
       },
 
       onmessage: (event) => {
-        if (event.event === 'notification' || !event.event) {
-          try {
-            const data = JSON.parse(event.data)
-            onMessage(data)
-          } catch (e) {
-            console.error('[SSE] Failed to parse message:', e)
-          }
+        try {
+          const data = JSON.parse(event.data)
+          onMessage(data)
+        } catch (e) {
+          console.error('[SSE] 解析消息失败:', e)
         }
       },
 
       onerror: (error) => {
-        if (isManualDisconnect) {
-          return
-        }
+        if (isManualDisconnect) return
 
         status.value = 'error'
 
         if (retryCount < maxRetries) {
           const delay = Math.min(retryDelay * Math.pow(2, retryCount), 30000)
           retryCount++
-          console.warn(
-            `[SSE] Connection error, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`
-          )
+          console.warn(`[SSE] 连接错误，${delay}ms后重试 (${retryCount}/${maxRetries})`)
           return delay
         } else {
           status.value = 'disconnected'
-          if (onError) {
-            onError(error instanceof Error ? error : new Error('SSE connection error'))
+          console.error('[SSE] 重试次数已达上限')
+          if (!hasShownError) {
+            hasShownError = true
+            ElMessage.warning('实时推送连接失败，请刷新页面')
           }
-          if (onDisconnect) {
-            onDisconnect()
-          }
+          onError?.(error instanceof Error ? error : new Error('SSE error'))
+          onDisconnect?.()
         }
       },
 
       onclose: () => {
         if (!isManualDisconnect) {
           status.value = 'disconnected'
-          if (onDisconnect) {
-            onDisconnect()
-          }
-          // 自动重连：连接正常关闭时（如服务重启）尝试重连
-          if (retryCount < maxRetries) {
-            const delay = Math.min(retryDelay * Math.pow(2, retryCount), 30000)
-            retryCount++
-            console.warn(
-              `[SSE] Connection closed, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`
-            )
-            retryTimer = setTimeout(() => {
-              if (!isManualDisconnect) {
-                connect()
-              }
-            }, delay)
-          } else {
-            console.error('[SSE] Max retries reached, connection permanently disconnected')
-          }
+          onDisconnect?.()
         }
       },
     }).catch((error) => {
       if (!isManualDisconnect && status.value !== 'disconnected') {
-        console.error('[SSE] Connection failed:', error)
+        console.error('[SSE] 连接失败:', error)
         status.value = 'error'
-        if (onError) {
-          onError(error)
-        }
+        onError?.(error)
       }
     })
   }
@@ -162,20 +140,13 @@ export function useSseConnection(options: SseOptions): SseConnection {
   const disconnect = () => {
     isManualDisconnect = true
 
-    if (retryTimer) {
-      clearTimeout(retryTimer)
-      retryTimer = null
-    }
-
     if (abortController) {
       abortController.abort()
       abortController = null
     }
 
     status.value = 'disconnected'
-    if (onDisconnect) {
-      onDisconnect()
-    }
+    onDisconnect?.()
   }
 
   onUnmounted(() => {

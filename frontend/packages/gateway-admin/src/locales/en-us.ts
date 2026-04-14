@@ -197,6 +197,15 @@ export default {
     recentActivity: 'Recent Activity',
     noActivity: 'No recent activity',
     activityNote: 'Activity log feature coming soon',
+    // Traffic trend controls
+    selectTimeRange: 'Select Time Range',
+    minute: 'Minute',
+    hour: 'Hour',
+    last1Hour: 'Last 1 Hour',
+    last6Hours: 'Last 6 Hours',
+    last24Hours: 'Last 24 Hours',
+    loadHistory: 'Load History',
+    trafficLoading: 'Loading traffic data...',
   },
   channel: {
     title: 'Channel Management',
@@ -1289,6 +1298,7 @@ export default {
   instance: {
     // Page title
     title: 'Instance Management',
+    detailTitle: 'Instance Detail',
 
     // Basic fields
     instanceId: 'Instance ID',
