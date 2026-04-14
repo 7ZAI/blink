@@ -1,6 +1,7 @@
 package com.blink.gateway.admin.service.impl;
 
 import com.blink.framework.redis.component.RedisClient;
+import com.blink.gateway.admin.config.MonitorProperties;
 import com.blink.gateway.admin.dto.InstanceStatusSnapshot;
 import com.blink.gateway.admin.sse.InstanceStatusPayload;
 import com.blink.gateway.admin.sse.SseConnectionPool;
@@ -17,7 +18,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.*;
 
@@ -44,6 +44,9 @@ class InstanceStatusPushServiceImplTest {
     @Mock
     private SseConnectionPool sseConnectionPool;
 
+    @Mock
+    private MonitorProperties monitorProperties;
+
     @InjectMocks
     private InstanceStatusPushServiceImpl service;
 
@@ -53,8 +56,9 @@ class InstanceStatusPushServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(service, "cpuChangeThreshold", 10);
-        ReflectionTestUtils.setField(service, "heapChangeThreshold", 10);
+        // 配置 MonitorProperties
+        when(monitorProperties.getCpuChangeThreshold()).thenReturn(10);
+        when(monitorProperties.getHeapChangeThreshold()).thenReturn(10);
     }
 
     @Nested

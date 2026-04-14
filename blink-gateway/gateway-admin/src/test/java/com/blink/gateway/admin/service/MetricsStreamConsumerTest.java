@@ -3,6 +3,8 @@ package com.blink.gateway.admin.service;
 import com.blink.gateway.admin.sse.InstanceStatusPayload;
 import com.blink.gateway.admin.sse.SseConnectionPool;
 import com.blink.gateway.admin.sse.SseMessage;
+import com.blink.gateway.admin.entity.GatewayInstanceDO;
+import com.blink.gateway.admin.mapper.GatewayInstanceMapper;
 import com.blink.framework.redis.component.RedisClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +57,15 @@ class MetricsStreamConsumerTest {
     @Mock
     private InstanceStatusPushService instanceStatusPushService;
 
+    @Mock
+    private GatewayInstanceMapper gatewayInstanceMapper;
+
+    @Mock
+    private DashboardPushService dashboardPushService;
+
+    @Mock
+    private TrafficIncrementService trafficIncrementService;
+
     private MetricsStreamConsumer metricsStreamConsumer;
 
     @BeforeEach
@@ -62,11 +73,16 @@ class MetricsStreamConsumerTest {
         metricsStreamConsumer = new MetricsStreamConsumer(
                 redisClient,
                 sseConnectionPool,
-                instanceStatusPushService
+                instanceStatusPushService,
+                gatewayInstanceMapper,
+                dashboardPushService,
+                trafficIncrementService
         );
 
         // 默认 mock：hGetStringMap 返回空 Map，避免 updateSummary 和 triggerStatusCheck 的 NPE
         when(redisClient.hGetStringMap(anyString())).thenReturn(Collections.emptyMap());
+        // 默认 mock：数据库中不存在实例
+        when(gatewayInstanceMapper.selectById(anyString())).thenReturn(null);
     }
 
     @Nested
@@ -77,9 +93,12 @@ class MetricsStreamConsumerTest {
         @Test
         @DisplayName("应该正确处理 METRICS 消息并存储指标")
         void shouldProcessMetricsMessageAndStoreMetrics() {
-            // Given: METRICS 类型消息
+            // Given: METRICS 类型消息，数据库中已存在实例
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
+
+            GatewayInstanceDO existingInstance = createOnlineInstance();
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(existingInstance);
 
             // When: 处理消息
             metricsStreamConsumer.processMessage(message);
@@ -95,11 +114,44 @@ class MetricsStreamConsumerTest {
         }
 
         @Test
+        @DisplayName("数据库不存在实例时应自动注册")
+        void shouldAutoRegisterWhenInstanceNotInDatabase() {
+            // Given: 数据库中不存在实例
+            Map<String, String> message = createMetricsMessage();
+            message.put("type", "METRICS");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(null);
+
+            // When
+            metricsStreamConsumer.processMessage(message);
+
+            // Then: 验证自动插入数据库
+            verify(gatewayInstanceMapper).insert(any(GatewayInstanceDO.class));
+        }
+
+        @Test
+        @DisplayName("手动下线的实例应忽略指标上报")
+        void shouldIgnoreMetricsForShutdownInstance() {
+            // Given: 实例被手动下线
+            Map<String, String> message = createMetricsMessage();
+            message.put("type", "METRICS");
+
+            GatewayInstanceDO shutdownInstance = createShutdownInstance();
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(shutdownInstance);
+
+            // When
+            metricsStreamConsumer.processMessage(message);
+
+            // Then: 不应存储指标
+            verify(redisClient, never()).hSet(eq(METRICS_KEY), any(Map.class));
+        }
+
+        @Test
         @DisplayName("应该更新实例列表")
         void shouldUpdateInstanceList() {
             // Given
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -119,6 +171,7 @@ class MetricsStreamConsumerTest {
             Map<String, Object> instanceList = new HashMap<>();
             instanceList.put(INSTANCE_ID, String.valueOf(System.currentTimeMillis()));
             when(redisClient.hGetStringMap(INSTANCE_LIST_KEY)).thenReturn(instanceList);
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
 
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
@@ -143,6 +196,7 @@ class MetricsStreamConsumerTest {
             metricsData.put("healthStatus", "UP");
             metricsData.put("cpuUsage", 15.5);
             when(redisClient.hGetStringMap(METRICS_KEY)).thenReturn(metricsData);
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
 
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
@@ -162,7 +216,7 @@ class MetricsStreamConsumerTest {
         @Test
         @DisplayName("应该正确处理 REGISTER 消息")
         void shouldProcessRegisterMessage() {
-            // Given: REGISTER 类型消息
+            // Given: REGISTER 类型消息，数据库不存在实例
             Map<String, String> message = new HashMap<>();
             message.put("instanceId", INSTANCE_ID);
             message.put("serviceId", "gateway-reactive");
@@ -171,6 +225,7 @@ class MetricsStreamConsumerTest {
             message.put("timestamp", String.valueOf(System.currentTimeMillis()));
             message.put("type", "REGISTER");
             message.put("healthStatus", "UP");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(null);
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -186,11 +241,14 @@ class MetricsStreamConsumerTest {
         @Test
         @DisplayName("REGISTER 消息应广播新实例上线通知")
         void registerMessageShouldBroadcastNotification() {
-            // Given
+            // Given: 数据库中已存在实例，避免自动注册时广播
             Map<String, String> message = new HashMap<>();
             message.put("instanceId", INSTANCE_ID);
             message.put("serviceId", "gateway-reactive");
+            message.put("host", "192.168.1.100");
+            message.put("port", "8080");
             message.put("type", "REGISTER");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -217,6 +275,7 @@ class MetricsStreamConsumerTest {
             message.put("serviceId", "gateway-reactive");
             message.put("type", "UNREGISTER");
             message.put("healthStatus", "DOWN");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -236,6 +295,7 @@ class MetricsStreamConsumerTest {
             message.put("instanceId", INSTANCE_ID);
             message.put("serviceId", "gateway-reactive");
             message.put("type", "UNREGISTER");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -255,12 +315,47 @@ class MetricsStreamConsumerTest {
             Map<String, String> message = new HashMap<>();
             message.put("instanceId", INSTANCE_ID);
             message.put("type", "UNREGISTER");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
 
             // Then: 验证删除指标缓存
             verify(redisClient).delete(METRICS_KEY);
+        }
+
+        @Test
+        @DisplayName("UNREGISTER 消息应更新数据库状态为离线")
+        void unregisterMessageShouldUpdateDatabaseStatus() {
+            // Given
+            Map<String, String> message = new HashMap<>();
+            message.put("instanceId", INSTANCE_ID);
+            message.put("type", "UNREGISTER");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
+
+            // When
+            metricsStreamConsumer.processMessage(message);
+
+            // Then: 验证数据库状态更新
+            ArgumentCaptor<GatewayInstanceDO> captor = ArgumentCaptor.forClass(GatewayInstanceDO.class);
+            verify(gatewayInstanceMapper).updateById(captor.capture());
+            assertEquals((byte) 1, captor.getValue().getStatus()); // INSTANCE_STATUS_OFFLINE = 1
+        }
+
+        @Test
+        @DisplayName("手动下线的实例 UNREGISTER 不应更新状态")
+        void shouldNotUpdateStatusForShutdownInstance() {
+            // Given: 实例已被手动下线
+            Map<String, String> message = new HashMap<>();
+            message.put("instanceId", INSTANCE_ID);
+            message.put("type", "UNREGISTER");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createShutdownInstance());
+
+            // When
+            metricsStreamConsumer.processMessage(message);
+
+            // Then: 不应更新数据库状态
+            verify(gatewayInstanceMapper, never()).updateById(any(GatewayInstanceDO.class));
         }
     }
 
@@ -291,6 +386,7 @@ class MetricsStreamConsumerTest {
             // Given: 缺少 type 的消息
             Map<String, String> message = createMetricsMessage();
             message.remove("type");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
 
             // When
             metricsStreamConsumer.processMessage(message);
@@ -306,6 +402,7 @@ class MetricsStreamConsumerTest {
             // Given
             Map<String, String> message = createMetricsMessage();
             message.put("type", "METRICS");
+            when(gatewayInstanceMapper.selectById(INSTANCE_ID)).thenReturn(createOnlineInstance());
 
             doThrow(new RuntimeException("Redis connection failed"))
                     .when(redisClient).hSet(anyString(), any(Map.class));
@@ -331,5 +428,27 @@ class MetricsStreamConsumerTest {
         message.put("cpuUsage", "15.5");
         message.put("healthStatus", "UP");
         return message;
+    }
+
+    /**
+     * 创建在线实例
+     */
+    private GatewayInstanceDO createOnlineInstance() {
+        GatewayInstanceDO instance = new GatewayInstanceDO();
+        instance.setInstanceId(INSTANCE_ID);
+        instance.setServiceId("gateway-reactive");
+        instance.setHost("192.168.1.100");
+        instance.setPort(8080);
+        instance.setStatus((byte) 0); // INSTANCE_STATUS_ONLINE
+        return instance;
+    }
+
+    /**
+     * 创建手动下线的实例
+     */
+    private GatewayInstanceDO createShutdownInstance() {
+        GatewayInstanceDO instance = createOnlineInstance();
+        instance.setStatus((byte) 2); // INSTANCE_STATUS_SHUTDOWN
+        return instance;
     }
 }

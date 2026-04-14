@@ -54,6 +54,7 @@ class SseConnectionPoolTest {
 
     private static final Integer TEST_USER_ID = 1001;
     private static final String TEST_INSTANCE_ID = "test-instance-001";
+    private static final String TEST_CONNECTION_KEY = TEST_USER_ID + ":test-token-abc123";
 
     @BeforeEach
     void setUp() {
@@ -73,7 +74,7 @@ class SseConnectionPoolTest {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
                 // When: 创建连接（用户第一个连接）
-                SseEmitter emitter = sseConnectionPool.createConnection();
+                SseEmitter emitter = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // Then: 连接应成功创建
                 assertNotNull(emitter);
@@ -90,11 +91,11 @@ class SseConnectionPoolTest {
 
                 // 创建达到上限的连接数
                 for (int i = 0; i < SseConfig.MAX_CONNECTIONS_PER_USER; i++) {
-                    sseConnectionPool.createConnection();
+                    sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
                 }
 
                 // When: 尝试创建超限连接
-                SseEmitter emitter = sseConnectionPool.createConnection();
+                SseEmitter emitter = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // Then: 应返回 null 表示拒绝连接
                 assertNull(emitter);
@@ -114,12 +115,12 @@ class SseConnectionPoolTest {
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 for (int i = 1; i <= 10; i++) {
                     stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(i);
-                    sseConnectionPool.createConnection();
+                    sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
                 }
 
                 // When: 创建新用户连接
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(11);
-                SseEmitter emitter = sseConnectionPool.createConnection();
+                SseEmitter emitter = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // Then: 连接应成功创建
                 assertNotNull(emitter);
@@ -141,7 +142,7 @@ class SseConnectionPoolTest {
                 int testLimit = Math.min(50, SseConfig.MAX_TOTAL_CONNECTIONS);
                 while (connectionsCreated < testLimit) {
                     stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(userId);
-                    SseEmitter emitter = sseConnectionPool.createConnection();
+                    SseEmitter emitter = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
                     if (emitter != null) {
                         connectionsCreated++;
                         userConnectionCount++;
@@ -171,7 +172,7 @@ class SseConnectionPoolTest {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
                 // When
-                SseEmitter emitter = sseConnectionPool.createConnection();
+                SseEmitter emitter = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // Then: 验证超时时间（通过反射或 mock 验证）
                 // SseEmitter 的超时时间在构造时设置，我们通过创建成功来验证
@@ -187,7 +188,7 @@ class SseConnectionPoolTest {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
                 // When
-                sseConnectionPool.createConnection();
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // Then: 验证 Redis 注册使用了正确的 TTL
                 verify(redisClient).expire(anyString(), eq(SseConfig.REGISTRY_TTL));
@@ -207,9 +208,9 @@ class SseConnectionPoolTest {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
                 // When: 创建多个连接
-                sseConnectionPool.createConnection();
-                sseConnectionPool.createConnection();
-                sseConnectionPool.createConnection();
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // Then
                 assertEquals(3, sseConnectionPool.getUserConnectionCount(TEST_USER_ID));
@@ -236,7 +237,7 @@ class SseConnectionPoolTest {
                 boolean beforeCreate = sseConnectionPool.hasConnection(TEST_USER_ID);
 
                 // 创建连接后
-                sseConnectionPool.createConnection();
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
                 boolean afterCreate = sseConnectionPool.hasConnection(TEST_USER_ID);
 
                 // Then
@@ -257,7 +258,7 @@ class SseConnectionPoolTest {
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
-                SseEmitter emitter = sseConnectionPool.createConnection();
+                SseEmitter emitter = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
                 assertEquals(1, sseConnectionPool.getUserConnectionCount(TEST_USER_ID));
 
                 // When: 触发 completion 回调
@@ -279,7 +280,7 @@ class SseConnectionPoolTest {
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
-                SseEmitter emitter = sseConnectionPool.createConnection();
+                SseEmitter emitter = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // When: 触发 completion 回调
                 Runnable completionCallback = (Runnable) ReflectionTestUtils.getField(emitter, "completionCallback");
@@ -299,8 +300,8 @@ class SseConnectionPoolTest {
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
 
-                SseEmitter emitter1 = sseConnectionPool.createConnection();
-                sseConnectionPool.createConnection();
+                SseEmitter emitter1 = sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // 重置 mock 以清除之前的调用
                 reset(redisClient);
@@ -328,14 +329,14 @@ class SseConnectionPoolTest {
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 // 用户1创建2个连接
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(1);
-                sseConnectionPool.createConnection();
-                sseConnectionPool.createConnection();
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // 用户2创建3个连接
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(2);
-                sseConnectionPool.createConnection();
-                sseConnectionPool.createConnection();
-                sseConnectionPool.createConnection();
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // When
                 int totalCount = sseConnectionPool.getTotalConnectionCount();
@@ -376,7 +377,7 @@ class SseConnectionPoolTest {
             // Given
             try (MockedStatic<StpUtil> stpUtilMock = mockStatic(StpUtil.class)) {
                 stpUtilMock.when(StpUtil::getLoginIdAsInt).thenReturn(TEST_USER_ID);
-                sseConnectionPool.createConnection();
+                sseConnectionPool.createConnection(TEST_CONNECTION_KEY, TEST_USER_ID);
 
                 // 重置 mock 以清除创建连接时的调用
                 reset(redisClient);

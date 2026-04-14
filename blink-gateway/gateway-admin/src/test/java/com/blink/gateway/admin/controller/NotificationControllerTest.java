@@ -56,12 +56,12 @@ class NotificationControllerTest {
         @DisplayName("SSE连接 - 正常场景")
         void testConnect_Success() {
             SseEmitter emitter = new SseEmitter();
-            when(sseConnectionPool.createConnection()).thenReturn(emitter);
+            when(sseConnectionPool.createConnection(any(String.class), any(Integer.class))).thenReturn(emitter);
 
             SseEmitter result = notificationController.connect();
 
             assertNotNull(result);
-            verify(sseConnectionPool, times(1)).createConnection();
+            verify(sseConnectionPool, times(1)).createConnection(any(String.class), any(Integer.class));
         }
     }
 

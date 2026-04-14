@@ -71,7 +71,7 @@ class MetricsReporterImplTest {
         // 使用反射设置私有字段
         ReflectionTestUtils.setField(metricsReporter, "serviceId", "test-gateway");
         ReflectionTestUtils.setField(metricsReporter, "port", 8080);
-        ReflectionTestUtils.setField(metricsReporter, "reportEnabled", true);
+        ReflectionTestUtils.setField(metricsReporter, "configPushEnabled", true);
     }
 
     @Nested
@@ -407,7 +407,7 @@ class MetricsReporterImplTest {
         @DisplayName("禁用上报时应跳过")
         void shouldSkipWhenReportDisabled() {
             // Given: 禁用上报
-            ReflectionTestUtils.setField(metricsReporter, "reportEnabled", false);
+            ReflectionTestUtils.setField(metricsReporter, "configPushEnabled", false);
 
             // When: 调用 reportMetrics
             metricsReporter.reportMetrics();
