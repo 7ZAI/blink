@@ -19,6 +19,8 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.CacheComponent;
 import com.blink.framework.redis.component.RedisClient;
+import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
+import com.blink.gateway.dto.MonitorConfigMsg;
 import com.blink.gateway.dto.req.QueryChannelConfigReq;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +63,14 @@ public class SysConfigServiceImpl implements SysConfigService {
 
     @Resource
     private ConfigCacheAsyncService configCacheAsyncService;
+
+    @Resource
+    private GateWayStreamMessageProducer streamMessageProducer;
+
+    /**
+     * 监控相关配置 Key 前缀
+     */
+    private static final String MONITOR_CONFIG_PREFIX = "monitor.";
 
     /**
      * 保存 参数配置表
@@ -147,6 +157,11 @@ public class SysConfigServiceImpl implements SysConfigService {
             cacheComponent.clearLocalCache(RedisKeyConstants.SYSTEM_CONFIG);
         }
 
+        // 监控配置变更，推送到所有 gateway-reactive 实例
+        if (isMonitorConfigChange(rawConfigKey)) {
+            pushMonitorConfigChange(sysConfigDO);
+        }
+
         // 异步延迟双删，避免阻塞主线程（通过独立 Service 调用，确保 @Async 生效）
         configCacheAsyncService.asyncDelayedDelete(cacheKey);
     }
@@ -179,6 +194,33 @@ public class SysConfigServiceImpl implements SysConfigService {
             || CommonConstants.SysConfigKeys.SYSTEM_LOGO.equals(cacheKey)
             || CommonConstants.SysConfigKeys.SYSTEM_FOOTER.equals(cacheKey)
             || CommonConstants.SysConfigKeys.USER_DEFAULT_AVATAR.equals(cacheKey);
+    }
+
+    /**
+     * 是否为监控相关配置项
+     *
+     * @param configKey 配置 Key
+     * @return boolean
+     */
+    private boolean isMonitorConfigChange(String configKey) {
+        return configKey != null && configKey.startsWith(MONITOR_CONFIG_PREFIX);
+    }
+
+    /**
+     * 推送监控配置变更到所有 gateway-reactive 实例
+     *
+     * @param configDO 配置实体
+     */
+    private void pushMonitorConfigChange(SysConfigDO configDO) {
+        MonitorConfigMsg configMsg = new MonitorConfigMsg();
+        configMsg.setConfigKey(configDO.getConfigKey());
+        configMsg.setConfigValue(configDO.getConfigValue());
+        configMsg.setConfigType(configDO.getConfigType());
+        configMsg.setOperator("U"); // Update
+
+        streamMessageProducer.monitorConfigOnChange(configMsg);
+        log.info("[SysConfig] 监控配置变更已推送 | configKey: {}, configValue: {}",
+                configDO.getConfigKey(), configDO.getConfigValue());
     }
 
 

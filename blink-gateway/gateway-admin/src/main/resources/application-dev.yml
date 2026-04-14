@@ -87,7 +87,7 @@ dubbo:
     check: false
     timeout: 10000
 
-# Actuator 监控配置
+# 网关监控配置
 blink:
   redis:
     distributed-lock:
@@ -96,12 +96,23 @@ blink:
       watchdog-enabled: true
   gateway:
     monitor:
-      # HTTP 采集已废弃，改用 Redis Stream 推模式
-      # gateway-reactive 通过 MetricsReporter 主动上报指标
-      # gateway-admin 通过 MetricsStreamConsumer 消费并存储
-      history-retention-days: 7        # 历史数据保留天数
-      # Stream 消费配置
-      stream:
-        enabled: true                  # 是否启用 Stream 消费
-        stream-key: "blink:gateway:metrics:stream"  # Redis Stream Key
-        consumer-group: "gateway-admin"  # 消费者组名称
+      # 监控消息推送/消费总开关（配置文件默认值）
+      # 实际开关由 Nacos 配置中心动态控制
+      enabled: true
+      # 历史数据保留天数
+      history-retention-days: 7
+      # CPU 使用率变化阈值（百分比）
+      cpu-change-threshold: 10
+      # 堆内存使用率变化阈值（百分比）
+      heap-change-threshold: 10
+      # Nacos 动态配置
+      config:
+        data-id: gateway-monitor-config.json
+        group: DEFAULT_GROUP
+      # Stream 消费配置（仅 gateway-admin 使用）
+      stream-consume:
+        stream-key: "blink:gateway:metrics:stream"
+        consumer-group: "gateway-admin"
+        consumer-name-prefix: "consumer-"
+        batch-size: 10
+        poll-interval-ms: 1000
