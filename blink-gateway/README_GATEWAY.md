@@ -782,7 +782,7 @@ blink:
   gateway:
     metrics:
       enabled: true                    # 启用指标上报
-      report-interval-ms: 30000        # 上报间隔（毫秒）
+      report-interval-ms: 5000         # 上报间隔（毫秒）- 5秒实现准实时监控
       stream-key: "blink:gateway:metrics:stream"  # Redis Stream Key
 ```
 

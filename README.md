@@ -11,7 +11,7 @@
 | 基础框架 | JDK、Spring Boot、Spring Cloud Alibaba | 17+、3.2.7、2023.0.3.2 |
 | 数据存储 | MySQL、Redis | 8.0+、7.0+ |
 | 消息队列 | RabbitMQ | 3.12+ |
-| 微服务 | Nacos（注册中心/配置中心）、Dubbo（RPC框架） | 2.3+、3.3.0（Triple协议） |
+| 微服务 | Nacos（注册中心/配置中心）、Dubbo（RPC框架） | 2.3+、3.3.0（Dubbo协议） |
 | ORM框架 | MyBatis-Plus | 3.5.16 |
 | 工具库 | Hutool | 5.8.29 |
 | 前端技术 | Vue 3、TypeScript、Vite、Element Plus | 3.5+、5.9+、7.0+、2.13+ |
@@ -26,7 +26,7 @@
 - **Starter封装**：类似Spring Boot Starter，内置自动化配置能力
 - **响应式网关**：基于Spring Cloud Gateway的非阻塞响应式网关
 - **网关运维平台**：独立的网关管理后台，支持渠道/路由/配置的动态管理
-- **Dubbo RPC**：支持Triple协议的Dubbo服务调用，实现同步Provider与响应式Consumer的无缝对接
+- **Dubbo RPC**：基于Dubbo协议的服务调用，支持CompletableFuture原生异步接口，实现同步Provider与响应式Consumer的无缝对接
 - **多渠道接入**：网关支持多渠道对接，包含签名验证、报文加解密等功能
 - **操作日志**：通过注解自动记录操作日志，支持敏感数据脱敏
 - **代码生成**：内置代码生成器，快速生成CRUD代码
@@ -73,32 +73,57 @@
 
 ## Dubbo服务架构
 
-本项目采用Dubbo 3.3作为RPC框架，支持Triple协议。
+本项目采用Dubbo 3.3作为RPC框架，使用Dubbo协议进行服务通信。
+
+### 异步调用机制
+
+Dubbo 3.x 对 `CompletableFuture` 返回类型的接口有专门的处理，实现真正的非阻塞异步调用：
+- Consumer 调用异步方法后，通过 Netty NIO 发送请求，当前线程不阻塞
+- 响应到达时，Netty EventLoop 线程触发回调，自动完成 CompletableFuture
 
 ### 服务提供者（Provider）
 
-`blink-base-app` 作为服务提供者，实现 `BaseDubboService` 接口：
+`blink-base-app` 作为服务提供者，实现 `BaseDubboService` 接口，提供同步方法和异步方法：
 
 ```java
-@DubboService(async = true, timeout = 10000)
+@DubboService(interfaceClass = BaseDubboService.class)
 public class BaseDubboServiceImpl implements BaseDubboService {
-    // 实现方法...
+    
+    // 同步方法
+    @Override
+    public ResponseDTO<T> getOneConfig(RequestDTO<T> reqDto) {
+        // 业务逻辑...
+    }
+    
+    // 异步方法 - 返回 CompletableFuture
+    @Override
+    public CompletableFuture<ResponseDTO<T>> getOneConfigAsync(RequestDTO<T> reqDto) {
+        return CompletableFuture.supplyAsync(() -> getOneConfig(reqDto), ioThreadPool);
+    }
 }
 ```
 
 ### 服务消费者（Consumer）
 
-`blink-gateway-reactive` 作为响应式消费者，通过异步调用实现响应式返回：
+`blink-gateway-reactive` 作为响应式消费者，通过 Dubbo 原生异步接口实现响应式返回：
 
 ```java
+// 接口定义 - 直接返回 CompletableFuture
+public interface BaseDubboService {
+    CompletableFuture<ResponseDTO<T>> getOneConfigAsync(RequestDTO<T> reqDto);
+}
+
+// Consumer 调用 - Dubbo 内部非阻塞网络通信
 public class BaseAppDubboService {
     private final BaseDubboService baseDubboService;
     
-    public Mono<SomeResult> someMethod() {
-        CompletableFuture<SomeResult> future = CompletableFuture.supplyAsync(
-            () -> baseDubboService.someMethod()
-        );
-        return Mono.fromFuture(future);
+    public Mono<SomeResult> someMethod(RequestDTO<T> reqDto) {
+        // 调用异步方法，Dubbo 通过 Netty NIO 发送请求，不阻塞当前线程
+        CompletableFuture<ResponseDTO<T>> future = baseDubboService.getOneConfigAsync(reqDto);
+        
+        return Mono.fromFuture(future)
+                .subscribeOn(Schedulers.boundedElastic())  // 指定调度器，避免阻塞 Netty EventLoop
+                .mapNotNull(response -> response.getBody());
     }
 }
 ```
@@ -112,8 +137,11 @@ dubbo:
   registry:
     address: nacos://localhost:8848
   protocol:
-    name: tri
-    port: 20880
+    name: dubbo      # 使用 Dubbo 协议
+    port: -1         # 自动分配端口
+  consumer:
+    check: false     # 启动时不检查 Provider
+    timeout: 10000   # 调用超时时间
 ```
 
 ## 快速构建
