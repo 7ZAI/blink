@@ -10,10 +10,13 @@ import com.blink.gateway.component.MultiLevelCacheComponent;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.dto.CacheMsg;
+import com.blink.gateway.dto.MonitorConfigMsg;
 import com.blink.gateway.dto.req.MessageAckReq;
 import com.blink.gateway.dto.RouteSyncMsg;
 import com.blink.gateway.dubbo.service.GatewayAdminDubboService;
 import com.blink.gateway.event.EnableStreamEvent;
+import com.blink.gateway.monitor.MonitorConfigHolder;
+import com.blink.gateway.monitor.MetricsReportScheduler;
 import com.blink.gateway.util.GateWayUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -69,11 +72,20 @@ public class CommonEventStreamListener implements CommandLineRunner {
     @Resource
     private GatewayAdminDubboService gatewayAdminDubboService;
 
+    @Resource
+    private MonitorConfigHolder monitorConfigHolder;
+
+    @Resource
+    private MetricsReportScheduler metricsReportScheduler;
+
     @Value("${blink.gateway.instance-id:01}")
     private String instanceId;
 
     @Value("${spring.application.name}")
     private String appName;
+
+    @Value("${server.port}")
+    private String serverPort;
 
     private Disposable disposable;
 
@@ -248,15 +260,32 @@ public class CommonEventStreamListener implements CommandLineRunner {
                 String pushMode = routeEvent.getPushMode();
                 if ("specified".equals(pushMode)) {
                     // 指定实例模式：检查当前实例是否在目标列表中
-                    String currentInstanceId = appName + ":" + instanceId;
                     List<String> targetInstanceIds = routeEvent.getTargetInstanceIds();
-                    if (targetInstanceIds == null || !targetInstanceIds.contains(currentInstanceId)) {
-                        log.info("[RouteSync] 跳过同步，当前实例不在目标列表中 | instanceId: {}, targetIds: {}",
-                                currentInstanceId, targetInstanceIds);
+                    if (targetInstanceIds == null || targetInstanceIds.isEmpty()) {
+                        log.warn("[RouteSync] 指定实例推送模式，但目标实例列表为空");
                         smr.setHandledResult(true);
                         return Mono.just(smr);
                     }
-                    log.info("[RouteSync] 指定实例推送，当前实例在目标列表中 | instanceId: {}", currentInstanceId);
+
+                    // 构造当前实例的多种标识格式进行匹配
+                    // 格式1: appName:instanceId (例如 gateway-app:00)
+                    // 格式2: host:port (例如 192.168.1.100:8002)
+                    String currentAppInstanceId = appName + ":" + instanceId;
+                    // 获取本机 IP 地址
+                    String localHost = GateWayUtil.getLocalIp();
+                    String currentHostPort = localHost + ":" + serverPort;
+
+                    boolean matched = targetInstanceIds.contains(currentAppInstanceId)
+                            || targetInstanceIds.contains(currentHostPort);
+
+                    if (!matched) {
+                        log.info("[RouteSync] 跳过同步，当前实例不在目标列表中 | appInstanceId: {}, hostPort: {}, targetIds: {}",
+                                currentAppInstanceId, currentHostPort, targetInstanceIds);
+                        smr.setHandledResult(true);
+                        return Mono.just(smr);
+                    }
+                    log.info("[RouteSync] 指定实例推送，当前实例在目标列表中 | appInstanceId: {}, hostPort: {}",
+                            currentAppInstanceId, currentHostPort);
                 }
 
                 // 发布事件更新路由
@@ -267,6 +296,20 @@ public class CommonEventStreamListener implements CommandLineRunner {
                 return Mono.just(smr);
             } catch (Exception e) {
                 log.error("[RouteSync] 路由发布刷新事件失败 | error: {}", e.getMessage(), e);
+                smr.setHandledResult(false);
+                return Mono.just(smr);
+            }
+        }
+        // 监控配置同步
+        if (message.getPayload() instanceof MonitorConfigMsg configMsg) {
+            try {
+                monitorConfigHandler(configMsg);
+                smr.setHandledResult(true);
+                log.info("[MonitorConfigSync] 监控配置同步成功 | configKey: {}, configValue: {}",
+                        configMsg.getConfigKey(), configMsg.getConfigValue());
+                return Mono.just(smr);
+            } catch (Exception e) {
+                log.error("[MonitorConfigSync] 监控配置同步失败 | error: {}", e.getMessage(), e);
                 smr.setHandledResult(false);
                 return Mono.just(smr);
             }
@@ -427,6 +470,66 @@ public class CommonEventStreamListener implements CommandLineRunner {
                                 return Mono.just(false);
                             });
                 });
+    }
+
+    /**
+     * 监控配置同步处理
+     * 处理 gateway-admin 推送的监控配置变更
+     *
+     * @param configMsg 监控配置消息
+     */
+    private void monitorConfigHandler(MonitorConfigMsg configMsg) {
+        String configKey = configMsg.getConfigKey();
+        String configValue = configMsg.getConfigValue();
+
+        log.info("[MonitorConfigSync] 收到配置同步 | key: {}, value: {}", configKey, configValue);
+
+        // 监控开关配置
+        if ("monitor.enabled".equals(configKey)) {
+            boolean enabled = Boolean.parseBoolean(configValue);
+            boolean oldEnabled = monitorConfigHolder.isEnabled();
+            monitorConfigHolder.setEnabled(enabled);
+
+            // 如果开关状态变化，需要重启调度
+            if (oldEnabled != enabled) {
+                if (enabled) {
+                    metricsReportScheduler.restart();
+                    log.info("[MonitorConfigSync] 监控已启用，重启调度");
+                } else {
+                    metricsReportScheduler.stop();
+                    log.info("[MonitorConfigSync] 监控已禁用，停止调度");
+                }
+            }
+            return;
+        }
+
+        // 推送间隔配置
+        if ("monitor.interval-ms".equals(configKey)) {
+            try {
+                long intervalMs = Long.parseLong(configValue);
+                monitorConfigHolder.setIntervalMs(intervalMs);
+                // 间隔变化需要重启调度
+                metricsReportScheduler.restart();
+                log.info("[MonitorConfigSync] 推送间隔已更新: {}ms", intervalMs);
+            } catch (NumberFormatException e) {
+                log.warn("[MonitorConfigSync] 无效的间隔配置值: {}", configValue);
+            }
+            return;
+        }
+
+        // 首次延迟配置
+        if ("monitor.initial-delay-ms".equals(configKey)) {
+            try {
+                long initialDelayMs = Long.parseLong(configValue);
+                monitorConfigHolder.setInitialDelayMs(initialDelayMs);
+                log.info("[MonitorConfigSync] 首次延迟已更新: {}ms", initialDelayMs);
+            } catch (NumberFormatException e) {
+                log.warn("[MonitorConfigSync] 无效的延迟配置值: {}", configValue);
+            }
+            return;
+        }
+
+        log.warn("[MonitorConfigSync] 未知的配置项: {}", configKey);
     }
 
     // TODO 定期扫描 PEL 重新投递或者放入死信队列

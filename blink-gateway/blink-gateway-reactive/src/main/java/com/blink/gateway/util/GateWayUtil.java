@@ -17,8 +17,13 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Enumeration;
 import java.util.List;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
@@ -30,6 +35,51 @@ import static com.blink.gateway.constant.GatewayConstant.*;
  */
 @Slf4j
 public class GateWayUtil {
+
+    /**
+     * 获取本机 IP 地址
+     * 优先获取非回环、非链路本地地址的 IPv4 地址
+     *
+     * @return 本机 IP 地址，获取失败时返回 127.0.0.1
+     */
+    public static String getLocalIp() {
+        try {
+            // 遍历所有网络接口
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+            if (networkInterfaces == null) {
+                log.warn("[GateWayUtil] 无法获取网络接口，使用回环地址");
+                return InetAddress.getLocalHost().getHostAddress();
+            }
+
+            while (networkInterfaces.hasMoreElements()) {
+                NetworkInterface networkInterface = networkInterfaces.nextElement();
+                // 跳过回环接口和未启用的接口
+                if (networkInterface.isLoopback() || !networkInterface.isUp()) {
+                    continue;
+                }
+
+                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
+                while (addresses.hasMoreElements()) {
+                    InetAddress address = addresses.nextElement();
+                    // 跳过回环地址、链路本地地址和 IPv6 地址
+                    if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
+                        continue;
+                    }
+                    // 优先返回 IPv4 地址
+                    String hostAddress = address.getHostAddress();
+                    if (hostAddress != null && !hostAddress.contains(":")) {
+                        return hostAddress;
+                    }
+                }
+            }
+
+            // 如果没有找到合适的地址，使用本地主机地址
+            return InetAddress.getLocalHost().getHostAddress();
+        } catch (SocketException | UnknownHostException e) {
+            log.warn("[GateWayUtil] 获取本机 IP 失败: {}", e.getMessage());
+            return "127.0.0.1";
+        }
+    }
 
 
     public static <T> T convertDataBufferToObject(DataBuffer dataBuffer, Class<T> clazz) {

@@ -94,6 +94,13 @@ management:
   metrics:
     tags:
       application: ${spring.application.name}
+    # 启用 WebFlux HTTP 请求指标自动计时
+    web:
+      server:
+        request:
+          autotime:
+            enabled: true
+            percentiles: 0.5, 0.95, 0.99
   endpoint:
     gateway:
       enabled: true
@@ -151,11 +158,19 @@ blink:
   gateway:
     eventStreamEnable: true
     instance-id: 00
-    # 指标上报配置
-    metrics:
-      enabled: true                    # 是否启用指标上报
-      report-interval-ms: 30000        # 上报间隔（毫秒）
-      stream-key: "blink:gateway:metrics:stream"  # Redis Stream Key
+    # 网关监控配置
+    monitor:
+      # 监控消息推送/消费总开关（配置文件默认值）
+      # 实际开关由 Nacos 配置中心动态控制
+      enabled: true
+      # Nacos 动态配置
+      config:
+        data-id: gateway-monitor-config.json
+        group: DEFAULT_GROUP
+      # 指标推送配置（仅 gateway-reactive 使用）
+      metrics-push:
+        interval-ms: 5000         # 上报间隔（毫秒）- 5秒实现准实时监控
+        initial-delay-ms: 5000    # 首次上报延迟（毫秒）
 
 # Dubbo 配置
 dubbo:

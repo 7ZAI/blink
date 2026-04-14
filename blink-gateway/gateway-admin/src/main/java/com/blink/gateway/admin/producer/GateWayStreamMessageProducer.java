@@ -11,6 +11,7 @@ import com.blink.framework.redis.mq.StreamMessage;
 import com.blink.gateway.admin.entity.RedisMqDO;
 import com.blink.gateway.admin.mapper.RedisMqMapper;
 import com.blink.gateway.dto.CacheMsg;
+import com.blink.gateway.dto.MonitorConfigMsg;
 import com.blink.gateway.dto.RouteSyncMsg;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -111,6 +112,24 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
     }
 
     /**
+     * 监控配置同步
+     * 向所有 gateway-reactive 实例推送监控配置变更
+     *
+     * @param configMsg 监控配置消息
+     */
+    public void monitorConfigOnChange(MonitorConfigMsg configMsg) {
+        // 设置操作人信息
+        setOperatorInfoForMonitor(configMsg);
+        // 发送消息通知同步
+        StreamMessage<MonitorConfigMsg> msg = StreamMessage.of(GATEWAY_STREAM_EVENT, MessageType.EVENT, configMsg);
+        msg.setSender(appName);
+        msg.setPayloadClass(MonitorConfigMsg.class.getName());
+        sendAndRecord(msg, configMsg);
+        log.info("[StreamProducer] 监控配置同步消息已发送 | configKey: {}, configValue: {}",
+                configMsg.getConfigKey(), configMsg.getConfigValue());
+    }
+
+    /**
      * 设置操作人信息到 CacheMsg
      * 从 Sa-Token 获取当前登录用户信息
      *
@@ -124,6 +143,30 @@ public class GateWayStreamMessageProducer extends RedisStreamProducer {
                 String userName = StpUtil.getLoginIdAsString();
                 cacheMsg.setOperatorUser(userId);
                 cacheMsg.setOperatorName(userName);
+                log.debug("[StreamProducer] 设置操作人 | userId: {}, userName: {}", userId, userName);
+            } else {
+                log.debug("[StreamProducer] 当前无登录用户，跳过操作人设置");
+            }
+        } catch (Exception e) {
+            // 获取登录信息失败不影响主流程
+            log.warn("[StreamProducer] 获取登录用户信息失败: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 设置操作人信息到 MonitorConfigMsg
+     * 从 Sa-Token 获取当前登录用户信息
+     *
+     * @param configMsg 监控配置消息对象
+     */
+    private void setOperatorInfoForMonitor(MonitorConfigMsg configMsg) {
+        try {
+            // 检查是否已登录
+            if (StpUtil.isLogin()) {
+                Integer userId = StpUtil.getLoginIdAsInt();
+                String userName = StpUtil.getLoginIdAsString();
+                configMsg.setOperatorUser(userId);
+                configMsg.setOperatorName(userName);
                 log.debug("[StreamProducer] 设置操作人 | userId: {}, userName: {}", userId, userName);
             } else {
                 log.debug("[StreamProducer] 当前无登录用户，跳过操作人设置");

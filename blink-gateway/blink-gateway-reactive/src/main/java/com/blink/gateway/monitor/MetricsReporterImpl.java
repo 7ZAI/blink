@@ -33,6 +33,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * 指标上报服务实现
  * 从 Micrometer MeterRegistry 采集本地指标，异步推送到 Redis Stream
  *
+ * 动态配置：
+ * - 通过 MonitorConfigHolder 获取配置（由 gateway-admin 通过 Redis Stream 推送）
+ * - 配置来源：数据库 sys_config 表
+ *
  * @author binblink
  * @since 2026-04-14
  */
@@ -45,6 +49,7 @@ public class MetricsReporterImpl implements MetricsReporter {
     private final MeterRegistry meterRegistry;
     private final ReactiveStringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final MonitorConfigHolder configHolder;
 
     @Value("${spring.application.name:gateway-reactive}")
     private String serviceId;
@@ -52,48 +57,66 @@ public class MetricsReporterImpl implements MetricsReporter {
     @Value("${server.port:8080}")
     private Integer port;
 
-    @Value("${blink.metrics.report.enabled:true}")
-    private boolean reportEnabled;
-
-    @Value("${blink.metrics.report.interval-ms:30000}")
-    private long reportIntervalMs;
+    @Value("${blink.gateway.instance.ip:}")
+    private String configuredIp;
 
     private final AtomicReference<String> instanceId = new AtomicReference<>();
     private final AtomicReference<String> hostAddress = new AtomicReference<>();
 
     public MetricsReporterImpl(MeterRegistry meterRegistry,
                                ReactiveStringRedisTemplate redisTemplate,
-                               BuildProperties buildProperties) {
+                               BuildProperties buildProperties,
+                               MonitorConfigHolder configHolder) {
         this.meterRegistry = meterRegistry;
         this.redisTemplate = redisTemplate;
         this.objectMapper = new ObjectMapper();
+        this.configHolder = configHolder;
+    }
+
+    /**
+     * 检查是否启用指标推送
+     * 使用 MonitorConfigHolder 获取动态配置
+     */
+    private boolean isPushEnabled() {
+        return configHolder.isEnabled();
     }
 
     /**
      * 初始化实例信息
+     * instanceId 格式：host#port##groupName@@serviceId（与 Nacos 实例 ID 格式一致）
      */
     private void initInstanceInfo() {
         if (instanceId.get() == null) {
             try {
-                String host = InetAddress.getLocalHost().getHostAddress();
+                String host;
+                if (StrUtil.isNotBlank(configuredIp)) {
+                    // 使用配置的 IP（需与 Nacos 注册 IP 一致）
+                    host = configuredIp;
+                } else {
+                    // 自动获取主机地址
+                    host = InetAddress.getLocalHost().getHostAddress();
+                }
                 hostAddress.set(host);
-                String id = serviceId + "@" + host + ":" + port;
+
+                // 生成与 Nacos 实例 ID 格式一致的 instanceId
+                // 格式：host#port##groupName@@serviceId
+                String id = host + "#" + port + "##DEFAULT_GROUP@@" + serviceId;
                 instanceId.set(id);
-                log.info("[MetricsReporter] 实例信息初始化完成 | instanceId: {}", id);
+                log.info("[MetricsReporter] 实例信息初始化完成 | instanceId: {}, host: {}, port: {}", id, host, port);
             } catch (Exception e) {
                 log.error("[MetricsReporter] 获取主机地址失败", e);
                 hostAddress.set("unknown");
-                instanceId.set(serviceId + "@unknown:" + port);
+                instanceId.set("unknown#" + port + "##DEFAULT_GROUP@@" + serviceId);
             }
         }
     }
 
+    /**
+     * 定时上报指标（由 MetricsReportScheduler 调用）
+     */
     @Override
-    @Scheduled(fixedDelayString = "${blink.metrics.report.interval-ms:30000}",
-               initialDelayString = "${blink.metrics.report.initial-delay-ms:10000}")
-    @Async("metricsReporterExecutor")
     public void reportMetrics() {
-        if (!reportEnabled) {
+        if (!isPushEnabled()) {
             return;
         }
 
@@ -113,6 +136,11 @@ public class MetricsReporterImpl implements MetricsReporter {
 
     @Override
     public void sendRegisterMessage() {
+        if (!isPushEnabled()) {
+            log.debug("[MetricsReporter] 监控已禁用，跳过注册消息");
+            return;
+        }
+
         initInstanceInfo();
 
         MetricsMessage message = new MetricsMessage();
@@ -133,6 +161,11 @@ public class MetricsReporterImpl implements MetricsReporter {
     @Override
     @PreDestroy
     public void sendUnregisterMessage() {
+        if (!isPushEnabled()) {
+            log.debug("[MetricsReporter] 监控已禁用，跳过注销消息");
+            return;
+        }
+
         initInstanceInfo();
 
         MetricsMessage message = new MetricsMessage();

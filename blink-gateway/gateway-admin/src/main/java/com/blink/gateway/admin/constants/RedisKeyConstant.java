@@ -42,6 +42,11 @@ public interface RedisKeyConstant {
     String GATEWAY_METRICS_PREFIX = "blink:gateway:metrics:";
 
     /**
+     * 网关实例列表 Redis Key
+     */
+    String GATEWAY_INSTANCE_LIST_KEY = "blink:gateway:instance:list";
+
+    /**
      * 网关指标汇总 Redis Key
      */
     String GATEWAY_METRICS_SUMMARY = "blink:gateway:metrics:summary";
@@ -81,4 +86,33 @@ public interface RedisKeyConstant {
      * Stream 死信队列 Key
      */
     String STREAM_DEAD_LETTER_QUEUE = BLINK_PREFIX + ":stream:dead-letter";
+
+    // ==================== 流量趋势监控 ====================
+
+    /**
+     * 流量实时数据 Redis Key（Sorted Set）
+     * 存储秒级增量数据，score 为时间戳
+     */
+    String TRAFFIC_REALTIME_KEY = "blink:gateway:traffic:realtime";
+
+    /**
+     * 流量上次累计值 Redis Key 前缀（Hash）
+     * 存储各实例上次上报的累计请求数，用于计算增量
+     * Key 格式：blink:gateway:traffic:last:{instanceId}
+     */
+    String TRAFFIC_LAST_VALUE_PREFIX = "blink:gateway:traffic:last:";
+
+    /**
+     * 流量分钟聚合数据 Redis Key 前缀（Sorted Set）
+     * 存储分钟级聚合数据，按日期分组
+     * Key 格式：blink:gateway:traffic:minute:{yyyyMMdd}
+     */
+    String TRAFFIC_MINUTE_KEY_PREFIX = "blink:gateway:traffic:minute:";
+
+    /**
+     * 流量小时聚合数据 Redis Key 前缀（Sorted Set）
+     * 存储小时级聚合数据，按日期分组
+     * Key 格式：blink:gateway:traffic:hour:{yyyyMMdd}
+     */
+    String TRAFFIC_HOUR_KEY_PREFIX = "blink:gateway:traffic:hour:";
 }
