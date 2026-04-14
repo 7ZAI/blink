@@ -42,6 +42,9 @@ out/
 .claudeignore
 /.mcp.json
 
+### Git Worktrees ###
+.worktrees/
+
 ### 知识文档目录 ###
 docs/knowledge/
 
