@@ -41,8 +41,8 @@ dependencies {
     implementation 'com.anji-plus:captcha:1.3.0'
 
     // SA-Token 权限认证
-    implementation 'cn.dev33:sa-token-spring-boot3-starter:1.37.0'
-    implementation 'cn.dev33:sa-token-redis-jackson:1.37.0'
+    implementation 'cn.dev33:sa-token-spring-boot3-starter:1.45.0'
+    implementation 'cn.dev33:sa-token-redis-jackson:1.45.0'
     // 密码加密
     implementation 'org.springframework.security:spring-security-crypto'
 
