@@ -61,22 +61,6 @@
 
     <!-- 实例列表 -->
     <el-card class="page-card" shadow="never">
-      <template #header>
-        <div class="card-header">
-          <span class="card-title">{{ t('instance.title') }}</span>
-          <div class="header-actions">
-            <el-button type="primary" @click="handleAdd">
-              <el-icon><Plus /></el-icon>
-              {{ t('instance.addInstance') }}
-            </el-button>
-            <el-button :loading="refreshing" @click="handleRefresh">
-              <el-icon><Refresh /></el-icon>
-              {{ t('common.refresh') }}
-            </el-button>
-          </div>
-        </div>
-      </template>
-
       <!-- 搜索区域 -->
       <div class="search-area">
         <el-form :inline="true" :model="searchForm" class="search-form">
@@ -97,10 +81,11 @@
             />
           </el-form-item>
           <el-form-item :label="t('common.status')">
-            <el-select v-model="searchForm.status" :placeholder="t('common.pleaseSelect')" clearable>
-              <el-option :label="t('instance.statusOnline')" :value="0" />
-              <el-option :label="t('instance.statusOffline')" :value="1" />
-              <el-option :label="t('instance.statusShutdown')" :value="2" />
+            <el-select v-model="searchForm.status" :placeholder="t('common.pleaseSelect')" clearable style="width: 140px">
+              <el-option :label="t('common.statusOnline')" :value="0" />
+              <el-option :label="t('common.statusOffline')" :value="1" />
+              <el-option :label="t('common.statusShutdown')" :value="2" />
+              <el-option :label="t('instance.statusDraining')" :value="3" />
             </el-select>
           </el-form-item>
           <el-form-item>
@@ -113,24 +98,29 @@
               {{ t('common.reset') }}
             </el-button>
           </el-form-item>
+          <el-form-item class="right-actions">
+            <el-button :loading="refreshing" @click="handleRefresh">
+              <el-icon><Refresh /></el-icon>
+              {{ t('common.refresh') }}
+            </el-button>
+          </el-form-item>
         </el-form>
       </div>
 
       <!-- 表格 -->
       <el-table :data="instanceList" v-loading="loading" stripe class="instance-table">
-        <el-table-column prop="id" label="ID" width="70" align="center" />
-        <el-table-column prop="instanceId" :label="t('instance.instanceId')" min-width="200" show-overflow-tooltip>
+        <el-table-column prop="instanceId" :label="t('common.instanceId')" min-width="100" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="instance-id">{{ row.instanceId }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="serviceId" :label="t('instance.serviceId')" min-width="130" show-overflow-tooltip>
+        <el-table-column prop="serviceId" :label="t('instance.serviceId')" width="120" show-overflow-tooltip>
           <template #default="{ row }">
             <el-tag size="small" effect="plain">{{ row.serviceId }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="host" :label="t('instance.host')" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="port" :label="t('instance.port')" width="90" align="center" />
+        <el-table-column prop="host" :label="t('instance.host')" width="150" show-overflow-tooltip />
+        <el-table-column prop="port" :label="t('common.port')" width="90" align="center" />
         <el-table-column :label="t('common.status')" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" effect="light" size="small">
@@ -138,22 +128,18 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="onlineTime" :label="t('instance.onlineTime')" min-width="150" show-overflow-tooltip>
+        <el-table-column prop="onlineTime" :label="t('instance.onlineTime')" width="160" show-overflow-tooltip>
           <template #default="{ row }">
             <span v-if="row.onlineTime">{{ formatTime(row.onlineTime) }}</span>
             <span v-else class="empty-text">-</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('common.operation')" width="180" fixed="right">
+        <el-table-column :label="t('common.operation')" width="290" fixed="right">
           <template #default="{ row }">
             <div class="operation-buttons">
               <el-button type="primary" link size="small" @click="handleViewDetail(row)">
                 <el-icon><View /></el-icon>
                 {{ t('common.detail') }}
-              </el-button>
-              <el-button type="primary" link size="small" @click="handleEdit(row)">
-                <el-icon><Edit /></el-icon>
-                {{ t('common.edit') }}
               </el-button>
               <el-button
                 v-if="row.status === INSTANCE_STATUS.ONLINE"
@@ -198,60 +184,71 @@
       </div>
     </el-card>
 
-    <!-- 新增/编辑弹窗 -->
-    <el-dialog
-      v-model="formDialogVisible"
-      :title="formType === 'add' ? t('instance.addInstance') : t('instance.editInstance')"
-      width="500px"
-      :close-on-click-modal="false"
-      :lock-scroll="false"
-    >
-      <el-form ref="formRef" :model="instanceForm" :rules="formRules" label-width="100px">
-        <el-form-item :label="t('instance.serviceId')" prop="serviceId">
-          <el-input v-model="instanceForm.serviceId" :placeholder="t('common.pleaseInput')" />
-        </el-form-item>
-        <el-form-item :label="t('instance.host')" prop="host">
-          <el-input v-model="instanceForm.host" :placeholder="t('instance.hostPlaceholder')" />
-        </el-form-item>
-        <el-form-item :label="t('instance.port')" prop="port">
-          <el-input-number v-model="instanceForm.port" :min="1" :max="65535" controls-position="right" />
-        </el-form-item>
-        <el-form-item :label="t('instance.metadata')">
-          <el-input
-            v-model="instanceForm.metadata"
-            type="textarea"
-            :rows="3"
-            :placeholder="t('instance.metadataPlaceholder')"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="formDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmitForm">
-          {{ t('common.confirm') }}
-        </el-button>
-      </template>
-    </el-dialog>
-
     <!-- 下线弹窗 -->
     <el-dialog
       v-model="offlineDialogVisible"
       :title="t('instance.offlineInstance')"
-      width="450px"
+      width="500px"
       :close-on-click-modal="false"
       :lock-scroll="false"
     >
-      <el-form :model="offlineForm" label-width="100px">
-        <el-form-item :label="t('instance.instanceId')">
+      <!-- 最后实例警告 -->
+      <el-alert
+        v-if="isLastInstance"
+        :title="t('instance.lastInstanceWarning')"
+        type="error"
+        :closable="false"
+        show-icon
+        class="offline-warning-alert"
+      />
+      <!-- 剩余实例提示 -->
+      <el-alert
+        v-else-if="remainingOnlineCount <= 2"
+        :title="t('instance.remainingInstancesWarning', { count: remainingOnlineCount })"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="offline-warning-alert"
+      />
+
+      <el-form :model="offlineForm" label-width="100px" class="offline-form">
+        <el-form-item :label="t('common.instanceId')">
           <el-input v-model="offlineForm.instanceId" disabled />
         </el-form-item>
-        <el-form-item :label="t('common.remark')">
-          <el-input v-model="offlineForm.reason" type="textarea" :rows="3" :placeholder="t('common.pleaseInput')" />
+        <!-- 下线模式选择 -->
+        <el-form-item :label="t('instance.offlineType')">
+          <el-radio-group v-model="offlineForm.mode">
+            <el-radio value="graceful">
+              {{ t('instance.gracefulOffline') }}
+              <el-tooltip :content="t('instance.gracefulOfflineDesc', { seconds: 30 })" placement="top">
+                <el-icon size="14" style="margin-left: 4px"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </el-radio>
+            <el-radio value="force">
+              {{ t('instance.forceOffline') }}
+              <el-tooltip :content="t('instance.forceOfflineWarning')" placement="top">
+                <el-icon size="14" style="margin-left: 4px" color="#e6a23c"><WarningFilled /></el-icon>
+              </el-tooltip>
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item :label="t('instance.offlineReason')">
+          <el-input
+            v-model="offlineForm.reason"
+            type="textarea"
+            :rows="3"
+            :placeholder="t('instance.offlineReasonPlaceholder')"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="offlineDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="warning" :loading="submitting" @click="confirmOffline">
+        <el-button
+          :type="offlineForm.mode === 'graceful' ? 'primary' : 'warning'"
+          :loading="submitting"
+          :disabled="isLastInstance"
+          @click="confirmOffline"
+        >
           {{ t('common.confirm') }}
         </el-button>
       </template>
@@ -269,21 +266,21 @@ import {
   CircleCheck,
   SuccessFilled,
   Cpu,
-  Plus,
   Refresh,
   Search,
   RefreshLeft,
   View,
   SwitchButton,
-  Edit,
   Delete,
+  InfoFilled,
+  WarningFilled,
 } from '@element-plus/icons-vue'
 import {
   queryInstanceList,
-  saveInstance,
   deleteInstance,
   onlineInstance,
   offlineInstance,
+  gracefulOfflineInstance,
   refreshInstanceStatus,
   type InstanceInfo,
   INSTANCE_STATUS,
@@ -370,31 +367,35 @@ const statistics = reactive({
 
 // ==================== 弹窗状态 ====================
 
-const formDialogVisible = ref(false)
 const offlineDialogVisible = ref(false)
 
 const currentInstance = ref<InstanceInfo | null>(null)
 
-const formRef = ref<FormInstance>()
-const formType = ref<'add' | 'edit'>('add')
-const instanceForm = reactive({
-  id: undefined as number | undefined,
-  serviceId: '',
-  host: '',
-  port: 8080,
-  metadata: '',
+// ==================== 下线实例保护 ====================
+
+/**
+ * 剩余在线实例数量（从 SSE 获取实时数据）
+ */
+const remainingOnlineCount = computed(() => {
+  return statistics.onlineInstances
+})
+
+/**
+ * 是否为最后一个在线实例（即将下线的实例是最后一个在线实例）
+ */
+const isLastInstance = computed(() => {
+  // 如果当前实例是在线或排空状态，且在线数量只有1个，则为最后一个
+  if (currentInstance.value && (currentInstance.value.status === INSTANCE_STATUS.ONLINE || currentInstance.value.status === INSTANCE_STATUS.DRAINING)) {
+    return remainingOnlineCount.value <= 1
+  }
+  return false
 })
 
 const offlineForm = reactive({
   instanceId: '',
   reason: '',
+  mode: 'force' as 'force' | 'graceful',
 })
-
-const formRules = computed<FormRules>(() => ({
-  serviceId: [{ required: true, message: t('common.pleaseInput') + t('instance.serviceId'), trigger: 'blur' }],
-  host: [{ required: true, message: t('common.pleaseInput') + t('instance.host'), trigger: 'blur' }],
-  port: [{ required: true, message: t('common.pleaseInput') + t('instance.port'), trigger: 'change' }],
-}))
 
 // ==================== 辅助方法 ====================
 
@@ -406,6 +407,8 @@ const getStatusType = (status: number): 'primary' | 'success' | 'warning' | 'inf
       return 'danger'
     case INSTANCE_STATUS.SHUTDOWN:
       return 'warning'
+    case INSTANCE_STATUS.DRAINING:
+      return 'primary'
     default:
       return 'info'
   }
@@ -414,11 +417,13 @@ const getStatusType = (status: number): 'primary' | 'success' | 'warning' | 'inf
 const getStatusText = (status: number): string => {
   switch (status) {
     case INSTANCE_STATUS.ONLINE:
-      return t('instance.statusOnline')
+      return t('common.statusOnline')
     case INSTANCE_STATUS.OFFLINE:
-      return t('instance.statusOffline')
+      return t('common.statusOffline')
     case INSTANCE_STATUS.SHUTDOWN:
-      return t('instance.statusShutdown')
+      return t('common.statusShutdown')
+    case INSTANCE_STATUS.DRAINING:
+      return t('instance.statusDraining')
     default:
       return t('common.unknown')
   }
@@ -532,45 +537,6 @@ const handleViewDetail = (row: InstanceInfo) => {
   })
 }
 
-// ==================== 新增/编辑 ====================
-
-const handleAdd = () => {
-  formType.value = 'add'
-  instanceForm.id = undefined
-  instanceForm.serviceId = 'gateway-app'
-  instanceForm.host = ''
-  instanceForm.port = 8080
-  instanceForm.metadata = ''
-  formDialogVisible.value = true
-}
-
-const handleEdit = (row: InstanceInfo) => {
-  formType.value = 'edit'
-  instanceForm.id = row.id
-  instanceForm.serviceId = row.serviceId
-  instanceForm.host = row.host
-  instanceForm.port = row.port
-  instanceForm.metadata = row.metadata || ''
-  formDialogVisible.value = true
-}
-
-const handleSubmitForm = async () => {
-  const valid = await formRef.value?.validate()
-  if (!valid) return
-
-  submitting.value = true
-  try {
-    await saveInstance(instanceForm)
-    ElMessage.success(t('common.success'))
-    formDialogVisible.value = false
-    loadData()
-  } catch (error) {
-    console.error('Save instance error:', error)
-  } finally {
-    submitting.value = false
-  }
-}
-
 // ==================== 删除 ====================
 
 const handleDelete = (row: InstanceInfo) => {
@@ -589,15 +555,22 @@ const handleDelete = (row: InstanceInfo) => {
 // ==================== 上线/下线 ====================
 
 const handleOffline = (row: InstanceInfo) => {
+  // 设置当前操作的实例，用于判断是否为最后一个在线实例
+  currentInstance.value = row
   offlineForm.instanceId = row.instanceId
   offlineForm.reason = ''
+  offlineForm.mode = 'graceful'  // 默认优雅下线
   offlineDialogVisible.value = true
 }
 
 const confirmOffline = async () => {
   submitting.value = true
   try {
-    await offlineInstance(offlineForm)
+    if (offlineForm.mode === 'graceful') {
+      await gracefulOfflineInstance(offlineForm)
+    } else {
+      await offlineInstance(offlineForm)
+    }
     ElMessage.success(t('common.success'))
     offlineDialogVisible.value = false
     loadData()
@@ -708,31 +681,18 @@ onMounted(() => {
     }
   }
 
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-
-    .card-title {
-      font-size: 16px;
-      font-weight: 500;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 8px;
-    }
-  }
-
   .search-area {
     flex-shrink: 0;
-    padding-bottom: 16px;
+    padding-bottom: 8px;
 
     .search-form {
       display: flex;
       flex-wrap: wrap;
+      align-items: flex-start;
+
+      .right-actions {
+        margin-left: auto;
+      }
     }
   }
 
@@ -765,6 +725,14 @@ onMounted(() => {
     :deep(.el-button) {
       margin: 0;
     }
+  }
+
+  .offline-warning-alert {
+    margin-bottom: 16px;
+  }
+
+  .offline-form {
+    margin-top: 0;
   }
 }
 </style>

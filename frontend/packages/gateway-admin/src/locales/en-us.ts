@@ -69,6 +69,29 @@ export default {
     to: 'to',
     hide: 'Hide',
     selectAll: 'Select All',
+    // Status related (extracted to common)
+    statusOnline: 'Online',
+    statusOffline: 'Offline',
+    statusShutdown: 'Shutdown',
+    statusEnable: 'Enable',
+    statusDisable: 'Disable',
+    // Instance related (extracted to common)
+    instanceId: 'Instance ID',
+    instanceAddress: 'Instance Address',
+    noOnlineInstances: 'No Online Instances',
+    // Common table columns (extracted to common)
+    routeIdColumn: 'Route ID',
+    routeNameColumn: 'Route Name',
+    uriColumn: 'Target URI',
+    orderColumn: 'Order',
+    port: 'Port',
+    // Operation results (extracted to common)
+    rollbackSuccess: 'Rollback Successful',
+    deleteConfirm: 'Are you sure to delete?',
+    syncSuccess: 'Sync successful',
+    syncFailed: 'Sync failed',
+    onlineSuccess: 'Online successfully',
+    offlineSuccess: 'Offline successfully',
   },
   loading: {
     loadingData: 'Loading data...',
@@ -222,6 +245,19 @@ export default {
     // Realtime metrics
     currentQps: 'Current QPS',
     peakQps: 'Peak QPS',
+    // New - Monitor UI redesign
+    qpsThreshold: 'Alert Threshold',
+    qpsHealthyRange: 'Healthy Range',
+    slaTarget: 'SLA Target',
+    slaCompliant: 'Compliant',
+    slaViolation: 'Violation',
+    errorThreshold: 'Error Threshold',
+    recent5MinTrend: 'Last 5 Min Trend',
+    qpsNormal: 'Normal',
+    qpsWarning: 'Near Threshold',
+    qpsCritical: 'Over Limit',
+    slaUnit: 'ms',
+    reqPerSecond: 'req/s',
   },
   channel: {
     title: 'Channel Management',
@@ -334,24 +370,14 @@ export default {
     specifiedPush: 'Specified',
     specifiedPushDesc: 'Manually select target instances',
     targetInstances: 'Target Instances',
-    online: 'Online',
-    offline: 'Offline',
     noOnlineInstances: 'No online instances',
     confirmPush: 'Confirm Push',
-    instanceId: 'Instance ID',
-    instanceAddress: 'Instance Address',
     // Order
     orderNum: 'Order',
     orderNumPlaceholder: 'Please input order value',
     // Routes Group
     routesGroup: 'Routes Group',
     routesGroupPlaceholder: 'Please input routes group name',
-    // Status
-    status: 'Status',
-    statusEnable: 'Enable',
-    statusDisable: 'Disable',
-    // Remark
-    remark: 'Remark',
     // Validation
     routeIdRequired: 'Route ID is required',
     uriRequired: 'Target URI is required',
@@ -372,7 +398,6 @@ export default {
     // Rollback
     rollback: 'Rollback',
     rollbackConfirm: 'Are you sure to rollback to this history version?',
-    rollbackSuccess: 'Rollback successful',
     viewDetail: 'View Detail',
     historyDetailTitle: 'History Detail',
     // JSON Preview
@@ -687,7 +712,10 @@ export default {
   },
   monitor: {
     title: 'Monitor Center',
+    dashboard: 'Monitor Dashboard',
     instanceList: 'Instance List',
+    alertRule: 'Alert Rules',
+    alertHistory: 'Alert History',
     statistics: 'Statistics',
     healthStatus: 'Health Status',
     instanceId: 'Instance ID',
@@ -706,6 +734,33 @@ export default {
     offlineReason: 'Offline Reason',
     offlineSuccess: 'Instance offline successfully',
     onlineSuccess: 'Instance online successfully',
+    // Circuit Breaker
+    circuitBreaker: 'Circuit Breaker Monitor',
+    circuitBreakerName: 'Circuit Breaker Name',
+    circuitBreakerDetail: 'Circuit Breaker Detail',
+    totalCircuitBreakers: 'Total Circuit Breakers',
+    closedCount: 'CLOSED Count',
+    openCount: 'OPEN Count',
+    halfOpenCount: 'HALF_OPEN Count',
+    totalInstances: 'Total Instances',
+    stateDistribution: 'State Distribution',
+    state: 'State',
+    failureRateThreshold: 'Failure Rate Threshold',
+    slidingWindowSize: 'Sliding Window Size',
+    minimumNumberOfCalls: 'Minimum Calls',
+    waitDurationInOpenState: 'Wait Duration',
+    slowCallRateThreshold: 'Slow Call Rate Threshold',
+    slowCallDurationThreshold: 'Slow Call Threshold',
+    permittedNumberOfCallsInHalfOpenState: 'Half-Open Calls',
+    slidingWindowType: 'Window Type',
+    baseConfig: 'Base Config',
+    configParams: 'Configuration',
+    instanceStatus: 'Instance Status',
+    failureRate: 'Failure Rate',
+    numberOfCalls: 'Total Calls',
+    numberOfFailedCalls: 'Failed Calls',
+    numberOfSuccessfulCalls: 'Success Calls',
+    numberOfSlowCalls: 'Slow Calls',
   },
   dataSync: {
     title: 'Data Sync',
@@ -1335,8 +1390,6 @@ export default {
     updateTime: 'Update Time',
 
     // Actions
-    addInstance: 'Add Instance',
-    editInstance: 'Edit Instance',
     deleteInstance: 'Delete Instance',
     onlineInstance: 'Online Instance',
     offlineInstance: 'Offline Instance',
@@ -1386,5 +1439,81 @@ export default {
     deleteSuccess: 'Instance deleted successfully',
     onlineSuccess: 'Instance is now online',
     offlineSuccess: 'Instance is now offline',
+
+    // Offline reason and type
+    offlineReason: 'Offline Reason',
+    offlineType: 'Offline Type',
+    offlineTypeManual: 'Manual Offline',
+    offlineTypeFault: 'Fault Offline',
+    offlineReasonPlaceholder: 'Enter offline reason (optional)',
+
+    // Last instance protection
+    lastInstanceWarning: 'This is the last online instance. Offline will cause service unavailable!',
+    lastInstanceCannotOffline: 'Last online instance cannot be offline',
+    remainingInstances: 'Current online instances: {count}',
+    remainingInstancesWarning: 'Only {count} online instance(s) remaining',
+
+    // Health check
+    healthCheckFailed: 'Instance health check failed',
+    instanceNotReady: 'Instance not ready, health status abnormal',
+
+    // Graceful offline
+    gracefulOffline: 'Graceful Offline',
+    forceOffline: 'Force Offline',
+    gracefulOfflineDesc: 'Graceful offline will wait for existing requests to complete, estimated wait ~{seconds} seconds',
+    forceOfflineWarning: 'Force offline will immediately interrupt ongoing requests!',
+    statusDraining: 'Draining',
+    drainingHint: 'Instance is draining traffic, will be offline soon',
+  },
+  alert: {
+    // Page title
+    title: 'Alert Center',
+    ruleManagement: 'Alert Rule Management',
+    historyManagement: 'Alert History',
+
+    // Rule config
+    ruleName: 'Rule Name',
+    ruleType: 'Rule Type',
+    conditions: 'Conditions',
+    severity: 'Severity',
+    notifyChannels: 'Notify Channels',
+    notifyTemplate: 'Notify Template',
+    templatePlaceholder: 'Enter notification template content, supports variable substitution',
+    availableVars: 'Available Variables',
+    suppressInterval: 'Suppress Interval',
+    duration: 'Duration',
+    minutes: 'minutes',
+    minutesNoRepeat: 'minutes no repeat alert',
+
+    // Actions
+    addRule: 'Add Rule',
+    editRule: 'Edit Rule',
+    addCondition: 'Add Condition',
+    deleteConfirm: 'Are you sure to delete rule "{name}"?',
+
+    // Tips
+    noRules: 'No alert rules',
+    ruleNameRequired: 'Please enter rule name',
+    metricRequired: 'Please select metric',
+
+    // History
+    history: 'Alert History',
+    historyTitle: 'Alert History Records',
+    noHistory: 'No alert history',
+    ruleId: 'Rule ID',
+    instanceId: 'Instance ID',
+    alertTitle: 'Alert Title',
+    alertContent: 'Alert Content',
+    firedTime: 'Fired Time',
+    resolvedTime: 'Resolved Time',
+    acknowledgedTime: 'Acknowledged Time',
+    acknowledgedBy: 'Acknowledged By',
+    acknowledge: 'Acknowledge',
+    acknowledgeConfirm: 'Are you sure to acknowledge this alert?',
+
+    // Status
+    statusFiring: 'Firing',
+    statusResolved: 'Resolved',
+    statusAcknowledged: 'Acknowledged',
   },
 }

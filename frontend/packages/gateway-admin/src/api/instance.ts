@@ -14,6 +14,7 @@ export const INSTANCE_STATUS = {
   ONLINE: 0,
   OFFLINE: 1,
   SHUTDOWN: 2,
+  DRAINING: 3,
 } as const
 
 /**
@@ -43,6 +44,7 @@ export interface JvmMetrics {
   heapMax?: number
   heapUsagePercent?: number
   nonHeapUsed?: number
+  cpuUsage?: number
   youngGcCount?: number
   youngGcTime?: number
   oldGcCount?: number
@@ -115,17 +117,6 @@ export interface QueryInstanceListResult {
 }
 
 /**
- * 保存实例请求参数
- */
-export interface SaveInstanceParams {
-  id?: number
-  serviceId: string
-  host: string
-  port: number
-  metadata?: string
-}
-
-/**
  * 删除实例请求参数
  */
 export interface DeleteInstanceParams {
@@ -164,13 +155,6 @@ export const queryInstanceList = (params: QueryInstanceParams = {}): Promise<Que
 }
 
 /**
- * 保存实例（新增/编辑）
- */
-export const saveInstance = (params: SaveInstanceParams): Promise<void> => {
-  return request.post('/gatewayInstance/saveInstance', { body: params })
-}
-
-/**
  * 删除实例
  */
 export const deleteInstance = (params: DeleteInstanceParams): Promise<void> => {
@@ -199,6 +183,13 @@ export const offlineInstance = (params: OfflineInstanceParams): Promise<void> =>
 }
 
 /**
+ * 优雅下线实例（流量排空）
+ */
+export const gracefulOfflineInstance = (params: OfflineInstanceParams): Promise<void> => {
+  return request.post('/gatewayInstance/gracefulOfflineInstance', { body: params })
+}
+
+/**
  * 手动刷新实例状态（从Nacos实时获取）
  */
 export const refreshInstanceStatus = (): Promise<void> => {
@@ -209,10 +200,10 @@ export const refreshInstanceStatus = (): Promise<void> => {
 
 export const instanceApi = {
   queryInstanceList,
-  saveInstance,
   deleteInstance,
   getInstanceDetailWithMetrics,
   onlineInstance,
   offlineInstance,
+  gracefulOfflineInstance,
   refreshInstanceStatus,
 }
