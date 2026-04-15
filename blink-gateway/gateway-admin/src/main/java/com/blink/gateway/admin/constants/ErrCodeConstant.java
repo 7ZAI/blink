@@ -318,16 +318,6 @@ public interface ErrCodeConstant {
     // ============ 实例管理错误码 GATE0160-GATE0169 ============
 
     /**
-     * 实例已存在（相同 host:port）
-     */
-    String INSTANCE_ALREADY_EXIST = "GATE0160";
-
-    /**
-     * 保存实例失败
-     */
-    String SAVE_INSTANCE_FAILED = "GATE0161";
-
-    /**
      * 删除实例失败
      */
     String DELETE_INSTANCE_FAILED = "GATE0162";
@@ -383,4 +373,73 @@ public interface ErrCodeConstant {
      * 不支持的过滤器类型
      */
     String UNSUPPORTED_FILTER_TYPE = "GATE0177";
+
+    // ============ 告警中心错误码 GATE0180-GATE0189 ============
+
+    /**
+     * 查询告警规则列表失败
+     */
+    String GET_ALERT_RULE_LIST_FAILED = "GATE0180";
+
+    /**
+     * 新增告警规则失败
+     */
+    String ADD_ALERT_RULE_FAILED = "GATE0181";
+
+    /**
+     * 更新告警规则失败
+     */
+    String UPDATE_ALERT_RULE_FAILED = "GATE0182";
+
+    /**
+     * 删除告警规则失败
+     */
+    String DELETE_ALERT_RULE_FAILED = "GATE0183";
+
+    /**
+     * 切换告警规则状态失败
+     */
+    String TOGGLE_ALERT_RULE_FAILED = "GATE0184";
+
+    /**
+     * 查询告警历史失败
+     */
+    String GET_ALERT_HISTORY_FAILED = "GATE0185";
+
+    /**
+     * 获取触发中告警失败
+     */
+    String GET_FIRING_ALERTS_FAILED = "GATE0186";
+
+    /**
+     * 确认告警失败
+     */
+    String ACKNOWLEDGE_ALERT_FAILED = "GATE0187";
+
+    /**
+     * 告警规则不存在
+     */
+    String ALERT_RULE_NOT_EXIST = "GATE0188";
+
+    /**
+     * 告警历史不存在
+     */
+    String ALERT_HISTORY_NOT_EXIST = "GATE0189";
+
+    // ============ 实例上下线优化错误码 GATE0190-GATE0199 ============
+
+    /**
+     * 健康检查失败
+     */
+    String INSTANCE_HEALTH_CHECK_FAILED = "GATE0190";
+
+    /**
+     * 实例未就绪（健康状态非 UP）
+     */
+    String INSTANCE_NOT_READY = "GATE0191";
+
+    /**
+     * 最后一个在线实例不能下线
+     */
+    String LAST_INSTANCE_CANNOT_OFFLINE = "GATE0192";
 }

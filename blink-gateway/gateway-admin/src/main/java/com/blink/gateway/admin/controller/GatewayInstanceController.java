@@ -9,12 +9,13 @@ import com.blink.gateway.admin.dto.req.GetInstanceDetailReq;
 import com.blink.gateway.admin.dto.req.OfflineGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.OnlineGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceReq;
-import com.blink.gateway.admin.dto.req.SaveInstanceReq;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.rsp.InstanceDetailRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceListRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.service.GatewayInstanceService;
+import com.blink.log.annotation.RecordLog;
+import com.blink.log.constant.LogType;
 import jakarta.annotation.Resource;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -63,9 +64,24 @@ public class GatewayInstanceController {
      * @param reqDto 请求参数
      * @return 操作结果
      */
+    @RecordLog(type = LogType.OPERATION, description = "网关实例下线")
     @PostMapping("/offlineInstance")
     public ResponseDTO<EmptyBody> offlineInstance(@RequestBody @Validated RequestDTO<OfflineGatewayInstanceReq> reqDto) {
         gatewayInstanceService.offlineInstance(reqDto.getBody());
+        return ResponseDTO.newSuccessInstance();
+    }
+
+    /**
+     * 优雅下线网关实例（流量排空）
+     * 先设置 weight=0 停止接收新流量，等待排空后再设置 enabled=false
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @RecordLog(type = LogType.OPERATION, description = "网关实例优雅下线")
+    @PostMapping("/gracefulOfflineInstance")
+    public ResponseDTO<EmptyBody> gracefulOfflineInstance(@RequestBody @Validated RequestDTO<OfflineGatewayInstanceReq> reqDto) {
+        gatewayInstanceService.gracefulOfflineInstance(reqDto.getBody());
         return ResponseDTO.newSuccessInstance();
     }
 
@@ -75,6 +91,7 @@ public class GatewayInstanceController {
      * @param reqDto 请求参数
      * @return 操作结果
      */
+    @RecordLog(type = LogType.OPERATION, description = "网关实例上线")
     @PostMapping("/onlineInstance")
     public ResponseDTO<EmptyBody> onlineInstance(@RequestBody @Validated RequestDTO<OnlineGatewayInstanceReq> reqDto) {
         gatewayInstanceService.onlineInstance(reqDto.getBody());
@@ -90,18 +107,6 @@ public class GatewayInstanceController {
     @PostMapping("/queryInstanceList")
     public ResponseDTO<QueryInstanceListRsp> queryInstanceList(@RequestBody @Validated RequestDTO<QueryInstanceReq> reqDto) {
         return gatewayInstanceService.queryInstanceList(reqDto.getBody());
-    }
-
-    /**
-     * 保存实例（新增/编辑）
-     *
-     * @param reqDto 请求参数
-     * @return 操作结果
-     */
-    @PostMapping("/saveInstance")
-    public ResponseDTO<EmptyBody> saveInstance(@RequestBody @Validated RequestDTO<SaveInstanceReq> reqDto) {
-        gatewayInstanceService.saveInstance(reqDto.getBody());
-        return ResponseDTO.newSuccessInstance();
     }
 
     /**

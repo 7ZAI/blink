@@ -27,6 +27,23 @@ public interface ConfigValueConstant {
      */
     Byte INSTANCE_STATUS_SHUTDOWN = 2;
 
+    /**
+     * 实例状态 - 排空（优雅下线进行中）
+     */
+    Byte INSTANCE_STATUS_DRAINING = 3;
+
+    // ============ 流量排空配置常量 ============
+
+    /**
+     * 默认流量排空等待时间（秒）
+     */
+    Integer DEFAULT_DRAIN_WAIT_SECONDS = 30;
+
+    /**
+     * 健康检查重试次数
+     */
+    Integer HEALTH_CHECK_RETRIES = 3;
+
     // ============ 超时时间常量 ============
 
     /**

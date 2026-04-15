@@ -81,6 +81,18 @@ public class GatewayInstanceDO implements Serializable {
     private LocalDateTime offlineTime;
 
     /**
+     * 下线原因
+     */
+    @TableField("offline_reason")
+    private String offlineReason;
+
+    /**
+     * 下线类型: MANUAL-主动/FAULT-被动/DRAINING-排空中
+     */
+    @TableField("offline_type")
+    private String offlineType;
+
+    /**
      * 创建时间
      */
     @TableField(value = "create_time", fill = FieldFill.INSERT)

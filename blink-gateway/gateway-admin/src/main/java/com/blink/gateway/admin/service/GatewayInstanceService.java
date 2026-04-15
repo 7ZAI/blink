@@ -8,7 +8,6 @@ import com.blink.gateway.admin.dto.req.GetInstanceDetailReq;
 import com.blink.gateway.admin.dto.req.OfflineGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.OnlineGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceReq;
-import com.blink.gateway.admin.dto.req.SaveInstanceReq;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.rsp.InstanceDetailRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceListRsp;
@@ -45,6 +44,15 @@ public interface GatewayInstanceService {
     ResponseDTO<EmptyBody> offlineInstance(OfflineGatewayInstanceReq req);
 
     /**
+     * 优雅下线网关实例（流量排空）
+     * 先设置 weight=0 停止接收新流量，等待排空时间后再设置 enabled=false
+     *
+     * @param req 请求参数
+     * @return 操作结果
+     */
+    ResponseDTO<EmptyBody> gracefulOfflineInstance(OfflineGatewayInstanceReq req);
+
+    /**
      * 上线网关实例（通过Nacos设置enabled=true）
      *
      * @param req 请求参数
@@ -71,14 +79,6 @@ public interface GatewayInstanceService {
      * @return 实例列表响应
      */
     ResponseDTO<QueryInstanceListRsp> queryInstanceList(QueryInstanceReq req);
-
-    /**
-     * 保存实例（新增/编辑）
-     *
-     * @param req 保存请求参数
-     * @return 操作结果
-     */
-    ResponseDTO<EmptyBody> saveInstance(SaveInstanceReq req);
 
     /**
      * 删除实例
