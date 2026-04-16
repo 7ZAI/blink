@@ -46,4 +46,5 @@ findProject(':blink-gateway:blink-gateway-admin-api-dubbo')?.name = 'blink-gatew
 // 定时任务调度模块
 include 'blink-job'
 include 'blink-job:blink-job-api'
+include 'blink-job:blink-job-core'
 
