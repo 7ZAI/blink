@@ -47,4 +47,5 @@ findProject(':blink-gateway:blink-gateway-admin-api-dubbo')?.name = 'blink-gatew
 include 'blink-job'
 include 'blink-job:blink-job-api'
 include 'blink-job:blink-job-core'
+include 'blink-job:blink-job-spring-starter'
 
