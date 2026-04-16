@@ -2,7 +2,7 @@ package com.blink.base.dto.req;
 
 import lombok.Data;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
 /**
@@ -13,6 +13,6 @@ import java.util.List;
 @Data
 public class DeleteSysJobReq {
 
-    @NotNull(message = "任务ID不能为空")
+    @NotEmpty(message = "任务ID列表不能为空")
     private List<Long> jobIds;
 }

@@ -4,6 +4,7 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.blink.base.constants.JobStatusConstant;
 import com.blink.base.dto.req.QuerySysJobLogReq;
 import com.blink.base.dto.rsp.SysJobLogRsp;
 import com.blink.base.dto.rsp.SysJobLogVO;
@@ -62,7 +63,7 @@ public class SysJobLogServiceImpl implements SysJobLogService {
         logDO.setJobName(jobName);
         logDO.setJobGroup(jobGroup);
         logDO.setTriggerTime(LocalDateTime.now());
-        logDO.setStatus((byte) 0);
+        logDO.setStatus(JobStatusConstant.RUNNING);
         logDO.setExecuteCount(0);
         logDO.setCreateTime(LocalDateTime.now());
 
@@ -76,7 +77,7 @@ public class SysJobLogServiceImpl implements SysJobLogService {
         logDO.setLogId(logId);
         logDO.setFinishTime(LocalDateTime.now());
         logDO.setDuration(duration);
-        logDO.setStatus(result.isSuccess() ? (byte) 1 : (byte) 2);
+        logDO.setStatus(result.isSuccess() ? JobStatusConstant.SUCCESS : JobStatusConstant.FAILED);
         logDO.setResultMessage(result.getMessage());
         logDO.setErrorMessage(result.getErrorMessage());
 

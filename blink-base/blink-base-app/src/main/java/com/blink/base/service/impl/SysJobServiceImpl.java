@@ -4,14 +4,16 @@ import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.blink.base.constants.BaseErrCodeConstant;
+import com.blink.base.constants.JobStatusConstant;
 import com.blink.base.dto.req.*;
 import com.blink.base.dto.rsp.SysJobRsp;
 import com.blink.base.dto.rsp.SysJobVO;
 import com.blink.base.entity.SysJobDO;
 import com.blink.base.mapper.SysJobMapper;
 import com.blink.base.service.SysJobService;
-import com.blink.framework.common.exception.BlinkException;
 import com.blink.datasource.utils.PageUtils;
+import com.blink.framework.common.exception.BlinkException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +21,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 定时任务服务实现
@@ -30,8 +31,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class SysJobServiceImpl implements SysJobService {
-
-    private static final String ERR_JOB_NOT_EXIST = "JOB0001";
 
     private final SysJobMapper sysJobMapper;
 
@@ -68,11 +67,12 @@ public class SysJobServiceImpl implements SysJobService {
         wrapper.eq(SysJobDO::getJobName, req.getJobName())
                 .eq(SysJobDO::getJobGroup, req.getJobGroup());
         if (sysJobMapper.selectCount(wrapper) > 0) {
-            throw new BlinkException("任务名称已存在", "JOB0002");
+            log.warn("[SysJobService] 任务名称已存在 | jobName: {}, jobGroup: {}", req.getJobName(), req.getJobGroup());
+            BlinkException.throwBusinessException(BaseErrCodeConstant.JOB_NAME_EXISTS);
         }
 
         SysJobDO jobDO = BeanUtil.copyProperties(req, SysJobDO.class);
-        jobDO.setJobStatus((byte) 1);
+        jobDO.setJobStatus(JobStatusConstant.NORMAL);
         jobDO.setCreateTime(LocalDateTime.now());
         jobDO.setUpdateTime(LocalDateTime.now());
         sysJobMapper.insert(jobDO);
@@ -83,8 +83,9 @@ public class SysJobServiceImpl implements SysJobService {
     @Override
     public void updateJob(UpdateSysJobReq req) {
         SysJobDO existing = sysJobMapper.selectById(req.getJobId());
-        if (existing == null) {
-            BlinkException.throwBusinessException(ERR_JOB_NOT_EXIST);
+        if (ObjectUtil.isNull(existing)) {
+            log.warn("[SysJobService] 任务不存在 | jobId: {}", req.getJobId());
+            BlinkException.throwBusinessException(BaseErrCodeConstant.JOB_NOT_EXIST);
         }
 
         SysJobDO jobDO = BeanUtil.copyProperties(req, SysJobDO.class);
@@ -106,11 +107,12 @@ public class SysJobServiceImpl implements SysJobService {
     @Override
     public void pauseJob(JobIdReq req) {
         SysJobDO jobDO = sysJobMapper.selectById(req.getJobId());
-        if (jobDO == null) {
-            BlinkException.throwBusinessException(ERR_JOB_NOT_EXIST);
+        if (ObjectUtil.isNull(jobDO)) {
+            log.warn("[SysJobService] 任务不存在 | jobId: {}", req.getJobId());
+            BlinkException.throwBusinessException(BaseErrCodeConstant.JOB_NOT_EXIST);
         }
 
-        jobDO.setJobStatus((byte) 0);
+        jobDO.setJobStatus(JobStatusConstant.PAUSED);
         jobDO.setUpdateTime(LocalDateTime.now());
         sysJobMapper.updateById(jobDO);
 
@@ -120,11 +122,12 @@ public class SysJobServiceImpl implements SysJobService {
     @Override
     public void resumeJob(JobIdReq req) {
         SysJobDO jobDO = sysJobMapper.selectById(req.getJobId());
-        if (jobDO == null) {
-            BlinkException.throwBusinessException(ERR_JOB_NOT_EXIST);
+        if (ObjectUtil.isNull(jobDO)) {
+            log.warn("[SysJobService] 任务不存在 | jobId: {}", req.getJobId());
+            BlinkException.throwBusinessException(BaseErrCodeConstant.JOB_NOT_EXIST);
         }
 
-        jobDO.setJobStatus((byte) 1);
+        jobDO.setJobStatus(JobStatusConstant.NORMAL);
         jobDO.setUpdateTime(LocalDateTime.now());
         sysJobMapper.updateById(jobDO);
 
@@ -134,8 +137,9 @@ public class SysJobServiceImpl implements SysJobService {
     @Override
     public void triggerJob(JobIdReq req) {
         SysJobDO jobDO = sysJobMapper.selectById(req.getJobId());
-        if (jobDO == null) {
-            BlinkException.throwBusinessException(ERR_JOB_NOT_EXIST);
+        if (ObjectUtil.isNull(jobDO)) {
+            log.warn("[SysJobService] 任务不存在 | jobId: {}", req.getJobId());
+            BlinkException.throwBusinessException(BaseErrCodeConstant.JOB_NOT_EXIST);
         }
 
         // TODO: 调用调度器立即执行
