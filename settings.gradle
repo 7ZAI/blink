@@ -49,4 +49,5 @@ include 'blink-job:blink-job-api'
 include 'blink-job:blink-job-core'
 include 'blink-job:blink-job-spring-starter'
 include 'blink-job:blink-job-quartz-starter'
+include 'blink-job:blink-job-xxljob-starter'
 
