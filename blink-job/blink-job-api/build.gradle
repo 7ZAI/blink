@@ -1,0 +1,22 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+dependencies {
+    implementation 'cn.hutool:hutool-core'
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'com.blink'
+            artifactId = 'blink-job-api'
+            version = '1.0.0-SNAPSHOT'
+        }
+    }
+}

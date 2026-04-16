@@ -43,3 +43,7 @@ findProject(':blink-gateway:gateway-admin')?.name = 'gateway-admin'
 include 'blink-gateway:blink-gateway-admin-api-dubbo'
 findProject(':blink-gateway:blink-gateway-admin-api-dubbo')?.name = 'blink-gateway-admin-api-dubbo'
 
+// 定时任务调度模块
+include 'blink-job'
+include 'blink-job:blink-job-api'
+
