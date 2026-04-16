@@ -712,8 +712,6 @@ export const routeApi = {
   exportRoutes,
   importRoutes,
   cloneRoute,
-  verifyPushResult,
-  getLatestPush,
   // 实例路由 Actuator 接口
   getInstanceRoutesFromActuator,
   // 路由实例推送状态接口

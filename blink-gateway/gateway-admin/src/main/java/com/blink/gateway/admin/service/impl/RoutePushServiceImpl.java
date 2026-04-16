@@ -998,6 +998,7 @@ public class RoutePushServiceImpl implements RoutePushService {
 
     @Override
     public ResponseDTO<EmptyBody> confirmPush(ConfirmPushReq req) {
+        // 参数校验
         if (req.getPushId() == null) {
             BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
         }

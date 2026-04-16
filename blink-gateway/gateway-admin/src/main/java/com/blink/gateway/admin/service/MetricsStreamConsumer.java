@@ -505,7 +505,7 @@ public class MetricsStreamConsumer {
         // 清理无效实例记录
         if (CollUtil.isNotEmpty(invalidInstanceIds)) {
             for (String invalidId : invalidInstanceIds) {
-                redisClient.hDeleteFields(INSTANCE_LIST_KEY, invalidId);
+                redisClient.hDeleteFields(GATEWAY_INSTANCE_LIST_KEY, invalidId);
                 log.info("[MetricsStreamConsumer] 清理无效实例记录 | instanceId: {}", invalidId);
             }
         }

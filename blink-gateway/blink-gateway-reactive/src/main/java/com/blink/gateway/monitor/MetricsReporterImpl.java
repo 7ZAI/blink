@@ -456,7 +456,6 @@ public class MetricsReporterImpl implements MetricsReporter {
                     CircuitBreakerMetric metric = new CircuitBreakerMetric();
                     metric.setName(name);
                     metric.setState(cb.getState().name());
-                    // Resilience4j 返回 float，需要转换为 Double
                     metric.setFailureRate((double) cbMetrics.getFailureRate());
                     metric.setSlowCallRate((double) cbMetrics.getSlowCallRate());
                     metric.setNumberOfCalls(cbMetrics.getNumberOfBufferedCalls());
