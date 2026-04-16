@@ -2,6 +2,7 @@ package com.blink.gateway.admin.service;
 
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
+import com.blink.gateway.admin.dto.req.ConfirmPushReq;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
 import com.blink.gateway.admin.dto.req.GetLatestPushReq;
@@ -117,4 +118,13 @@ public interface RoutePushService {
      * @return 推送状态列表
      */
     ResponseDTO<List<RouteInstancePushStatusRsp>> getRouteInstancePushStatus(QueryRouteInstancePushStatusReq req);
+
+    /**
+     * 确认推送结果
+     * 用户确认推送已生效，更新确认状态
+     *
+     * @param req 确认请求
+     * @return 操作结果
+     */
+    ResponseDTO<EmptyBody> confirmPush(ConfirmPushReq req);
 }

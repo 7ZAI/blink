@@ -14,6 +14,7 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.constants.RouteConstant;
+import com.blink.gateway.admin.dto.req.ConfirmPushReq;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
 import com.blink.gateway.admin.dto.req.GetLatestPushReq;
@@ -970,5 +971,39 @@ public class RoutePushServiceImpl implements RoutePushService {
             return "已推送(" + pushedCount + "/" + total + ")";
         }
         return "已推送(" + pushedCount + "/" + total + ")";
+    }
+
+    @Override
+    public ResponseDTO<EmptyBody> confirmPush(ConfirmPushReq req) {
+        if (req.getPushId() == null) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 查询推送记录
+        GaRoutePushLogDO pushLog = gaRoutePushLogMapper.selectById(req.getPushId());
+        if (pushLog == null) {
+            BlinkException.throwBusinessException(PUSH_LOG_NOT_EXIST);
+        }
+
+        // 检查是否已确认
+        if (RouteConstant.CONFIRM_STATUS_CONFIRMED.equals(pushLog.getConfirmStatus())) {
+            log.warn("[RoutePush] 推送已确认，无需重复操作 | pushId: {}", req.getPushId());
+            return ResponseDTO.newSuccessInstance();
+        }
+
+        // 更新确认状态
+        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
+
+        LambdaUpdateWrapper<GaRoutePushLogDO> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(GaRoutePushLogDO::getPushId, req.getPushId())
+            .set(GaRoutePushLogDO::getConfirmStatus, RouteConstant.CONFIRM_STATUS_CONFIRMED)
+            .set(GaRoutePushLogDO::getConfirmTime, LocalDateTime.now())
+            .set(GaRoutePushLogDO::getConfirmBy, operatorName);
+
+        gaRoutePushLogMapper.update(null, updateWrapper);
+
+        log.info("[RoutePush] 确认推送成功 | pushId: {}, operator: {}", req.getPushId(), operatorName);
+
+        return ResponseDTO.newSuccessInstance();
     }
 }

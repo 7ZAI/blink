@@ -610,6 +610,21 @@ export const getRouteInstancePushStatus = (
   return request.post('/route/getRouteInstancePushStatus', { body: params })
 }
 
+/**
+ * 确认推送请求
+ */
+export interface ConfirmPushReq {
+  pushId: number
+  remark?: string
+}
+
+/**
+ * 确认推送结果
+ */
+export const confirmPush = (data: ConfirmPushReq): Promise<void> => {
+  return request.post('/route/confirmPush', { body: data })
+}
+
 // Route API object (for component using routeApi.xxx pattern)
 export const routeApi = {
   getList: getRouteList,
@@ -646,4 +661,6 @@ export const routeApi = {
   getInstanceRoutesFromActuator,
   // 路由实例推送状态接口
   getRouteInstancePushStatus,
+  // 确认推送
+  confirmPush,
 }

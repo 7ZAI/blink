@@ -190,9 +190,19 @@
             <span class="time-cell">{{ row.pushTime }}</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('pushHistory.actionColumn')" width="120" fixed="right">
+        <el-table-column :label="t('pushHistory.actionColumn')" width="180" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
+              <el-button
+                v-if="row.confirmStatus === 0"
+                type="success"
+                link
+                size="small"
+                @click="handleConfirm(row)"
+              >
+                <el-icon><Check /></el-icon>
+                {{ t('pushHistory.confirmPush') }}
+              </el-button>
               <el-button
                 type="primary"
                 link
@@ -277,7 +287,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, ArrowRight, View, RefreshLeft } from '@element-plus/icons-vue'
+import { Search, Refresh, ArrowRight, View, RefreshLeft, Check } from '@element-plus/icons-vue'
 import {
   routeApi,
   type RouteDefinition,
@@ -362,6 +372,27 @@ async function handleRollback(row: GaRoutePushLogDO) {
   try {
     await routeApi.rollbackPush(rollbackReq)
     ElMessage.success(t('pushHistory.rollbackSuccess'))
+    loadPushHistory()
+  } catch (error) {
+    ElMessage.error(t('message.fetchFailed'))
+  }
+}
+
+// 处理确认推送
+async function handleConfirm(row: GaRoutePushLogDO) {
+  try {
+    await ElMessageBox.confirm(
+      t('pushHistory.confirmPushConfirm'),
+      t('common.confirm'),
+      { type: 'info' }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    await routeApi.confirmPush({ pushId: row.pushId })
+    ElMessage.success(t('pushHistory.confirmSuccess'))
     loadPushHistory()
   } catch (error) {
     ElMessage.error(t('message.fetchFailed'))

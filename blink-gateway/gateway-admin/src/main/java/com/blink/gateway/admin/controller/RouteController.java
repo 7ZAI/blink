@@ -7,6 +7,7 @@ import com.blink.gateway.admin.dto.req.DeleteNacosRouteReq;
 import com.blink.gateway.admin.dto.req.DeleteRouteReq;
 import com.blink.gateway.admin.dto.req.BatchUpdateStatusReq;
 import com.blink.gateway.admin.dto.req.CloneRouteReq;
+import com.blink.gateway.admin.dto.req.ConfirmPushReq;
 import com.blink.gateway.admin.dto.req.ExportRoutesReq;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
@@ -417,5 +418,17 @@ public class RouteController {
     public ResponseDTO<List<RouteInstancePushStatusRsp>> getRouteInstancePushStatus(
         @RequestBody @Validated RequestDTO<QueryRouteInstancePushStatusReq> reqDto) {
         return routePushService.getRouteInstancePushStatus(reqDto.getBody());
+    }
+
+    /**
+     * 确认推送结果
+     * 用户确认推送已生效
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @PostMapping("/confirmPush")
+    public ResponseDTO<EmptyBody> confirmPush(@RequestBody @Validated RequestDTO<ConfirmPushReq> reqDto) {
+        return routePushService.confirmPush(reqDto.getBody());
     }
 }

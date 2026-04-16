@@ -596,6 +596,9 @@ export default {
     routeIdsPreview: '路由ID预览',
     moreRoutes: '还有 {count} 条...',
     noRoutes: '暂无路由',
+    confirmPush: '确认',
+    confirmPushConfirm: '确认该推送已生效？',
+    confirmSuccess: '确认成功',
   },
   monitor: {
     title: '监控中心',

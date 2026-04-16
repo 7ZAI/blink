@@ -616,6 +616,9 @@ export default {
     routeNameColumn: 'Route Name',
     uriColumn: 'Target URI',
     orderColumn: 'Order',
+    confirmPush: 'Confirm',
+    confirmPushConfirm: 'Confirm this push has taken effect?',
+    confirmSuccess: 'Confirmed',
   },
   config: {
     title: 'Config Management',

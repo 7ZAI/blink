@@ -135,4 +135,14 @@ public class GaRoutePushLogDO implements Serializable {
      * 2: 超时
      */
     private Byte confirmStatus;
+
+    /**
+     * 确认时间
+     */
+    private LocalDateTime confirmTime;
+
+    /**
+     * 确认人
+     */
+    private String confirmBy;
 }
