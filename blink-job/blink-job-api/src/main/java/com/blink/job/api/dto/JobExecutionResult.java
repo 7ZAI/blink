@@ -14,10 +14,10 @@ import java.util.Map;
 public class JobExecutionResult {
 
     /** 是否成功 */
-    private boolean success;
+    private Boolean success;
 
     /** 执行耗时（毫秒） */
-    private long duration;
+    private Long duration;
 
     /** 结果消息 */
     private String message;

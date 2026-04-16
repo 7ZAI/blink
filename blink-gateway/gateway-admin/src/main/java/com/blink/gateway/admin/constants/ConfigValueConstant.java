@@ -98,4 +98,11 @@ public interface ConfigValueConstant {
      * 路由历史记录保留天数
      */
     Integer ROUTE_HISTORY_KEEP_DAYS = 90;
+
+    // ============ 指标采集配置常量 ============
+
+    /**
+     * 实例指标 TTL（秒）
+     */
+    Integer METRICS_TTL_SECONDS = 90;
 }

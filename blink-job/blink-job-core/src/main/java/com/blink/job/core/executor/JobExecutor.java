@@ -7,6 +7,7 @@ import com.blink.job.api.dto.JobInfo;
 import com.blink.job.api.enums.JobType;
 import com.blink.job.api.job.BlinkJob;
 import com.blink.job.core.alarm.JobAlarmHandler;
+import com.blink.job.core.constants.JobConstant;
 import com.blink.job.core.registry.JobRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -54,7 +55,7 @@ public class JobExecutor {
             JobExecutionResult result = doExecute(target, jobInfo, context);
 
             // 3. 失败重试
-            if (!result.isSuccess() && ObjectUtil.isNotNull(jobInfo.getRetryCount()) && jobInfo.getRetryCount() > 0) {
+            if (!Boolean.TRUE.equals(result.getSuccess()) && ObjectUtil.isNotNull(jobInfo.getRetryCount()) && jobInfo.getRetryCount() > 0) {
                 result = retryExecute(jobInfo, context, result);
             }
 
@@ -146,7 +147,7 @@ public class JobExecutor {
     private JobExecutionResult retryExecute(JobInfo jobInfo, JobContext context,
                                             JobExecutionResult lastResult) {
         int maxRetry = jobInfo.getRetryCount();
-        long interval = ObjectUtil.isNotNull(jobInfo.getRetryInterval()) ? jobInfo.getRetryInterval() : 1000;
+        long interval = ObjectUtil.isNotNull(jobInfo.getRetryInterval()) ? jobInfo.getRetryInterval() : JobConstant.DEFAULT_RETRY_INTERVAL_MS;
 
         for (int i = 1; i <= maxRetry; i++) {
             try {
@@ -158,7 +159,7 @@ public class JobExecutor {
                 JobContext retryContext = context.withExecuteCount(i);
                 JobExecutionResult result = doExecute(target, jobInfo, retryContext);
 
-                if (result.isSuccess()) {
+                if (Boolean.TRUE.equals(result.getSuccess())) {
                     log.info("[JobExecutor] 任务重试成功 | jobName: {}, retryCount: {}",
                             jobInfo.getName(), i);
                     return result;

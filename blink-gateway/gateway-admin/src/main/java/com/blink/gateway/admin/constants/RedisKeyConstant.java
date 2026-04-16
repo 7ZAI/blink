@@ -115,4 +115,26 @@ public interface RedisKeyConstant {
      * Key 格式：blink:gateway:traffic:hour:{yyyyMMdd}
      */
     String TRAFFIC_HOUR_KEY_PREFIX = "blink:gateway:traffic:hour:";
+
+    // ==================== 熔断器指标 ====================
+
+    /**
+     * 熔断器指标 Redis Key 前缀
+     */
+    String CIRCUIT_BREAKER_KEY_PREFIX = "blink:gateway:circuitbreaker:";
+
+    /**
+     * 熔断器状态转换历史 Redis Key 前缀
+     */
+    String CIRCUIT_BREAKER_HISTORY_KEY_PREFIX = "blink:gateway:circuitbreaker:history:";
+
+    /**
+     * 熔断器指标 TTL（秒）
+     */
+    int CIRCUIT_BREAKER_TTL_SECONDS = 90;
+
+    /**
+     * 熔断器历史记录 TTL（秒）- 7 天
+     */
+    int CIRCUIT_BREAKER_HISTORY_TTL_SECONDS = 7 * 24 * 60 * 60;
 }

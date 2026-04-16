@@ -1,37 +1,15 @@
 package com.blink.gateway.admin.constants;
 
 /**
- * 熔断器相关常量
+ * 熔断器状态常量
+ *
+ * 注意：Redis Key 常量请使用 RedisKeyConstant.CIRCUIT_BREAKER_KEY_PREFIX 等
+ * TTL 配置值请使用 RedisKeyConstant.CIRCUIT_BREAKER_TTL_SECONDS 等
  *
  * @author binblink
  * @since 2026-04-16
  */
 public interface CircuitBreakerConstant {
-
-    /**
-     * Redis Key 前缀：熔断器指标
-     */
-    String CB_KEY_PREFIX = "blink:gateway:circuitbreaker:";
-
-    /**
-     * Redis Key 前缀：状态转换历史
-     */
-    String CB_HISTORY_KEY_PREFIX = "blink:gateway:circuitbreaker:history:";
-
-    /**
-     * 熔断器指标 TTL（秒）
-     */
-    int CB_TTL_SECONDS = 90;
-
-    /**
-     * 历史记录 TTL（秒）- 7 天
-     */
-    int HISTORY_TTL_SECONDS = 7 * 24 * 60 * 60;
-
-    /**
-     * 默认历史记录查询数量
-     */
-    int DEFAULT_HISTORY_LIMIT = 20;
 
     /**
      * 状态：关闭（正常）
@@ -49,7 +27,7 @@ public interface CircuitBreakerConstant {
     String STATE_HALF_OPEN = "HALF_OPEN";
 
     /**
-     * 实例列表 Key（复用 RedisKeyConstant）
+     * 默认历史记录查询数量
      */
-    String INSTANCE_LIST_KEY = "blink:gateway:instance:list";
+    int DEFAULT_HISTORY_LIMIT = 20;
 }

@@ -29,6 +29,14 @@ import java.util.Map;
 import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_OFFLINE;
 import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_ONLINE;
 import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_SHUTDOWN;
+import static com.blink.gateway.admin.constants.ConfigValueConstant.METRICS_TTL_SECONDS;
+import static com.blink.gateway.admin.constants.RedisKeyConstant.CIRCUIT_BREAKER_HISTORY_KEY_PREFIX;
+import static com.blink.gateway.admin.constants.RedisKeyConstant.CIRCUIT_BREAKER_HISTORY_TTL_SECONDS;
+import static com.blink.gateway.admin.constants.RedisKeyConstant.CIRCUIT_BREAKER_KEY_PREFIX;
+import static com.blink.gateway.admin.constants.RedisKeyConstant.CIRCUIT_BREAKER_TTL_SECONDS;
+import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_INSTANCE_LIST_KEY;
+import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_PREFIX;
+import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_SUMMARY;
 
 /**
  * Redis Stream 指标消息消费者
@@ -44,15 +52,6 @@ import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STA
 @Service
 @Slf4j
 public class MetricsStreamConsumer {
-
-    private static final String METRICS_KEY_PREFIX = "blink:gateway:metrics:";
-    private static final String INSTANCE_LIST_KEY = "blink:gateway:instance:list";
-    private static final String SUMMARY_KEY = "blink:gateway:metrics:summary";
-    private static final int METRICS_TTL_SECONDS = 90;
-
-    // 熔断器指标存储常量
-    private static final String CB_KEY_PREFIX = "blink:gateway:circuitbreaker:";
-    private static final int CB_TTL_SECONDS = 90;
 
     private final RedisClient redisClient;
     private final SseConnectionPool sseConnectionPool;
@@ -119,7 +118,7 @@ public class MetricsStreamConsumer {
         }
 
         // 存储实例指标到 Redis Hash
-        String metricsKey = METRICS_KEY_PREFIX + instanceId;
+        String metricsKey = GATEWAY_METRICS_PREFIX + instanceId;
         Map<String, Object> metricsData = convertToMetricsData(message);
         redisClient.hSet(metricsKey, metricsData);
         redisClient.expire(metricsKey, METRICS_TTL_SECONDS);
@@ -131,7 +130,7 @@ public class MetricsStreamConsumer {
         }
 
         // 更新实例列表（使用 hPutField 设置单个字段）
-        redisClient.hPutField(INSTANCE_LIST_KEY, instanceId, String.valueOf(System.currentTimeMillis()));
+        redisClient.hPutField(GATEWAY_INSTANCE_LIST_KEY, instanceId, String.valueOf(System.currentTimeMillis()));
 
         // 计算流量增量并存储（用于趋势图）
         calculateTrafficIncrement(message);
@@ -184,7 +183,7 @@ public class MetricsStreamConsumer {
      * 解析消息中的 Int 值
      */
     private int parseMessageInt(String value) {
-        if (value == null || value.isEmpty()) {
+        if (StrUtil.isBlank(value)) {
             return 0;
         }
         try {
@@ -198,7 +197,7 @@ public class MetricsStreamConsumer {
      * 解析消息中的 Long 值
      */
     private long parseMessageLong(String value) {
-        if (value == null || value.isEmpty()) {
+        if (StrUtil.isBlank(value)) {
             return 0L;
         }
         try {
@@ -297,10 +296,10 @@ public class MetricsStreamConsumer {
         }
 
         // 注册实例到列表
-        redisClient.hPutField(INSTANCE_LIST_KEY, instanceId, String.valueOf(System.currentTimeMillis()));
+        redisClient.hPutField(GATEWAY_INSTANCE_LIST_KEY, instanceId, String.valueOf(System.currentTimeMillis()));
 
         // 存储初始指标
-        String metricsKey = METRICS_KEY_PREFIX + instanceId;
+        String metricsKey = GATEWAY_METRICS_PREFIX + instanceId;
         Map<String, Object> metricsData = convertToMetricsData(message);
         redisClient.hSet(metricsKey, metricsData);
         redisClient.expire(metricsKey, METRICS_TTL_SECONDS);
@@ -325,10 +324,10 @@ public class MetricsStreamConsumer {
         String serviceId = message.get("serviceId");
 
         // 从实例列表移除
-        redisClient.hDeleteFields(INSTANCE_LIST_KEY, instanceId);
+        redisClient.hDeleteFields(GATEWAY_INSTANCE_LIST_KEY, instanceId);
 
         // 删除实例指标缓存
-        redisClient.delete(METRICS_KEY_PREFIX + instanceId);
+        redisClient.delete(GATEWAY_METRICS_PREFIX + instanceId);
 
         // 根据 instanceId 字段查询并更新数据库状态为离线
         LambdaQueryWrapper<GatewayInstanceDO> queryWrapper = new LambdaQueryWrapper<>();
@@ -440,7 +439,7 @@ public class MetricsStreamConsumer {
      * 更新汇总统计
      */
     private void updateSummary() {
-        Map<String, Object> instanceList = redisClient.hGetStringMap(INSTANCE_LIST_KEY);
+        Map<String, Object> instanceList = redisClient.hGetStringMap(GATEWAY_INSTANCE_LIST_KEY);
 
         if (CollUtil.isEmpty(instanceList)) {
             return;
@@ -457,7 +456,7 @@ public class MetricsStreamConsumer {
         int responseTimeCount = 0;
 
         for (String instanceId : instanceList.keySet()) {
-            Map<String, Object> metrics = redisClient.hGetStringMap(METRICS_KEY_PREFIX + instanceId);
+            Map<String, Object> metrics = redisClient.hGetStringMap(GATEWAY_METRICS_PREFIX + instanceId);
 
             if (CollUtil.isEmpty(metrics)) {
                 continue;
@@ -512,15 +511,15 @@ public class MetricsStreamConsumer {
                 BigDecimal.valueOf(totalResponseTime / responseTimeCount).setScale(0, RoundingMode.HALF_UP).longValue() : 0L);
         summary.put("timestamp", System.currentTimeMillis());
 
-        redisClient.hSet(SUMMARY_KEY, summary);
-        redisClient.expire(SUMMARY_KEY, METRICS_TTL_SECONDS);
+        redisClient.hSet(GATEWAY_METRICS_SUMMARY, summary);
+        redisClient.expire(GATEWAY_METRICS_SUMMARY, METRICS_TTL_SECONDS);
     }
 
     /**
      * 触发状态变化检测
      */
     private void triggerStatusCheck() {
-        Map<String, Object> instanceList = redisClient.hGetStringMap(INSTANCE_LIST_KEY);
+        Map<String, Object> instanceList = redisClient.hGetStringMap(GATEWAY_INSTANCE_LIST_KEY);
 
         if (CollUtil.isEmpty(instanceList)) {
             return;
@@ -529,7 +528,7 @@ public class MetricsStreamConsumer {
         List<InstanceStatusPayload.InstanceSummary> summaries = new ArrayList<>();
 
         for (String instanceId : instanceList.keySet()) {
-            Map<String, Object> metrics = redisClient.hGetStringMap(METRICS_KEY_PREFIX + instanceId);
+            Map<String, Object> metrics = redisClient.hGetStringMap(GATEWAY_METRICS_PREFIX + instanceId);
 
             InstanceStatusPayload.InstanceSummary summary = new InstanceStatusPayload.InstanceSummary();
             summary.setInstanceId(instanceId);
@@ -601,7 +600,7 @@ public class MetricsStreamConsumer {
             }
 
             // 存储到 Redis Hash: blink:gateway:circuitbreaker:{instanceId}
-            String cbKey = CB_KEY_PREFIX + instanceId;
+            String cbKey = CIRCUIT_BREAKER_KEY_PREFIX + instanceId;
             Map<String, Object> cbData = new HashMap<>();
             cbData.put("timestamp", System.currentTimeMillis());
 
@@ -616,7 +615,7 @@ public class MetricsStreamConsumer {
             }
 
             redisClient.hSet(cbKey, cbData);
-            redisClient.expire(cbKey, CB_TTL_SECONDS);
+            redisClient.expire(cbKey, CIRCUIT_BREAKER_TTL_SECONDS);
 
             log.debug("[MetricsStreamConsumer] 存储熔断器指标 | instanceId: {}, count: {}",
                     instanceId, metrics.size());
@@ -635,7 +634,7 @@ public class MetricsStreamConsumer {
      */
     private void checkStateTransition(String instanceId, String cbName, Map<String, Object> newMetric) {
         try {
-            String cbKey = CB_KEY_PREFIX + instanceId;
+            String cbKey = CIRCUIT_BREAKER_KEY_PREFIX + instanceId;
             String oldMetricJson = (String) redisClient.hGetField(cbKey, cbName);
 
             if (StrUtil.isBlank(oldMetricJson)) {
@@ -673,7 +672,7 @@ public class MetricsStreamConsumer {
                                         String fromState, String toState,
                                         Map<String, Object> metric) {
         try {
-            String historyKey = CB_KEY_PREFIX + "history:" + instanceId + ":" + cbName;
+            String historyKey = CIRCUIT_BREAKER_HISTORY_KEY_PREFIX + instanceId + ":" + cbName;
 
             Map<String, Object> transition = new HashMap<>();
             transition.put("from", fromState);
@@ -685,7 +684,7 @@ public class MetricsStreamConsumer {
 
             String json = objectMapper.writeValueAsString(transition);
             redisClient.lPush(historyKey, json);
-            redisClient.expire(historyKey, 7 * 24 * 60 * 60); // 7 天
+            redisClient.expire(historyKey, CIRCUIT_BREAKER_HISTORY_TTL_SECONDS);
 
             log.info("[MetricsStreamConsumer] 状态转换记录 | instance: {}, cb: {}, {} -> {}",
                     instanceId, cbName, fromState, toState);
