@@ -15,13 +15,18 @@ import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.constants.RouteConstant;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
+import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
+import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
+import com.blink.gateway.admin.dto.req.VerifyPushResultReq;
+import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
+import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
@@ -38,9 +43,13 @@ import com.blink.gateway.dto.RouteSyncMsg;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -84,6 +93,25 @@ public class RoutePushServiceImpl implements RoutePushService {
      * Nacos 配置组件（可选注入）
      */
     private NacosConfigComponent nacosConfigComponent;
+
+    /**
+     * WebClient 用于调用网关实例 Actuator 端点
+     */
+    private final WebClient webClient = WebClient.builder()
+        .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
+        .build();
+
+    /**
+     * Actuator 认证用户名
+     */
+    @Value("${blink.gateway.actuator.username:admin}")
+    private String actuatorUsername;
+
+    /**
+     * Actuator 认证密码
+     */
+    @Value("${blink.gateway.actuator.password:123456}")
+    private String actuatorPassword;
 
     @Autowired(required = false)
     public void setNacosConfigComponent(NacosConfigComponent nacosConfigComponent) {
@@ -657,5 +685,111 @@ public class RoutePushServiceImpl implements RoutePushService {
         log.info("[RoutePush] 查询实例推送历史成功 | instanceId: {}, count: {}", req.getInstanceId(), rsp.getTotal());
 
         return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    @Override
+    public ResponseDTO<InstanceRoutesRsp> getInstanceRoutesFromActuator(GetInstanceRoutesFromActuatorReq req) {
+        // 参数校验
+        if (StrUtil.isBlank(req.getInstanceId())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        InstanceRoutesRsp rsp = new InstanceRoutesRsp();
+        rsp.setInstanceId(req.getInstanceId());
+        rsp.setFromActuator(true);
+
+        // 解析实例ID获取 host:port
+        // 格式：gateway-app:host:port
+        String[] parts = req.getInstanceId().split(":");
+        if (parts.length < 3) {
+            log.warn("[RoutePush] 实例ID格式错误 | instanceId: {}", req.getInstanceId());
+            rsp.setError("实例ID格式错误");
+            rsp.setRows(new ArrayList<>());
+            rsp.setTotal(0);
+            return ResponseDTO.newSuccessInstance(rsp);
+        }
+
+        String host = parts[1];
+        String port = parts[2];
+
+        // 调用网关实例 Actuator 端点
+        try {
+            String actuatorUrl = String.format("http://%s:%s/actuator/gateway-routes", host, port);
+
+            log.info("[RoutePush] 调用网关实例 Actuator 端点 | url: {}", actuatorUrl);
+
+            // 使用 WebClient 调用（带 Basic 认证）
+            String response = webClient.get()
+                .uri(actuatorUrl)
+                .headers(headers -> headers.setBasicAuth(actuatorUsername, actuatorPassword))
+                .retrieve()
+                .bodyToMono(String.class)
+                .timeout(Duration.ofSeconds(5))
+                .block();
+
+            // 解析响应
+            if (StrUtil.isNotBlank(response)) {
+                Map<String, Object> responseMap = JacksonUtil.fromJson(response,
+                    new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> routesList = (List<Map<String, Object>>) responseMap.get("routes");
+                List<GaRouteDO> routes = convertRouteMapListToGaRouteDOList(routesList);
+
+                rsp.setRows(routes);
+                rsp.setTotal(routes.size());
+                rsp.setTimestamp(LocalDateTime.now());
+            } else {
+                rsp.setRows(new ArrayList<>());
+                rsp.setTotal(0);
+            }
+
+            log.info("[RoutePush] 从实例获取路由成功 | instanceId: {}, count: {}",
+                req.getInstanceId(), rsp.getTotal());
+
+        } catch (Exception e) {
+            log.error("[RoutePush] 从实例获取路由失败 | instanceId: {}, error: {}",
+                req.getInstanceId(), e.getMessage(), e);
+
+            // 根据异常类型提供更友好的错误信息
+            String errorMessage = e.getMessage();
+            if (errorMessage.contains("Connection refused") || errorMessage.contains("connect timed out")) {
+                errorMessage = "实例已离线或网络不可达";
+            } else if (errorMessage.contains("401") || errorMessage.contains("Unauthorized")) {
+                errorMessage = "Actuator 认证失败";
+            } else if (errorMessage.contains("Timeout")) {
+                errorMessage = "获取路由超时";
+            }
+
+            rsp.setError("获取失败：" + errorMessage);
+            rsp.setRows(new ArrayList<>());
+            rsp.setTotal(0);
+        }
+
+        return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    /**
+     * 将路由 Map 列表转换为 GaRouteDO 列表
+     *
+     * @param routesList 路由 Map 列表
+     * @return GaRouteDO 列表
+     */
+    @SuppressWarnings("unchecked")
+    private List<GaRouteDO> convertRouteMapListToGaRouteDOList(List<Map<String, Object>> routesList) {
+        List<GaRouteDO> routes = new ArrayList<>();
+
+        if (routesList == null) {
+            return routes;
+        }
+
+        for (Map<String, Object> routeMap : routesList) {
+            GaRouteDO route = convertNacosRouteToGaRouteDO(routeMap);
+            if (route != null) {
+                routes.add(route);
+            }
+        }
+
+        return routes;
     }
 }

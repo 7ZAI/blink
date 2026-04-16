@@ -3,13 +3,18 @@ package com.blink.gateway.admin.service;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
+import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
+import com.blink.gateway.admin.dto.req.VerifyPushResultReq;
+import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
+import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
+import com.blink.gateway.admin.entity.GaRoutePushLogDO;
 
 /**
  * 路由推送服务接口
@@ -72,4 +77,30 @@ public interface RoutePushService {
      * @return 推送历史列表
      */
     ResponseDTO<QueryPushLogRsp> getInstancePushHistory(QueryInstancePushHistoryReq req);
+
+    /**
+     * 从网关实例获取实际加载的路由
+     * 通过 HTTP Actuator 端点获取实例内存中的路由定义
+     *
+     * @param req 请求参数
+     * @return 实例路由响应
+     */
+    ResponseDTO<InstanceRoutesRsp> getInstanceRoutesFromActuator(GetInstanceRoutesFromActuatorReq req);
+
+    /**
+     * 获取实例最新推送记录
+     *
+     * @param req 请求参数
+     * @return 最新推送记录
+     */
+    ResponseDTO<GaRoutePushLogDO> getLatestPush(com.blink.gateway.admin.dto.req.GetLatestPushReq req);
+
+    /**
+     * 验证推送结果
+     * 比较推送的路由快照与实例实际路由配置
+     *
+     * @param req 验证请求
+     * @return 验证结果
+     */
+    ResponseDTO<VerifyPushResultRsp> verifyPushResult(VerifyPushResultReq req);
 }

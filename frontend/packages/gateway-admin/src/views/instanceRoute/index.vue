@@ -458,16 +458,15 @@ async function loadInstanceRoutes() {
   }
   routesLoading.value = true
   try {
-    const result = await routeApi.getInstanceRoutes({
+    // 使用 Actuator 接口从实例获取真实路由
+    const result = await routeApi.getInstanceRoutesFromActuator({
       instanceId: selectedInstance.value.instanceId,
     })
-    // getInstanceRoutes 返回 RouteDefinition[] 或 { rows: RouteDefinition[] }
-    if (Array.isArray(result)) {
-      instanceRoutes.value = result
-    } else if (result && Array.isArray((result as any).rows)) {
-      instanceRoutes.value = (result as any).rows
-    } else {
+    if (result.error) {
+      ElMessage.warning(result.error)
       instanceRoutes.value = []
+    } else {
+      instanceRoutes.value = result.rows || []
     }
   } catch (error) {
     ElMessage.error(t('message.fetchFailed'))

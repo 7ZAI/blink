@@ -535,6 +535,37 @@ export const cloneRoute = (data: CloneRouteReq): Promise<RouteDefinition> => {
   return request.post('/route/cloneRoute', { body: data })
 }
 
+// ========== 实例路由 Actuator 接口 ==========
+
+/**
+ * 从实例获取路由请求
+ */
+export interface GetInstanceRoutesFromActuatorReq {
+  instanceId: string
+}
+
+/**
+ * 实例路由响应
+ */
+export interface InstanceRoutesRsp {
+  instanceId: string
+  timestamp: string
+  rows: RouteDefinition[]
+  total: number
+  fromActuator: boolean
+  error?: string
+}
+
+/**
+ * 从网关实例获取实际加载的路由
+ * 通过 HTTP Actuator 端点获取实例内存中的路由定义
+ */
+export const getInstanceRoutesFromActuator = (
+  params: GetInstanceRoutesFromActuatorReq,
+): Promise<InstanceRoutesRsp> => {
+  return request.post('/route/getInstanceRoutesFromActuator', { body: params })
+}
+
 // Route API object (for component using routeApi.xxx pattern)
 export const routeApi = {
   getList: getRouteList,
@@ -565,4 +596,8 @@ export const routeApi = {
   exportRoutes,
   importRoutes,
   cloneRoute,
+  verifyPushResult,
+  getLatestPush,
+  // 实例路由 Actuator 接口
+  getInstanceRoutesFromActuator,
 }

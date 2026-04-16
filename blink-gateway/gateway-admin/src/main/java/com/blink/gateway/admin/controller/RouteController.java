@@ -9,6 +9,8 @@ import com.blink.gateway.admin.dto.req.BatchUpdateStatusReq;
 import com.blink.gateway.admin.dto.req.CloneRouteReq;
 import com.blink.gateway.admin.dto.req.ExportRoutesReq;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
+import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
+import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.ImportRoutesReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
@@ -24,6 +26,8 @@ import com.blink.gateway.admin.dto.req.SaveNacosRouteReq;
 import com.blink.gateway.admin.dto.req.SaveRouteReq;
 import com.blink.gateway.admin.dto.req.SyncRoutesReq;
 import com.blink.gateway.admin.dto.req.UpdateRouteReq;
+import com.blink.gateway.admin.dto.req.VerifyPushResultReq;
+import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.ImportRoutesRsp;
@@ -32,9 +36,11 @@ import com.blink.gateway.admin.dto.rsp.QueryPushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
 import com.blink.gateway.admin.dto.rsp.RoutesGroupStatsRsp;
+import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
+import com.blink.gateway.admin.entity.GaRoutePushLogDO;
 import com.blink.gateway.admin.service.NacosRouteService;
 import com.blink.gateway.admin.service.RoutePushService;
 import com.blink.gateway.admin.service.RouteService;
@@ -360,5 +366,41 @@ public class RouteController {
     @PostMapping("/rollbackPush")
     public ResponseDTO<EmptyBody> rollbackPush(@RequestBody @Validated RequestDTO<RollbackPushReq> reqDto) {
         return routePushService.rollbackPush(reqDto.getBody());
+    }
+
+    /**
+     * 从网关实例获取实际加载的路由
+     * 通过 HTTP Actuator 端点获取实例内存中的路由定义
+     *
+     * @param reqDto 请求参数
+     * @return 实例路由响应
+     */
+    @PostMapping("/getInstanceRoutesFromActuator")
+    public ResponseDTO<InstanceRoutesRsp> getInstanceRoutesFromActuator(
+        @RequestBody @Validated RequestDTO<GetInstanceRoutesFromActuatorReq> reqDto) {
+        return routePushService.getInstanceRoutesFromActuator(reqDto.getBody());
+    }
+
+    /**
+     * 获取实例最新推送记录
+     *
+     * @param reqDto 请求参数
+     * @return 最新推送记录
+     */
+    @PostMapping("/getLatestPush")
+    public ResponseDTO<GaRoutePushLogDO> getLatestPush(@RequestBody @Validated RequestDTO<GetLatestPushReq> reqDto) {
+        return routePushService.getLatestPush(reqDto.getBody());
+    }
+
+    /**
+     * 验证推送结果
+     * 比较推送的路由快照与实例实际路由配置
+     *
+     * @param reqDto 请求参数
+     * @return 验证结果
+     */
+    @PostMapping("/verifyPushResult")
+    public ResponseDTO<VerifyPushResultRsp> verifyPushResult(@RequestBody @Validated RequestDTO<VerifyPushResultReq> reqDto) {
+        return routePushService.verifyPushResult(reqDto.getBody());
     }
 }
