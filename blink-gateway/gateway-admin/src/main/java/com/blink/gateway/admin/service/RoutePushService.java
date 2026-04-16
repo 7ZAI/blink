@@ -4,17 +4,22 @@ import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
+import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
+import com.blink.gateway.admin.dto.req.QueryRouteInstancePushStatusReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
 import com.blink.gateway.admin.dto.req.VerifyPushResultReq;
 import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
+import com.blink.gateway.admin.dto.rsp.RouteInstancePushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
 import com.blink.gateway.admin.entity.GaRoutePushLogDO;
+
+import java.util.List;
 
 /**
  * 路由推送服务接口
@@ -103,4 +108,13 @@ public interface RoutePushService {
      * @return 验证结果
      */
     ResponseDTO<VerifyPushResultRsp> verifyPushResult(VerifyPushResultReq req);
+
+    /**
+     * 查询路由实例推送状态
+     * 返回每个路由在各实例上的推送状态统计
+     *
+     * @param req 查询请求
+     * @return 推送状态列表
+     */
+    ResponseDTO<List<RouteInstancePushStatusRsp>> getRouteInstancePushStatus(QueryRouteInstancePushStatusReq req);
 }

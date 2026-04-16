@@ -417,6 +417,10 @@ export default {
     pushStatusPushed: '已推送',
     pushStatusFailed: '推送失败',
     pushStatusUnknown: '未知',
+    pushStatusPushedFormat: '已推送({count}/{total})',
+    pushStatusNotPushedFormat: '未推送(0/{total})',
+    pushStatusPartialFormat: '部分失败({success}/{total})',
+    instancePushDetail: '实例推送详情',
     lastPushTime: '最后推送时间',
     // 新增功能相关
     batchStatus: '批量状态',

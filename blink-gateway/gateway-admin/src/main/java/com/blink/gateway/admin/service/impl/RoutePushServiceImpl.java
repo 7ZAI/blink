@@ -21,20 +21,24 @@ import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
+import com.blink.gateway.admin.dto.req.QueryRouteInstancePushStatusReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
 import com.blink.gateway.admin.dto.req.VerifyPushResultReq;
 import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
+import com.blink.gateway.admin.dto.rsp.RouteInstancePushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
 import com.blink.gateway.admin.entity.GaRoutePushLogDO;
+import com.blink.gateway.admin.entity.GaRouteInstanceRelaDO;
 import com.blink.gateway.admin.entity.FilterConfig;
 import com.blink.gateway.admin.entity.PredicateConfig;
 import com.blink.gateway.admin.mapper.GaRouteMapper;
 import com.blink.gateway.admin.mapper.GaRoutePushLogMapper;
+import com.blink.gateway.admin.mapper.GaRouteInstanceRelaMapper;
 import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
 import com.blink.gateway.admin.service.GatewayInstanceService;
 import com.blink.gateway.admin.service.RoutePushService;
@@ -79,6 +83,9 @@ public class RoutePushServiceImpl implements RoutePushService {
 
     @Resource
     private GaRoutePushLogMapper gaRoutePushLogMapper;
+
+    @Resource
+    private GaRouteInstanceRelaMapper gaRouteInstanceRelaMapper;
 
     @Resource
     private RedisClient redisClient;
@@ -230,6 +237,10 @@ public class RoutePushServiceImpl implements RoutePushService {
 
         // 保存推送记录
         gaRoutePushLogMapper.insert(pushLog);
+
+        // 记录实例级推送状态
+        saveRouteInstanceRela(req.getRouteIds(), targetInstanceIds, pushLog.getPushId(),
+            pushLog.getPushResult() == RouteConstant.PUSH_RESULT_SUCCESS);
 
         log.info("[RoutePush] 推送路由成功 | pushId: {}, routeIds: {}, targetInstances: {}, operatorUser: {}",
             pushLog.getPushId(), req.getRouteIds(), targetInstanceIds.size(), operatorUser);
@@ -791,5 +802,173 @@ public class RoutePushServiceImpl implements RoutePushService {
         }
 
         return routes;
+    }
+
+    /**
+     * 保存路由实例关联记录
+     * 记录每个路由在每个实例上的推送状态
+     *
+     * @param routeIds 路由ID列表
+     * @param instanceIds 实例ID列表
+     * @param pushId 推送记录ID
+     * @param success 是否推送成功
+     */
+    private void saveRouteInstanceRela(List<String> routeIds, List<String> instanceIds,
+            Long pushId, boolean success) {
+        if (CollUtil.isEmpty(routeIds) || CollUtil.isEmpty(instanceIds)) {
+            return;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        Byte pushStatus = success ? RouteConstant.PUSH_STATUS_PUSHED : RouteConstant.PUSH_STATUS_PUSH_FAILED;
+
+        for (String routeId : routeIds) {
+            for (String instanceId : instanceIds) {
+                // 检查是否已存在记录
+                LambdaQueryWrapper<GaRouteInstanceRelaDO> queryWrapper = new LambdaQueryWrapper<>();
+                queryWrapper.eq(GaRouteInstanceRelaDO::getRouteId, routeId)
+                    .eq(GaRouteInstanceRelaDO::getInstanceId, instanceId);
+
+                GaRouteInstanceRelaDO existingRela = gaRouteInstanceRelaMapper.selectOne(queryWrapper);
+
+                if (existingRela != null) {
+                    // 更新现有记录
+                    existingRela.setPushId(pushId);
+                    existingRela.setPushStatus(pushStatus);
+                    existingRela.setPushTime(now);
+                    gaRouteInstanceRelaMapper.updateById(existingRela);
+                } else {
+                    // 插入新记录
+                    GaRouteInstanceRelaDO rela = new GaRouteInstanceRelaDO();
+                    rela.setRouteId(routeId);
+                    rela.setInstanceId(instanceId);
+                    rela.setPushId(pushId);
+                    rela.setPushStatus(pushStatus);
+                    rela.setPushTime(now);
+                    gaRouteInstanceRelaMapper.insert(rela);
+                }
+            }
+        }
+
+        log.info("[RoutePush] 保存路由实例关联 | routeCount: {}, instanceCount: {}, pushId: {}, success: {}",
+            routeIds.size(), instanceIds.size(), pushId, success);
+    }
+
+    @Override
+    public ResponseDTO<List<RouteInstancePushStatusRsp>> getRouteInstancePushStatus(QueryRouteInstancePushStatusReq req) {
+        List<RouteInstancePushStatusRsp> result = new ArrayList<>();
+
+        // 获取要查询的路由ID列表
+        List<String> routeIds = new ArrayList<>();
+        if (CollUtil.isNotEmpty(req.getRouteIds())) {
+            routeIds = req.getRouteIds();
+        } else if (StrUtil.isNotBlank(req.getRouteId())) {
+            routeIds.add(req.getRouteId());
+        }
+
+        if (CollUtil.isEmpty(routeIds)) {
+            return ResponseDTO.newSuccessInstance(result);
+        }
+
+        // 获取所有在线实例
+        ResponseDTO<GatewayInstanceListRsp> instancesRsp = gatewayInstanceService.getGatewayInstances();
+        List<String> allInstanceIds = new ArrayList<>();
+        if (instancesRsp.getBody() != null && instancesRsp.getBody().getInstances() != null) {
+            allInstanceIds = instancesRsp.getBody().getInstances().stream()
+                .filter(inst -> inst.getStatus().equals(INSTANCE_STATUS_ONLINE))
+                .map(GatewayInstanceVO::getInstanceId)
+                .toList();
+        }
+
+        // 查询每个路由的实例推送状态
+        for (String routeId : routeIds) {
+            RouteInstancePushStatusRsp statusRsp = new RouteInstancePushStatusRsp();
+            statusRsp.setRouteId(routeId);
+
+            // 查询该路由的所有实例关联记录
+            List<GaRouteInstanceRelaDO> relaList = gaRouteInstanceRelaMapper.selectByRouteId(routeId);
+
+            // 统计各状态数量
+            int pushedCount = 0;
+            int failedCount = 0;
+            int notPushedCount = allInstanceIds.size() - relaList.size();
+
+            List<RouteInstancePushStatusRsp.InstancePushDetail> details = new ArrayList<>();
+
+            for (GaRouteInstanceRelaDO rela : relaList) {
+                if (RouteConstant.PUSH_STATUS_PUSHED.equals(rela.getPushStatus())) {
+                    pushedCount++;
+                } else if (RouteConstant.PUSH_STATUS_PUSH_FAILED.equals(rela.getPushStatus())) {
+                    failedCount++;
+                }
+
+                // 构建详情
+                RouteInstancePushStatusRsp.InstancePushDetail detail = new RouteInstancePushStatusRsp.InstancePushDetail();
+                detail.setInstanceId(rela.getInstanceId());
+                detail.setPushStatus(rela.getPushStatus());
+                detail.setPushStatusDesc(getPushStatusDesc(rela.getPushStatus()));
+                detail.setPushTime(rela.getPushTime() != null ? rela.getPushTime().toString() : null);
+                detail.setErrorMsg(rela.getErrorMsg());
+                details.add(detail);
+            }
+
+            statusRsp.setTotalInstances(allInstanceIds.size());
+            statusRsp.setPushedInstances(pushedCount);
+            statusRsp.setFailedInstances(failedCount);
+            statusRsp.setNotPushedInstances(notPushedCount);
+            statusRsp.setInstanceDetails(details);
+
+            // 生成状态描述
+            statusRsp.setStatusDesc(buildStatusDesc(pushedCount, failedCount, notPushedCount, allInstanceIds.size()));
+
+            result.add(statusRsp);
+        }
+
+        log.info("[RoutePush] 查询路由实例推送状态 | routeCount: {}", result.size());
+
+        return ResponseDTO.newSuccessInstance(result);
+    }
+
+    /**
+     * 获取推送状态描述
+     */
+    private String getPushStatusDesc(Byte pushStatus) {
+        if (pushStatus == null) {
+            return RouteConstant.PUSH_STATUS_DESC_UNKNOWN;
+        }
+        if (RouteConstant.PUSH_STATUS_PUSHED.equals(pushStatus)) {
+            return RouteConstant.PUSH_STATUS_DESC_PUSHED;
+        }
+        if (RouteConstant.PUSH_STATUS_PUSH_FAILED.equals(pushStatus)) {
+            return RouteConstant.PUSH_STATUS_DESC_PUSH_FAILED;
+        }
+        return RouteConstant.PUSH_STATUS_DESC_NOT_PUSHED;
+    }
+
+    /**
+     * 构建状态描述
+     * 格式：已推送(3/5)、推送失败(1/5)、部分成功(3/5) 等
+     */
+    private String buildStatusDesc(int pushedCount, int failedCount, int notPushedCount, int total) {
+        if (total == 0) {
+            return "无实例";
+        }
+        if (pushedCount == total) {
+            return "已推送(" + pushedCount + "/" + total + ")";
+        }
+        if (failedCount == total) {
+            return "推送失败(" + failedCount + "/" + total + ")";
+        }
+        if (notPushedCount == total) {
+            return "未推送";
+        }
+        // 部分成功情况
+        if (failedCount > 0 && pushedCount > 0) {
+            return "部分成功(" + pushedCount + "/" + total + ")";
+        }
+        if (notPushedCount > 0 && pushedCount > 0) {
+            return "已推送(" + pushedCount + "/" + total + ")";
+        }
+        return "已推送(" + pushedCount + "/" + total + ")";
     }
 }

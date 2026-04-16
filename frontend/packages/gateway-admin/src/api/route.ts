@@ -566,6 +566,50 @@ export const getInstanceRoutesFromActuator = (
   return request.post('/route/getInstanceRoutesFromActuator', { body: params })
 }
 
+// ========== 路由实例推送状态接口 ==========
+
+/**
+ * 查询路由实例推送状态请求
+ */
+export interface QueryRouteInstancePushStatusReq {
+  routeIds?: string[]
+  routeId?: string
+}
+
+/**
+ * 实例推送详情
+ */
+export interface InstancePushDetail {
+  instanceId: string
+  pushStatus: number
+  pushStatusDesc: string
+  pushTime?: string
+  errorMsg?: string
+}
+
+/**
+ * 路由实例推送状态响应
+ */
+export interface RouteInstancePushStatusRsp {
+  routeId: string
+  totalInstances: number
+  pushedInstances: number
+  failedInstances: number
+  notPushedInstances: number
+  statusDesc: string
+  instanceDetails?: InstancePushDetail[]
+}
+
+/**
+ * 查询路由实例推送状态
+ * 返回每个路由在各实例上的推送状态统计
+ */
+export const getRouteInstancePushStatus = (
+  params: QueryRouteInstancePushStatusReq,
+): Promise<RouteInstancePushStatusRsp[]> => {
+  return request.post('/route/getRouteInstancePushStatus', { body: params })
+}
+
 // Route API object (for component using routeApi.xxx pattern)
 export const routeApi = {
   getList: getRouteList,
@@ -600,4 +644,6 @@ export const routeApi = {
   getLatestPush,
   // 实例路由 Actuator 接口
   getInstanceRoutesFromActuator,
+  // 路由实例推送状态接口
+  getRouteInstancePushStatus,
 }

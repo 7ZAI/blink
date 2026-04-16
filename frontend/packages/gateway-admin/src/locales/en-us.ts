@@ -417,6 +417,10 @@ export default {
     pushStatusPushed: 'Pushed',
     pushStatusFailed: 'Failed',
     pushStatusUnknown: 'Unknown',
+    pushStatusPushedFormat: 'Pushed({count}/{total})',
+    pushStatusNotPushedFormat: 'Not Pushed(0/{total})',
+    pushStatusPartialFormat: 'Partial({success}/{total})',
+    instancePushDetail: 'Instance Push Details',
     lastPushTime: 'Last Push Time',
     // New features
     batchStatus: 'Batch Status',

@@ -18,6 +18,7 @@ import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryNacosRouteReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
 import com.blink.gateway.admin.dto.req.QueryPushStatusReq;
+import com.blink.gateway.admin.dto.req.QueryRouteInstancePushStatusReq;
 import com.blink.gateway.admin.dto.req.QueryRouteReq;
 import com.blink.gateway.admin.dto.req.QueryRouteHistoryReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
@@ -35,6 +36,7 @@ import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
+import com.blink.gateway.admin.dto.rsp.RouteInstancePushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.RoutesGroupStatsRsp;
 import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
@@ -402,5 +404,18 @@ public class RouteController {
     @PostMapping("/verifyPushResult")
     public ResponseDTO<VerifyPushResultRsp> verifyPushResult(@RequestBody @Validated RequestDTO<VerifyPushResultReq> reqDto) {
         return routePushService.verifyPushResult(reqDto.getBody());
+    }
+
+    /**
+     * 查询路由实例推送状态
+     * 返回每个路由在各实例上的推送状态统计
+     *
+     * @param reqDto 请求参数
+     * @return 推送状态列表
+     */
+    @PostMapping("/getRouteInstancePushStatus")
+    public ResponseDTO<List<RouteInstancePushStatusRsp>> getRouteInstancePushStatus(
+        @RequestBody @Validated RequestDTO<QueryRouteInstancePushStatusReq> reqDto) {
+        return routePushService.getRouteInstancePushStatus(reqDto.getBody());
     }
 }

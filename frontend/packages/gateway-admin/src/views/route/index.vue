@@ -184,15 +184,44 @@
             </template>
           </el-table-column>
           <!-- 新增：推送状态列 -->
-          <el-table-column :label="t('route.pushStatus')" width="100" align="center">
+          <el-table-column :label="t('route.pushStatus')" min-width="120" align="center">
             <template #default="{ row }">
-              <el-tag
-                :type="getPushStatusType(row.pushStatus)"
-                effect="plain"
-                size="small"
+              <el-popover
+                placement="top"
+                :width="320"
+                trigger="hover"
+                :disabled="!hasInstancePushStatus(row.routeId)"
               >
-                {{ getPushStatusText(row.pushStatus) }}
-              </el-tag>
+                <template #reference>
+                  <el-tag
+                    :type="getPushStatusType(row.pushStatus, row.routeId)"
+                    effect="plain"
+                    size="small"
+                    class="cursor-pointer"
+                  >
+                    {{ getPushStatusText(row.pushStatus, row.routeId) }}
+                  </el-tag>
+                </template>
+                <div class="instance-push-status-popover">
+                  <div class="popover-title">{{ t('route.instancePushDetail') }}</div>
+                  <div class="instance-list">
+                    <div
+                      v-for="detail in getInstancePushDetails(row.routeId)"
+                      :key="detail.instanceId"
+                      class="instance-item"
+                    >
+                      <span class="instance-id">{{ detail.instanceId }}</span>
+                      <el-tag
+                        :type="getInstancePushStatusType(detail.pushStatus)"
+                        size="small"
+                        effect="plain"
+                      >
+                        {{ detail.pushStatusDesc }}
+                      </el-tag>
+                    </div>
+                  </div>
+                </div>
+              </el-popover>
             </template>
           </el-table-column>
           <!-- 新增：最后推送时间列 -->
@@ -792,9 +821,42 @@
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item :label="t('route.pushStatus')">
-            <el-tag :type="getPushStatusType(currentRouteDetail.pushStatus)" size="small" effect="plain">
-              {{ getPushStatusText(currentRouteDetail.pushStatus) }}
-            </el-tag>
+            <el-popover
+              placement="top"
+              :width="320"
+              trigger="hover"
+              :disabled="!hasInstancePushStatus(currentRouteDetail.routeId)"
+            >
+              <template #reference>
+                <el-tag
+                  :type="getPushStatusType(currentRouteDetail.pushStatus, currentRouteDetail.routeId)"
+                  size="small"
+                  effect="plain"
+                  class="cursor-pointer"
+                >
+                  {{ getPushStatusText(currentRouteDetail.pushStatus, currentRouteDetail.routeId) }}
+                </el-tag>
+              </template>
+              <div class="instance-push-status-popover">
+                <div class="popover-title">{{ t('route.instancePushDetail') }}</div>
+                <div class="instance-list">
+                  <div
+                    v-for="detail in getInstancePushDetails(currentRouteDetail.routeId)"
+                    :key="detail.instanceId"
+                    class="instance-item"
+                  >
+                    <span class="instance-id">{{ detail.instanceId }}</span>
+                    <el-tag
+                      :type="getInstancePushStatusType(detail.pushStatus)"
+                      size="small"
+                      effect="plain"
+                    >
+                      {{ detail.pushStatusDesc }}
+                    </el-tag>
+                  </div>
+                </div>
+              </div>
+            </el-popover>
           </el-descriptions-item>
           <el-descriptions-item :label="t('route.lastPushTime')">
             {{ currentRouteDetail.lastPushTime || '-' }}
@@ -1017,6 +1079,7 @@ import {
   type CloneRouteReq,
   type ExportRoutesReq,
   type GatewayInstanceVO,
+  type RouteInstancePushStatusRsp,
 } from '@/api/route'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
 import SyncInstanceDialog from './components/SyncInstanceDialog.vue'
@@ -1050,6 +1113,8 @@ const pagination = reactive({
 const loading = ref(false)
 const tableData = ref<RouteDefinition[]>([])
 const selectedRoutes = ref<RouteDefinition[]>([])
+// 路由实例推送状态映射 (routeId -> RouteInstancePushStatusRsp)
+const routeInstancePushStatusMap = ref<Map<string, RouteInstancePushStatusRsp>>(new Map())
 
 // 弹窗
 const dialogVisible = ref(false)
@@ -1270,12 +1335,39 @@ const loadData = async () => {
     })
     tableData.value = res.rows || []
     pagination.total = res.total || 0
+
+    // 加载路由实例推送状态
+    if (tableData.value.length > 0) {
+      await loadRouteInstancePushStatus()
+    }
   } catch (error) {
     console.error('[RouteManagement] Failed to load route list:', error)
     tableData.value = []
     pagination.total = 0
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 加载路由实例推送状态
+ */
+const loadRouteInstancePushStatus = async () => {
+  if (tableData.value.length === 0) return
+
+  try {
+    const routeIds = tableData.value.map(r => r.routeId)
+    const statusList = await routeApi.getRouteInstancePushStatus({ routeIds })
+
+    // 构建映射
+    routeInstancePushStatusMap.value.clear()
+    if (Array.isArray(statusList)) {
+      statusList.forEach(status => {
+        routeInstancePushStatusMap.value.set(status.routeId, status)
+      })
+    }
+  } catch (error) {
+    console.error('[RouteManagement] Failed to load route instance push status:', error)
   }
 }
 
@@ -1683,7 +1775,31 @@ const importingRoutes = ref(false)
 /**
  * 获取推送状态类型（用于Tag颜色）
  */
-const getPushStatusType = (pushStatus: number | undefined): 'info' | 'success' | 'danger' | 'warning' => {
+const getPushStatusType = (pushStatus: number | undefined, routeId?: string): 'info' | 'success' | 'danger' | 'warning' => {
+  // 如果有实例级别状态，根据实例推送比例判断
+  if (routeId) {
+    const instanceStatus = routeInstancePushStatusMap.value.get(routeId)
+    if (instanceStatus) {
+      // 部分成功显示 warning
+      if (instanceStatus.pushedInstances > 0 && instanceStatus.pushedInstances < instanceStatus.totalInstances) {
+        return 'warning'
+      }
+      // 全部成功
+      if (instanceStatus.pushedInstances === instanceStatus.totalInstances) {
+        return 'success'
+      }
+      // 全部失败
+      if (instanceStatus.failedInstances === instanceStatus.totalInstances) {
+        return 'danger'
+      }
+      // 部分失败
+      if (instanceStatus.failedInstances > 0) {
+        return 'warning'
+      }
+    }
+  }
+
+  // 兼容旧的推送状态
   if (pushStatus === undefined || pushStatus === 0) return 'info'
   if (pushStatus === 1) return 'success'
   if (pushStatus === 2) return 'danger'
@@ -1693,11 +1809,56 @@ const getPushStatusType = (pushStatus: number | undefined): 'info' | 'success' |
 /**
  * 获取推送状态文本
  */
-const getPushStatusText = (pushStatus: number | undefined): string => {
+const getPushStatusText = (pushStatus: number | undefined, routeId?: string): string => {
+  // 如果有实例级别状态，显示详细格式
+  if (routeId) {
+    const instanceStatus = routeInstancePushStatusMap.value.get(routeId)
+    if (instanceStatus) {
+      // 显示格式: "已推送(3/5)" 或 "未推送(0/5)" 或 "部分失败(3/5)"
+      if (instanceStatus.pushedInstances === instanceStatus.totalInstances) {
+        return t('route.pushStatusPushedFormat', { count: instanceStatus.pushedInstances, total: instanceStatus.totalInstances })
+      }
+      if (instanceStatus.pushedInstances === 0 && instanceStatus.failedInstances === 0) {
+        return t('route.pushStatusNotPushedFormat', { total: instanceStatus.totalInstances })
+      }
+      if (instanceStatus.failedInstances > 0) {
+        return t('route.pushStatusPartialFormat', { success: instanceStatus.pushedInstances, failed: instanceStatus.failedInstances, total: instanceStatus.totalInstances })
+      }
+      return t('route.pushStatusPushedFormat', { count: instanceStatus.pushedInstances, total: instanceStatus.totalInstances })
+    }
+  }
+
+  // 兼容旧的推送状态
   if (pushStatus === undefined || pushStatus === 0) return t('route.pushStatusNotPushed')
   if (pushStatus === 1) return t('route.pushStatusPushed')
   if (pushStatus === 2) return t('route.pushStatusFailed')
   return t('route.pushStatusUnknown')
+}
+
+/**
+ * 判断是否有实例推送状态详情
+ */
+const hasInstancePushStatus = (routeId: string): boolean => {
+  const status = routeInstancePushStatusMap.value.get(routeId)
+  return status !== undefined && status.instanceDetails !== undefined && status.instanceDetails.length > 0
+}
+
+/**
+ * 获取实例推送状态详情
+ */
+const getInstancePushDetails = (routeId: string) => {
+  const status = routeInstancePushStatusMap.value.get(routeId)
+  return status?.instanceDetails || []
+}
+
+/**
+ * 获取实例推送状态类型
+ */
+const getInstancePushStatusType = (pushStatus: number): 'info' | 'success' | 'danger' | 'warning' => {
+  if (pushStatus === 1) return 'success'
+  if (pushStatus === 2) return 'danger'
+  if (pushStatus === 0) return 'info'
+  return 'warning'
 }
 
 /**
@@ -2087,6 +2248,45 @@ onMounted(() => {
 .time-text {
   font-size: 12px;
   color: var(--el-text-color-secondary);
+}
+
+// 实例推送状态 Popover 样式
+.instance-push-status-popover {
+  .popover-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--el-border-color-lighter);
+  }
+
+  .instance-list {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  .instance-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--el-border-color-lighter);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .instance-id {
+      font-size: 12px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      color: var(--el-text-color-regular);
+    }
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 
 // 获取实例路由弹窗样式
