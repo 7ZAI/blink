@@ -5,6 +5,8 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.blink.framework.redis.component.RedisClient;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.blink.gateway.admin.entity.GatewayInstanceDO;
 import com.blink.gateway.admin.mapper.GatewayInstanceMapper;
 import com.blink.gateway.admin.sse.InstanceStatusPayload;
@@ -48,12 +50,17 @@ public class MetricsStreamConsumer {
     private static final String SUMMARY_KEY = "blink:gateway:metrics:summary";
     private static final int METRICS_TTL_SECONDS = 90;
 
+    // 熔断器指标存储常量
+    private static final String CB_KEY_PREFIX = "blink:gateway:circuitbreaker:";
+    private static final int CB_TTL_SECONDS = 90;
+
     private final RedisClient redisClient;
     private final SseConnectionPool sseConnectionPool;
     private final InstanceStatusPushService instanceStatusPushService;
     private final GatewayInstanceMapper gatewayInstanceMapper;
     private final DashboardPushService dashboardPushService;
     private final TrafficIncrementService trafficIncrementService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public MetricsStreamConsumer(RedisClient redisClient,
                                   SseConnectionPool sseConnectionPool,
@@ -116,6 +123,12 @@ public class MetricsStreamConsumer {
         Map<String, Object> metricsData = convertToMetricsData(message);
         redisClient.hSet(metricsKey, metricsData);
         redisClient.expire(metricsKey, METRICS_TTL_SECONDS);
+
+        // 处理熔断器指标
+        String circuitBreakersJson = message.get("circuitBreakers");
+        if (StrUtil.isNotBlank(circuitBreakersJson)) {
+            storeCircuitBreakerMetrics(instanceId, circuitBreakersJson);
+        }
 
         // 更新实例列表（使用 hPutField 设置单个字段）
         redisClient.hPutField(INSTANCE_LIST_KEY, instanceId, String.valueOf(System.currentTimeMillis()));
@@ -565,5 +578,189 @@ public class MetricsStreamConsumer {
 
         SseMessage<NotificationPayload> message = SseMessage.notification(payload);
         sseConnectionPool.broadcast(message);
+    }
+
+    // ==================== 熔断器指标处理 ====================
+
+    /**
+     * 存储熔断器指标到 Redis
+     *
+     * @param instanceId           实例ID
+     * @param circuitBreakersJson  熔断器指标JSON数组
+     */
+    private void storeCircuitBreakerMetrics(String instanceId, String circuitBreakersJson) {
+        try {
+            // 解析 JSON 数组
+            List<Map<String, Object>> metrics = objectMapper.readValue(
+                    circuitBreakersJson,
+                    new TypeReference<List<Map<String, Object>>>() {}
+            );
+
+            if (CollUtil.isEmpty(metrics)) {
+                return;
+            }
+
+            // 存储到 Redis Hash: blink:gateway:circuitbreaker:{instanceId}
+            String cbKey = CB_KEY_PREFIX + instanceId;
+            Map<String, Object> cbData = new HashMap<>();
+            cbData.put("timestamp", System.currentTimeMillis());
+
+            for (Map<String, Object> metric : metrics) {
+                String cbName = (String) metric.get("name");
+                if (StrUtil.isNotBlank(cbName)) {
+                    // 检测状态变化
+                    checkStateTransition(instanceId, cbName, metric);
+                    // 存储单个熔断器指标（JSON 字符串）
+                    cbData.put(cbName, objectMapper.writeValueAsString(metric));
+                }
+            }
+
+            redisClient.hSet(cbKey, cbData);
+            redisClient.expire(cbKey, CB_TTL_SECONDS);
+
+            log.debug("[MetricsStreamConsumer] 存储熔断器指标 | instanceId: {}, count: {}",
+                    instanceId, metrics.size());
+
+        } catch (Exception e) {
+            log.error("[MetricsStreamConsumer] 解析熔断器指标失败 | error: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 检测状态转换
+     *
+     * @param instanceId 实例ID
+     * @param cbName     熔断器名称
+     * @param newMetric  新指标数据
+     */
+    private void checkStateTransition(String instanceId, String cbName, Map<String, Object> newMetric) {
+        try {
+            String cbKey = CB_KEY_PREFIX + instanceId;
+            String oldMetricJson = (String) redisClient.hGetField(cbKey, cbName);
+
+            if (StrUtil.isBlank(oldMetricJson)) {
+                return;
+            }
+
+            Map<String, Object> oldMetric = objectMapper.readValue(oldMetricJson,
+                    new TypeReference<Map<String, Object>>() {});
+
+            String oldState = (String) oldMetric.get("state");
+            String newState = (String) newMetric.get("state");
+
+            if (!StrUtil.equals(oldState, newState)) {
+                // 记录状态转换历史
+                recordStateTransition(instanceId, cbName, oldState, newState, newMetric);
+
+                // 触发告警
+                triggerCircuitBreakerAlert(instanceId, cbName, oldState, newState, newMetric);
+            }
+        } catch (Exception e) {
+            log.error("[MetricsStreamConsumer] 检测状态转换失败 | error: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * 记录状态转换历史
+     *
+     * @param instanceId 实例ID
+     * @param cbName     熔断器名称
+     * @param fromState  原状态
+     * @param toState    新状态
+     * @param metric     指标数据
+     */
+    private void recordStateTransition(String instanceId, String cbName,
+                                        String fromState, String toState,
+                                        Map<String, Object> metric) {
+        try {
+            String historyKey = CB_KEY_PREFIX + "history:" + instanceId + ":" + cbName;
+
+            Map<String, Object> transition = new HashMap<>();
+            transition.put("from", fromState);
+            transition.put("to", toState);
+            transition.put("time", System.currentTimeMillis());
+            transition.put("reason", buildTransitionReason(fromState, toState));
+            transition.put("failureRate", metric.get("failureRate"));
+            transition.put("numberOfCalls", metric.get("numberOfCalls"));
+
+            String json = objectMapper.writeValueAsString(transition);
+            redisClient.lPush(historyKey, json);
+            redisClient.expire(historyKey, 7 * 24 * 60 * 60); // 7 天
+
+            log.info("[MetricsStreamConsumer] 状态转换记录 | instance: {}, cb: {}, {} -> {}",
+                    instanceId, cbName, fromState, toState);
+
+        } catch (Exception e) {
+            log.error("[MetricsStreamConsumer] 记录状态转换历史失败", e);
+        }
+    }
+
+    /**
+     * 构建状态转换原因
+     *
+     * @param fromState 原状态
+     * @param toState   新状态
+     * @return 转换原因
+     */
+    private String buildTransitionReason(String fromState, String toState) {
+        if ("CLOSED".equals(fromState) && "OPEN".equals(toState)) {
+            return "failureRate_exceeded";
+        } else if ("OPEN".equals(fromState) && "HALF_OPEN".equals(toState)) {
+            return "waitDurationElapsed";
+        } else if ("HALF_OPEN".equals(fromState) && "OPEN".equals(toState)) {
+            return "probe_failed";
+        } else if ("HALF_OPEN".equals(fromState) && "CLOSED".equals(toState)) {
+            return "probe_succeeded";
+        }
+        return fromState.toLowerCase() + "_to_" + toState.toLowerCase();
+    }
+
+    /**
+     * 触发熔断器告警
+     *
+     * @param instanceId 实例ID
+     * @param cbName     熔断器名称
+     * @param fromState  原状态
+     * @param toState    新状态
+     * @param metric     指标数据
+     */
+    private void triggerCircuitBreakerAlert(String instanceId, String cbName,
+                                            String fromState, String toState,
+                                            Map<String, Object> metric) {
+        String severity = determineAlertSeverity(fromState, toState);
+
+        if (severity == null) {
+            return;
+        }
+
+        NotificationPayload payload = new NotificationPayload();
+        payload.setTitle("熔断器状态变化");
+        payload.setContent(String.format("实例 %s 的 %s 从 %s 变为 %s",
+                instanceId, cbName, fromState, toState));
+        payload.setSeverity(severity);
+        payload.setCreatedTime(LocalDateTime.now());
+        payload.setTargetType("all");
+
+        SseMessage<NotificationPayload> message = SseMessage.notification(payload);
+        sseConnectionPool.broadcast(message);
+
+        log.info("[MetricsStreamConsumer] 触发熔断器告警 | instance: {}, cb: {}, severity: {}",
+                instanceId, cbName, severity);
+    }
+
+    /**
+     * 确定告警级别
+     *
+     * @param fromState 原状态
+     * @param toState   新状态
+     * @return 告警级别，null表示无需告警
+     */
+    private String determineAlertSeverity(String fromState, String toState) {
+        if ("CLOSED".equals(fromState) && "OPEN".equals(toState)) {
+            return "warning";
+        } else if ("HALF_OPEN".equals(fromState) && "OPEN".equals(toState)) {
+            return "error";
+        }
+        return null;
     }
 }
