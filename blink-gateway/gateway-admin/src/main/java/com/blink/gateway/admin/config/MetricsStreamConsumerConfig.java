@@ -3,16 +3,15 @@ package com.blink.gateway.admin.config;
 import com.blink.gateway.admin.service.MetricsStreamConsumer;
 import com.blink.gateway.base.service.SysConfigService;
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.stream.Consumer;
 import org.springframework.data.redis.connection.stream.MapRecord;
 import org.springframework.data.redis.connection.stream.ReadOffset;
 import org.springframework.data.redis.connection.stream.StreamOffset;
-import org.springframework.data.redis.connection.stream.StreamReadOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer;
 import org.springframework.data.redis.stream.StreamMessageListenerContainer.StreamMessageListenerContainerOptions;
@@ -21,12 +20,15 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Redis Stream 消费者配置
  *
  * 负责启动和停止 Stream 消费者，消费 gateway-reactive 上报的指标消息
+ *
+ * 实现 SmartLifecycle 接口，确保在 Redis 连接关闭之前先停止消费者
  *
  * 启用条件：
  * - 数据库配置 monitor.enabled=true（默认开启）
@@ -40,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Configuration
 @EnableConfigurationProperties(MonitorProperties.class)
 @Slf4j
-public class MetricsStreamConsumerConfig {
+public class MetricsStreamConsumerConfig implements SmartLifecycle {
 
     private static final String MONITOR_ENABLED_KEY = "monitor.enabled";
 
@@ -51,6 +53,7 @@ public class MetricsStreamConsumerConfig {
     private final SysConfigService sysConfigService;
 
     private StreamMessageListenerContainer<String, MapRecord<String, String, String>> container;
+    private ExecutorService executorService;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     public MetricsStreamConsumerConfig(MonitorProperties monitorProperties,
@@ -177,12 +180,13 @@ public class MetricsStreamConsumerConfig {
      * 任务执行器
      */
     private ExecutorService taskExecutor() {
-        return Executors.newFixedThreadPool(2, r -> {
+        executorService = Executors.newFixedThreadPool(2, r -> {
             Thread t = new Thread(r);
             t.setName("metrics-stream-consumer-" + t.getId());
             t.setDaemon(true);
             return t;
         });
+        return executorService;
     }
 
     /**
@@ -190,9 +194,14 @@ public class MetricsStreamConsumerConfig {
      */
     public void stopConsumer() {
         if (container != null && running.get()) {
-            container.stop();
-            running.set(false);
-            log.info("[MetricsStream] Stream 消费者已停止");
+            try {
+                container.stop();
+                log.info("[MetricsStream] Stream 消费者已停止");
+            } catch (Exception e) {
+                log.warn("[MetricsStream] 停止 Stream 消费者时出错 | error: {}", e.getMessage());
+            } finally {
+                running.set(false);
+            }
         }
     }
 
@@ -221,12 +230,73 @@ public class MetricsStreamConsumerConfig {
         }
     }
 
+    // ==================== SmartLifecycle 接口实现 ====================
+
+    /**
+     * 启动生命周期组件（由 Spring 容器调用）
+     */
+    @Override
+    public void start() {
+        // 已在 @PostConstruct 中启动，此处无需操作
+    }
+
+    /**
+     * 停止生命周期组件（由 Spring 容器调用）
+     * SmartLifecycle 的 stop 方法会在 Redis 等基础设施 Bean 销毁之前调用
+     */
+    @Override
+    public void stop() {
+        log.info("[MetricsStream] 开始关闭 Stream 消费者...");
+
+        // 先停止容器
+        stopConsumer();
+
+        // 关闭线程池
+        if (executorService != null && !executorService.isShutdown()) {
+            try {
+                executorService.shutdown();
+                if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+                    executorService.shutdownNow();
+                }
+                log.info("[MetricsStream] 线程池已关闭");
+            } catch (InterruptedException e) {
+                executorService.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    /**
+     * 是否正在运行
+     */
+    @Override
     public boolean isRunning() {
         return running.get();
     }
 
-    @PreDestroy
-    public void destroy() {
-        stopConsumer();
+    /**
+     * 返回 false，表示不自动启动（由 @PostConstruct 控制启动）
+     */
+    @Override
+    public boolean isAutoStartup() {
+        return false;
+    }
+
+    /**
+     * 返回阶段值，值越大越先启动、越后停止
+     * 使用 Integer.MAX_VALUE 确保在其他 Bean 之前停止
+     */
+    @Override
+    public int getPhase() {
+        return Integer.MAX_VALUE;
+    }
+
+    /**
+     * 停止时的回调（可用于执行停止后的逻辑）
+     */
+    @Override
+    public void stop(Runnable callback) {
+        stop();
+        callback.run();
     }
 }

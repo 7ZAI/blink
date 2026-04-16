@@ -43,17 +43,8 @@ dependencies {
 
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
 
-    // ============ 单元测试依赖 ============
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
-    testImplementation 'org.mockito:mockito-core:5.5.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.5.0'
-    testImplementation 'org.assertj:assertj-core:3.24.2'
-
-    // 数据库测试
-    testImplementation 'com.h2database:h2:2.2.224'
-
-    // Spring Boot Test
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // ============ 测试框架 ============
+    testImplementation 'com.blink:blink-framework-test:1.0.0-SNAPSHOT'
 }
 
 

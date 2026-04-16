@@ -16,6 +16,16 @@ public class JobExecutionResult {
     /** 是否成功 */
     private Boolean success;
 
+    /**
+     * 判断是否成功
+     * 提供 isSuccess() 方法以符合布尔属性命名习惯
+     *
+     * @return 是否成功
+     */
+    public boolean isSuccess() {
+        return Boolean.TRUE.equals(this.success);
+    }
+
     /** 执行耗时（毫秒） */
     private Long duration;
 

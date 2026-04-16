@@ -48,12 +48,13 @@ dependencies {
     testImplementation "org.redisson:redisson-spring-boot-starter:${redissonVersion}"
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
     
-    //注释切换环境
+    // ============ 测试框架 ============
+    testImplementation 'com.blink:blink-framework-test:1.0.0-SNAPSHOT'
+    testImplementation "org.redisson:redisson-spring-boot-starter:${redissonVersion}"
+
+    // 测试依赖
     testImplementation 'org.springframework.boot:spring-boot-starter-webflux'
-//    testImplementation 'org.springframework.boot:spring-boot-starter-web'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-actuator'
-    testImplementation 'io.projectreactor:reactor-test'
 
 
 }

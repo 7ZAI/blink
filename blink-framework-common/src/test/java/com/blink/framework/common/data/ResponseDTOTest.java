@@ -1,5 +1,7 @@
 package com.blink.framework.common.data;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import com.blink.framework.common.constrant.ResponseMsgType;
 import com.blink.framework.common.constrant.SysConstant;
 import org.junit.jupiter.api.DisplayName;
@@ -19,8 +21,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("ResponseDTO 通用响应数据传输对象测试")
-class ResponseDTOTest {
+class ResponseDTOTest extends BlinkUnitTest {
 
     // ==================== 成功响应测试 ====================
 

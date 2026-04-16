@@ -6,6 +6,7 @@ plugins {
     id 'maven-publish'  // 发布插件仅子模块应用
     id 'io.spring.dependency-management' apply false
     id 'org.springframework.boot' apply false
+    // Jacoco 是 Gradle 核心插件，在 subprojects 中直接应用
 }
 
 // 全局版本常量
@@ -27,6 +28,8 @@ ext {
     jjwtVersion = '0.13.0'
     dubboVersion = '3.3.0'
     redissonVersion = '3.27.0'
+    // 测试框架版本
+    jacocoVersion = '0.8.11'
 }
 
 group = 'com.blink'
@@ -225,4 +228,140 @@ subprojects {
         // 并行测试（加快测试速度）
         maxParallelForks = Runtime.runtime.availableProcessors() / 2
     }
+
+    // ========== Jacoco 覆盖率配置（新增） ==========
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = rootProject.ext.jacocoVersion
+    }
+
+    tasks.test {
+        finalizedBy jacocoTestReport
+    }
+
+    jacocoTestReport {
+        reports {
+            xml.required = true   // CI 报告格式
+            html.required = true  // 本地查看
+            csv.required = false
+        }
+        // 排除非业务代码
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: [
+                    '**/config/**',
+                    '**/*Config.class',
+                    '**/*Configuration.class',
+                    '**/*Application.class',
+                    '**/dto/**',
+                    '**/entity/**',
+                    '**/exception/**'
+                ])
+            }))
+        }
+    }
+
+    // 覆盖率验证（本地不强制阈值）
+    jacocoTestCoverageVerification {
+        violationRules {
+            rule {
+                limit {
+                    minimum = 0.0
+                }
+            }
+        }
+    }
+}
+
+// ========== 根工程聚合任务 ==========
+
+// 聚合所有子模块覆盖率报告
+task jacocoRootReport(type: JacocoReport) {
+    description = '生成所有子模块的聚合覆盖率报告'
+    group = 'verification'
+    dependsOn subprojects*.test
+
+    executionData.setFrom(files(subprojects*.jacocoTestReport*.executionData))
+    classDirectories.setFrom(files(subprojects*.jacocoTestReport*.classDirectories))
+    sourceDirectories.setFrom(files(subprojects*.jacocoTestReport*.sourceDirectories))
+
+    reports {
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco/html')
+        xml.outputLocation = layout.buildDirectory.file('reports/jacoco/jacoco.xml')
+    }
+}
+
+// ========== 本地 CI 任务组合 ==========
+
+// 快速 CI 任务（适合 pre-commit）
+task ciQuick(type: GradleBuild) {
+    description = '快速 CI 检查 - 编译 + 关键模块测试'
+    group = 'ci'
+    tasks = ['compileJava', ':blink-framework-common:test', ':blink-web-starter:test']
+}
+
+// 完整后端 CI 任务
+task ciBackend(type: GradleBuild) {
+    description = '完整后端 CI - 编译 + 测试 + 覆盖率'
+    group = 'ci'
+    tasks = ['compileJava', 'compileTestJava', 'test', 'jacocoRootReport']
+}
+
+// 仅单元测试 CI
+task ciUnitTest(type: GradleBuild) {
+    description = '仅运行单元测试'
+    group = 'ci'
+    tasks = ['test']
+}
+
+// 集成测试 CI（需要先配置集成测试源集）
+task ciIntegration(type: GradleBuild) {
+    description = '仅运行集成测试'
+    group = 'ci'
+    tasks = ['integrationTest']
+}
+
+// ========== 测试分类任务（新增） ==========
+
+// 单元测试任务 - 仅运行带 @Tag("unit") 的测试
+task unitTest(type: Test) {
+    description = '运行所有单元测试（不依赖外部容器）'
+    group = 'verification'
+    useJUnitPlatform {
+        includeTags 'unit'
+        excludeTags 'integration', 'repository'
+    }
+}
+
+// 集成测试任务 - 仅运行带 @Tag("integration") 的测试
+task integrationTest(type: Test) {
+    description = '运行所有集成测试（需要 Testcontainers/Docker）'
+    group = 'verification'
+    useJUnitPlatform {
+        includeTags 'integration'
+    }
+}
+
+// Repository 测试任务 - 仅运行带 @Tag("repository") 的测试
+task repositoryTest(type: Test) {
+    description = '运行所有数据层测试（使用 H2 内存数据库）'
+    group = 'verification'
+    useJUnitPlatform {
+        includeTags 'repository'
+    }
+}
+
+// 快速 CI（仅单元测试，无需 Docker）
+task ciQuickTest(type: GradleBuild) {
+    description = '快速 CI - 仅运行单元测试'
+    group = 'ci'
+    tasks = ['compileJava', 'unitTest']
+}
+
+// 完整 CI（包含集成测试，需要 Docker）
+task ciFullTest(type: GradleBuild) {
+    description = '完整 CI - 运行所有测试'
+    group = 'ci'
+    tasks = ['compileJava', 'unitTest', 'repositoryTest', 'integrationTest', 'jacocoRootReport']
 }

@@ -1,5 +1,7 @@
 package com.blink.framework.common.exception;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -17,8 +19,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("BlinkException 自定义异常类测试")
-class BlinkExceptionTest {
+class BlinkExceptionTest extends BlinkUnitTest {
 
     private static final String TEST_ERROR_CODE = "TEST0001";
 

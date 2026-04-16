@@ -1,5 +1,6 @@
 package com.blink.framework.common.utils;
 
+import com.blink.framework.test.annotation.IntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@IntegrationTest
 @SpringBootTest(classes = ApplicationContextUtilTest.TestConfig.class)
 @DisplayName("ApplicationContextUtil Spring上下文工具测试")
 class ApplicationContextUtilTest {

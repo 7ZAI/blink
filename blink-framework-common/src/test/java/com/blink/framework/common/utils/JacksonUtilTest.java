@@ -1,5 +1,7 @@
 package com.blink.framework.common.utils;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,8 +28,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("JacksonUtil JSON工具类测试")
-class JacksonUtilTest {
+class JacksonUtilTest extends BlinkUnitTest {
 
     // ==================== 测试数据类 ====================
 

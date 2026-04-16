@@ -1,5 +1,7 @@
 package com.blink.framework.common.data;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,8 +24,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("RequestDTO 通用请求数据传输对象测试")
-class RequestDTOTest {
+class RequestDTOTest extends BlinkUnitTest {
 
     // ==================== 静态工厂方法测试 ====================
 

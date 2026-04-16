@@ -6,6 +6,8 @@ import com.blink.base.dto.rsp.QueryShowMenuRsp;
 import com.blink.base.dto.rsp.QuerySysMenuRsp;
 import com.blink.base.dto.vo.SysMenuVO;
 import com.blink.base.service.SysMenuService;
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
@@ -13,12 +15,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -27,9 +27,9 @@ import static org.mockito.Mockito.*;
  *
  * @author binblink
  */
-@ExtendWith(MockitoExtension.class)
+@UnitTest
 @DisplayName("SysMenuController 单元测试")
-class SysMenuControllerTest {
+class SysMenuControllerTest extends BlinkUnitTest {
 
     @Mock
     private SysMenuService sysMenuService;
@@ -51,7 +51,7 @@ class SysMenuControllerTest {
         void testSaveSysMenu_Success() throws Exception {
             AddSysMenuReq req = new AddSysMenuReq();
             req.setMenuName("测试菜单");
-            req.setType(1);
+            req.setType((byte) 1);
 
             RequestDTO<AddSysMenuReq> requestDTO = new RequestDTO<>();
             requestDTO.setBody(req);
@@ -63,10 +63,10 @@ class SysMenuControllerTest {
 
             ResponseDTO<SysMenuVO> response = sysMenuController.saveSysMenu(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
-            assertNotNull(response.getBody());
-            assertEquals("测试菜单", response.getBody().getMenuName());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getMenuName()).isEqualTo("测试菜单");
             verify(sysMenuService, times(1)).saveSysMenu(any(AddSysMenuReq.class));
         }
 
@@ -80,7 +80,8 @@ class SysMenuControllerTest {
             when(sysMenuService.saveSysMenu(any(AddSysMenuReq.class)))
                     .thenThrow(new RuntimeException("菜单已存在"));
 
-            assertThrows(RuntimeException.class, () -> sysMenuController.saveSysMenu(requestDTO));
+            assertThatThrownBy(() -> sysMenuController.saveSysMenu(requestDTO))
+                    .isInstanceOf(RuntimeException.class);
             verify(sysMenuService, times(1)).saveSysMenu(any(AddSysMenuReq.class));
         }
     }
@@ -103,8 +104,8 @@ class SysMenuControllerTest {
 
             ResponseDTO<EmptyBody> response = sysMenuController.deleteSysMenu(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
             verify(sysMenuService, times(1)).deleteSysMenu(any(DeleteSysMenuReq.class));
         }
     }
@@ -130,9 +131,9 @@ class SysMenuControllerTest {
 
             ResponseDTO<SysMenuVO> response = sysMenuController.modifySysMenu(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
-            assertNotNull(response.getBody());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+            assertThat(response.getBody()).isNotNull();
             verify(sysMenuService, times(1)).modifySysMenu(any(UpdateSysMenuReq.class));
         }
     }
@@ -154,9 +155,9 @@ class SysMenuControllerTest {
 
             ResponseDTO<QuerySysMenuRsp> response = sysMenuController.getSysMenuList(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
-            assertNotNull(response.getBody());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+            assertThat(response.getBody()).isNotNull();
             verify(sysMenuService, times(1)).getSysMenuList(any(QuerySysMenuReq.class));
         }
     }
@@ -178,9 +179,9 @@ class SysMenuControllerTest {
 
             ResponseDTO<QueryShowMenuRsp> response = sysMenuController.getSysMenusByRoles(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
-            assertNotNull(response.getBody());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+            assertThat(response.getBody()).isNotNull();
             verify(sysMenuService, times(1)).getSysMenusByRoles(any(QueryShowMenuReq.class));
         }
     }
@@ -203,9 +204,9 @@ class SysMenuControllerTest {
 
             ResponseDTO<CheckMenuRoleRsp> response = sysMenuController.checkMenuRoleAssignment(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
-            assertNotNull(response.getBody());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+            assertThat(response.getBody()).isNotNull();
             verify(sysMenuService, times(1)).checkMenuRoleAssignment(any(CheckMenuRoleReq.class));
         }
     }

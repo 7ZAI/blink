@@ -1,5 +1,7 @@
 package com.blink.framework.common.utils;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,8 +23,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("RSAUtils 加密解密工具类测试")
-class RSAUtilsTest {
+class RSAUtilsTest extends BlinkUnitTest {
 
     private static final String TEST_PLAINTEXT = "Hello, RSA Encryption!";
 

@@ -1,5 +1,7 @@
 package com.blink.framework.common.utils;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,8 +25,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("AESUtils 加密解密工具类测试")
-class AESUtilsTest {
+class AESUtilsTest extends BlinkUnitTest {
 
     private static final String TEST_PLAINTEXT = "Hello, Blink Framework!";
     private static final String TEST_KEY_STRING = "ThisIsASecretKey1234567890123456"; // 32字节

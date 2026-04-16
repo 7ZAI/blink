@@ -1,6 +1,7 @@
 package com.blink.gateway.monitor;
 
 import com.blink.gateway.monitor.dto.MetricsMessage;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -47,6 +48,7 @@ class MetricsReporterImplTest {
     private ReactiveStringRedisTemplate redisTemplate;
     private ReactiveStreamOperations<String, Object, Object> streamOperations;
     private MonitorConfigHolder monitorConfigHolder;
+    private CircuitBreakerRegistry circuitBreakerRegistry;
     private MetricsReporterImpl metricsReporter;
 
     @SuppressWarnings("unchecked")
@@ -57,6 +59,7 @@ class MetricsReporterImplTest {
         streamOperations = mock(ReactiveStreamOperations.class);
         BuildProperties buildProperties = mock(BuildProperties.class);
         monitorConfigHolder = mock(MonitorConfigHolder.class);
+        circuitBreakerRegistry = mock(CircuitBreakerRegistry.class);
 
         // Mock Redis Stream 操作
         when(redisTemplate.opsForStream()).thenReturn(streamOperations);
@@ -66,12 +69,16 @@ class MetricsReporterImplTest {
         // Mock MonitorConfigHolder
         when(monitorConfigHolder.isEnabled()).thenReturn(true);
 
+        // Mock CircuitBreakerRegistry - 返回空集合
+        when(circuitBreakerRegistry.getAllCircuitBreakers()).thenReturn(java.util.Collections.emptySet());
+
         // 创建 MetricsReporterImpl 实例
         metricsReporter = new MetricsReporterImpl(
                 meterRegistry,
                 redisTemplate,
                 buildProperties,
-                monitorConfigHolder
+                monitorConfigHolder,
+                circuitBreakerRegistry
         );
 
         // 使用反射设置私有字段

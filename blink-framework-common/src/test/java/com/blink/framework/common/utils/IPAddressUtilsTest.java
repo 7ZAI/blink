@@ -1,5 +1,7 @@
 package com.blink.framework.common.utils;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,8 +24,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("IPAddressUtils IP工具类测试")
-class IPAddressUtilsTest {
+class IPAddressUtilsTest extends BlinkUnitTest {
 
     // ==================== IPv4格式校验测试 ====================
 

@@ -1,5 +1,7 @@
 package com.blink.framework.common.jwt;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,8 +26,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("JwtProvider JWT工具类测试")
-class JwtProviderTest {
+class JwtProviderTest extends BlinkUnitTest {
 
     private JwtConfig jwtConfig;
     private JwtProvider jwtProvider;

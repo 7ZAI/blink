@@ -1,5 +1,7 @@
 package com.blink.framework.common.utils;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,8 +32,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("EnvReaderUtil 环境变量工具测试")
-class EnvReaderUtilTest {
+class EnvReaderUtilTest extends BlinkUnitTest {
 
     @AfterEach
     void tearDown() {

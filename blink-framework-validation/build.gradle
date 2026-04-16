@@ -44,8 +44,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.blink:blink-redis-spring-boot-starter:1.0.0-SNAPSHOT'
 
-    // 测试依赖
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // ============ 测试框架 ============
+    testImplementation 'com.blink:blink-framework-test:1.0.0-SNAPSHOT'
 }
 
 test {

@@ -51,7 +51,8 @@ dependencies {
 
 //    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // ============ 测试框架 ============
+    testImplementation 'com.blink:blink-framework-test:1.0.0-SNAPSHOT'
 //    testImplementation 'io.micrometer:micrometer-observation-registry:1.11.0'
 
 }

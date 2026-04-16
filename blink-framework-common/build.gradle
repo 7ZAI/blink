@@ -25,7 +25,8 @@ dependencies {
     // Runtime library
     implementation 'com.github.therapi:therapi-runtime-javadoc:0.13.0'
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // ============ 测试框架 ============
+    testImplementation 'com.blink:blink-framework-test:1.0.0-SNAPSHOT'
 }
 
 // 任务：生成源码JAR

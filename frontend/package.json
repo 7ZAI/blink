@@ -17,13 +17,18 @@
     "build:base": "pnpm --filter base-admin build",
     "build:gateway": "pnpm --filter gateway-admin build",
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test:run",
     "test:coverage": "pnpm -r test:coverage",
+    "test:e2e": "pnpm --filter gateway-admin test:e2e",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"packages/**/*.{ts,vue,js,json,md}\"",
     "format:check": "prettier --check \"packages/**/*.{ts,vue,js,json,md}\"",
-    "clean": "pnpm -r clean && rm -rf node_modules"
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "typecheck": "pnpm -r exec vue-tsc --noEmit",
+    "ci:quick": "pnpm typecheck && pnpm test",
+    "ci:full": "pnpm typecheck && pnpm test:coverage && pnpm lint",
+    "ci:e2e": "pnpm test:e2e"
   },
   "engines": {
     "node": ">=18.0.0",

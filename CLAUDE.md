@@ -24,22 +24,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew publish
 ```
 
-## Frontend Commands (blink-base-web)
+## Frontend Commands
 
 ```bash
-cd blink-base/blink-base-web
+cd frontend
 
-# Install dependencies
-npm install
+# Install dependencies (pnpm monorepo)
+pnpm install
 
 # Development server
-npm run dev
+pnpm dev:base       # Base Admin (port 4000)
+pnpm dev:gateway    # Gateway Admin (port 3001)
 
 # Build for production
-npm run build
+pnpm build:components  # Build shared component library
+pnpm build             # Build all projects
 
-# Preview production build
-npm run preview
+# Run tests
+pnpm test
+pnpm test:e2e          # End-to-end tests
 ```
 
 ## Architecture Overview
@@ -53,27 +56,44 @@ This is a microservice framework built with Spring Boot 3.2 + Spring Cloud Aliba
 - `blink-datasource-starter`: MyBatis-Plus + Druid + code generator
 - `blink-redis-starter`: Redis operations, distributed ID generation
 - `blink-web-starter`: Global exception handling, logging, cache preheating
-- `blink-framework-mq`: RabbitMQ message queue封装
+- `blink-log-starter`: Unified logging configuration
 - `blink-framework-validation`: Custom validation annotations
+- `blink-framework-test`: Test framework utilities
+- `blink-framework-mq`: RabbitMQ message queue封装 (可选，需在 settings.gradle 启用)
+- `blink-framework-openfeign`: OpenFeign 远程调用封装 (可选，需在 settings.gradle 启用)
+
+**Job Scheduler Modules**:
+- `blink-job-api`: API definitions, annotations, enums, DTOs
+- `blink-job-core`: Core implementation, task registry, executor, alarm handling
+- `blink-job-spring-starter`: Spring native scheduling implementation
+- `blink-job-quartz-starter`: Quartz scheduling implementation
+- `blink-job-xxljob-starter`: XXL-Job distributed scheduling implementation
 
 **Application Modules**:
 - `blink-base`: RBAC backend management service (multi-module: `blink-base-app` for implementation, `blink-base-api-dubbo` for Dubbo interfaces)
 - `blink-gateway-reactive`: Reactive API Gateway based on Spring Cloud Gateway
-- `blink-base-web`: Vue 3 + TypeScript + Element Plus frontend
+- `gateway-admin`: Gateway management admin service
+- `blink-gateway-admin-api-dubbo`: Gateway admin Dubbo interfaces
+
+**Frontend Modules** (`frontend/` pnpm monorepo):
+- `@blink/components`: Shared component library
+- `base-admin`: Base Admin application (Vue 3 + Element Plus)
+- `gateway-admin`: Gateway Admin application
 
 ### Key Technologies
 
 | Layer | Technology |
 |-------|------------|
 | JDK | 17+ |
-| Framework | Spring Boot 3.2, Spring Cloud 2023.0.3, Spring Cloud Alibaba 2023.0.3.2 |
-| RPC | Dubbo 3.3 (Triple protocol) |
-| ORM | MyBatis-Plus 3.5 |
+| Framework | Spring Boot 3.2.7, Spring Cloud 2023.0.3, Spring Cloud Alibaba 2023.0.3.2 |
+| RPC | Dubbo 3.3.0 (Triple protocol) |
+| ORM | MyBatis-Plus 3.5.16 |
 | Cache | Redis 7.0+ |
 | Registry/Config | Nacos 2.3+ |
 | Database | MySQL 8.0+ |
 | MQ | RabbitMQ |
 | Build | Gradle 8.8+ |
+| Frontend | pnpm 9.15+, Vue 3.5, Element Plus 2.13 |
 
 ## Critical Development Rules
 
@@ -124,6 +144,13 @@ public ResponseDTO<Object> getDetail(@RequestBody RequestDTO<String> reqDto) { }
 - **响应 DTO** 继承 `PageDTO<T>`（包含结果集 `rows`）
 
 **原因：** `Page` 是通用分页基类，已实现 `Serializable`；`PageDTO<T>` 继承 `Page` 并添加了 `rows` 字段用于存放结果集。请求 DTO 只需要分页参数，无需 `rows` 字段。
+
+**Page 类包含的字段：**
+- `pageNum`: 页码，默认 1
+- `pageSize`: 每页记录数，默认 10
+- `total`: 总记录数
+- `pages`: 总页数
+- `orderBy`: 排序字段（如 `"createTime desc"`）
 
 **禁止重复实现 Serializable：** `Page` 已实现 `Serializable`，子类无需再声明。
 
@@ -355,8 +382,6 @@ public interface ConfigValueConstant {
 }
 ```
 
-### Code Comments
-
 ### Logging Specification (重要)
 
 **1. 日志框架**
@@ -566,7 +591,7 @@ for (User u : userList) { }  // ❌ 需先判断 CollUtil.isNotEmpty(userList)
 if (str.trim().isEmpty()) { }  // ❌ 如果 str 为 null 会 NPE
 ```
 
-### Code Comments
+### Code Comments (重要)
 
 **1. 类和方法必须有 Javadoc 注释**
 
@@ -661,7 +686,14 @@ Generates: Controller, Service, ServiceImpl, Mapper, mapper.xml, DO entity, and 
 
 ## Gateway Architecture
 
-The reactive gateway (`blink-gateway-reactive`) uses a filter chain:
+The gateway system consists of multiple modules:
+
+**Module Structure:**
+- `blink-gateway-reactive`: Reactive API Gateway based on Spring Cloud Gateway
+- `gateway-admin`: Gateway management admin service (backend)
+- `blink-gateway-admin-api-dubbo`: Dubbo interfaces for gateway admin
+
+**Reactive Gateway Filter Chain:**
 
 ```
 Request → LogFilter → IpFilter → RequestHeaderValidationFilter → Security → SignatureFilter → ReplayAttackPreventionFilter → CryptFilter → RewriteRequestBodyFilter → Downstream
@@ -673,6 +705,44 @@ Key features:
 - JWT authentication for channels, stateful token for internal users
 - AES+RSA hybrid encryption, SHA-256 signing
 - Rate limiting with Redis token bucket
+
+## Job Scheduler Architecture
+
+基于 Spring Boot 3.2 的统一定时任务调度抽象框架，支持多种调度实现方式。
+
+**模块结构：**
+- `blink-job-api`: API 层 - 注解、接口、枚举、DTO 定义
+- `blink-job-core`: 核心层 - 任务注册、执行器、告警处理
+- `blink-job-spring-starter`: Spring 原生调度实现
+- `blink-job-quartz-starter`: Quartz 调度实现
+- `blink-job-xxljob-starter`: XXL-Job 分布式调度实现
+
+**两种任务定义方式：**
+
+1. **注解驱动**：使用 `@BlinkScheduled` 注解标记方法
+```java
+@Component
+public class MyTask {
+    @BlinkScheduled(cron = "0 0 1 * * ?", description = "每日凌晨1点执行")
+    public void dailyTask() {
+        // 任务逻辑
+    }
+}
+```
+
+2. **接口驱动**：实现 `BlinkJob` 接口
+```java
+@Component
+public class DataSyncJob implements BlinkJob {
+    @Override
+    public JobExecutionResult execute(JobContext context) {
+        // 任务逻辑
+        return JobExecutionResult.success();
+    }
+}
+```
+
+详细文档见 [blink-job/README.md](./blink-job/README.md)
 
 
 ## Naming Conventions
@@ -729,6 +799,278 @@ Response:
   "msg": "success",
   "body": { /* response data */ }
 }
+```
+
+## Unit Testing Specification (重要)
+
+项目使用 `blink-framework-test` 模块统一管理测试依赖和测试工具类。
+
+### 1. 添加测试依赖
+
+在模块的 `build.gradle` 中添加：
+
+```groovy
+dependencies {
+    // 引入测试框架，自动获得所有测试依赖
+    testImplementation 'com.blink:blink-framework-test:1.0.0-SNAPSHOT'
+}
+```
+
+引入后自动获得以下依赖（无需重复配置）：
+- JUnit 5 (`junit-jupiter`, `junit-jupiter-params`)
+- Mockito (`mockito-core`, `mockito-junit-jupiter`)
+- AssertJ (`assertj-core`)
+- Spring Boot Test (`spring-boot-starter-test`)
+- Testcontainers (`testcontainers`, `junit-jupiter`, `mysql`)
+- H2 内存数据库
+- JsonPath、Awaitility、WireMock、Spring Security Test、Reactor Test
+
+### 2. 选择测试基类
+
+| 测试类型 | 注解 | 基类 | 适用场景 |
+|----------|------|------|----------|
+| 单元测试 | `@UnitTest` | `BlinkUnitTest` | 不依赖 Spring 容器的纯逻辑测试 |
+| 集成测试 | `@IntegrationTest` | `BlinkIntegrationTest` | 需要 Spring Boot 容器和 Testcontainers |
+| 数据层测试 | `@RepositoryTest` | `BlinkRepositoryTest` | Mapper/Repository 层测试（H2 内存数据库） |
+| 响应式测试 | `@IntegrationTest` | `BlinkReactiveTest` | WebFlux 响应式应用测试 |
+
+### 3. 单元测试示例
+
+```java
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
+import com.blink.framework.test.helper.MockHelper;
+import com.blink.framework.test.helper.AssertionHelper;
+import com.blink.framework.test.builder.TestDataBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@UnitTest
+@DisplayName("SysUserService 单元测试")
+class SysUserServiceTest extends BlinkUnitTest {
+
+    @Mock
+    private SysUserMapper sysUserMapper;
+
+    @InjectMocks
+    private SysUserServiceImpl sysUserService;
+
+    @Nested
+    @DisplayName("getUserById 测试")
+    class GetUserByIdTests {
+
+        @Test
+        @DisplayName("应该返回用户信息 - 用户存在")
+        void shouldReturnUser_whenUserExists() {
+            // given - 使用 TestDataBuilder 构建测试数据
+            SysUserDO user = new SysUserDO();
+            user.setUserId(1);
+            user.setLoginName("admin");
+            when(sysUserMapper.selectById(1)).thenReturn(user);
+
+            // when
+            SysUserVO result = sysUserService.getUserById(1);
+
+            // then - 使用 AssertJ 断言
+            assertThat(result).isNotNull();
+            assertThat(result.getLoginName()).isEqualTo("admin");
+        }
+
+        @Test
+        @DisplayName("应该抛出异常 - 用户不存在")
+        void shouldThrowException_whenUserNotExists() {
+            // given
+            when(sysUserMapper.selectById(999)).thenReturn(null);
+
+            // when & then
+            assertThatThrownBy(() -> sysUserService.getUserById(999))
+                    .isInstanceOf(BlinkException.class);
+        }
+    }
+}
+```
+
+### 4. Controller 测试示例
+
+```java
+@UnitTest
+@DisplayName("SysUserController 单元测试")
+class SysUserControllerTest extends BlinkUnitTest {
+
+    @Mock
+    private SysUserService sysUserService;
+
+    @InjectMocks
+    private SysUserController sysUserController;
+
+    @Test
+    @DisplayName("应该成功保存用户")
+    void shouldSaveUser_successfully() {
+        // given - 使用 TestDataBuilder 构建 RequestDTO
+        AddSysUserReq req = new AddSysUserReq();
+        req.setLoginName("testuser");
+        RequestDTO<AddSysUserReq> requestDTO = TestDataBuilder.requestDTO(req);
+
+        doNothing().when(sysUserService).saveSysUser(any(AddSysUserReq.class));
+
+        // when
+        ResponseDTO<EmptyBody> response = sysUserController.saveSysUser(requestDTO);
+
+        // then - 使用 AssertionHelper 断言 ResponseDTO
+        AssertionHelper.assertThatSuccess(response);
+        verify(sysUserService, times(1)).saveSysUser(any(AddSysUserReq.class));
+    }
+}
+```
+
+### 5. 测试工具类使用
+
+**TestDataBuilder（测试数据构建器）**：
+
+```java
+// 构建 RequestDTO（自动生成 requestId/traceId）
+RequestDTO<MyReq> request = TestDataBuilder.requestDTO(new MyReq());
+
+// 构建分页请求
+Page page = TestDataBuilder.page(1, 10);  // 第1页，10条
+Page defaultPage = TestDataBuilder.defaultPage();  // 默认分页
+
+// 生成随机测试数据
+String loginName = TestDataBuilder.randomLoginName();  // test_a1b2c3d4
+String email = TestDataBuilder.randomEmail();          // test_x@test.com
+```
+
+**MockHelper（Mock 辅助工具）**：
+
+```java
+// Mock BlinkRequestContextHolder（常用场景）
+try (MockedStatic<BlinkRequestContextHolder> mock = MockHelper.mockRequestContext("1", "admin")) {
+    // 此时 BlinkRequestContextHolder.getUserId() 返回 "1"
+    // BlinkRequestContextHolder.getLoginName() 返回 "admin"
+}
+
+// 仅 Mock userId
+try (MockedStatic<BlinkRequestContextHolder> mock = MockHelper.mockUserId("1")) {
+    // ...
+}
+
+// 创建 ArgumentCaptor
+ArgumentCaptor<SysUserDO> captor = MockHelper.captor(SysUserDO.class);
+```
+
+**AssertionHelper（Blink 专用断言）**：
+
+```java
+// 断言 ResponseDTO 成功
+AssertionHelper.assertThatSuccess(response);
+AssertionHelper.assertThatSuccessWithBody(response);
+
+// 断言 ResponseDTO 失败
+AssertionHelper.assertThatError(response, "BUSS0001");
+AssertionHelper.assertThatErrorPrefix(response, "GATE");
+
+// 断言 PageDTO 分页数据
+AssertionHelper.assertThatPage(pageRsp, 10, 100);
+AssertionHelper.assertThatPageNotEmpty(pageRsp);
+
+// 软断言（收集所有错误）
+AssertionHelper.assertSoftly(soft -> {
+    soft.assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+    soft.assertThat(response.getBody()).isNotNull();
+});
+```
+
+### 6. 断言规范
+
+**必须使用 AssertJ 断言，禁止使用 JUnit 断言**：
+
+```java
+// Correct - AssertJ 流式断言
+assertThat(user).isNotNull();
+assertThat(user.getLoginName()).isEqualTo("admin");
+assertThat(user.getAge()).isGreaterThan(18);
+
+// Wrong - JUnit 传统断言
+assertNotNull(user);  // ❌
+assertEquals("admin", user.getLoginName());  // ❌
+assertTrue(user.getAge() > 18);  // ❌
+```
+
+**异常断言**：
+
+```java
+// Correct
+assertThatThrownBy(() -> service.deleteUser(null))
+        .isInstanceOf(BlinkException.class)
+        .hasMessageContaining("用户不存在");
+
+// Wrong
+assertThrows(BlinkException.class, () -> service.deleteUser(null));  // ❌
+```
+
+### 7. 测试命名规范
+
+```
+类名：{被测类}Test（单元测试）/{被测类}IT（集成测试）
+方法名：should_{期望结果}_when_{条件}
+```
+
+```java
+// 单元测试
+class SysUserServiceTest {
+    void shouldReturnUser_whenUserExists() { }
+    void shouldThrowException_whenUserNotFound() { }
+}
+
+// 集成测试
+class SysUserControllerIT {
+    void shouldCreateUser_viaHttp() { }
+}
+```
+
+### 8. 运行测试
+
+```bash
+# 运行所有单元测试（快速，无需 Docker）
+./gradlew unitTest
+
+# 运行所有集成测试（需要 Docker）
+./gradlew integrationTest
+
+# 运行所有数据层测试（使用 H2）
+./gradlew repositoryTest
+
+# 运行所有测试
+./gradlew test
+
+# 运行特定模块测试
+./gradlew :blink-framework-common:test
+./gradlew :blink-base:blink-base-app:test
+
+# 运行单个测试类
+./gradlew :blink-base:blink-base-app:test --tests "com.blink.base.controller.SysUserControllerTest"
+```
+
+### 9. 测试分类注解
+
+配合 Gradle 任务使用测试分类注解：
+
+```java
+@UnitTest
+class MyServiceTest { }  // ./gradlew unitTest 会运行
+
+@IntegrationTest
+class MyControllerIT { }  // ./gradlew integrationTest 会运行
+
+@RepositoryTest
+class MyMapperTest { }  // ./gradlew repositoryTest 会运行
 ```
 
 ## Frontend Development Rules

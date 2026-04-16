@@ -1,5 +1,7 @@
 package com.blink.framework.common.factory;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,8 +24,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("BlinkNamedThreadFactory 线程工厂测试")
-class BlinkNamedThreadFactoryTest {
+class BlinkNamedThreadFactoryTest extends BlinkUnitTest {
 
     // ==================== Builder 构建测试 ====================
 

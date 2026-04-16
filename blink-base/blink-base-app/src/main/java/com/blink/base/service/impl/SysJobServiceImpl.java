@@ -100,7 +100,7 @@ public class SysJobServiceImpl implements SysJobService {
         if (CollUtil.isEmpty(req.getJobIds())) {
             return;
         }
-        sysJobMapper.deleteBatchIds(req.getJobIds());
+        sysJobMapper.deleteByIds(req.getJobIds());
         log.info("[SysJobService] 删除任务成功 | jobIds: {}", req.getJobIds());
     }
 

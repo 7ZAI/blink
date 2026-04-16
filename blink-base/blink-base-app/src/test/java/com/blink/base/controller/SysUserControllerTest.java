@@ -7,6 +7,9 @@ import com.blink.base.dto.vo.SysUserVO;
 import com.blink.base.dto.vo.UserPreferenceVO;
 import com.blink.base.service.SysUserPreferenceService;
 import com.blink.base.service.SysUserService;
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
+import com.blink.framework.test.helper.MockHelper;
 import com.blink.framework.common.context.BlinkRequestContextHolder;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.RequestDTO;
@@ -15,13 +18,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -30,9 +31,9 @@ import static org.mockito.Mockito.*;
  *
  * @author binblink
  */
-@ExtendWith(MockitoExtension.class)
+@UnitTest
 @DisplayName("SysUserController 单元测试")
-class SysUserControllerTest {
+class SysUserControllerTest extends BlinkUnitTest {
 
     @Mock
     private SysUserService sysUserService;
@@ -66,8 +67,8 @@ class SysUserControllerTest {
 
             ResponseDTO<EmptyBody> response = sysUserController.saveSysUser(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
             verify(sysUserService, times(1)).saveSysUser(any(AddSysUserReq.class));
         }
 
@@ -80,7 +81,8 @@ class SysUserControllerTest {
 
             doThrow(new RuntimeException("保存失败")).when(sysUserService).saveSysUser(any(AddSysUserReq.class));
 
-            assertThrows(RuntimeException.class, () -> sysUserController.saveSysUser(requestDTO));
+            assertThatThrownBy(() -> sysUserController.saveSysUser(requestDTO))
+                    .isInstanceOf(RuntimeException.class);
             verify(sysUserService, times(1)).saveSysUser(any(AddSysUserReq.class));
         }
     }
@@ -102,8 +104,8 @@ class SysUserControllerTest {
 
             ResponseDTO<EmptyBody> response = sysUserController.deleteSysUser(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
             verify(sysUserService, times(1)).deleteSysUser(any(DeleteSysUserReq.class));
         }
     }
@@ -126,8 +128,8 @@ class SysUserControllerTest {
 
             ResponseDTO<EmptyBody> response = sysUserController.modifySysUser(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
             verify(sysUserService, times(1)).modifySysUser(any(UpdateSysUserReq.class));
         }
     }
@@ -151,9 +153,9 @@ class SysUserControllerTest {
 
             ResponseDTO<SysUserRsp> response = sysUserController.getSysUserList(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
-            assertNotNull(response.getBody());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+            assertThat(response.getBody()).isNotNull();
             verify(sysUserService, times(1)).getSysUserList(any(QuerySysUserReq.class));
         }
     }
@@ -178,10 +180,10 @@ class SysUserControllerTest {
 
             ResponseDTO<SysUserVO> response = sysUserController.getSysUserDetail(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
-            assertNotNull(response.getBody());
-            assertEquals("testuser", response.getBody().getLoginName());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getLoginName()).isEqualTo("testuser");
             verify(sysUserService, times(1)).getSysUserDetail(any(QuerySysUserReq.class));
         }
     }
@@ -204,8 +206,8 @@ class SysUserControllerTest {
 
             ResponseDTO<EmptyBody> response = sysUserController.lockUser(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
             verify(sysUserService, times(1)).lockUser(1, 1);
         }
     }
@@ -228,8 +230,8 @@ class SysUserControllerTest {
 
             ResponseDTO<EmptyBody> response = sysUserController.assignUserRoles(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
             verify(sysUserService, times(1)).assignUserRoles(any(AssignUserRoleReq.class));
         }
     }
@@ -252,8 +254,8 @@ class SysUserControllerTest {
 
             ResponseDTO<EmptyBody> response = sysUserController.modifyPassword(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
             verify(sysUserService, times(1)).modifyPassword(any(ModifyPasswordReq.class));
         }
     }
@@ -275,8 +277,8 @@ class SysUserControllerTest {
 
             ResponseDTO<EmptyBody> response = sysUserController.resetPassword(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
             verify(sysUserService, times(1)).resetPassword(any(ResetPasswordReq.class));
         }
     }
@@ -293,15 +295,13 @@ class SysUserControllerTest {
             RequestDTO<SaveUserPreferenceReq> requestDTO = new RequestDTO<>();
             requestDTO.setBody(req);
 
-            try (MockedStatic<BlinkRequestContextHolder> mockedStatic = mockStatic(BlinkRequestContextHolder.class)) {
-                mockedStatic.when(BlinkRequestContextHolder::getUserId).thenReturn("1");
-
+            try (MockedStatic<BlinkRequestContextHolder> mockedStatic = MockHelper.mockUserId("1")) {
                 doNothing().when(sysUserPreferenceService).saveOrUpdatePreference(anyInt(), any(SaveUserPreferenceReq.class));
 
                 ResponseDTO<EmptyBody> response = sysUserController.saveUserPreference(requestDTO);
 
-                assertNotNull(response);
-                assertEquals("BLINK0000", response.getMsgCode());
+                assertThat(response).isNotNull();
+                assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
                 verify(sysUserPreferenceService, times(1)).saveOrUpdatePreference(anyInt(), any(SaveUserPreferenceReq.class));
             }
         }
@@ -318,16 +318,14 @@ class SysUserControllerTest {
 
             UserPreferenceVO preferenceVO = new UserPreferenceVO();
 
-            try (MockedStatic<BlinkRequestContextHolder> mockedStatic = mockStatic(BlinkRequestContextHolder.class)) {
-                mockedStatic.when(BlinkRequestContextHolder::getUserId).thenReturn("1");
-
+            try (MockedStatic<BlinkRequestContextHolder> mockedStatic = MockHelper.mockUserId("1")) {
                 when(sysUserPreferenceService.getPreferenceByUserId(anyInt())).thenReturn(preferenceVO);
 
                 ResponseDTO<UserPreferenceVO> response = sysUserController.getUserPreference(requestDTO);
 
-                assertNotNull(response);
-                assertEquals("BLINK0000", response.getMsgCode());
-                assertNotNull(response.getBody());
+                assertThat(response).isNotNull();
+                assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+                assertThat(response.getBody()).isNotNull();
                 verify(sysUserPreferenceService, times(1)).getPreferenceByUserId(anyInt());
             }
         }
@@ -351,9 +349,9 @@ class SysUserControllerTest {
 
             ResponseDTO<UserPermissionRsp> response = sysUserController.getUserPermissions(requestDTO);
 
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
-            assertNotNull(response.getBody());
+            assertThat(response).isNotNull();
+            assertThat(response.getMsgCode()).isEqualTo("BLINK0000");
+            assertThat(response.getBody()).isNotNull();
             verify(sysUserService, times(1)).getUserPermissions(any(UserIdReq.class));
         }
     }

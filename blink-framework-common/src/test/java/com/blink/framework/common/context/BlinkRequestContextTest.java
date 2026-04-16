@@ -1,7 +1,8 @@
 package com.blink.framework.common.context;
 
+import com.blink.framework.test.annotation.UnitTest;
+import com.blink.framework.test.base.BlinkUnitTest;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,8 +22,9 @@ import static org.assertj.core.api.Assertions.*;
  *
  * @author binblink
  */
+@UnitTest
 @DisplayName("BlinkRequestContext 请求上下文测试")
-class BlinkRequestContextTest {
+class BlinkRequestContextTest extends BlinkUnitTest {
 
     @AfterEach
     void tearDown() {
