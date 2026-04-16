@@ -192,18 +192,18 @@
       :close-on-click-modal="false"
       :lock-scroll="false"
     >
-      <!-- 最后实例警告 -->
-      <el-alert
+      <!-- 最后实例警告（测试环境临时禁用） -->
+      <!-- <el-alert
         v-if="isLastInstance"
         :title="t('instance.lastInstanceWarning')"
         type="error"
         :closable="false"
         show-icon
         class="offline-warning-alert"
-      />
+      /> -->
       <!-- 剩余实例提示 -->
       <el-alert
-        v-else-if="remainingOnlineCount <= 2"
+        v-if="remainingOnlineCount <= 2"
         :title="t('instance.remainingInstancesWarning', { count: remainingOnlineCount })"
         type="warning"
         :closable="false"
@@ -246,7 +246,6 @@
         <el-button
           :type="offlineForm.mode === 'graceful' ? 'primary' : 'warning'"
           :loading="submitting"
-          :disabled="isLastInstance"
           @click="confirmOffline"
         >
           {{ t('common.confirm') }}
@@ -714,7 +713,7 @@ onMounted(() => {
   }
 
   .empty-text {
-    color: var(--text-color-placeholder);
+    color: var(--el-text-color-placeholder);
   }
 
   .operation-buttons {

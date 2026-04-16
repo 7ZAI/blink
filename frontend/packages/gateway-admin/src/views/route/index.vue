@@ -176,10 +176,10 @@
               <el-tag type="info" effect="plain" size="small">{{ row.orderNum || 0 }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column :label="t('route.status')" width="80" align="center">
+          <el-table-column :label="t('common.status')" width="80" align="center">
             <template #default="{ row }">
               <el-tag :type="row.status === 1 ? 'success' : 'danger'" effect="plain" size="small">
-                {{ row.status === 1 ? t('route.statusEnable') : t('route.statusDisable') }}
+                {{ row.status === 1 ? t('common.statusEnable') : t('common.statusDisable') }}
               </el-tag>
             </template>
           </el-table-column>
@@ -363,13 +363,13 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item :label="t('route.status')">
+            <el-form-item :label="t('common.status')">
               <el-switch
                 v-model="formData.status"
                 :active-value="1"
                 :inactive-value="0"
-                :active-text="t('route.statusEnable')"
-                :inactive-text="t('route.statusDisable')"
+                :active-text="t('common.statusEnable')"
+                :inactive-text="t('common.statusDisable')"
               />
             </el-form-item>
           </el-col>
@@ -377,7 +377,7 @@
 
         <el-row :gutter="20">
           <el-col :span="24">
-            <el-form-item :label="t('route.remark')">
+            <el-form-item :label="t('common.remark')">
               <el-input v-model="formData.remark" :placeholder="t('route.remarkPlaceholder')" />
             </el-form-item>
           </el-col>
@@ -694,7 +694,7 @@
     <el-dialog
       v-model="batchStatusDialogVisible"
       :title="t('route.batchStatus')"
-      width="400px"
+      width="450px"
       :close-on-click-modal="false"
       :lock-scroll="false"
       @open="lockBodyScroll"
@@ -707,14 +707,31 @@
         <el-form-item :label="t('route.targetStatus')">
           <el-radio-group v-model="batchStatusValue">
             <el-radio :value="1">
-              <el-tag type="success" effect="plain" size="small">{{ t('route.statusEnable') }}</el-tag>
+              <el-tag type="success" effect="plain" size="small">{{ t('common.statusEnable') }}</el-tag>
             </el-radio>
             <el-radio :value="0">
-              <el-tag type="danger" effect="plain" size="small">{{ t('route.statusDisable') }}</el-tag>
+              <el-tag type="danger" effect="plain" size="small">{{ t('common.statusDisable') }}</el-tag>
             </el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
+      <!-- 操作结果 -->
+      <div v-if="batchStatusResult" class="batch-status-result">
+        <el-alert
+          :type="batchStatusResult.success ? 'success' : 'error'"
+          :closable="false"
+          show-icon
+        >
+          <template #title>
+            {{ batchStatusResult.success ? t('message.success') : t('message.operationFailed') }}
+          </template>
+          <template #default>
+            <div class="result-detail">
+              {{ t('route.batchStatusResult', { count: selectedRoutes.length }) }}
+            </div>
+          </template>
+        </el-alert>
+      </div>
       <template #footer>
         <el-button @click="batchStatusDialogVisible = false">{{ t('common.cancel') }}</el-button>
         <el-button type="primary" :loading="batchStatusLoading" @click="handleBatchStatusSubmit">
@@ -727,34 +744,111 @@
     <el-dialog
       v-model="importDialogVisible"
       :title="t('route.importRoutes')"
-      width="600px"
+      width="800px"
       :close-on-click-modal="false"
       :lock-scroll="false"
       @open="lockBodyScroll"
       @closed="unlockBodyScroll"
     >
-      <div class="import-tip">{{ t('route.importTip') }}</div>
-      <el-form label-width="100px">
-        <el-form-item :label="t('route.routesGroup')">
-          <el-input v-model="importRoutesGroup" :placeholder="t('route.routeGroupPlaceholder')" />
-        </el-form-item>
-        <el-form-item :label="t('route.importData')">
-          <el-input
-            v-model="importJsonData"
-            type="textarea"
-            :rows="10"
-            placeholder="JSON format route array"
-          />
-        </el-form-item>
-        <el-form-item :label="t('route.overwrite')">
-          <el-switch v-model="importOverwrite" />
-        </el-form-item>
-      </el-form>
+      <!-- 步骤指示器 -->
+      <el-steps :active="importStep === 'input' ? 0 : 1" simple style="margin-bottom: 20px">
+        <el-step :title="t('route.importStepInput')" />
+        <el-step :title="t('route.importStepPreview')" />
+      </el-steps>
+
+      <!-- 步骤1：输入数据 -->
+      <div v-show="importStep === 'input'">
+        <div class="import-tip">{{ t('route.importTip') }}</div>
+        <el-form label-width="100px">
+          <el-form-item :label="t('route.routesGroup')">
+            <el-input v-model="importRoutesGroup" :placeholder="t('route.routeGroupPlaceholder')" />
+          </el-form-item>
+          <el-form-item :label="t('route.importData')">
+            <el-input
+              v-model="importJsonData"
+              type="textarea"
+              :rows="10"
+              placeholder="JSON format route array"
+            />
+          </el-form-item>
+          <el-form-item :label="t('route.overwrite')">
+            <el-switch v-model="importOverwrite" />
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <!-- 步骤2：预览数据 -->
+      <div v-show="importStep === 'preview'">
+        <!-- 冲突警告 -->
+        <div v-if="importConflicts.length > 0" class="import-conflicts">
+          <el-alert type="warning" :closable="false" show-icon>
+            <template #title>
+              {{ t('route.importConflictWarning', { count: importConflicts.length }) }}
+            </template>
+            <template #default>
+              <div class="conflict-list">
+                <div v-for="(conflict, idx) in importConflicts" :key="idx" class="conflict-item">
+                  <el-tag :type="conflict.type === 'exists' ? 'warning' : 'danger'" size="small">
+                    {{ conflict.type === 'exists' ? t('route.conflictExists') : t('route.conflictFormat') }}
+                  </el-tag>
+                  <span class="conflict-route-id">{{ conflict.routeId }}</span>
+                  <span class="conflict-message">{{ conflict.message }}</span>
+                </div>
+              </div>
+            </template>
+          </el-alert>
+        </div>
+
+        <!-- 预览表格 -->
+        <div class="import-preview-title">{{ t('route.importPreviewTitle', { count: importPreviewData.length }) }}</div>
+        <el-table :data="importPreviewData" max-height="300" stripe border size="small">
+          <el-table-column prop="routeId" :label="t('route.routeId')" min-width="150" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span class="mono-text">{{ row.routeId }}</span>
+              <el-tag
+                v-if="importConflicts.some(c => c.routeId === row.routeId)"
+                type="warning"
+                size="small"
+                effect="plain"
+                class="ml-2"
+              >
+                {{ t('route.conflict') }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="routeName" :label="t('route.routeName')" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="uri" :label="t('route.uri')" min-width="150" show-overflow-tooltip />
+          <el-table-column prop="orderNum" :label="t('route.order')" width="80" align="center" />
+          <el-table-column :label="t('route.predicates')" min-width="150" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span v-if="row.predicates?.length">{{ row.predicates.map((p: any) => p.name).join(', ') }}</span>
+              <span v-else>-</span>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+
       <template #footer>
-        <el-button @click="importDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="importLoading" @click="handleImportSubmit">
-          {{ t('common.confirm') }}
-        </el-button>
+        <div class="import-footer">
+          <template v-if="importStep === 'input'">
+            <el-button @click="importDialogVisible = false">{{ t('common.cancel') }}</el-button>
+            <el-button type="primary" :loading="importPreviewLoading" @click="handleImportPreview">
+              {{ t('route.previewImport') }}
+            </el-button>
+          </template>
+          <template v-else>
+            <el-button @click="importStep = 'input'">{{ t('common.previous') }}</el-button>
+            <el-button @click="handleImportCancel">{{ t('common.cancel') }}</el-button>
+            <el-button
+              type="primary"
+              :loading="importLoading"
+              :disabled="importPreviewData.length === 0"
+              @click="handleImportSubmit"
+            >
+              {{ t('route.confirmImport') }}
+            </el-button>
+          </template>
+        </div>
       </template>
     </el-dialog>
 
@@ -815,9 +909,9 @@
           <el-descriptions-item :label="t('route.order')">
             {{ currentRouteDetail.orderNum || 0 }}
           </el-descriptions-item>
-          <el-descriptions-item :label="t('route.status')">
+          <el-descriptions-item :label="t('common.status')">
             <el-tag :type="currentRouteDetail.status === 1 ? 'success' : 'danger'" size="small" effect="light">
-              {{ currentRouteDetail.status === 1 ? t('route.statusEnable') : t('route.statusDisable') }}
+              {{ currentRouteDetail.status === 1 ? t('common.statusEnable') : t('common.statusDisable') }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item :label="t('route.pushStatus')">
@@ -861,7 +955,7 @@
           <el-descriptions-item :label="t('route.lastPushTime')">
             {{ currentRouteDetail.lastPushTime || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item :label="t('route.remark')" :span="2">
+          <el-descriptions-item :label="t('common.remark')" :span="2">
             {{ currentRouteDetail.remark || '-' }}
           </el-descriptions-item>
         </el-descriptions>
@@ -1032,6 +1126,7 @@
  */
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import yaml from 'js-yaml'
 import {
@@ -1091,12 +1186,16 @@ defineOptions({
 const { hasPermission: checkPermission } = usePermission()
 
 const { t } = useI18n()
+const route = useRoute()
 
 // 搜索表单
 const searchForm = reactive({
   routesGroup: '',
   routeName: '',
 })
+
+// 从路由参数获取要定位的路由ID
+const highlightRouteId = ref<string | null>(null)
 
 // 同步弹窗
 const syncDialogVisible = ref(false)
@@ -1746,6 +1845,7 @@ const handlePushSelected = () => {
 const batchStatusDialogVisible = ref(false)
 const batchStatusValue = ref(1) // 1-启用 0-禁用
 const batchStatusLoading = ref(false)
+const batchStatusResult = ref<{ success: boolean; message?: string } | null>(null)
 
 // 导入路由弹窗状态
 const importDialogVisible = ref(false)
@@ -1753,6 +1853,12 @@ const importRoutesGroup = ref('default')
 const importJsonData = ref('')
 const importOverwrite = ref(false)
 const importLoading = ref(false)
+
+// 导入预览相关
+const importStep = ref<'input' | 'preview'>('input')
+const importPreviewData = ref<RouteDefinition[]>([])
+const importConflicts = ref<Array<{ routeId: string; type: 'exists' | 'format_error'; message: string }>>([])
+const importPreviewLoading = ref(false)
 
 // 克隆路由弹窗状态
 const cloneDialogVisible = ref(false)
@@ -1870,6 +1976,7 @@ const handleBatchStatus = () => {
     return
   }
   batchStatusValue.value = 1
+  batchStatusResult.value = null
   batchStatusDialogVisible.value = true
 }
 
@@ -1878,6 +1985,7 @@ const handleBatchStatus = () => {
  */
 const handleBatchStatusSubmit = async () => {
   batchStatusLoading.value = true
+  batchStatusResult.value = null
   try {
     const req: BatchUpdateStatusReq = {
       routeIds: selectedRoutes.value.map((r) => r.routeId),
@@ -1885,11 +1993,13 @@ const handleBatchStatusSubmit = async () => {
       routesGroup: searchForm.routesGroup || 'default',
     }
     await batchUpdateStatus(req)
+    batchStatusResult.value = { success: true }
     ElMessage.success(t('message.success'))
     batchStatusDialogVisible.value = false
     loadData()
   } catch (error) {
     console.error('[RouteManagement] Failed to batch update status:', error)
+    batchStatusResult.value = { success: false, message: String(error) }
     ElMessage.error(t('message.operationFailed'))
   } finally {
     batchStatusLoading.value = false
@@ -1903,23 +2013,86 @@ const handleImport = () => {
   importRoutesGroup.value = searchForm.routesGroup || 'default'
   importJsonData.value = ''
   importOverwrite.value = false
+  importStep.value = 'input'
+  importPreviewData.value = []
+  importConflicts.value = []
   importDialogVisible.value = true
 }
 
 /**
- * 处理导入路由提交
+ * 处理导入预览
  */
-const handleImportSubmit = async () => {
+const handleImportPreview = async () => {
   if (!importJsonData.value.trim()) {
     ElMessage.warning(t('route.importDataRequired'))
     return
   }
 
   // 验证JSON格式
+  let parsedData: RouteDefinition[]
   try {
-    JSON.parse(importJsonData.value)
+    parsedData = JSON.parse(importJsonData.value)
+    if (!Array.isArray(parsedData)) {
+      ElMessage.error(t('route.invalidJsonFormat'))
+      return
+    }
   } catch {
     ElMessage.error(t('route.invalidJsonFormat'))
+    return
+  }
+
+  importPreviewLoading.value = true
+  try {
+    // 解析预览数据
+    importPreviewData.value = parsedData
+    importConflicts.value = []
+
+    // 检测与现有路由的冲突
+    const existingRouteIds = new Set(routeList.value.map(r => r.routeId))
+    for (const route of parsedData) {
+      if (!route.routeId) {
+        importConflicts.value.push({
+          routeId: 'unknown',
+          type: 'format_error',
+          message: t('route.missingRouteId')
+        })
+        continue
+      }
+      if (existingRouteIds.has(route.routeId) && !importOverwrite.value) {
+        importConflicts.value.push({
+          routeId: route.routeId,
+          type: 'exists',
+          message: t('route.conflictExistsMessage')
+        })
+      }
+    }
+
+    // 切换到预览步骤
+    importStep.value = 'preview'
+  } catch (error) {
+    console.error('[RouteManagement] Failed to preview import:', error)
+    ElMessage.error(t('message.operationFailed'))
+  } finally {
+    importPreviewLoading.value = false
+  }
+}
+
+/**
+ * 处理导入取消
+ */
+const handleImportCancel = () => {
+  importStep.value = 'input'
+  importPreviewData.value = []
+  importConflicts.value = []
+  importDialogVisible.value = false
+}
+
+/**
+ * 处理导入路由提交
+ */
+const handleImportSubmit = async () => {
+  if (importPreviewData.value.length === 0) {
+    ElMessage.warning(t('route.noDataToImport'))
     return
   }
 
@@ -1945,6 +2118,10 @@ const handleImportSubmit = async () => {
       )
     }
     importDialogVisible.value = false
+    // 重置状态
+    importStep.value = 'input'
+    importPreviewData.value = []
+    importConflicts.value = []
     loadData()
   } catch (error) {
     console.error('[RouteManagement] Failed to import routes:', error)
@@ -2189,7 +2366,25 @@ const unlockBodyScroll = () => {
 
 // 组件挂载时加载初始数据
 onMounted(() => {
+  // 处理从推送历史跳转过来的路由参数
+  const routeIdFromQuery = route.query.routeId as string | undefined
+  if (routeIdFromQuery) {
+    highlightRouteId.value = routeIdFromQuery
+  }
   loadData()
+})
+
+// 监听数据加载完成后，高亮定位到指定路由
+watch(routeList, () => {
+  if (highlightRouteId.value && routeList.value.length > 0) {
+    const targetRoute = routeList.value.find(r => r.routeId === highlightRouteId.value)
+    if (targetRoute) {
+      // 打开路由详情
+      handleViewDetail(targetRoute)
+      // 清除高亮标记
+      highlightRouteId.value = null
+    }
+  }
 })
 </script>
 
@@ -2243,6 +2438,45 @@ onMounted(() => {
   font-size: 13px;
   color: var(--el-text-color-secondary);
   border-left: 3px solid var(--el-color-primary);
+}
+
+// 导入预览相关样式
+.import-conflicts {
+  margin-bottom: 16px;
+
+  .conflict-list {
+    margin-top: 8px;
+
+    .conflict-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 13px;
+
+      .conflict-route-id {
+        font-family: 'Monaco', 'Menlo', monospace;
+        color: var(--el-text-color-primary);
+      }
+
+      .conflict-message {
+        color: var(--el-text-color-secondary);
+      }
+    }
+  }
+}
+
+.import-preview-title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  color: var(--el-text-color-primary);
+}
+
+.import-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .time-text {

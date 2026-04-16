@@ -210,7 +210,7 @@ import {
   cancelLeave,
   getLeaveDetail,
 } from '@/api/leave'
-import type { LeaveRequestVO, LeaveType, LeaveStatus } from '@/api/types/leave'
+import type { LeaveRequestVO, LeaveType, LeaveStatus, QueryLeaveReq } from '@/api/types/leave'
 import { LEAVE_TYPE_OPTIONS, LEAVE_STATUS_OPTIONS, getLeaveStatusType } from '@/api/types/leave'
 
 // 获取状态标签类型
@@ -267,9 +267,12 @@ onMounted(() => {
 const getList = async () => {
   loading.value = true
   try {
-    const params = { ...queryParams }
-    if (!params.status) delete (params as any).status
-    if (!params.leaveType) delete (params as any).leaveType
+    const params: QueryLeaveReq = {
+      pageNum: queryParams.pageNum,
+      pageSize: queryParams.pageSize,
+      status: queryParams.status || undefined,
+      leaveType: queryParams.leaveType || undefined,
+    }
 
     const res = await getMyLeaveList(params)
     leaveList.value = res.rows || []
@@ -309,9 +312,19 @@ const openDialog = () => {
 // 提交
 const handleSubmit = async () => {
   await formRef.value?.validate()
+  if (!form.leaveType) {
+    ElMessage.error('请选择请假类型')
+    return
+  }
   submitLoading.value = true
   try {
-    await submitLeave(form)
+    await submitLeave({
+      leaveType: form.leaveType,
+      startDate: form.startDate,
+      endDate: form.endDate,
+      days: form.days,
+      reason: form.reason,
+    })
     ElMessage.success('提交成功')
     dialogVisible.value = false
     getList()

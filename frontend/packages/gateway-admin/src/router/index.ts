@@ -304,8 +304,34 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'monitor',
         name: 'Monitor',
-        component: () => import('@/views/monitor/index.vue'),
+        redirect: '/monitor/dashboard',
         meta: { title: 'monitor.title' },
+        children: [
+          {
+            path: 'dashboard',
+            name: 'MonitorDashboard',
+            component: () => import('@/views/monitor/index.vue'),
+            meta: { title: 'monitor.dashboard' },
+          },
+          {
+            path: 'alert-rule',
+            name: 'MonitorAlertRule',
+            component: () => import('@/views/alert/rules/index.vue'),
+            meta: { title: 'monitor.alertRule' },
+          },
+          {
+            path: 'alert-history',
+            name: 'MonitorAlertHistory',
+            component: () => import('@/views/alert/history/index.vue'),
+            meta: { title: 'monitor.alertHistory' },
+          },
+          {
+            path: 'circuit-breaker',
+            name: 'MonitorCircuitBreaker',
+            component: () => import('@/views/monitor/circuitBreaker/index.vue'),
+            meta: { title: 'monitor.circuitBreaker' },
+          },
+        ],
       },
       {
         path: 'instance',

@@ -251,7 +251,7 @@ public class RouteServiceImpl implements RouteService {
         Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
 
         // 批量查询现有路由
-        List<GaRouteDO> existingRoutes = gaRouteMapper.selectBatchIds(routeIds);
+        List<GaRouteDO> existingRoutes = gaRouteMapper.selectByIds(routeIds);
         if (CollUtil.isEmpty(existingRoutes)) {
             log.warn("[Route] 未找到要删除的路由 | routeIds: {}", routeIds);
             return ResponseDTO.newSuccessInstance();
@@ -263,7 +263,7 @@ public class RouteServiceImpl implements RouteService {
         }
 
         // 批量删除数据库记录
-        gaRouteMapper.deleteBatchIds(routeIds);
+        gaRouteMapper.deleteByIds(routeIds);
 
         log.info("[Route] 批量删除路由成功 | routeIds: {}, count: {}, operatorUser: {}", routeIds, existingRoutes.size(), operatorUser);
 

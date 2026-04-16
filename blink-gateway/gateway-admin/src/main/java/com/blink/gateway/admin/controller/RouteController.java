@@ -33,6 +33,7 @@ import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.ImportRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
@@ -358,6 +359,17 @@ public class RouteController {
     @PostMapping("/getInstancePushHistory")
     public ResponseDTO<QueryPushLogRsp> getInstancePushHistory(@RequestBody @Validated RequestDTO<QueryInstancePushHistoryReq> reqDto) {
         return routePushService.getInstancePushHistory(reqDto.getBody());
+    }
+
+    /**
+     * 获取实例最新推送记录
+     *
+     * @param reqDto 请求参数（包含实例ID）
+     * @return 最新推送记录（单条，无记录时返回 null）
+     */
+    @PostMapping("/getLatestPush")
+    public ResponseDTO<GaRoutePushLogDO> getLatestPush(@RequestBody @Validated RequestDTO<GetLatestPushReq> reqDto) {
+        return routePushService.getLatestPush(reqDto.getBody());
     }
 
     /**

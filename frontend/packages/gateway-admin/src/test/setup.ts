@@ -6,6 +6,7 @@
 
 import { config } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, vi } from 'vitest'
 
 // 全局设置：每个测试前创建新的 Pinia 实例
 beforeEach(() => {

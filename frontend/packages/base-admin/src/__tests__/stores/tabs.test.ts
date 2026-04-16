@@ -259,7 +259,7 @@ describe('Tabs Store', () => {
       store.closeAllTabs()
 
       expect(store.tabs).toHaveLength(1)
-      expect(store.tabs[0].path).toBe('/dashboard')
+      expect(store.tabs[0]?.path).toBe('/dashboard')
     })
 
     it('should update activeTab to first remaining tab', () => {

@@ -437,6 +437,7 @@ public class MetricsStreamConsumer {
 
     /**
      * 更新汇总统计
+     * 同时清理无效的实例记录（有 instanceId 但无对应指标数据）
      */
     private void updateSummary() {
         Map<String, Object> instanceList = redisClient.hGetStringMap(GATEWAY_INSTANCE_LIST_KEY);
@@ -445,7 +446,9 @@ public class MetricsStreamConsumer {
             return;
         }
 
-        int totalCount = instanceList.size();
+        // 收集无效实例 ID（有记录但无指标数据）
+        List<String> invalidInstanceIds = new ArrayList<>();
+
         int onlineCount = 0;
         int healthyCount = 0;
         double totalCpu = 0;
@@ -459,6 +462,8 @@ public class MetricsStreamConsumer {
             Map<String, Object> metrics = redisClient.hGetStringMap(GATEWAY_METRICS_PREFIX + instanceId);
 
             if (CollUtil.isEmpty(metrics)) {
+                // 无指标数据的实例记录，标记为无效
+                invalidInstanceIds.add(instanceId);
                 continue;
             }
 
@@ -496,6 +501,17 @@ public class MetricsStreamConsumer {
                 responseTimeCount++;
             }
         }
+
+        // 清理无效实例记录
+        if (CollUtil.isNotEmpty(invalidInstanceIds)) {
+            for (String invalidId : invalidInstanceIds) {
+                redisClient.hDeleteFields(INSTANCE_LIST_KEY, invalidId);
+                log.info("[MetricsStreamConsumer] 清理无效实例记录 | instanceId: {}", invalidId);
+            }
+        }
+
+        // 实际有效实例数（清理后的在线数）
+        int totalCount = onlineCount;
 
         Map<String, Object> summary = new HashMap<>();
         summary.put("total", totalCount);

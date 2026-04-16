@@ -120,6 +120,8 @@
     <logger name="org.apache" level="INFO"/>
     <logger name="com.alibaba.nacos" level="WARN"/>
     <logger name="io.netty" level="WARN"/>
+    <!-- 禁止 Nacos shaded grpc/netty debug 日志 -->
+    <logger name="com.alibaba.nacos.shaded" level="WARN"/>
 
     <!-- ============== 6. 根日志配置 ============== -->
     <!-- dev 环境：仅控制台输出，DEBUG 级别 -->

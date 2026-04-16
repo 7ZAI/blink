@@ -50,12 +50,12 @@
                 />
               </el-form-item>
 
-              <el-form-item :label="t('user.remark')">
+              <el-form-item :label="t('common.remark')">
                 <el-input
                   v-model="form.remark"
                   type="textarea"
                   :rows="4"
-                  :placeholder="t('common.pleaseInput') + t('user.remark')"
+                  :placeholder="t('common.pleaseInput') + t('common.remark')"
                 />
               </el-form-item>
 

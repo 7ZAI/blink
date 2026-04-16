@@ -216,7 +216,7 @@
                 {{ row.lastLoginTime || '-' }}
               </template>
             </el-table-column>
-            <el-table-column prop="createTime" :label="t('user.createTime')" min-width="160">
+            <el-table-column prop="createTime" :label="t('common.createTime')" min-width="160">
               <template #default="{ row }">
                 {{ row.createTime || '-' }}
               </template>

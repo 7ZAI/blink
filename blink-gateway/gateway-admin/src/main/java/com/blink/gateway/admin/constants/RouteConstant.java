@@ -255,4 +255,21 @@ public interface RouteConstant {
      * 全量推送备注
      */
     String REMARK_FULL_PUSH = "全量推送";
+
+    // ==================== 验证结果常量 ====================
+
+    /**
+     * 验证结果：一致
+     */
+    Byte VERIFY_RESULT_CONSISTENT = 0;
+
+    /**
+     * 验证结果：部分不一致
+     */
+    Byte VERIFY_RESULT_PARTIAL_MISMATCH = 1;
+
+    /**
+     * 验证结果：完全不一致
+     */
+    Byte VERIFY_RESULT_MISMATCH = 2;
 }

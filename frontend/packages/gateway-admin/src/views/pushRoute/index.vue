@@ -100,7 +100,7 @@
                       size="small"
                       effect="light"
                     >
-                      {{ route.status === 1 ? t('route.statusEnable') : t('route.statusDisable') }}
+                      {{ route.status === 1 ? t('common.statusEnable') : t('common.statusDisable') }}
                     </el-tag>
                     <el-tag
                       :type="getPushStatusType(route.pushStatus)"
@@ -186,6 +186,13 @@
                   </div>
                   <div class="code-block">
                     <pre>{{ formattedPushResult }}</pre>
+                  </div>
+                  <!-- 跳转到推送历史 -->
+                  <div class="push-history-link">
+                    <el-button type="primary" link @click="goToPushHistory">
+                      <el-icon><Clock /></el-icon>
+                      {{ t('pushHistory.goToPushHistory') }}
+                    </el-button>
                   </div>
                 </div>
                 <div v-else class="result-error">
@@ -301,7 +308,7 @@
                   size="small"
                   effect="dark"
                 >
-                  {{ instance.status === 0 ? t('instanceRoute.online') : t('instanceRoute.offline') }}
+                  {{ instance.status === 0 ? t('common.online') : t('common.offline') }}
                 </el-tag>
               </div>
             </div>
@@ -366,9 +373,9 @@
           <el-descriptions-item :label="t('route.order')">
             {{ currentRouteDetail.orderNum || 0 }}
           </el-descriptions-item>
-          <el-descriptions-item :label="t('route.status')">
+          <el-descriptions-item :label="t('common.status')">
             <el-tag :type="currentRouteDetail.status === 1 ? 'success' : 'danger'" size="small" effect="light">
-              {{ currentRouteDetail.status === 1 ? t('route.statusEnable') : t('route.statusDisable') }}
+              {{ currentRouteDetail.status === 1 ? t('common.statusEnable') : t('common.statusDisable') }}
             </el-tag>
           </el-descriptions-item>
           <el-descriptions-item :label="t('route.pushStatus')">
@@ -379,7 +386,7 @@
           <el-descriptions-item :label="t('route.lastPushTime')">
             {{ currentRouteDetail.lastPushTime || '-' }}
           </el-descriptions-item>
-          <el-descriptions-item :label="t('route.remark')" :span="2">
+          <el-descriptions-item :label="t('common.remark')" :span="2">
             {{ currentRouteDetail.remark || '-' }}
           </el-descriptions-item>
         </el-descriptions>
@@ -430,6 +437,7 @@
  */
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Promotion,
@@ -455,6 +463,7 @@ defineOptions({
 })
 
 const { t } = useI18n()
+const router = useRouter()
 
 // 路由列表状态
 const routesLoading = ref(false)
@@ -469,6 +478,7 @@ const selectedInstanceIds = ref<string[]>([])
 
 // 推送状态
 const pushing = ref(false)
+const validating = ref(false)
 const remarkDialogVisible = ref(false)
 const pushRemark = ref('')
 
@@ -486,6 +496,8 @@ const pushResult = ref<{
 } | null>(null)
 const validateResult = ref<{
   consistent: boolean
+  summary?: string
+  instanceDetails?: any[]
   differences?: Array<{
     instanceId: string
     type: string
@@ -493,6 +505,8 @@ const validateResult = ref<{
     actual: string
   }>
 } | null>(null)
+// 最新推送记录ID（用于校验）
+const latestPushId = ref<number | null>(null)
 
 // 计算属性
 const filteredRoutes = computed(() => {
@@ -673,12 +687,19 @@ function getResultPanelTitle(): string {
 async function loadWarehouseRoutes() {
   routesLoading.value = true
   try {
+    // 加载所有启用的路由，用于推送选择
+    // 如果路由数量超过2000，需要实现分页加载
     const result = await routeApi.getList({
       pageNum: 1,
-      pageSize: 500, // 加载足够多的路由
+      pageSize: 2000, // 加载足够多的路由
       status: 1, // 只加载启用的路由
     })
     warehouseRoutes.value = Array.isArray(result?.rows) ? result.rows : []
+
+    // 如果返回数量等于 pageSize，提示用户可能存在更多路由
+    if (warehouseRoutes.value.length >= 2000) {
+      ElMessage.warning(t('pushRoute.tooManyRoutes'))
+    }
   } catch (error) {
     ElMessage.error(t('message.fetchFailed'))
     warehouseRoutes.value = []
@@ -791,6 +812,7 @@ async function confirmPush() {
   pushing.value = true
   pushResult.value = null
   validateResult.value = null
+  latestPushId.value = null
 
   try {
     const req: PushRoutesReq = {
@@ -800,6 +822,16 @@ async function confirmPush() {
       remark: pushRemark.value,
     }
     await routeApi.pushRoutes(req)
+
+    // 获取最新推送记录用于后续校验
+    try {
+      if (selectedInstanceIds.value.length > 0) {
+        const latestPush = await routeApi.getLatestPush({ instanceId: selectedInstanceIds.value[0] })
+        latestPushId.value = latestPush?.pushId || null
+      }
+    } catch {
+      // 忽略获取推送记录失败
+    }
 
     pushResult.value = {
       success: true,
@@ -846,20 +878,38 @@ async function handleFullPush() {
   validateResult.value = null
 
   try {
-    // 全实例推送所有选中的路由
-    const req: PushRoutesReq = {
-      routeIds: selectedRouteIds.value.length > 0 ? [...selectedRouteIds.value] : [],
-      pushMode: 'broadcast',
-      remark: 'Full push from push route page',
-    }
-    await routeApi.pushRoutes(req)
+    // 全量推送：推送所有启用状态的路由到所有在线实例
+    // 如果选择了路由，推送选中的；否则推送所有启用的路由
+    if (selectedRouteIds.value.length > 0) {
+      // 推送选中的路由
+      const req: PushRoutesReq = {
+        routeIds: [...selectedRouteIds.value],
+        pushMode: 'broadcast',
+        remark: 'Full push from push route page - selected routes',
+      }
+      await routeApi.pushRoutes(req)
 
-    pushResult.value = {
-      success: true,
-      data: {
-        pushedRoutes: selectedRouteIds.value.length || 'all enabled',
-        targetInstances: onlineInstances.value.length,
-        timestamp: new Date().toISOString(),
+      pushResult.value = {
+        success: true,
+        data: {
+          pushedRoutes: selectedRouteIds.value.length,
+          targetInstances: onlineInstances.value.length,
+          timestamp: new Date().toISOString(),
+        }
+      }
+    } else {
+      // 未选择路由时，调用全量推送接口推送所有启用路由
+      await routeApi.fullPushRoutes({
+        storageMode: 'nacos', // 默认使用 nacos
+      })
+
+      pushResult.value = {
+        success: true,
+        data: {
+          pushedRoutes: 'all enabled routes',
+          targetInstances: onlineInstances.value.length,
+          timestamp: new Date().toISOString(),
+        }
       }
     }
 
@@ -883,17 +933,71 @@ async function handleFullPush() {
 async function handleValidate() {
   if (!canValidate.value) return
 
-  // TODO: 调用 actuator 接口校验路由一致性
-  // 这里需要后端提供相应的接口
-
-  // 模拟校验结果
-  validateResult.value = {
-    consistent: true,
-    differences: []
+  // 如果没有推送记录ID，无法校验
+  if (!latestPushId.value) {
+    ElMessage.warning(t('pushRoute.noPushRecord'))
+    return
   }
 
-  resultTab.value = 'validate'
-  ElMessage.success(t('pushRoute.validateSuccess'))
+  validating.value = true
+  validateResult.value = null
+
+  try {
+    const result = await routeApi.verifyPushResult({
+      pushId: latestPushId.value,
+    })
+
+    // 转换验证结果
+    validateResult.value = {
+      consistent: result.verifyResult === 0,
+      summary: result.summary,
+      instanceDetails: result.instanceDetails,
+      differences: []
+    }
+
+    // 如果有不一致的实例，提取差异信息
+    if (result.instanceDetails) {
+      for (const detail of result.instanceDetails) {
+        if (detail.result !== 0) {
+          // 合并所有差异
+          const missingRoutes = detail.missingRoutes || []
+          const extraRoutes = detail.extraRoutes || []
+          const mismatchedRoutes = detail.mismatchedRoutes || []
+
+          for (const route of [...missingRoutes, ...extraRoutes, ...mismatchedRoutes]) {
+            validateResult.value.differences!.push({
+              instanceId: detail.instanceId,
+              type: route.diffType,
+              expected: route.pushedConfig ? JSON.stringify(route.pushedConfig) : '-',
+              actual: route.actualConfig ? JSON.stringify(route.actualConfig) : '-',
+            })
+          }
+        }
+      }
+    }
+
+    resultTab.value = 'validate'
+
+    if (validateResult.value.consistent) {
+      ElMessage.success(t('pushRoute.validateSuccess'))
+    } else {
+      ElMessage.warning(t('pushRoute.validateFailed'))
+    }
+  } catch (error: any) {
+    validateResult.value = {
+      consistent: false,
+      differences: [{
+        instanceId: 'unknown',
+        type: 'error',
+        expected: '-',
+        actual: error?.message || t('message.fetchFailed'),
+      }]
+    }
+    resultTab.value = 'validate'
+    ElMessage.error(t('message.fetchFailed'))
+  } finally {
+    validating.value = false
+  }
 }
 
 // 复制结果
@@ -911,6 +1015,11 @@ async function copyResult() {
   } catch {
     ElMessage.error(t('common.copy') + ' ' + t('common.failed'))
   }
+}
+
+// 跳转到推送历史
+function goToPushHistory() {
+  router.push('/route/push-history')
 }
 
 // 监听推送成功后启用校验按钮
@@ -943,7 +1052,7 @@ const unlockBodyScroll = () => {
   flex-direction: column;
   height: 100%;
   padding: 20px;
-  background: var(--el-bg-color-page);
+  background: var(--bg-color-page);
   gap: 16px;
 }
 
@@ -952,11 +1061,11 @@ const unlockBodyScroll = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--el-bg-color);
+  background: var(--bg-color-card);
   border-radius: 12px;
   padding: 16px 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid var(--el-border-color-light);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color-base);
 
   .header-left {
     display: flex;
@@ -979,13 +1088,13 @@ const unlockBodyScroll = () => {
         margin: 0;
         font-size: 18px;
         font-weight: 600;
-        color: var(--el-text-color-primary);
+        color: var(--text-color-primary);
       }
 
       .subtitle {
         margin: 4px 0 0;
         font-size: 13px;
-        color: var(--el-text-color-secondary);
+        color: var(--text-color-secondary);
       }
     }
   }
@@ -1020,10 +1129,10 @@ const unlockBodyScroll = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--el-bg-color);
+  background: var(--bg-color-card);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid var(--el-border-color-light);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color-base);
   overflow: hidden;
   min-height: 0;
   max-height: 50%;
@@ -1034,10 +1143,10 @@ const unlockBodyScroll = () => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--el-bg-color);
+  background: var(--bg-color-card);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid var(--el-border-color-light);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color-base);
   overflow: hidden;
   min-height: 0;
 }
@@ -1047,21 +1156,21 @@ const unlockBodyScroll = () => {
   width: 380px;
   display: flex;
   flex-direction: column;
-  background: var(--el-bg-color);
+  background: var(--bg-color-card);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  border: 1px solid var(--el-border-color-light);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color-base);
   overflow: hidden;
 }
 
 // 面板头部
 .panel-header {
   padding: 12px 16px;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid var(--border-color-base);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--el-fill-color-light);
+  background: var(--bg-color-page);
   flex-shrink: 0;
 
   .panel-title {
@@ -1069,7 +1178,7 @@ const unlockBodyScroll = () => {
     align-items: center;
     gap: 8px;
     font-weight: 600;
-    color: var(--el-text-color-primary);
+    color: var(--text-color-primary);
   }
 
   .panel-actions {
@@ -1082,10 +1191,10 @@ const unlockBodyScroll = () => {
 // 面板统计
 .panel-stats {
   padding: 8px 16px;
-  background: var(--el-fill-color-lighter);
-  border-bottom: 1px solid var(--el-border-color-lighter);
+  background: var(--bg-color);
+  border-bottom: 1px solid var(--border-color-light);
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  color: var(--text-color-secondary);
   display: flex;
   gap: 8px;
   flex-shrink: 0;
@@ -1098,7 +1207,7 @@ const unlockBodyScroll = () => {
   }
 
   .stat-divider {
-    color: var(--el-border-color);
+    color: var(--border-color-base);
   }
 }
 
@@ -1106,6 +1215,7 @@ const unlockBodyScroll = () => {
 .panel-body {
   flex: 1;
   overflow: hidden;
+  background: var(--bg-color-card);
 }
 
 .empty-state {
@@ -1126,18 +1236,19 @@ const unlockBodyScroll = () => {
 .route-list {
   .route-item {
     padding: 10px 16px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    border-bottom: 1px solid var(--border-color-light);
     display: flex;
     align-items: center;
     gap: 12px;
     transition: all 0.2s ease;
+    background: var(--bg-color-card);
 
     &:hover {
-      background: var(--el-fill-color-light);
+      background: var(--table-row-hover);
     }
 
     &.is-selected {
-      background: var(--el-color-primary-light-9);
+      background: var(--table-row-hover);
       border-left: 3px solid var(--el-color-primary);
       padding-left: 13px;
     }
@@ -1154,7 +1265,7 @@ const unlockBodyScroll = () => {
         font-family: 'SF Mono', 'Monaco', monospace;
         font-size: 13px;
         font-weight: 500;
-        color: var(--el-text-color-primary);
+        color: var(--text-color-primary);
         min-width: 120px;
         max-width: 180px;
         overflow: hidden;
@@ -1164,7 +1275,7 @@ const unlockBodyScroll = () => {
 
       .route-name {
         font-size: 12px;
-        color: var(--el-text-color-secondary);
+        color: var(--text-color-secondary);
         min-width: 80px;
         max-width: 120px;
         overflow: hidden;
@@ -1185,19 +1296,20 @@ const unlockBodyScroll = () => {
 .instance-list {
   .instance-item {
     padding: 12px 16px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    border-bottom: 1px solid var(--border-color-light);
     display: flex;
     align-items: center;
     gap: 10px;
     cursor: pointer;
     transition: all 0.2s ease;
+    background: var(--bg-color-card);
 
     &:hover {
-      background: var(--el-fill-color-light);
+      background: var(--table-row-hover);
     }
 
     &.is-selected {
-      background: var(--el-color-primary-light-9);
+      background: var(--table-row-hover);
       border-left: 3px solid var(--el-color-primary);
       padding-left: 13px;
     }
@@ -1215,7 +1327,7 @@ const unlockBodyScroll = () => {
 
       &.online {
         background: var(--el-color-success);
-        box-shadow: 0 0 6px var(--el-color-success-light-3);
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
       }
 
       &.offline {
@@ -1231,7 +1343,7 @@ const unlockBodyScroll = () => {
         font-family: 'SF Mono', 'Monaco', monospace;
         font-size: 12px;
         font-weight: 500;
-        color: var(--el-text-color-primary);
+        color: var(--text-color-primary);
         margin-bottom: 2px;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1240,7 +1352,7 @@ const unlockBodyScroll = () => {
 
       .instance-uri {
         font-size: 11px;
-        color: var(--el-text-color-secondary);
+        color: var(--text-color-secondary);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -1272,7 +1384,8 @@ const unlockBodyScroll = () => {
 
   .code-block {
     flex: 1;
-    background: var(--el-fill-color-light);
+    background: var(--bg-color-page);
+    border: 1px solid var(--border-color-light);
     border-radius: 8px;
     padding: 12px;
     overflow: auto;
@@ -1284,7 +1397,15 @@ const unlockBodyScroll = () => {
       line-height: 1.6;
       white-space: pre-wrap;
       word-break: break-all;
+      color: var(--text-color-primary);
     }
+  }
+
+  .push-history-link {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color-light);
+    flex-shrink: 0;
   }
 
   .validate-info {
@@ -1312,7 +1433,8 @@ const unlockBodyScroll = () => {
 
   .code-block {
     flex: 1;
-    background: var(--el-fill-color-light);
+    background: var(--bg-color-page);
+    border: 1px solid var(--border-color-light);
     border-radius: 8px;
     padding: 12px;
     overflow: auto;
@@ -1324,6 +1446,7 @@ const unlockBodyScroll = () => {
       line-height: 1.6;
       white-space: pre-wrap;
       word-break: break-all;
+      color: var(--text-color-primary);
     }
   }
 }
@@ -1358,7 +1481,7 @@ const unlockBodyScroll = () => {
       .error-instance {
         font-family: 'SF Mono', 'Monaco', monospace;
         font-weight: 500;
-        color: var(--el-text-color-primary);
+        color: var(--text-color-primary);
       }
 
       .error-message {
@@ -1399,7 +1522,7 @@ const unlockBodyScroll = () => {
         font-size: 12px;
 
         .label {
-          color: var(--el-text-color-secondary);
+          color: var(--text-color-secondary);
           min-width: 60px;
         }
 
@@ -1425,17 +1548,17 @@ const unlockBodyScroll = () => {
       .section-title {
         font-size: 13px;
         font-weight: 600;
-        color: var(--el-text-color-primary);
+        color: var(--text-color-primary);
         margin-bottom: 8px;
         padding-left: 8px;
         border-left: 3px solid var(--el-color-primary);
       }
 
       .empty-section {
-        color: var(--el-text-color-secondary);
+        color: var(--text-color-secondary);
         font-size: 12px;
         padding: 8px 12px;
-        background: var(--el-fill-color-lighter);
+        background: var(--bg-color-page);
         border-radius: 4px;
       }
 
@@ -1451,20 +1574,21 @@ const unlockBodyScroll = () => {
           align-items: center;
           gap: 10px;
           padding: 8px 12px;
-          background: var(--el-fill-color-light);
+          background: var(--bg-color-page);
           border-radius: 6px;
 
           .predicate-args,
           .filter-args {
             font-size: 12px;
-            color: var(--el-text-color-secondary);
+            color: var(--text-color-secondary);
             font-family: 'SF Mono', 'Monaco', monospace;
           }
         }
       }
 
       .json-preview {
-        background: var(--el-fill-color-light);
+        background: var(--bg-color-page);
+        border: 1px solid var(--border-color-light);
         border-radius: 8px;
         padding: 12px;
         overflow: auto;
@@ -1477,6 +1601,7 @@ const unlockBodyScroll = () => {
           line-height: 1.6;
           white-space: pre-wrap;
           word-break: break-all;
+          color: var(--text-color-primary);
         }
       }
     }

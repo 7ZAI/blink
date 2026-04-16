@@ -1,35 +1,34 @@
 package com.blink.gateway.admin.handler;
 
 import com.blink.framework.common.utils.JacksonUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
-import org.apache.ibatis.type.MappedTypes;
 
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.List;
 
 /**
- * String List 类型 JSON TypeHandler
- * 使用 JacksonUtil 的 ObjectMapper
+ * List<String> 类型 JSON TypeHandler
  *
  * @author binblink
- * @since 2026-04-12
+ * @since 2026-04-16
  */
 @Slf4j
-@MappedTypes({List.class})
 public class StringListTypeHandler extends BaseTypeHandler<List<String>> {
+
+    private static final TypeReference<List<String>> TYPE_REFERENCE = new TypeReference<List<String>>() {};
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, List<String> parameter, JdbcType jdbcType) throws SQLException {
         try {
             ps.setString(i, JacksonUtil.toJson(parameter));
         } catch (Exception e) {
-            log.error("String List JSON序列化失败", e);
+            log.error("[StringList] JSON序列化失败", e);
             throw new SQLException("JSON序列化失败: " + e.getMessage(), e);
         }
     }
@@ -51,13 +50,13 @@ public class StringListTypeHandler extends BaseTypeHandler<List<String>> {
 
     private List<String> parseJson(String json) {
         if (json == null || json.isEmpty()) {
-            return Collections.emptyList();
+            return null;
         }
         try {
-            return JacksonUtil.fromJsonToList(json, String.class);
+            return JacksonUtil.fromJson(json, TYPE_REFERENCE);
         } catch (Exception e) {
-            log.error("String List JSON反序列化失败, json: {}", json, e);
-            return Collections.emptyList();
+            log.error("[StringList] JSON反序列化失败, json: {}", json, e);
+            return null;
         }
     }
 }

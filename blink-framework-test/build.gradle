@@ -1,0 +1,107 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+/**
+ * Blink 测试框架模块
+ * 统一管理所有后端应用的测试依赖和通用测试工具
+ *
+ * @author binblink
+ * @since 2026-04-16
+ */
+
+// 任务：生成源码JAR
+java {
+    withSourcesJar()
+    modularity.inferModulePath = true
+}
+
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+bootJar {
+    enabled = false
+}
+
+// 禁用 resolveMainClassName 任务
+tasks.named('resolveMainClassName').configure {
+    enabled = false
+}
+
+// 覆盖 artifactId（根 build.gradle 已配置统一发布）
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'blink-framework-test'
+        }
+    }
+}
+
+dependencies {
+    // ========== 核心依赖 ==========
+    api 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+
+    // ========== JUnit 5 测试框架 ==========
+    api 'org.junit.jupiter:junit-jupiter:5.10.0'
+    api 'org.junit.jupiter:junit-jupiter-api:5.10.0'
+    api 'org.junit.jupiter:junit-jupiter-params:5.10.0'  // 参数化测试支持
+
+    // ========== Mockito ==========
+    api 'org.mockito:mockito-core:5.5.0'
+    api 'org.mockito:mockito-junit-jupiter:5.5.0'
+
+    // ========== AssertJ ==========
+    api 'org.assertj:assertj-core:3.24.2'
+
+    // ========== Spring Boot Test ==========
+    api 'org.springframework.boot:spring-boot-starter-test'
+
+    // ========== Jackson (JSON 处理) ==========
+    api 'com.fasterxml.jackson.core:jackson-databind'
+
+    // ========== Spring JDBC (SQL 脚本执行) ==========
+    api 'org.springframework:spring-jdbc'
+
+    // ========== Testcontainers (集成测试) ==========
+    api 'org.testcontainers:testcontainers:1.19.0'
+    api 'org.testcontainers:junit-jupiter:1.19.0'
+    api 'org.testcontainers:mysql:1.19.0'
+    api 'org.springframework.boot:spring-boot-testcontainers'
+
+    // ========== 内存数据库 ==========
+    api 'com.h2database:h2:2.2.224'
+
+    // ========== JSON 测试 ==========
+    api 'com.jayway.jsonpath:json-path:2.9.0'
+
+    // ========== 异步测试 ==========
+    api 'org.awaitility:awaitility:4.2.0'
+
+    // ========== HTTP Mock（WireMock） ==========
+    api 'com.github.tomakehurst:wiremock-standalone:3.0.1'
+
+    // ========== Spring Security Test ==========
+    api 'org.springframework.security:spring-security-test'
+
+    // ========== 响应式测试 ==========
+    api 'io.projectreactor:reactor-test'
+    api 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // ========== Lombok ==========
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+// 测试配置
+tasks.named('test') {
+    useJUnitPlatform()
+    testLogging {
+        events 'PASSED', 'FAILED', 'SKIPPED'
+        showStackTraces = true
+        showCauses = true
+    }
+}

@@ -7,11 +7,13 @@
     :user-info="userStore.userInfo"
     :current-theme="themeStore.theme"
     :current-language="currentLocale"
-    :tabs="tabsStore.tabs"
-    :cached-views="tabsStore.cachedViews"
+    :tabs="convertedTabs"
     :active-path="tabsStore.activeTab"
     :show-theme-settings="true"
+    :enable-keep-alive="true"
+    :cached-views="tabsStore.cachedViews"
     :avatar-resolver="avatarResolver"
+    :min-tab-width="60"
     :labels="{
       fullscreen: { enter: t('header.fullscreen'), exit: t('header.exitFullscreen') },
       theme: { dark: t('header.darkMode'), light: t('header.lightMode') },
@@ -25,14 +27,14 @@
     @theme-change="handleThemeChange"
     @language-change="handleLanguageChange"
     @user-command="handleUserCommand"
-    @add-tab="handleAddTab"
+    @tab-click="handleTabClick"
     @close-tab="handleCloseTab"
     @close-other-tabs="handleCloseOtherTabs"
     @close-right-tabs="handleCloseRightTabs"
     @close-left-tabs="handleCloseLeftTabs"
     @close-all-tabs="handleCloseAllTabs"
-    @del-cached-view="handleDelCachedView"
-    @add-cached-view="handleAddCachedView"
+    @refresh-tab="handleRefreshTab"
+    @max-tabs-reached="handleMaxTabsReached"
   >
     <!-- 自定义用户下拉菜单 -->
     <template #dropdown-menu>
@@ -80,7 +82,7 @@
  * 展示如何将通用组件与业务逻辑解耦
  */
 
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -90,7 +92,8 @@ import { useTabsStore } from '@/stores/tabs'
 import { useThemeStore } from '@/stores/theme'
 import { useSystemConfigStore } from '@/stores/systemConfig'
 import { setLocale, getCurrentLocale } from '@/locales'
-import { MainLayout, type TabItem } from '@blink/components'
+import { MainLayout } from '@blink/components'
+import type { TabItem } from '@/stores/tabs'
 import ThemeEditor from '@/views/settings/components/ThemeEditor.vue'
 import { getLocalAvatarUrl } from '@/utils/avatar'
 
@@ -113,6 +116,25 @@ const systemConfigStore = useSystemConfigStore()
 
 const menuList = computed(() => userStore.menuTree || [])
 const currentLocale = ref(getCurrentLocale())
+
+// 转换 TabItem 格式
+const convertedTabs = computed(() => {
+  return tabsStore.tabs.map((tab) => ({
+    path: tab.path,
+    name: tab.name,
+    title: tab.dynamicTitle || t(tab.title),
+    fullPath: tab.fullPath,
+    query: tab.query,
+    params: tab.params,
+    affix: tab.affix,
+    closable: tab.closable,
+    icon: tab.icon,
+    status: tab.status,
+    badge: tab.badge,
+    tooltip: tab.tooltip,
+    isNew: tab.isNew,
+  }))
+})
 
 // 头像解析函数 - 将 avatar 名称转换为实际 URL
 const avatarResolver = (user: { avatar?: string }) => {
@@ -191,56 +213,86 @@ const handleUserCommand = async (command: string) => {
 // 标签页事件处理
 // ============================================
 
-const handleAddTab = (tab: TabItem) => {
-  tabsStore.addTab(tab)
+const handleTabClick = (tab: TabItem) => {
+  const targetPath = tab.fullPath || tab.path
+  if (targetPath !== route.fullPath) {
+    router.push(targetPath)
+  }
 }
 
-const handleCloseTab = (path: string) => {
-  tabsStore.closeTab(path)
+const handleCloseTab = (tab: TabItem) => {
+  const tabPath = tab.fullPath || tab.path
+  const nextPath = tabsStore.closeTab(tabPath)
+  if (nextPath) {
+    router.push(nextPath)
+  }
 }
 
-const handleCloseOtherTabs = (path: string) => {
-  tabsStore.closeOtherTabs(path)
+const handleCloseOtherTabs = (tab: TabItem) => {
+  const tabPath = tab.fullPath || tab.path
+  tabsStore.closeOtherTabs(tabPath)
 }
 
-const handleCloseRightTabs = (path: string) => {
-  tabsStore.closeRightTabs(path)
+const handleCloseRightTabs = (tab: TabItem) => {
+  const tabPath = tab.fullPath || tab.path
+  tabsStore.closeRightTabs(tabPath)
 }
 
-const handleCloseLeftTabs = (path: string) => {
-  tabsStore.closeLeftTabs(path)
+const handleCloseLeftTabs = (tab: TabItem) => {
+  const tabPath = tab.fullPath || tab.path
+  tabsStore.closeLeftTabs(tabPath)
 }
 
 const handleCloseAllTabs = () => {
   tabsStore.closeAllTabs()
+  router.push('/dashboard')
 }
 
-const handleDelCachedView = (name: string) => {
-  tabsStore.delCachedView(name)
+const handleRefreshTab = (tab: TabItem) => {
+  tabsStore.delCachedView(tab.name)
+  if (tab.fullPath === route.fullPath) {
+    router.replace({
+      path: `/redirect${tab.path}`,
+      query: tab.query,
+    })
+  }
 }
 
-const handleAddCachedView = (name: string) => {
-  tabsStore.addCachedView(name)
+/**
+ * 达到最大标签数量时的处理
+ */
+const handleMaxTabsReached = (currentCount: number, maxTabs: number) => {
+  ElMessage.warning(`标签数量已达上限 ${maxTabs}，请先关闭部分标签后再打开新页面`)
 }
 
 // ============================================
 // 初始化
 // ============================================
 
+// 监听路由变化，自动添加标签
+watch(
+  () => route.fullPath,
+  (fullPath) => {
+    if (fullPath) {
+      const { name, path, meta, query, params } = route
+      if (name) {
+        tabsStore.addTab({
+          name: String(name),
+          path,
+          title: (meta?.title as string) || 'no-name',
+          fullPath,
+          query: query as Record<string, any>,
+          params: params as Record<string, any>,
+          affix: meta?.affix as boolean,
+        })
+      }
+    }
+  },
+  { immediate: true }
+)
+
 onMounted(() => {
-  // 初始化时添加当前路由到标签页
-  const { name, path, meta, fullPath, query, params } = route
-  if (name) {
-    tabsStore.addTab({
-      name: String(name),
-      path,
-      title: (meta?.title as string) || 'no-name',
-      fullPath,
-      query: query as Record<string, any>,
-      params: params as Record<string, any>,
-      affix: meta?.affix as boolean,
-    })
-  }
+  // onMounted 中的逻辑已通过 watch immediate: true 处理
 })
 </script>
 

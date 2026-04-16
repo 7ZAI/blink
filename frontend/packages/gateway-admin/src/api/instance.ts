@@ -81,6 +81,13 @@ export interface HttpMetrics {
   failedRequests?: number
   successRate?: number
   avgResponseTime?: number
+  // 响应时间分布
+  p50ResponseTime?: number
+  p95ResponseTime?: number
+  p99ResponseTime?: number
+  maxResponseTime?: number
+  // QPS 指标
+  currentQps?: number
   timestamp?: number
 }
 

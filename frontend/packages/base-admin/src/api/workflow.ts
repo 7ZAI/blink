@@ -45,6 +45,7 @@ export interface TaskInfo {
   taskDescription?: string
   processInstanceId: string
   processDefinitionId: string
+  processDefinitionKey?: string
   processName?: string
   assignee?: string
   createTime: string

@@ -75,8 +75,8 @@
                 clearable
                 style="width: 120px"
               >
-                <el-option :label="t('dict.statusEnable')" :value="0" />
-                <el-option :label="t('dict.statusDisable')" :value="1" />
+                <el-option :label="t('common.statusEnable')" :value="0" />
+                <el-option :label="t('common.statusDisable')" :value="1" />
               </el-select>
             </el-form-item>
             <el-form-item>
@@ -147,9 +147,9 @@
               <el-table-column prop="status" :label="t('common.status')" width="80" align="center">
                 <template #default="{ row }">
                   <el-tag v-if="row.status === 0" type="success">
-                    {{ t('dict.statusEnable') }}
+                    {{ t('common.statusEnable') }}
                   </el-tag>
-                  <el-tag v-else type="danger">{{ t('dict.statusDisable') }}</el-tag>
+                  <el-tag v-else type="danger">{{ t('common.statusDisable') }}</el-tag>
                 </template>
               </el-table-column>
               <el-table-column prop="createTime" :label="t('common.createTime')" min-width="160" />

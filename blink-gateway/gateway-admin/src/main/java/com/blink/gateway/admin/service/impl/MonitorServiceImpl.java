@@ -7,11 +7,13 @@ import cn.hutool.core.util.StrUtil;
 import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.RedisClient;
+import com.blink.gateway.admin.dto.req.GetGatewayInstanceDetailReq;
 import com.blink.gateway.admin.dto.req.GetGatewayMetricsReq;
 import com.blink.gateway.admin.dto.req.QueryGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.QueryHealthStatusReq;
 import com.blink.gateway.admin.dto.req.QueryStatisticsReq;
 import com.blink.gateway.admin.dto.rsp.GatewayHealthStatusRsp;
+import com.blink.gateway.admin.dto.rsp.GatewayInstanceDetailRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayMetricsRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayStatisticsRsp;
@@ -32,6 +34,7 @@ import java.util.Map;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.GET_INSTANCE_LIST_FAILED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.GET_METRICS_FAILED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.GATEWAY_INSTANCE_NOT_EXIST;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.PARAMETER_NOT_NULL;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_PREFIX;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_SUMMARY;
 
@@ -217,6 +220,13 @@ public class MonitorServiceImpl implements MonitorService {
                     metrics.setSuccessRequests(getLongValue(metricsData, "successRequests"));
                     metrics.setFailedRequests(getLongValue(metricsData, "failedRequests"));
                     metrics.setAvgResponseTime(getLongValue(metricsData, "avgResponseTime"));
+                    // 响应时间分布指标
+                    metrics.setP50ResponseTime(getLongValue(metricsData, "p50ResponseTime"));
+                    metrics.setP95ResponseTime(getLongValue(metricsData, "p95ResponseTime"));
+                    metrics.setP99ResponseTime(getLongValue(metricsData, "p99ResponseTime"));
+                    metrics.setMaxResponseTime(getLongValue(metricsData, "maxResponseTime"));
+                    // QPS 指标
+                    metrics.setCurrentQps(getIntValue(metricsData, "currentQps"));
                     metrics.setActiveConnections(0); // 暂不支持
                     metrics.setTimestamp(getLongValue(metricsData, "timestamp"));
 
@@ -229,6 +239,11 @@ public class MonitorServiceImpl implements MonitorService {
                     metrics.setSuccessRequests(0L);
                     metrics.setFailedRequests(0L);
                     metrics.setAvgResponseTime(0L);
+                    metrics.setP50ResponseTime(0L);
+                    metrics.setP95ResponseTime(0L);
+                    metrics.setP99ResponseTime(0L);
+                    metrics.setMaxResponseTime(0L);
+                    metrics.setCurrentQps(0);
                     metrics.setActiveConnections(0);
                     metrics.setTimestamp(System.currentTimeMillis());
 
@@ -295,5 +310,143 @@ public class MonitorServiceImpl implements MonitorService {
             return ((Number) value).doubleValue();
         }
         return 0.0;
+    }
+
+    @Override
+    public ResponseDTO<GatewayInstanceDetailRsp> getInstanceDetail(GetGatewayInstanceDetailReq req) {
+        try {
+            String instanceId = req.getInstanceId();
+
+            if (StrUtil.isBlank(instanceId)) {
+                BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+            }
+
+            // 从注册中心获取实例基础信息
+            List<ServiceInstance> instances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);
+            ServiceInstance targetInstance = null;
+
+            for (ServiceInstance instance : instances) {
+                if (instance.getInstanceId().equals(instanceId)) {
+                    targetInstance = instance;
+                    break;
+                }
+            }
+
+            if (targetInstance == null) {
+                BlinkException.throwBusinessException(GATEWAY_INSTANCE_NOT_EXIST);
+            }
+
+            // 从 Redis 读取详细指标数据
+            String redisKey = GATEWAY_METRICS_PREFIX + instanceId;
+            Map<String, Object> metricsData = redisClient.hGetStringMap(redisKey);
+
+            GatewayInstanceDetailRsp detail = new GatewayInstanceDetailRsp();
+
+            // 设置基础信息
+            detail.setInstanceId(instanceId);
+            detail.setServiceId(targetInstance.getServiceId());
+            detail.setHost(targetInstance.getHost());
+            detail.setPort(targetInstance.getPort());
+            detail.setUri(targetInstance.getUri().toString());
+            detail.setHealthStatus("UP");
+            detail.setStatusDesc("在线");
+
+            if (MapUtil.isNotEmpty(metricsData)) {
+                // JVM 内存指标
+                detail.setHeapUsed(getLongValue(metricsData, "heapUsed"));
+                detail.setHeapMax(getLongValue(metricsData, "heapMax"));
+                detail.setHeapUsagePercent(getDoubleValue(metricsData, "heapUsagePercent"));
+                detail.setNonHeapUsed(getLongValue(metricsData, "nonHeapUsed"));
+                detail.setCpuUsage(getDoubleValue(metricsData, "cpuUsage"));
+                detail.setMemoryUsage(calculateMemoryUsage(metricsData));
+
+                // GC 统计指标
+                detail.setYoungGcCount(getLongValue(metricsData, "youngGcCount"));
+                detail.setYoungGcTime(getLongValue(metricsData, "youngGcTime"));
+                detail.setOldGcCount(getLongValue(metricsData, "oldGcCount"));
+                detail.setOldGcTime(getLongValue(metricsData, "oldGcTime"));
+                detail.setTotalGcCount(detail.getYoungGcCount() + detail.getOldGcCount());
+                detail.setTotalGcTime(detail.getYoungGcTime() + detail.getOldGcTime());
+
+                // 线程指标
+                detail.setLiveThreads(getIntValue(metricsData, "liveThreads"));
+                detail.setPeakThreads(getIntValue(metricsData, "peakThreads"));
+                detail.setDaemonThreads(getIntValue(metricsData, "daemonThreads"));
+
+                // HTTP 统计指标
+                detail.setTotalRequests(getLongValue(metricsData, "totalRequests"));
+                detail.setSuccessRequests(getLongValue(metricsData, "successRequests"));
+                detail.setFailedRequests(getLongValue(metricsData, "failedRequests"));
+                detail.setAvgResponseTime(getLongValue(metricsData, "avgResponseTime"));
+                // 响应时间分布指标
+                detail.setP50ResponseTime(getLongValue(metricsData, "p50ResponseTime"));
+                detail.setP95ResponseTime(getLongValue(metricsData, "p95ResponseTime"));
+                detail.setP99ResponseTime(getLongValue(metricsData, "p99ResponseTime"));
+                detail.setMaxResponseTime(getLongValue(metricsData, "maxResponseTime"));
+                // QPS 指标
+                detail.setCurrentQps(getIntValue(metricsData, "currentQps"));
+                detail.setActiveConnections(0); // 暂不支持
+
+                // 计算成功率
+                if (detail.getTotalRequests() > 0) {
+                    detail.setSuccessRate((detail.getSuccessRequests() * 100.0) / detail.getTotalRequests());
+                } else {
+                    detail.setSuccessRate(100.0);
+                }
+
+                detail.setTimestamp(getLongValue(metricsData, "timestamp"));
+
+                log.info("[Monitor] 获取实例详情成功 | instanceId: {}, cpu: {}%, heap: {}%",
+                        instanceId, detail.getCpuUsage(), detail.getHeapUsagePercent());
+            } else {
+                // Redis 无数据时返回默认值
+                setDefaultMetrics(detail);
+                detail.setTimestamp(System.currentTimeMillis());
+
+                log.warn("[Monitor] Redis 无数据，使用默认值 | instanceId: {}", instanceId);
+            }
+
+            return ResponseDTO.newSuccessInstance(detail);
+        } catch (BlinkException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[Monitor] 获取实例详情失败 | error: {}", e.getMessage(), e);
+            throw new BlinkException("获取实例详情失败：" + e.getMessage(), e, GET_METRICS_FAILED);
+        }
+    }
+
+    /**
+     * 设置默认指标值
+     */
+    private void setDefaultMetrics(GatewayInstanceDetailRsp detail) {
+        detail.setHeapUsed(0L);
+        detail.setHeapMax(0L);
+        detail.setHeapUsagePercent(0.0);
+        detail.setNonHeapUsed(0L);
+        detail.setCpuUsage(0.0);
+        detail.setMemoryUsage(0.0);
+
+        detail.setYoungGcCount(0L);
+        detail.setYoungGcTime(0L);
+        detail.setOldGcCount(0L);
+        detail.setOldGcTime(0L);
+        detail.setTotalGcCount(0L);
+        detail.setTotalGcTime(0L);
+
+        detail.setLiveThreads(0);
+        detail.setPeakThreads(0);
+        detail.setDaemonThreads(0);
+
+        detail.setTotalRequests(0L);
+        detail.setSuccessRequests(0L);
+        detail.setFailedRequests(0L);
+        detail.setAvgResponseTime(0L);
+        detail.setP50ResponseTime(0L);
+        detail.setP95ResponseTime(0L);
+        detail.setP99ResponseTime(0L);
+        detail.setMaxResponseTime(0L);
+        detail.setCurrentQps(0);
+        detail.setSuccessRate(100.0);
+        detail.setActiveConnections(0);
     }
 }

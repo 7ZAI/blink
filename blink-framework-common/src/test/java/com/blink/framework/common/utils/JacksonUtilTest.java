@@ -558,6 +558,38 @@ class JacksonUtilTest {
             // then
             assertThat(JacksonUtil.isValidJson(normalized)).isTrue();
         }
+
+        @Test
+        @DisplayName("fromJson应正确保留嵌套JSON字符串的转义")
+        void shouldPreserveNestedJsonEscapingWithFromJson() {
+            // given - 模拟 ruleConfig 字段包含嵌套 JSON 的场景
+            String nestedJson = "{\"relationTable\":\"sys_user_group_rela\",\"sourceField\":\"group_id\"}";
+            String escapedNestedJson = nestedJson.replace("\"", "\\\"");
+            String requestBody = "{\"body\":{\"dataFilterId\":10,\"ruleConfig\":\"" + escapedNestedJson + "\"}}";
+
+            // when - 使用 fromJson 解析（正确方式）
+            Map<String, Object> result = JacksonUtil.fromJson(requestBody, Map.class);
+
+            // then - ruleConfig 字段应保留为字符串，内部转义正确
+            assertThat(result).isNotNull();
+            Map<String, Object> body = (Map<String, Object>) result.get("body");
+            String ruleConfig = (String) body.get("ruleConfig");
+            assertThat(ruleConfig).isEqualTo(nestedJson);
+        }
+
+        @Test
+        @DisplayName("parseMessyJson会破坏正常嵌套JSON字符串")
+        void parseMessyJsonShouldBreakNormalNestedJson() {
+            // given - 模拟 ruleConfig 字段包含嵌套 JSON 的场景（与上例相同）
+            String nestedJson = "{\"relationTable\":\"sys_user_group_rela\",\"sourceField\":\"group_id\"}";
+            String escapedNestedJson = nestedJson.replace("\"", "\\\"");
+            String requestBody = "{\"body\":{\"dataFilterId\":10,\"ruleConfig\":\"" + escapedNestedJson + "\"}}";
+
+            // when & then - parseMessyJson 会破坏嵌套 JSON 结构，抛出异常
+            assertThatThrownBy(() -> JacksonUtil.parseMessyJson(requestBody, Map.class))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("反序列化失败");
+        }
     }
 
     // ==================== 对象操作测试 ====================

@@ -67,7 +67,9 @@ public class CacheComponent {
 
         if (enableLocalCache) {
             Cache<String, Object> localCache = getLocalCache();
-            value = localCache.getIfPresent(key);
+            if (localCache != null) {
+                value = localCache.getIfPresent(key);
+            }
         }
 
         if (Objects.nonNull(value)) {
@@ -77,7 +79,10 @@ public class CacheComponent {
         value = redisClient.get(key);
         if (enableLocalCache && Objects.nonNull(value)) {
             // Redis 命中后回填本地缓存，避免二级缓存只写不热。
-            getLocalCache().put(key, value);
+            Cache<String, Object> localCache = getLocalCache();
+            if (localCache != null) {
+                localCache.put(key, value);
+            }
         }
 
         return value;
@@ -131,8 +136,10 @@ public class CacheComponent {
     public void resetCache(String key, Object value) {
         if (enableLocalCache) {
             Cache<String, Object> localCache = getLocalCache();
-            localCache.put(key, value);
-            log.info("Key: {} has been put into local cache", key);
+            if (localCache != null) {
+                localCache.put(key, value);
+                log.info("Key: {} has been put into local cache", key);
+            }
         }
 
         redisClient.delete(key);
@@ -162,19 +169,29 @@ public class CacheComponent {
 
         if (enableLocalCache) {
             Cache<String, Object> localCache = getLocalCache();
-            localCache.putAll(map);
-            log.info("Local cache loaded with {} entries", map.size());
+            if (localCache != null) {
+                localCache.putAll(map);
+                log.info("Local cache loaded with {} entries", map.size());
+            }
         }
     }
 
     /**
-     * 获取本地缓存实例
+     * 获取本地缓存实例（安全延迟加载）
      *
-     * @return Caffeine 本地缓存
+     * 使用 ObjectProvider 延迟获取 Cache bean，避免在初始化阶段 ApplicationContext 未就绪时失败
+     *
+     * @return Caffeine 本地缓存，如果 ApplicationContext 未就绪则返回 null
      */
     @SuppressWarnings("unchecked")
     private Cache<String, Object> getLocalCache() {
-        return ApplicationContextUtil.getBean(Cache.class);
+        try {
+            return ApplicationContextUtil.getBean(Cache.class);
+        } catch (IllegalStateException e) {
+            // ApplicationContext 未就绪，返回 null，本次请求不使用本地缓存
+            log.warn("ApplicationContext 未就绪，本地缓存暂不可用: {}", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -188,8 +205,10 @@ public class CacheComponent {
     public void clearLocalCache(String key) {
         if (enableLocalCache) {
             Cache<String, Object> localCache = getLocalCache();
-            localCache.invalidate(key);
-            log.info("Local cache invalidated for key: {}", key);
+            if (localCache != null) {
+                localCache.invalidate(key);
+                log.info("Local cache invalidated for key: {}", key);
+            }
         }
     }
 
@@ -204,10 +223,12 @@ public class CacheComponent {
     public void clearLocalCache(List<String> keys) {
         if (enableLocalCache && keys != null && !keys.isEmpty()) {
             Cache<String, Object> localCache = getLocalCache();
-            for (String key : keys) {
-                localCache.invalidate(key);
+            if (localCache != null) {
+                for (String key : keys) {
+                    localCache.invalidate(key);
+                }
+                log.info("Local cache invalidated for keys: {}", keys);
             }
-            log.info("Local cache invalidated for keys: {}", keys);
         }
     }
 }

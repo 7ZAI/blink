@@ -8,6 +8,7 @@ import com.blink.gateway.admin.dto.rsp.*;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
+import com.blink.gateway.admin.entity.GaRoutePushLogDO;
 import com.blink.gateway.admin.service.NacosRouteService;
 import com.blink.gateway.admin.service.RoutePushService;
 import com.blink.gateway.admin.service.RouteService;
@@ -482,155 +483,49 @@ class RouteControllerTest {
         }
     }
 
-    // ========== 新增接口测试 (P0-1.1, P0-1.2, P1-2.1) ==========
-
     @Nested
-    @DisplayName("getInstanceRoutesFromActuator 测试")
-    class GetInstanceRoutesFromActuatorTests {
+    @DisplayName("getLatestPush 测试")
+    class GetLatestPushTests {
 
         @Test
-        @DisplayName("从实例获取路由 - 正常场景")
-        void testGetInstanceRoutesFromActuator_Success() {
-            GetInstanceRoutesFromActuatorReq req = new GetInstanceRoutesFromActuatorReq();
-            req.setInstanceId("gateway-app:192.168.1.10:8080");
+        @DisplayName("获取实例最新推送记录 - 正常场景")
+        void testGetLatestPush_Success() {
+            GetLatestPushReq req = new GetLatestPushReq();
+            req.setInstanceId("instance-001");
 
-            RequestDTO<GetInstanceRoutesFromActuatorReq> requestDTO = new RequestDTO<>();
+            RequestDTO<GetLatestPushReq> requestDTO = new RequestDTO<>();
             requestDTO.setBody(req);
 
-            InstanceRoutesRsp rsp = new InstanceRoutesRsp();
-            rsp.setInstanceId("gateway-app:192.168.1.10:8080");
-            rsp.setTotal(5);
-            rsp.setFromActuator(true);
-            when(routePushService.getInstanceRoutesFromActuator(any(GetInstanceRoutesFromActuatorReq.class)))
-                    .thenReturn(ResponseDTO.newSuccessInstance(rsp));
+            GaRoutePushLogDO pushLog = new GaRoutePushLogDO();
+            pushLog.setPushId(1L);
+            when(routePushService.getLatestPush(any(GetLatestPushReq.class))).thenReturn(ResponseDTO.newSuccessInstance(pushLog));
 
-            ResponseDTO<InstanceRoutesRsp> response = routeController.getInstanceRoutesFromActuator(requestDTO);
+            ResponseDTO<GaRoutePushLogDO> response = routeController.getLatestPush(requestDTO);
 
             assertNotNull(response);
             assertEquals("BLINK0000", response.getMsgCode());
             assertNotNull(response.getBody());
-            assertEquals("gateway-app:192.168.1.10:8080", response.getBody().getInstanceId());
-            assertTrue(response.getBody().getFromActuator());
-            verify(routePushService, times(1)).getInstanceRoutesFromActuator(any(GetInstanceRoutesFromActuatorReq.class));
+            assertEquals(1L, response.getBody().getPushId());
+            verify(routePushService, times(1)).getLatestPush(any(GetLatestPushReq.class));
         }
 
         @Test
-        @DisplayName("从实例获取路由 - 实例ID为空")
-        void testGetInstanceRoutesFromActuator_EmptyInstanceId() {
-            GetInstanceRoutesFromActuatorReq req = new GetInstanceRoutesFromActuatorReq();
+        @DisplayName("获取实例最新推送记录 - 无记录场景")
+        void testGetLatestPush_NoRecord() {
+            GetLatestPushReq req = new GetLatestPushReq();
+            req.setInstanceId("instance-002");
 
-            RequestDTO<GetInstanceRoutesFromActuatorReq> requestDTO = new RequestDTO<>();
+            RequestDTO<GetLatestPushReq> requestDTO = new RequestDTO<>();
             requestDTO.setBody(req);
 
-            InstanceRoutesRsp rsp = new InstanceRoutesRsp();
-            rsp.setError("实例ID格式错误");
-            when(routePushService.getInstanceRoutesFromActuator(any(GetInstanceRoutesFromActuatorReq.class)))
-                    .thenReturn(ResponseDTO.newSuccessInstance(rsp));
+            when(routePushService.getLatestPush(any(GetLatestPushReq.class))).thenReturn(ResponseDTO.newSuccessInstance(null));
 
-            ResponseDTO<InstanceRoutesRsp> response = routeController.getInstanceRoutesFromActuator(requestDTO);
-
-            assertNotNull(response);
-            assertNotNull(response.getBody().getError());
-            verify(routePushService, times(1)).getInstanceRoutesFromActuator(any(GetInstanceRoutesFromActuatorReq.class));
-        }
-    }
-
-    @Nested
-    @DisplayName("getRouteInstancePushStatus 测试")
-    class GetRouteInstancePushStatusTests {
-
-        @Test
-        @DisplayName("查询路由实例推送状态 - 正常场景")
-        void testGetRouteInstancePushStatus_Success() {
-            QueryRouteInstancePushStatusReq req = new QueryRouteInstancePushStatusReq();
-            req.setRouteIds(List.of("route-001", "route-002"));
-
-            RequestDTO<QueryRouteInstancePushStatusReq> requestDTO = new RequestDTO<>();
-            requestDTO.setBody(req);
-
-            RouteInstancePushStatusRsp statusRsp = new RouteInstancePushStatusRsp();
-            statusRsp.setRouteId("route-001");
-            statusRsp.setTotalInstances(3);
-            statusRsp.setPushedInstances(2);
-            statusRsp.setFailedInstances(1);
-
-            List<RouteInstancePushStatusRsp> rspList = List.of(statusRsp);
-            when(routePushService.getRouteInstancePushStatus(any(QueryRouteInstancePushStatusReq.class)))
-                    .thenReturn(ResponseDTO.newSuccessInstance(rspList));
-
-            ResponseDTO<List<RouteInstancePushStatusRsp>> response = routeController.getRouteInstancePushStatus(requestDTO);
+            ResponseDTO<GaRoutePushLogDO> response = routeController.getLatestPush(requestDTO);
 
             assertNotNull(response);
             assertEquals("BLINK0000", response.getMsgCode());
-            assertNotNull(response.getBody());
-            assertEquals(1, response.getBody().size());
-            assertEquals("route-001", response.getBody().get(0).getRouteId());
-            assertEquals(3, response.getBody().get(0).getTotalInstances());
-            verify(routePushService, times(1)).getRouteInstancePushStatus(any(QueryRouteInstancePushStatusReq.class));
-        }
-
-        @Test
-        @DisplayName("查询路由实例推送状态 - 单个路由ID")
-        void testGetRouteInstancePushStatus_SingleRouteId() {
-            QueryRouteInstancePushStatusReq req = new QueryRouteInstancePushStatusReq();
-            req.setRouteId("route-001");
-
-            RequestDTO<QueryRouteInstancePushStatusReq> requestDTO = new RequestDTO<>();
-            requestDTO.setBody(req);
-
-            RouteInstancePushStatusRsp statusRsp = new RouteInstancePushStatusRsp();
-            statusRsp.setRouteId("route-001");
-            statusRsp.setTotalInstances(5);
-            statusRsp.setPushedInstances(5);
-
-            List<RouteInstancePushStatusRsp> rspList = List.of(statusRsp);
-            when(routePushService.getRouteInstancePushStatus(any(QueryRouteInstancePushStatusReq.class)))
-                    .thenReturn(ResponseDTO.newSuccessInstance(rspList));
-
-            ResponseDTO<List<RouteInstancePushStatusRsp>> response = routeController.getRouteInstancePushStatus(requestDTO);
-
-            assertNotNull(response);
-            assertEquals(1, response.getBody().size());
-            assertEquals(5, response.getBody().get(0).getPushedInstances());
-            verify(routePushService, times(1)).getRouteInstancePushStatus(any(QueryRouteInstancePushStatusReq.class));
-        }
-    }
-
-    @Nested
-    @DisplayName("confirmPush 测试")
-    class ConfirmPushTests {
-
-        @Test
-        @DisplayName("确认推送 - 正常场景")
-        void testConfirmPush_Success() {
-            ConfirmPushReq req = new ConfirmPushReq();
-            req.setPushId(1L);
-
-            RequestDTO<ConfirmPushReq> requestDTO = new RequestDTO<>();
-            requestDTO.setBody(req);
-
-            when(routePushService.confirmPush(any(ConfirmPushReq.class))).thenReturn(ResponseDTO.newSuccessInstance());
-
-            ResponseDTO<EmptyBody> response = routeController.confirmPush(requestDTO);
-
-            assertNotNull(response);
-            assertEquals("BLINK0000", response.getMsgCode());
-            verify(routePushService, times(1)).confirmPush(any(ConfirmPushReq.class));
-        }
-
-        @Test
-        @DisplayName("确认推送 - pushId为空")
-        void testConfirmPush_NullPushId() {
-            ConfirmPushReq req = new ConfirmPushReq();
-
-            RequestDTO<ConfirmPushReq> requestDTO = new RequestDTO<>();
-            requestDTO.setBody(req);
-
-            when(routePushService.confirmPush(any(ConfirmPushReq.class)))
-                    .thenThrow(new RuntimeException("参数不能为空"));
-
-            assertThrows(RuntimeException.class, () -> routeController.confirmPush(requestDTO));
-            verify(routePushService, times(1)).confirmPush(any(ConfirmPushReq.class));
+            assertNull(response.getBody());
+            verify(routePushService, times(1)).getLatestPush(any(GetLatestPushReq.class));
         }
     }
 }

@@ -6,10 +6,13 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.ReactiveRedisClient;
 import com.blink.framework.redis.mq.StreamMessage;
 import com.blink.gateway.component.GateWayCacheComponent;
+import com.blink.gateway.component.GatewayInstanceStateManager;
 import com.blink.gateway.component.MultiLevelCacheComponent;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.dto.CacheMsg;
+import com.blink.gateway.dto.InstanceOfflineMsg;
+import com.blink.gateway.dto.InstanceOnlineMsg;
 import com.blink.gateway.dto.MonitorConfigMsg;
 import com.blink.gateway.dto.req.MessageAckReq;
 import com.blink.gateway.dto.RouteSyncMsg;
@@ -77,6 +80,9 @@ public class CommonEventStreamListener implements CommandLineRunner {
 
     @Resource
     private MetricsReportScheduler metricsReportScheduler;
+
+    @Resource
+    private GatewayInstanceStateManager instanceStateManager;
 
     @Value("${blink.gateway.instance-id:01}")
     private String instanceId;
@@ -314,6 +320,44 @@ public class CommonEventStreamListener implements CommandLineRunner {
                 return Mono.just(smr);
             }
         }
+        // 实例下线指令
+        if (message.getPayload() instanceof InstanceOfflineMsg offlineMsg) {
+            try {
+                return instanceOfflineHandler(offlineMsg)
+                        .doOnSuccess(result -> {
+                            smr.setHandledResult(result);
+                            if (result) {
+                                log.info("[InstanceOffline] 实例下线指令处理成功 | target: {}, type: {}",
+                                        offlineMsg.getTargetInstance(), offlineMsg.getOfflineType());
+                            }
+                        })
+                        .onErrorResume(e -> {
+                            log.error("[InstanceOffline] 实例下线指令处理失败 | error: {}", e.getMessage(), e);
+                            smr.setHandledResult(false);
+                            return Mono.just(false);
+                        })
+                        .map(r -> smr);
+            } catch (Exception e) {
+                log.error("[InstanceOffline] 实例下线指令处理异常 | error: {}", e.getMessage(), e);
+                smr.setHandledResult(false);
+                return Mono.just(smr);
+            }
+        }
+        // 实例上线指令
+        if (message.getPayload() instanceof InstanceOnlineMsg onlineMsg) {
+            try {
+                boolean result = instanceOnlineHandler(onlineMsg);
+                smr.setHandledResult(result);
+                if (result) {
+                    log.info("[InstanceOnline] 实例上线指令处理成功 | target: {}", onlineMsg.getTargetInstance());
+                }
+                return Mono.just(smr);
+            } catch (Exception e) {
+                log.error("[InstanceOnline] 实例上线指令处理失败 | error: {}", e.getMessage(), e);
+                smr.setHandledResult(false);
+                return Mono.just(smr);
+            }
+        }
         smr.setHandledResult(true);
         //废消息 返回true
         return Mono.just(smr);
@@ -530,6 +574,96 @@ public class CommonEventStreamListener implements CommandLineRunner {
         }
 
         log.warn("[MonitorConfigSync] 未知的配置项: {}", configKey);
+    }
+
+    /**
+     * 实例下线指令处理
+     * 只处理目标实例匹配的消息，其他实例忽略
+     *
+     * @param offlineMsg 下线消息
+     * @return 是否处理成功
+     */
+    private Mono<Boolean> instanceOfflineHandler(InstanceOfflineMsg offlineMsg) {
+        String targetInstance = offlineMsg.getTargetInstance();
+        String currentInstance = getCurrentInstanceIdentifier();
+
+        // 实例过滤：只处理目标实例匹配的消息
+        if (!currentInstance.equals(targetInstance)) {
+            log.debug("[InstanceOffline] 跳过非目标实例 | current: {}, target: {}", currentInstance, targetInstance);
+            return Mono.just(true); // 非目标实例，返回成功但不处理
+        }
+
+        log.info("[InstanceOffline] 收到下线指令 | instance: {}, type: {}, waitSeconds: {}s, reason: {}",
+                currentInstance, offlineMsg.getOfflineType(), offlineMsg.getDrainWaitSeconds(), offlineMsg.getReason());
+
+        // 强制下线
+        if ("FORCE".equals(offlineMsg.getOfflineType())) {
+            instanceStateManager.startForceOffline(offlineMsg.getReason());
+            return Mono.just(true);
+        }
+
+        // 优雅下线
+        int waitSeconds = offlineMsg.getDrainWaitSeconds() != null ? offlineMsg.getDrainWaitSeconds() : 30;
+        boolean started = instanceStateManager.startGracefulOffline(waitSeconds, offlineMsg.getReason());
+
+        if (!started) {
+            log.warn("[InstanceOffline] 实例已在下线中，忽略重复指令");
+            return Mono.just(true);
+        }
+
+        // 异步等待排空完成后上报状态
+        return Mono.fromRunnable(() -> {
+            // 启动异步排空等待
+            java.util.concurrent.CompletableFuture.runAsync(() -> {
+                try {
+                    log.info("[InstanceOffline] 开始等待流量排空 | waitSeconds: {}s", waitSeconds);
+                    Thread.sleep(waitSeconds * 1000L);
+                    log.info("[InstanceOffline] 流量排空完成，实例已完全下线 | instance: {}", currentInstance);
+                } catch (InterruptedException e) {
+                    log.warn("[InstanceOffline] 排空等待被中断 | instance: {}", currentInstance);
+                    Thread.currentThread().interrupt();
+                }
+            });
+        }).then(Mono.just(true));
+    }
+
+    /**
+     * 实例上线指令处理
+     * 只处理目标实例匹配的消息，其他实例忽略
+     *
+     * @param onlineMsg 上线消息
+     * @return 是否处理成功
+     */
+    private boolean instanceOnlineHandler(InstanceOnlineMsg onlineMsg) {
+        String targetInstance = onlineMsg.getTargetInstance();
+        String currentInstance = getCurrentInstanceIdentifier();
+
+        // 实例过滤：只处理目标实例匹配的消息
+        if (!currentInstance.equals(targetInstance)) {
+            log.debug("[InstanceOnline] 跳过非目标实例 | current: {}, target: {}", currentInstance, targetInstance);
+            return true; // 非目标实例，返回成功但不处理
+        }
+
+        log.info("[InstanceOnline] 收到上线指令 | instance: {}", currentInstance);
+
+        boolean result = instanceStateManager.online();
+        if (result) {
+            log.info("[InstanceOnline] 实例已恢复接收请求 | instance: {}", currentInstance);
+        } else {
+            log.info("[InstanceOnline] 实例已在在线状态 | instance: {}", currentInstance);
+        }
+
+        return true;
+    }
+
+    /**
+     * 获取当前实例标识
+     *
+     * @return 实例标识，格式：host:port
+     */
+    private String getCurrentInstanceIdentifier() {
+        String localHost = GateWayUtil.getLocalIp();
+        return localHost + ":" + serverPort;
     }
 
     // TODO 定期扫描 PEL 重新投递或者放入死信队列

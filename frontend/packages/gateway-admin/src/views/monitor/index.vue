@@ -70,7 +70,7 @@
       <el-table :data="instances" v-loading="loading" stripe class="instance-table">
         <el-table-column
           prop="instanceId"
-          :label="t('monitor.instanceId')"
+          :label="t('common.instanceId')"
           min-width="180"
           show-overflow-tooltip
         >
@@ -144,14 +144,14 @@
     <!-- Detail Dialog -->
     <el-dialog
       v-model="detailDialogVisible"
-      :title="t('monitor.instanceId') + ': ' + (currentInstance?.instanceId || '')"
+      :title="t('common.instanceId') + ': ' + (currentInstance?.instanceId || '')"
       width="600px"
       :close-on-click-modal="false"
       :lock-scroll="false"
       class="detail-dialog"
     >
       <el-descriptions :column="2" border v-if="currentInstance">
-        <el-descriptions-item :label="t('monitor.instanceId')">
+        <el-descriptions-item :label="t('common.instanceId')">
           {{ currentInstance.instanceId }}
         </el-descriptions-item>
         <el-descriptions-item :label="t('route.routeName')">
@@ -205,7 +205,7 @@
       :lock-scroll="false"
     >
       <el-form :model="offlineForm" label-width="100px">
-        <el-form-item :label="t('monitor.instanceId')">
+        <el-form-item :label="t('common.instanceId')">
           <el-input v-model="offlineForm.instanceId" disabled />
         </el-form-item>
         <el-form-item :label="t('common.remark')">

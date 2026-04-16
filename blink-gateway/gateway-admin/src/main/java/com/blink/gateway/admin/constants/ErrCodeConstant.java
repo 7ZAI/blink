@@ -442,4 +442,11 @@ public interface ErrCodeConstant {
      * 最后一个在线实例不能下线
      */
     String LAST_INSTANCE_CANNOT_OFFLINE = "GATE0192";
+
+    // ============ 路由推送错误码 GATE0200-GATE0209 ============
+
+    /**
+     * 实例配置未找到（无法确定路由模式）
+     */
+    String INSTANCE_CONFIG_NOT_FOUND = "GATE0200";
 }

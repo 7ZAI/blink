@@ -20,9 +20,9 @@
         </el-descriptions-item>
         <el-descriptions-item :label="t('common.status')">
           <el-tag v-if="roleDetail?.roleInfo?.status === 0" type="success">
-            {{ t('role.statusEnable') }}
+            {{ t('common.statusEnable') }}
           </el-tag>
-          <el-tag v-else type="danger">{{ t('role.statusDisable') }}</el-tag>
+          <el-tag v-else type="danger">{{ t('common.statusDisable') }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item :label="t('role.roleType')">
           <el-tag v-if="roleDetail?.roleInfo?.roleType === 1" type="primary">
@@ -30,7 +30,7 @@
           </el-tag>
           <el-tag v-else type="info">{{ t('role.typeCustom') }}</el-tag>
         </el-descriptions-item>
-        <el-descriptions-item :label="t('role.createTime')">
+        <el-descriptions-item :label="t('common.createTime')">
           {{ roleDetail?.roleInfo?.createTime || '-' }}
         </el-descriptions-item>
       </el-descriptions>

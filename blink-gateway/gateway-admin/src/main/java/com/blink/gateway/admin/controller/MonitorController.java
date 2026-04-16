@@ -2,11 +2,13 @@ package com.blink.gateway.admin.controller;
 
 import com.blink.framework.common.data.RequestDTO;
 import com.blink.framework.common.data.ResponseDTO;
+import com.blink.gateway.admin.dto.req.GetGatewayInstanceDetailReq;
 import com.blink.gateway.admin.dto.req.GetGatewayMetricsReq;
 import com.blink.gateway.admin.dto.req.QueryGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.QueryHealthStatusReq;
 import com.blink.gateway.admin.dto.req.QueryStatisticsReq;
 import com.blink.gateway.admin.dto.rsp.GatewayHealthStatusRsp;
+import com.blink.gateway.admin.dto.rsp.GatewayInstanceDetailRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayMetricsRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayStatisticsRsp;
@@ -73,5 +75,17 @@ public class MonitorController {
     @PostMapping("/getGatewayMetrics")
     public ResponseDTO<GatewayMetricsRsp> getGatewayMetrics(@RequestBody @Validated RequestDTO<GetGatewayMetricsReq> reqDto) {
         return monitorService.getGatewayMetrics(reqDto.getBody());
+    }
+
+    /**
+     * 获取网关实例详情
+     * 包含完整的 JVM/GC/线程/HTTP 指标
+     *
+     * @param reqDto 请求参数（instanceId）
+     * @return 实例详情
+     */
+    @PostMapping("/getInstanceDetail")
+    public ResponseDTO<GatewayInstanceDetailRsp> getInstanceDetail(@RequestBody @Validated RequestDTO<GetGatewayInstanceDetailReq> reqDto) {
+        return monitorService.getInstanceDetail(reqDto.getBody());
     }
 }

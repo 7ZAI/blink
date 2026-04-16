@@ -61,7 +61,7 @@
 
       <!-- 绝对时间 -->
       <template v-if="config.rangeType === 'ABSOLUTE'">
-        <el-form-item :label="t('dataScope.startTime')">
+        <el-form-item :label="t('common.startTime')">
           <el-date-picker
             v-model="config.startTime"
             type="datetime"
@@ -71,7 +71,7 @@
             @change="updateConfig"
           />
         </el-form-item>
-        <el-form-item :label="t('dataScope.endTime')">
+        <el-form-item :label="t('common.endTime')">
           <el-date-picker
             v-model="config.endTime"
             type="datetime"

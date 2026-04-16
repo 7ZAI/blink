@@ -7,6 +7,7 @@ import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
 import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
+import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
@@ -99,7 +100,7 @@ public interface RoutePushService {
      * @param req 请求参数
      * @return 最新推送记录
      */
-    ResponseDTO<GaRoutePushLogDO> getLatestPush(com.blink.gateway.admin.dto.req.GetLatestPushReq req);
+    ResponseDTO<GaRoutePushLogDO> getLatestPush(GetLatestPushReq req);
 
     /**
      * 验证推送结果

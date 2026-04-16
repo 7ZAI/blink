@@ -13,11 +13,13 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.constants.RouteConstant;
+import com.blink.gateway.admin.constants.ServiceConstant;
 import com.blink.gateway.admin.dto.req.ConfirmPushReq;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
 import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
+import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
@@ -51,6 +53,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.yaml.snakeyaml.Yaml;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -66,6 +69,7 @@ import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STA
 import static com.blink.gateway.admin.constants.ErrCodeConstant.PARAMETER_NOT_NULL;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.PUSH_LOG_NOT_EXIST;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.ROUTE_NOT_EXIST;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_CONFIG_NOT_FOUND;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_DYNAMIC_ROUTES;
 
 /**
@@ -122,6 +126,12 @@ public class RoutePushServiceImpl implements RoutePushService {
     @Value("${blink.gateway.actuator.password:123456}")
     private String actuatorPassword;
 
+    @Value("${spring.cloud.nacos.discovery.namespace:public}")
+    private String nacosNamespace;
+
+    @Value("${spring.cloud.nacos.discovery.group:DEFAULT_GROUP}")
+    private String nacosGroup;
+
     @Autowired(required = false)
     public void setNacosConfigComponent(NacosConfigComponent nacosConfigComponent) {
         this.nacosConfigComponent = nacosConfigComponent;
@@ -133,15 +143,12 @@ public class RoutePushServiceImpl implements RoutePushService {
         if (CollUtil.isEmpty(req.getRouteIds())) {
             BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
         }
-        if (StrUtil.isBlank(req.getStorageMode())) {
-            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
-        }
         if (StrUtil.isBlank(req.getPushMode())) {
             req.setPushMode(RouteConstant.PUSH_MODE_BROADCAST);
         }
 
         // 查询要推送的路由
-        List<GaRouteDO> routes = gaRouteMapper.selectBatchIds(req.getRouteIds());
+        List<GaRouteDO> routes = gaRouteMapper.selectByIds(req.getRouteIds());
         if (CollUtil.isEmpty(routes)) {
             BlinkException.throwBusinessException(ROUTE_NOT_EXIST);
         }
@@ -149,6 +156,38 @@ public class RoutePushServiceImpl implements RoutePushService {
         // 获取操作人信息
         Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
         String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
+
+        // 获取目标实例列表
+        List<String> targetInstanceIds = new ArrayList<>();
+        if (RouteConstant.PUSH_MODE_SPECIFIED.equals(req.getPushMode())
+            && CollUtil.isNotEmpty(req.getTargetInstanceIds())) {
+            targetInstanceIds = req.getTargetInstanceIds();
+        } else {
+            // 广播模式：获取所有在线实例
+            ResponseDTO<GatewayInstanceListRsp> instancesRsp = gatewayInstanceService.getGatewayInstances();
+            if (instancesRsp.getBody() != null && instancesRsp.getBody().getInstances() != null) {
+                targetInstanceIds = instancesRsp.getBody().getInstances().stream()
+                    .filter(inst -> inst.getStatus().equals(INSTANCE_STATUS_ONLINE))
+                    .map(GatewayInstanceVO::getInstanceId)
+                    .toList();
+            }
+        }
+
+        // 如果 storageMode 为空，从实例配置获取
+        if (StrUtil.isBlank(req.getStorageMode())) {
+            if (CollUtil.isEmpty(targetInstanceIds)) {
+                log.warn("[RoutePush] 无法确定路由模式：无目标实例 | routeIds: {}", req.getRouteIds());
+                BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+            }
+            // 从第一个目标实例的配置获取路由模式
+            InstanceRouteConfig config = getStorageModeFromInstanceConfig(targetInstanceIds.get(0));
+            req.setStorageMode(config.getStorageMode());
+            req.setRoutesGroup(config.getRoutesGroup());
+            req.setNacosDataId(config.getNacosDataId());
+            req.setNacosGroup(config.getNacosGroup());
+            log.info("[RoutePush] 从实例配置获取路由模式 | instanceId: {}, storageMode: {}, routesGroup: {}",
+                targetInstanceIds.get(0), req.getStorageMode(), req.getRoutesGroup());
+        }
 
         // 构建推送记录
         GaRoutePushLogDO pushLog = new GaRoutePushLogDO();
@@ -159,6 +198,8 @@ public class RoutePushServiceImpl implements RoutePushService {
         pushLog.setOperatorId(operatorUser);
         pushLog.setOperatorName(operatorName);
         pushLog.setRemark(req.getRemark());
+        pushLog.setTargetInstanceIds(JacksonUtil.toJson(targetInstanceIds));
+        pushLog.setInstanceCount(targetInstanceIds.size());
 
         // 设置存储方式相关参数并执行推送
         if (RouteConstant.STORAGE_MODE_REDIS.equals(req.getStorageMode())) {
@@ -178,25 +219,6 @@ public class RoutePushServiceImpl implements RoutePushService {
 
             // 推送到 Nacos 配置文件
             pushRoutesToNacos(routes, nacosDataId, nacosGroup);
-        }
-
-        // 设置目标实例信息
-        List<String> targetInstanceIds = new ArrayList<>();
-        if (RouteConstant.PUSH_MODE_SPECIFIED.equals(req.getPushMode())
-            && CollUtil.isNotEmpty(req.getTargetInstanceIds())) {
-            targetInstanceIds = req.getTargetInstanceIds();
-            pushLog.setTargetInstanceIds(JacksonUtil.toJson(targetInstanceIds));
-            pushLog.setInstanceCount(targetInstanceIds.size());
-        } else {
-            // 广播模式：获取所有在线实例
-            ResponseDTO<GatewayInstanceListRsp> instancesRsp = gatewayInstanceService.getGatewayInstances();
-            if (instancesRsp.getBody() != null && instancesRsp.getBody().getInstances() != null) {
-                targetInstanceIds = instancesRsp.getBody().getInstances().stream()
-                    .filter(inst -> inst.getStatus().equals(INSTANCE_STATUS_ONLINE))
-                    .map(GatewayInstanceVO::getInstanceId)
-                    .toList();
-                pushLog.setInstanceCount(targetInstanceIds.size());
-            }
         }
 
         // 发送 Stream 消息通知网关刷新
@@ -1007,6 +1029,8 @@ public class RoutePushServiceImpl implements RoutePushService {
 
         return ResponseDTO.newSuccessInstance();
     }
+
+    // ==================== 推送结果验证 ====================
 
     @Override
     public ResponseDTO<VerifyPushResultRsp> verifyPushResult(VerifyPushResultReq req) {

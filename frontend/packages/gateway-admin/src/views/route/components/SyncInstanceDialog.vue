@@ -37,12 +37,12 @@
                 <div class="instance-info">
                   <span class="instance-name">{{ instance.instanceId }}</span>
                   <span class="instance-address">{{ instance.host }}:{{ instance.port }}</span>
-                  <el-tag type="success" size="small" effect="plain">{{ t('route.online') }}</el-tag>
+                  <el-tag type="success" size="small" effect="plain">{{ t('common.online') }}</el-tag>
                 </div>
               </el-checkbox>
             </div>
           </el-checkbox-group>
-          <el-empty v-if="onlineInstances.length === 0" :description="t('route.noOnlineInstances')" />
+          <el-empty v-if="onlineInstances.length === 0" :description="t('common.noOnlineInstances')" />
         </div>
       </el-form-item>
     </el-form>

@@ -45,7 +45,7 @@
         <!-- 基本信息 -->
         <el-tab-pane :label="t('instance.basicInfo')" name="basic">
           <el-descriptions :column="2" border v-if="instanceInfo" class="basic-info">
-            <el-descriptions-item :label="t('instance.instanceId')">
+            <el-descriptions-item :label="t('common.instanceId')">
               {{ instanceInfo.instanceId }}
             </el-descriptions-item>
             <el-descriptions-item :label="t('instance.serviceId')">
@@ -54,7 +54,7 @@
             <el-descriptions-item :label="t('instance.host')">
               {{ instanceInfo.host }}
             </el-descriptions-item>
-            <el-descriptions-item :label="t('instance.port')">
+            <el-descriptions-item :label="t('common.port')">
               {{ instanceInfo.port }}
             </el-descriptions-item>
             <el-descriptions-item :label="t('route.uri')" :span="2">
@@ -194,35 +194,77 @@
         <!-- HTTP 统计 -->
         <el-tab-pane :label="t('instance.httpStatistics')" name="http">
           <div v-if="instanceDetail?.httpMetrics" class="http-section">
-            <el-row :gutter="20">
-              <el-col :span="6">
-                <div class="metric-item">
-                  <div class="metric-label">{{ t('instance.totalRequests') }}</div>
-                  <div class="metric-value">{{ formatNumber(instanceDetail.httpMetrics.totalRequests || 0) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="metric-item">
-                  <div class="metric-label">{{ t('instance.successRequests') }}</div>
-                  <div class="metric-value success">{{ formatNumber(instanceDetail.httpMetrics.successRequests || 0) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="metric-item">
-                  <div class="metric-label">{{ t('instance.failedRequests') }}</div>
-                  <div class="metric-value danger">{{ formatNumber(instanceDetail.httpMetrics.failedRequests || 0) }}</div>
-                </div>
-              </el-col>
-              <el-col :span="6">
-                <div class="metric-item">
-                  <div class="metric-label">{{ t('instance.successRate') }}</div>
-                  <div class="metric-value">{{ instanceDetail.httpMetrics.successRate?.toFixed(2) || 0 }}%</div>
-                </div>
-              </el-col>
-            </el-row>
-            <div class="metric-item center">
-              <div class="metric-label">{{ t('instance.avgResponseTime') }}</div>
-              <div class="metric-value">{{ instanceDetail.httpMetrics.avgResponseTime || 0 }} ms</div>
+            <!-- 请求统计 -->
+            <div class="metric-group">
+              <h4>{{ t('instance.requestStatistics') }}</h4>
+              <el-row :gutter="20">
+                <el-col :span="6">
+                  <div class="metric-item">
+                    <div class="metric-label">{{ t('instance.totalRequests') }}</div>
+                    <div class="metric-value">{{ formatNumber(instanceDetail.httpMetrics.totalRequests || 0) }}</div>
+                  </div>
+                </el-col>
+                <el-col :span="6">
+                  <div class="metric-item">
+                    <div class="metric-label">{{ t('instance.successRequests') }}</div>
+                    <div class="metric-value success">{{ formatNumber(instanceDetail.httpMetrics.successRequests || 0) }}</div>
+                  </div>
+                </el-col>
+                <el-col :span="6">
+                  <div class="metric-item">
+                    <div class="metric-label">{{ t('instance.failedRequests') }}</div>
+                    <div class="metric-value danger">{{ formatNumber(instanceDetail.httpMetrics.failedRequests || 0) }}</div>
+                  </div>
+                </el-col>
+                <el-col :span="6">
+                  <div class="metric-item">
+                    <div class="metric-label">{{ t('instance.successRate') }}</div>
+                    <div class="metric-value">{{ instanceDetail.httpMetrics.successRate?.toFixed(2) || 0 }}%</div>
+                  </div>
+                </el-col>
+              </el-row>
+            </div>
+            <!-- 响应时间分布 -->
+            <div class="metric-group">
+              <h4>{{ t('instance.responseTimeDistribution') }}</h4>
+              <el-row :gutter="20">
+                <el-col :span="4">
+                  <div class="metric-item">
+                    <div class="metric-label">{{ t('instance.avgResponseTime') }}</div>
+                    <div class="metric-value">{{ instanceDetail.httpMetrics.avgResponseTime || 0 }} ms</div>
+                  </div>
+                </el-col>
+                <el-col :span="4">
+                  <div class="metric-item">
+                    <div class="metric-label">P50</div>
+                    <div class="metric-value">{{ instanceDetail.httpMetrics.p50ResponseTime || 0 }} ms</div>
+                  </div>
+                </el-col>
+                <el-col :span="4">
+                  <div class="metric-item">
+                    <div class="metric-label">P95</div>
+                    <div class="metric-value">{{ instanceDetail.httpMetrics.p95ResponseTime || 0 }} ms</div>
+                  </div>
+                </el-col>
+                <el-col :span="4">
+                  <div class="metric-item">
+                    <div class="metric-label">P99</div>
+                    <div class="metric-value">{{ instanceDetail.httpMetrics.p99ResponseTime || 0 }} ms</div>
+                  </div>
+                </el-col>
+                <el-col :span="4">
+                  <div class="metric-item">
+                    <div class="metric-label">{{ t('instance.maxResponseTime') }}</div>
+                    <div class="metric-value">{{ instanceDetail.httpMetrics.maxResponseTime || 0 }} ms</div>
+                  </div>
+                </el-col>
+                <el-col :span="4">
+                  <div class="metric-item">
+                    <div class="metric-label">{{ t('instance.currentQps') }}</div>
+                    <div class="metric-value highlight">{{ instanceDetail.httpMetrics.currentQps || 0 }}</div>
+                  </div>
+                </el-col>
+              </el-row>
             </div>
           </div>
           <el-empty v-else :description="t('common.noData')" />
@@ -234,21 +276,67 @@
     <el-dialog
       v-model="offlineDialogVisible"
       :title="t('instance.offlineInstance')"
-      width="450px"
+      width="500px"
       :close-on-click-modal="false"
       :lock-scroll="false"
     >
-      <el-form :model="offlineForm" label-width="100px">
-        <el-form-item :label="t('instance.instanceId')">
+      <!-- 最后实例警告 -->
+      <el-alert
+        v-if="isLastInstance"
+        :title="t('instance.lastInstanceWarning')"
+        type="error"
+        :closable="false"
+        show-icon
+        class="offline-warning-alert"
+      />
+      <!-- 剩余实例提示 -->
+      <el-alert
+        v-else-if="remainingOnlineCount <= 2"
+        :title="t('instance.remainingInstancesWarning', { count: remainingOnlineCount })"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="offline-warning-alert"
+      />
+
+      <el-form :model="offlineForm" label-width="100px" class="offline-form">
+        <el-form-item :label="t('common.instanceId')">
           <el-input v-model="offlineForm.instanceId" disabled />
         </el-form-item>
-        <el-form-item :label="t('common.remark')">
-          <el-input v-model="offlineForm.reason" type="textarea" :rows="3" :placeholder="t('common.pleaseInput')" />
+        <!-- 下线模式选择 -->
+        <el-form-item :label="t('instance.offlineType')">
+          <el-radio-group v-model="offlineForm.mode">
+            <el-radio value="graceful">
+              {{ t('instance.gracefulOffline') }}
+              <el-tooltip :content="t('instance.gracefulOfflineDesc', { seconds: 30 })" placement="top">
+                <el-icon size="14" style="margin-left: 4px"><InfoFilled /></el-icon>
+              </el-tooltip>
+            </el-radio>
+            <el-radio value="force">
+              {{ t('instance.forceOffline') }}
+              <el-tooltip :content="t('instance.forceOfflineWarning')" placement="top">
+                <el-icon size="14" style="margin-left: 4px" color="#e6a23c"><WarningFilled /></el-icon>
+              </el-tooltip>
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item :label="t('instance.offlineReason')">
+          <el-input
+            v-model="offlineForm.reason"
+            type="textarea"
+            :rows="3"
+            :placeholder="t('instance.offlineReasonPlaceholder')"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="offlineDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="warning" :loading="submitting" @click="confirmOffline">
+        <el-button
+          :type="offlineForm.mode === 'graceful' ? 'primary' : 'warning'"
+          :loading="submitting"
+          :disabled="isLastInstance"
+          @click="confirmOffline"
+        >
           {{ t('common.confirm') }}
         </el-button>
       </template>
@@ -261,22 +349,26 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Refresh, SwitchButton, CircleCheck } from '@element-plus/icons-vue'
+import { ArrowLeft, Refresh, SwitchButton, CircleCheck, InfoFilled, WarningFilled } from '@element-plus/icons-vue'
 import {
   getInstanceDetailWithMetrics,
   onlineInstance,
   offlineInstance,
+  gracefulOfflineInstance,
   type InstanceInfo,
   type InstanceDetail,
   INSTANCE_STATUS,
 } from '@/api/instance'
+import { monitorApi, type InstanceDetailInfo } from '@/api/monitor'
 import { useInstanceStatus } from '@/composables/useInstanceStatus'
+import { useTabsStore } from '@/stores/tabs'
 
 defineOptions({ name: 'InstanceDetail' })
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const tabsStore = useTabsStore()
 
 // 从路由获取实例 ID
 const instanceId = computed(() => route.params.instanceId as string || route.query.instanceId as string)
@@ -295,12 +387,21 @@ const offlineDialogVisible = ref(false)
 const offlineForm = reactive({
   instanceId: '',
   reason: '',
+  mode: 'graceful' as 'force' | 'graceful',
 })
 
 // SSE 实时状态（复用 MainLayout 的 SSE 连接）
 // 用于更新实例基本状态信息（status, healthStatus, cpuUsage, heapUsagePercent）
+const statistics = reactive({
+  onlineInstances: 0,
+})
+
 useInstanceStatus({
   onStatusChange: (data) => {
+    // 更新统计数据（用于最后实例保护）
+    if (data.stats) {
+      statistics.onlineInstances = data.stats.online
+    }
     // 更新实例状态
     if (data.instances && instanceId.value) {
       const sseInstance = data.instances.find(i => i.instanceId === instanceId.value)
@@ -320,6 +421,25 @@ useInstanceStatus({
   },
 })
 
+// ==================== 下线实例保护 ====================
+
+/**
+ * 剩余在线实例数量（从 SSE 获取实时数据）
+ */
+const remainingOnlineCount = computed(() => {
+  return statistics.onlineInstances
+})
+
+/**
+ * 是否为最后一个在线实例
+ */
+const isLastInstance = computed(() => {
+  if (instanceInfo.value && (instanceInfo.value.status === INSTANCE_STATUS.ONLINE || instanceInfo.value.status === INSTANCE_STATUS.DRAINING)) {
+    return remainingOnlineCount.value <= 1
+  }
+  return false
+})
+
 // 辅助方法
 const getStatusType = (status?: number): 'primary' | 'success' | 'warning' | 'info' | 'danger' => {
   switch (status) {
@@ -329,6 +449,8 @@ const getStatusType = (status?: number): 'primary' | 'success' | 'warning' | 'in
       return 'danger'
     case INSTANCE_STATUS.SHUTDOWN:
       return 'warning'
+    case INSTANCE_STATUS.DRAINING:
+      return 'primary'
     default:
       return 'info'
   }
@@ -337,11 +459,13 @@ const getStatusType = (status?: number): 'primary' | 'success' | 'warning' | 'in
 const getStatusText = (status?: number): string => {
   switch (status) {
     case INSTANCE_STATUS.ONLINE:
-      return t('instance.statusOnline')
+      return t('common.statusOnline')
     case INSTANCE_STATUS.OFFLINE:
-      return t('instance.statusOffline')
+      return t('common.statusOffline')
     case INSTANCE_STATUS.SHUTDOWN:
-      return t('instance.statusShutdown')
+      return t('common.statusShutdown')
+    case INSTANCE_STATUS.DRAINING:
+      return t('instance.statusDraining')
     default:
       return t('common.unknown')
   }
@@ -371,16 +495,74 @@ const formatBytes = (bytes: number | undefined): string => {
 
 // 加载数据
 const loadData = async () => {
-  if (!instanceRowId.value) {
-    ElMessage.error(t('common.paramError'))
-    return
-  }
+  // 支持两种访问方式：
+  // 1. 从实例管理页面访问（有数据库行 ID）
+  // 2. 从监控中心访问（只有 instanceId）
 
   loading.value = true
   try {
-    const detail = await getInstanceDetailWithMetrics({ id: instanceRowId.value })
-    instanceDetail.value = detail
-    instanceInfo.value = detail?.instanceInfo || null
+    if (instanceRowId.value) {
+      // 从数据库加载实例详情（包含数据库管理信息）
+      const detail = await getInstanceDetailWithMetrics({ id: instanceRowId.value })
+      instanceDetail.value = detail
+      instanceInfo.value = detail?.instanceInfo || null
+    } else if (instanceId.value) {
+      // 从监控 API 加载实时指标（无需数据库行 ID）
+      const monitorDetail = await monitorApi.getMonitorInstanceDetail(instanceId.value)
+
+      // 转换为统一的 InstanceDetail 格式
+      instanceInfo.value = {
+        id: 0,
+        instanceId: monitorDetail.instanceId,
+        serviceId: monitorDetail.serviceId,
+        host: monitorDetail.host,
+        port: monitorDetail.port,
+        uri: monitorDetail.uri,
+        status: monitorDetail.healthStatus === 'UP' ? INSTANCE_STATUS.ONLINE : INSTANCE_STATUS.OFFLINE,
+        statusDesc: monitorDetail.statusDesc,
+      }
+
+      instanceDetail.value = {
+        instanceInfo: instanceInfo.value,
+        jvmMetrics: {
+          heapUsed: monitorDetail.heapUsed,
+          heapMax: monitorDetail.heapMax,
+          heapUsagePercent: monitorDetail.heapUsagePercent,
+          nonHeapUsed: monitorDetail.nonHeapUsed,
+          youngGcCount: monitorDetail.youngGcCount,
+          youngGcTime: monitorDetail.youngGcTime,
+          oldGcCount: monitorDetail.oldGcCount,
+          oldGcTime: monitorDetail.oldGcTime,
+          liveThreads: monitorDetail.liveThreads,
+          peakThreads: monitorDetail.peakThreads,
+          daemonThreads: monitorDetail.daemonThreads,
+          timestamp: monitorDetail.timestamp,
+        },
+        httpMetrics: {
+          totalRequests: monitorDetail.totalRequests,
+          successRequests: monitorDetail.successRequests,
+          failedRequests: monitorDetail.failedRequests,
+          successRate: monitorDetail.successRate,
+          avgResponseTime: monitorDetail.avgResponseTime,
+          p50ResponseTime: monitorDetail.p50ResponseTime,
+          p95ResponseTime: monitorDetail.p95ResponseTime,
+          p99ResponseTime: monitorDetail.p99ResponseTime,
+          maxResponseTime: monitorDetail.maxResponseTime,
+          currentQps: monitorDetail.currentQps,
+          timestamp: monitorDetail.timestamp,
+        },
+        healthDetail: {
+          status: monitorDetail.healthStatus,
+        },
+      }
+    } else {
+      ElMessage.error(t('common.paramError'))
+    }
+
+    // 更新标签页标题为实例 ID
+    if (instanceInfo.value?.instanceId) {
+      tabsStore.updateTabTitle(route.fullPath, instanceInfo.value.instanceId)
+    }
   } catch (error) {
     console.error('Load instance detail error:', error)
     ElMessage.error(t('common.loadFailed'))
@@ -412,13 +594,18 @@ const handleOffline = () => {
   if (!instanceInfo.value) return
   offlineForm.instanceId = instanceInfo.value.instanceId
   offlineForm.reason = ''
+  offlineForm.mode = 'graceful'  // 默认优雅下线
   offlineDialogVisible.value = true
 }
 
 const confirmOffline = async () => {
   submitting.value = true
   try {
-    await offlineInstance(offlineForm)
+    if (offlineForm.mode === 'graceful') {
+      await gracefulOfflineInstance(offlineForm)
+    } else {
+      await offlineInstance(offlineForm)
+    }
     ElMessage.success(t('common.success'))
     offlineDialogVisible.value = false
     loadData()
@@ -576,6 +763,7 @@ watch(() => route.query.id, (newId) => {
 
         &.success { color: var(--success-color); }
         &.danger { color: var(--danger-color); }
+        &.highlight { color: var(--primary-color); }
       }
 
       &.center {
@@ -583,6 +771,14 @@ watch(() => route.query.id, (newId) => {
         margin: 16px auto 0;
       }
     }
+  }
+
+  .offline-warning-alert {
+    margin-bottom: 16px;
+  }
+
+  .offline-form {
+    margin-top: 0;
   }
 }
 </style>

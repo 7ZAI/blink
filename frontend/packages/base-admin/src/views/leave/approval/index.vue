@@ -163,7 +163,7 @@ import {
   approvalLeave,
   getLeaveDetail,
 } from '@/api/leave'
-import type { LeaveRequestVO, LeaveType, ApprovalResult } from '@/api/types/leave'
+import type { LeaveRequestVO, LeaveType, ApprovalResult, QueryLeaveReq } from '@/api/types/leave'
 import { LEAVE_TYPE_OPTIONS } from '@/api/types/leave'
 
 // 数据
@@ -208,8 +208,11 @@ onMounted(() => {
 const getList = async () => {
   loading.value = true
   try {
-    const params = { ...queryParams }
-    if (!params.leaveType) delete (params as any).leaveType
+    const params: QueryLeaveReq = {
+      pageNum: queryParams.pageNum,
+      pageSize: queryParams.pageSize,
+      leaveType: queryParams.leaveType || undefined,
+    }
 
     const res = await getPendingList(params)
     leaveList.value = res.rows || []

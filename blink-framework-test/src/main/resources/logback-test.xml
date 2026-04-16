@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Blink 测试环境日志配置
+  优化测试输出，减少噪音日志
+-->
+<configuration>
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 根日志级别 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- Blink 包 DEBUG 级别（方便调试） -->
+    <logger name="com.blink" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Spring 框架 WARN 级别（减少噪音） -->
+    <logger name="org.springframework" level="WARN"/>
+
+    <!-- Hibernate INFO 级别 -->
+    <logger name="org.hibernate" level="INFO"/>
+
+    <!-- MyBatis DEBUG 级别（查看 SQL） -->
+    <logger name="org.mybatis" level="DEBUG"/>
+    <logger name="com.baomidou.mybatisplus" level="DEBUG"/>
+
+    <!-- Testcontainers INFO 级别 -->
+    <logger name="org.testcontainers" level="INFO"/>
+    <logger name="com.github.dockerjava" level="WARN"/>
+
+    <!-- H2 数据库 INFO 级别 -->
+    <logger name="org.h2" level="INFO"/>
+
+    <!-- Dubbo WARN 级别 -->
+    <logger name="org.apache.dubbo" level="WARN"/>
+
+    <!-- Nacos WARN 级别 -->
+    <logger name="com.alibaba.nacos" level="WARN"/>
+</configuration>

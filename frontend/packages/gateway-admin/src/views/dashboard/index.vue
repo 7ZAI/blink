@@ -61,78 +61,109 @@
       </el-col>
     </el-row>
 
-    <!-- Response Time & Error Classification Cards -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :xs="24" :sm="12" :md="8">
-        <el-card class="stat-card response-time-card">
+    <!-- 核心监控指标三联排 -->
+    <el-row :gutter="20" class="core-metrics-row">
+      <!-- 实时 QPS 仪表盘 -->
+      <el-col :xs="24" :sm="24" :md="8">
+        <el-card class="metric-card qps-gauge-card">
           <template #header>
-            <div class="card-header-inline">
-              <el-icon><Timer /></el-icon>
-              <span>{{ t('dashboard.responseTimeDistribution') }}</span>
+            <div class="metric-header">
+              <div class="header-left">
+                <el-icon><Odometer /></el-icon>
+                <span>{{ t('dashboard.currentQps') }}</span>
+              </div>
+              <el-tag :type="qpsStatusType" size="small">{{ qpsStatusLabel }}</el-tag>
             </div>
           </template>
-          <div class="response-time-grid">
-            <div class="time-item">
-              <span class="time-label">{{ t('dashboard.p50ResponseTime') }}</span>
-              <span class="time-value">{{ statistics.p50ResponseTime || 0 }} ms</span>
+          <div class="metric-body">
+            <v-chart :option="qpsGaugeOption" autoresize style="height: 130px" />
+            <div class="mini-trend">
+              <span class="trend-label">{{ t('dashboard.recent5MinTrend') }}</span>
+              <v-chart :option="qpsTrendOption" autoresize style="height: 25px" />
             </div>
-            <div class="time-item">
-              <span class="time-label">{{ t('dashboard.p95ResponseTime') }}</span>
-              <span class="time-value">{{ statistics.p95ResponseTime || 0 }} ms</span>
+          </div>
+          <div class="metric-footer">
+            <div class="footer-item">
+              <span class="footer-label">{{ t('dashboard.peakQps') }}</span>
+              <span class="footer-value">{{ trafficHistory.reduce((max, p) => Math.max(max, p.peakQps || 0), 0) }}</span>
             </div>
-            <div class="time-item">
-              <span class="time-label">{{ t('dashboard.p99ResponseTime') }}</span>
-              <span class="time-value">{{ statistics.p99ResponseTime || 0 }} ms</span>
-            </div>
-            <div class="time-item highlight">
-              <span class="time-label">{{ t('dashboard.maxResponseTime') }}</span>
-              <span class="time-value">{{ statistics.maxResponseTime || 0 }} ms</span>
+            <div class="footer-item">
+              <span class="footer-label">{{ t('dashboard.qpsThreshold') }}</span>
+              <span class="footer-value">{{ QPS_THRESHOLD }}</span>
             </div>
           </div>
         </el-card>
       </el-col>
-      <el-col :xs="24" :sm="12" :md="8">
-        <el-card class="stat-card error-card">
+
+      <!-- 响应时间分布直方图 -->
+      <el-col :xs="24" :sm="24" :md="8">
+        <el-card class="metric-card response-time-bar-card">
           <template #header>
-            <div class="card-header-inline">
-              <el-icon><Warning /></el-icon>
-              <span>{{ t('dashboard.errorClassification') }}</span>
+            <div class="metric-header">
+              <div class="header-left">
+                <el-icon><Timer /></el-icon>
+                <span>{{ t('dashboard.responseTimeDistribution') }}</span>
+              </div>
+              <el-tag :type="slaStatusType" size="small">{{ slaStatusLabel }}</el-tag>
             </div>
           </template>
-          <div class="error-grid">
-            <div class="error-item">
-              <span class="error-label">{{ t('dashboard.errorRate') }}</span>
-              <span class="error-value">{{ statistics.errorRate || 0 }}%</span>
+          <div class="metric-body">
+            <v-chart :option="responseTimeBarOption" autoresize style="height: 130px" />
+            <div class="sla-progress">
+              <div class="progress-header">
+                <span>P99: {{ statistics.p99ResponseTime || 0 }}{{ t('dashboard.slaUnit') }}</span>
+                <span>SLA: {{ SLA_TARGET_MS }}{{ t('dashboard.slaUnit') }}</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: p99SlaPercentage + '%', backgroundColor: slaStatusType === 'success' ? '#10b981' : '#ef4444' }"></div>
+              </div>
+              <div class="progress-label">{{ p99SlaPercentage }}% {{ t('dashboard.slaTarget') }}</div>
             </div>
-            <div class="error-item client">
-              <span class="error-label">{{ t('dashboard.error4xxCount') }}</span>
-              <span class="error-value">{{ formatNumber(statistics.error4xxCount || 0) }}</span>
-              <span class="error-desc">{{ t('dashboard.clientError') }}</span>
+          </div>
+          <div class="metric-footer">
+            <div class="footer-item highlight">
+              <span class="footer-label">Max</span>
+              <span class="footer-value">{{ statistics.maxResponseTime || 0 }}ms</span>
             </div>
-            <div class="error-item server">
-              <span class="error-label">{{ t('dashboard.error5xxCount') }}</span>
-              <span class="error-value">{{ formatNumber(statistics.error5xxCount || 0) }}</span>
-              <span class="error-desc">{{ t('dashboard.serverError') }}</span>
+            <div class="footer-item">
+              <span class="footer-label">P50</span>
+              <span class="footer-value">{{ statistics.p50ResponseTime || 0 }}ms</span>
             </div>
           </div>
         </el-card>
       </el-col>
-      <el-col :xs="24" :sm="12" :md="8">
-        <el-card class="stat-card qps-card">
+
+      <!-- 错误分类饼图 -->
+      <el-col :xs="24" :sm="24" :md="8">
+        <el-card class="metric-card error-pie-card">
           <template #header>
-            <div class="card-header-inline">
-              <el-icon><Odometer /></el-icon>
-              <span>{{ t('dashboard.currentQps') }}</span>
+            <div class="metric-header">
+              <div class="header-left">
+                <el-icon><Warning /></el-icon>
+                <span>{{ t('dashboard.errorClassification') }}</span>
+              </div>
+              <el-tag :type="errorStatusType" size="small">{{ statistics.errorRate || 0 }}%</el-tag>
             </div>
           </template>
-          <div class="qps-content">
-            <div class="qps-main">
-              <span class="qps-value">{{ statistics.currentQps || 0 }}</span>
-              <span class="qps-unit">req/s</span>
+          <div class="metric-body">
+            <v-chart :option="errorPieOption" autoresize style="height: 130px" />
+            <div class="error-stats">
+              <div class="error-stat-item client">
+                <span class="stat-dot"></span>
+                <span class="stat-label">4xx {{ t('dashboard.clientError') }}</span>
+                <span class="stat-value">{{ formatNumber(statistics.error4xxCount || 0) }}</span>
+              </div>
+              <div class="error-stat-item server">
+                <span class="stat-dot"></span>
+                <span class="stat-label">5xx {{ t('dashboard.serverError') }}</span>
+                <span class="stat-value">{{ formatNumber(statistics.error5xxCount || 0) }}</span>
+              </div>
             </div>
-            <div class="qps-peak">
-              <span class="peak-label">{{ t('dashboard.peakQps') }}</span>
-              <span class="peak-value">{{ statistics.peakQps || trafficHistory.reduce((max, p) => Math.max(max, p.peakQps || 0), 0) }}</span>
+          </div>
+          <div class="metric-footer">
+            <div class="footer-item">
+              <span class="footer-label">{{ t('dashboard.errorThreshold') }}</span>
+              <span class="footer-value">{{ ERROR_RATE_THRESHOLD }}%</span>
             </div>
           </div>
         </el-card>
@@ -229,7 +260,7 @@
         </div>
       </template>
       <el-table :data="instances" v-loading="instancesLoading" stripe>
-        <el-table-column prop="instanceId" :label="t('monitor.instanceId')" />
+        <el-table-column prop="instanceId" :label="t('common.instanceId')" />
         <el-table-column prop="host" :label="t('monitor.ip')" />
         <el-table-column prop="port" :label="t('monitor.port')" />
         <el-table-column :label="t('monitor.healthStatus')">
@@ -252,15 +283,15 @@ import { ElMessage } from 'element-plus'
 import VChart from 'vue-echarts'
 import { use } from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import { LineChart, PieChart } from 'echarts/charts'
-import { GridComponent, TooltipComponent, LegendComponent } from 'echarts/components'
+import { LineChart, PieChart, GaugeChart, BarChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent, LegendComponent, MarkLineComponent } from 'echarts/components'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useNotificationStore } from '@/stores/notification'
 import { refreshRoutes } from '@/api/route'
 import { syncConfig } from '@/api/config'
 
 // 注册 ECharts 组件
-use([CanvasRenderer, LineChart, PieChart, GridComponent, TooltipComponent, LegendComponent])
+use([CanvasRenderer, LineChart, PieChart, GaugeChart, BarChart, GridComponent, TooltipComponent, LegendComponent, MarkLineComponent])
 
 const { t } = useI18n()
 const router = useRouter()
@@ -535,6 +566,453 @@ const pieChartOption = computed(() => {
   }
 })
 
+// ==================== 核心监控指标图表配置 ====================
+
+/**
+ * QPS 告警阈值（默认 5000 req/s）
+ */
+const QPS_THRESHOLD = 5000
+
+/**
+ * SLA 响应时间目标（默认 200ms）
+ */
+const SLA_TARGET_MS = 200
+
+/**
+ * 错误率阈值（默认 5%）
+ */
+const ERROR_RATE_THRESHOLD = 5
+
+/**
+ * 计算 QPS 状态类型（用于 el-tag 显示）
+ */
+const qpsStatusType = computed(() => {
+  const qps = statistics.value.currentQps || 0
+  const percentage = (qps / QPS_THRESHOLD) * 100
+  if (percentage > 100) return 'danger'
+  if (percentage > 80) return 'warning'
+  return 'success'
+})
+
+/**
+ * 计算 QPS 状态标签
+ */
+const qpsStatusLabel = computed(() => {
+  const qps = statistics.value.currentQps || 0
+  const percentage = (qps / QPS_THRESHOLD) * 100
+  if (percentage > 100) return t('dashboard.qpsCritical')
+  if (percentage > 80) return t('dashboard.qpsWarning')
+  return t('dashboard.qpsNormal')
+})
+
+/**
+ * 计算 SLA 达标状态类型
+ */
+const slaStatusType = computed(() => {
+  const p99 = statistics.value.p99ResponseTime || 0
+  return p99 <= SLA_TARGET_MS ? 'success' : 'danger'
+})
+
+/**
+ * 计算 SLA 状态标签
+ */
+const slaStatusLabel = computed(() => {
+  const p99 = statistics.value.p99ResponseTime || 0
+  return p99 <= SLA_TARGET_MS ? t('dashboard.slaCompliant') : t('dashboard.slaViolation')
+})
+
+/**
+ * 计算错误率状态类型
+ */
+const errorStatusType = computed(() => {
+  const rate = statistics.value.errorRate || 0
+  if (rate > ERROR_RATE_THRESHOLD) return 'danger'
+  if (rate > 2) return 'warning'
+  return 'success'
+})
+
+/**
+ * 计算 P99 占 SLA 比例
+ */
+const p99SlaPercentage = computed(() => {
+  const p99 = statistics.value.p99ResponseTime || 0
+  return Math.min(Math.round((p99 / SLA_TARGET_MS) * 100), 100)
+})
+
+/**
+ * QPS 仪表盘配置 - 半圆仪表盘
+ */
+const qpsGaugeOption = computed(() => {
+  const currentQps = statistics.value.currentQps || 0
+  const percentage = Math.min((currentQps / QPS_THRESHOLD) * 100, 100)
+
+  // 根据百分比决定颜色
+  let color = '#10b981' // 绿色 - 正常
+  if (percentage > 80) color = '#f59e0b' // 黄色 - 接近阈值
+  if (percentage > 100) color = '#ef4444' // 红色 - 超限
+
+  return {
+    series: [
+      {
+        type: 'gauge',
+        startAngle: 180,
+        endAngle: 0,
+        min: 0,
+        max: QPS_THRESHOLD,
+        splitNumber: 5,
+        radius: '100%',
+        center: ['50%', '70%'],
+        axisLine: {
+          lineStyle: {
+            width: 15,
+            color: [
+              [0.8, '#10b981'],
+              [1, '#f59e0b'],
+            ],
+          },
+        },
+        pointer: {
+          length: '60%',
+          width: 6,
+          itemStyle: {
+            color: color,
+          },
+        },
+        axisTick: {
+          show: false,
+        },
+        splitLine: {
+          length: 15,
+          lineStyle: {
+            width: 2,
+            color: 'var(--text-color-secondary)',
+          },
+        },
+        axisLabel: {
+          distance: 20,
+          color: 'var(--text-color-secondary)',
+          fontSize: 10,
+          formatter: (value: number) => {
+            if (value === 0) return '0'
+            if (value === QPS_THRESHOLD) return value.toString()
+            return ''
+          },
+        },
+        detail: {
+          valueAnimation: true,
+          formatter: `{value} ${t('dashboard.reqPerSecond')}`,
+          color: 'var(--text-color-primary)',
+          fontSize: 14,
+          offsetCenter: [0, '20%'],
+        },
+        data: [
+          {
+            value: currentQps,
+            itemStyle: {
+              color: color,
+            },
+          },
+        ],
+      },
+    ],
+  }
+})
+
+/**
+ * QPS 迷你趋势线配置（最近 5 分钟）
+ */
+const qpsTrendOption = computed(() => {
+  // 从 trafficHistory 取最近 5 个数据点的 count 值作为 QPS 趋势参考
+  const recentPoints = trafficHistory.value.slice(-5)
+  const maxCount = Math.max(...recentPoints.map((p) => p.count || 0), 1)
+
+  return {
+    grid: {
+      left: 0,
+      right: 0,
+      top: 5,
+      bottom: 5,
+    },
+    xAxis: {
+      type: 'category',
+      show: false,
+      data: recentPoints.map((p) => p.time),
+    },
+    yAxis: {
+      type: 'value',
+      show: false,
+      min: 0,
+      max: maxCount,
+    },
+    series: [
+      {
+        type: 'line',
+        data: recentPoints.map((p) => p.count || 0),
+        smooth: true,
+        symbol: 'none',
+        lineStyle: {
+          width: 2,
+          color: '#3b82f6',
+        },
+        areaStyle: {
+          opacity: 0.3,
+          color: '#3b82f6',
+        },
+      },
+    ],
+  }
+})
+
+/**
+ * 响应时间分布直方图配置
+ */
+const responseTimeBarOption = computed(() => {
+  const p50 = statistics.value.p50ResponseTime || 0
+  const p95 = statistics.value.p95ResponseTime || 0
+  const p99 = statistics.value.p99ResponseTime || 0
+  const maxVal = statistics.value.maxResponseTime || 0
+
+  // 估算 P75 和 P90（如果没有实际数据，用线性插值）
+  const p75 = Math.round(p50 + (p95 - p50) * 0.5)
+  const p90 = Math.round(p50 + (p99 - p50) * 0.8)
+
+  // Y 轴最大值
+  const yAxisMax = Math.max(SLA_TARGET_MS * 1.5, p99 * 1.2, maxVal * 1.1)
+
+  return {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: 'var(--border-color-base)',
+      borderWidth: 1,
+      formatter: (params: any) => {
+        if (!params || params.length === 0) return ''
+        const data = params[0]
+        return `${data.name}: ${data.value}ms`
+      },
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true,
+    },
+    xAxis: {
+      type: 'category',
+      data: ['P50', 'P75', 'P90', 'P95', 'P99'],
+      axisLine: {
+        lineStyle: {
+          color: 'var(--neutral-300)',
+        },
+      },
+      axisLabel: {
+        color: 'var(--text-color-secondary)',
+        fontSize: 11,
+      },
+    },
+    yAxis: {
+      type: 'value',
+      min: 0,
+      max: yAxisMax,
+      axisLine: {
+        show: false,
+      },
+      axisLabel: {
+        color: 'var(--text-color-secondary)',
+        fontSize: 10,
+        formatter: '{value}ms',
+      },
+      splitLine: {
+        lineStyle: {
+          color: 'var(--neutral-200)',
+        },
+      },
+    },
+    series: [
+      {
+        type: 'bar',
+        data: [
+          { value: p50, itemStyle: { color: '#3b82f6' } },
+          { value: p75, itemStyle: { color: '#3b82f6' } },
+          { value: p90, itemStyle: { color: '#3b82f6' } },
+          { value: p95, itemStyle: { color: '#60a5fa' } },
+          { value: p99, itemStyle: { color: '#f59e0b', borderRadius: [4, 4, 0, 0] } },
+        ],
+        barWidth: 20,
+        markLine: {
+          silent: true,
+          symbol: 'none',
+          data: [
+            {
+              yAxis: SLA_TARGET_MS,
+              label: {
+                formatter: `SLA ${SLA_TARGET_MS}ms`,
+                position: 'end',
+                color: '#ef4444',
+                fontSize: 10,
+              },
+              lineStyle: {
+                color: '#ef4444',
+                type: 'dashed',
+                width: 2,
+              },
+            },
+          ],
+        },
+      },
+    ],
+  }
+})
+
+/**
+ * 错误分类饼图配置
+ */
+const errorPieOption = computed(() => {
+  const error4xx = statistics.value.error4xxCount || 0
+  const error5xx = statistics.value.error5xxCount || 0
+  const totalErrors = error4xx + error5xx
+
+  // 如果没有错误数据，显示空状态
+  if (totalErrors === 0) {
+    return {
+      series: [
+        {
+          type: 'pie',
+          radius: ['40%', '65%'],
+          center: ['50%', '50%'],
+          data: [
+            { value: 1, name: '无错误', itemStyle: { color: '#10b981' } },
+          ],
+          label: {
+            show: true,
+            position: 'center',
+            formatter: '无错误',
+            color: 'var(--text-color-secondary)',
+            fontSize: 14,
+          },
+          emphasis: {
+            disabled: true,
+          },
+        },
+      ],
+    }
+  }
+
+  return {
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: 'var(--border-color-base)',
+      borderWidth: 1,
+      formatter: (params: any) => {
+        const percent = Math.round((params.value / totalErrors) * 100)
+        return `${params.name}: ${formatNumber(params.value)} (${percent}%)`
+      },
+    },
+    legend: {
+      show: false,
+    },
+    series: [
+      {
+        type: 'pie',
+        radius: ['40%', '65%'],
+        center: ['50%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 4,
+          borderColor: 'var(--card-bg)',
+          borderWidth: 2,
+        },
+        label: {
+          show: true,
+          position: 'center',
+          formatter: () => {
+            return `{total|${formatNumber(totalErrors)}}\n{label|${t('dashboard.errorClassification')}}`
+          },
+          rich: {
+            total: {
+              fontSize: 18,
+              fontWeight: '600',
+              color: 'var(--text-color-primary)',
+            },
+            label: {
+              fontSize: 11,
+              color: 'var(--text-color-secondary)',
+              padding: [4, 0, 0, 0],
+            },
+          },
+        },
+        emphasis: {
+          label: {
+            show: true,
+          },
+        },
+        labelLine: {
+          show: false,
+        },
+        data: [
+          {
+            value: error4xx,
+            name: '4xx',
+            itemStyle: { color: '#f59e0b' },
+          },
+          {
+            value: error5xx,
+            name: '5xx',
+            itemStyle: { color: '#ef4444' },
+          },
+        ],
+      },
+    ],
+  }
+})
+
+/**
+ * 错误趋势迷你图配置（最近 5 分钟）
+ */
+const errorTrendOption = computed(() => {
+  // 从 trafficHistory 取最近 5 个数据点的 failedCount 值
+  const recentPoints = trafficHistory.value.slice(-5)
+  const maxFailed = Math.max(...recentPoints.map((p) => p.failedCount || 0), 1)
+
+  return {
+    grid: {
+      left: 0,
+      right: 0,
+      top: 5,
+      bottom: 5,
+    },
+    xAxis: {
+      type: 'category',
+      show: false,
+      data: recentPoints.map((p) => p.time),
+    },
+    yAxis: {
+      type: 'value',
+      show: false,
+      min: 0,
+      max: maxFailed,
+    },
+    series: [
+      {
+        type: 'line',
+        data: recentPoints.map((p) => p.failedCount || 0),
+        smooth: true,
+        symbol: 'none',
+        lineStyle: {
+          width: 2,
+          color: '#ef4444',
+        },
+        areaStyle: {
+          opacity: 0.3,
+          color: '#ef4444',
+        },
+      },
+    ],
+  }
+})
+
 /**
  * 格式化数字（使用 store 提供的方法）
  */
@@ -625,6 +1103,187 @@ onUnmounted(() => {
     margin-bottom: 24px;
   }
 
+  // ==================== 核心监控指标卡片样式 ====================
+  .core-metrics-row {
+    margin-bottom: 24px;
+  }
+
+  .metric-card {
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color-base);
+    height: 320px;
+    display: flex;
+    flex-direction: column;
+    transition:
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
+
+    &:hover {
+      box-shadow: var(--shadow-medium);
+      transform: translateY(-2px);
+    }
+
+    :deep(.el-card__header) {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color-base);
+      flex-shrink: 0;
+    }
+
+    :deep(.el-card__body) {
+      padding: 12px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .metric-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        color: var(--text-color-primary);
+        font-size: 14px;
+      }
+    }
+
+    .metric-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+    }
+
+    .mini-trend {
+      flex-shrink: 0;
+      .trend-label {
+        font-size: 11px;
+        color: var(--text-color-secondary);
+        margin-bottom: 2px;
+        display: block;
+      }
+    }
+
+    .metric-footer {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px solid var(--border-color-light);
+      margin-top: 8px;
+
+      .footer-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .footer-label {
+          font-size: 11px;
+          color: var(--text-color-secondary);
+        }
+
+        .footer-value {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-color-primary);
+        }
+
+        &.highlight .footer-value {
+          color: #f59e0b;
+        }
+      }
+    }
+
+    // QPS 仪表盘卡片特有样式
+    &.qps-gauge-card {
+      .metric-body {
+        padding: 0;
+      }
+    }
+
+    // 响应时间直方图卡片特有样式
+    &.response-time-bar-card {
+      .sla-progress {
+        flex-shrink: 0;
+        margin-top: 8px;
+
+        .progress-header {
+          display: flex;
+          justify-content: space-between;
+          font-size: 12px;
+          color: var(--text-color-secondary);
+        }
+
+        .progress-bar {
+          height: 6px;
+          background: var(--neutral-200);
+          border-radius: 3px;
+          margin-top: 4px;
+          overflow: hidden;
+
+          .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+          }
+        }
+
+        .progress-label {
+          font-size: 11px;
+          color: var(--text-color-placeholder);
+          margin-top: 2px;
+          text-align: right;
+        }
+      }
+    }
+
+    // 错误饼图卡片特有样式
+    &.error-pie-card {
+      .error-stats {
+        flex-shrink: 0;
+        display: flex;
+        gap: 16px;
+        margin-top: 8px;
+
+        .error-stat-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+
+          .stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+          }
+
+          .stat-label {
+            color: var(--text-color-secondary);
+          }
+
+          .stat-value {
+            font-weight: 500;
+            color: var(--text-color-primary);
+          }
+
+          &.client .stat-dot {
+            background: #f59e0b;
+          }
+
+          &.server .stat-dot {
+            background: #ef4444;
+          }
+        }
+      }
+    }
+  }
+
   .stat-card {
     margin-bottom: 20px;
     border: 1px solid var(--border-color-base);
@@ -675,149 +1334,6 @@ onUnmounted(() => {
         font-size: 13px;
         color: var(--text-color-secondary);
         margin-top: 4px;
-      }
-    }
-
-    // Response Time Card
-    .response-time-card {
-      :deep(.el-card__header) {
-        padding: 12px 20px;
-        border-bottom: 1px solid var(--border-color-base);
-      }
-      .card-header-inline {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 500;
-        color: var(--text-color-primary);
-      }
-      .response-time-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        .time-item {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          .time-label {
-            font-size: 12px;
-            color: var(--text-color-secondary);
-          }
-          .time-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text-color-primary);
-          }
-          &.highlight {
-            .time-value {
-              color: #e6a23c;
-            }
-          }
-        }
-      }
-    }
-
-    // Error Classification Card
-    .error-card {
-      :deep(.el-card__header) {
-        padding: 12px 20px;
-        border-bottom: 1px solid var(--border-color-base);
-      }
-      .card-header-inline {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 500;
-        color: var(--text-color-primary);
-      }
-      .error-grid {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        .error-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 12px;
-          border-radius: var(--radius-sm);
-          background: var(--neutral-100);
-          .error-label {
-            font-size: 12px;
-            color: var(--text-color-secondary);
-          }
-          .error-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-color-primary);
-          }
-          .error-desc {
-            font-size: 11px;
-            color: var(--text-color-placeholder);
-          }
-          &.client {
-            background: rgba(#e6a23c, 0.1);
-            .error-value {
-              color: #e6a23c;
-            }
-          }
-          &.server {
-            background: rgba(#f56c6c, 0.1);
-            .error-value {
-              color: #f56c6c;
-            }
-          }
-        }
-      }
-    }
-
-    // QPS Card
-    .qps-card {
-      :deep(.el-card__header) {
-        padding: 12px 20px;
-        border-bottom: 1px solid var(--border-color-base);
-      }
-      .card-header-inline {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-weight: 500;
-        color: var(--text-color-primary);
-      }
-      .qps-content {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        .qps-main {
-          display: flex;
-          align-items: baseline;
-          gap: 8px;
-          .qps-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: #409eff;
-          }
-          .qps-unit {
-            font-size: 14px;
-            color: var(--text-color-secondary);
-          }
-        }
-        .qps-peak {
-          margin-top: 12px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          .peak-label {
-            font-size: 12px;
-            color: var(--text-color-secondary);
-          }
-          .peak-value {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-color-primary);
-          }
-        }
       }
     }
   }

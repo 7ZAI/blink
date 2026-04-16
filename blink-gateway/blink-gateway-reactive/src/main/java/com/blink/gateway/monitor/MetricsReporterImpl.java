@@ -445,33 +445,7 @@ public class MetricsReporterImpl implements MetricsReporter {
 
         List<CircuitBreakerMetric> metrics = new ArrayList<>();
 
-        // 获取所有已注册的熔断器配置名称
-        for (String name : circuitBreakerRegistry.getConfigurationNames()) {
-            try {
-                CircuitBreaker cb = circuitBreakerRegistry.circuitBreaker(name);
-                CircuitBreaker.Metrics cbMetrics = cb.getMetrics();
-
-                CircuitBreakerMetric metric = new CircuitBreakerMetric();
-                metric.setName(name);
-                metric.setState(cb.getState().name());
-                metric.setFailureRate(cbMetrics.getFailureRate());
-                metric.setSlowCallRate(cbMetrics.getSlowCallRate());
-                metric.setNumberOfCalls(cbMetrics.getNumberOfCalls());
-                metric.setNumberOfFailedCalls(cbMetrics.getNumberOfFailedCalls());
-                metric.setNumberOfSlowCalls(cbMetrics.getNumberOfSlowCalls());
-                metric.setNumberOfSuccessfulCalls(cbMetrics.getNumberOfSuccessfulCalls());
-                metric.setTimestamp(System.currentTimeMillis());
-
-                // 状态转换时间需要通过事件监听获取，这里暂不设置
-                metric.setStateTransitionTime(null);
-
-                metrics.add(metric);
-            } catch (Exception e) {
-                log.warn("[MetricsReporter] 获取熔断器指标失败 | name: {}, error: {}", name, e.getMessage());
-            }
-        }
-
-        // 也获取所有已创建的熔断器实例
+        // 获取所有已创建的熔断器实例
         for (CircuitBreaker cb : circuitBreakerRegistry.getAllCircuitBreakers()) {
             String name = cb.getName();
             // 避免重复添加
@@ -482,9 +456,9 @@ public class MetricsReporterImpl implements MetricsReporter {
                     CircuitBreakerMetric metric = new CircuitBreakerMetric();
                     metric.setName(name);
                     metric.setState(cb.getState().name());
-                    metric.setFailureRate(cbMetrics.getFailureRate());
-                    metric.setSlowCallRate(cbMetrics.getSlowCallRate());
-                    metric.setNumberOfCalls(cbMetrics.getNumberOfCalls());
+                    metric.setFailureRate((double) cbMetrics.getFailureRate());
+                    metric.setSlowCallRate((double) cbMetrics.getSlowCallRate());
+                    metric.setNumberOfCalls(cbMetrics.getNumberOfBufferedCalls());
                     metric.setNumberOfFailedCalls(cbMetrics.getNumberOfFailedCalls());
                     metric.setNumberOfSlowCalls(cbMetrics.getNumberOfSlowCalls());
                     metric.setNumberOfSuccessfulCalls(cbMetrics.getNumberOfSuccessfulCalls());

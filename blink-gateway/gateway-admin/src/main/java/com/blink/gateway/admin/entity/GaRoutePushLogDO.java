@@ -3,7 +3,10 @@ package com.blink.gateway.admin.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.blink.gateway.admin.handler.GaRouteDOListTypeHandler;
+import com.blink.gateway.admin.handler.MapObjectHandler;
+import com.blink.gateway.admin.handler.MapStringHandler;
+import com.blink.gateway.admin.handler.StringListTypeHandler;
 import lombok.Data;
 
 import java.io.Serial;
@@ -60,7 +63,7 @@ public class GaRoutePushLogDO implements Serializable {
     /**
      * 路由配置快照(JSON数组)
      */
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(typeHandler = GaRouteDOListTypeHandler.class)
     private List<GaRouteDO> routeSnapshot;
 
     /**
@@ -91,7 +94,7 @@ public class GaRoutePushLogDO implements Serializable {
     /**
      * 各实例推送详情(JSON对象)
      */
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(typeHandler = MapObjectHandler.class)
     private Map<String, Object> pushDetail;
 
     /**
@@ -118,14 +121,14 @@ public class GaRoutePushLogDO implements Serializable {
      * 失败实例ID列表(JSON数组)
      * 记录推送失败的网关实例ID
      */
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(typeHandler = StringListTypeHandler.class)
     private List<String> failedInstanceIds;
 
     /**
      * 各实例错误信息(JSON对象)
      * key: instanceId, value: errorMsg
      */
-    @TableField(typeHandler = JacksonTypeHandler.class)
+    @TableField(typeHandler = MapStringHandler.class)
     private Map<String, String> instanceErrors;
 
     /**

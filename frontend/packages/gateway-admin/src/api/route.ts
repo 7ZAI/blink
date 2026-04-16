@@ -625,6 +625,63 @@ export const confirmPush = (data: ConfirmPushReq): Promise<void> => {
   return request.post('/route/confirmPush', { body: data })
 }
 
+// ========== 推送结果验证接口 ==========
+
+/** 验证推送结果请求 */
+export interface VerifyPushResultReq {
+  pushId: number
+  instanceId?: string
+}
+
+/** 路由差异详情 */
+export interface RouteDiff {
+  routeId: string
+  diffType: 'MISSING' | 'EXTRA' | 'MISMATCH'
+  description?: string
+  pushedConfig?: Record<string, any>
+  actualConfig?: Record<string, any>
+}
+
+/** 实例验证详情 */
+export interface InstanceVerifyDetail {
+  instanceId: string
+  result: number // 0-一致, 1-不一致
+  pushedCount: number
+  actualCount: number
+  matchedCount: number
+  missingRoutes?: RouteDiff[]
+  extraRoutes?: RouteDiff[]
+  mismatchedRoutes?: RouteDiff[]
+}
+
+/** 验证推送结果响应 */
+export interface VerifyPushResultRsp {
+  pushId: number
+  verifyResult: number // 0-一致, 1-部分不一致, 2-完全不一致
+  summary?: string
+  instanceDetails?: InstanceVerifyDetail[]
+}
+
+/**
+ * 验证推送结果
+ * 比较推送的路由快照与实例实际路由配置
+ */
+export const verifyPushResult = (params: VerifyPushResultReq): Promise<VerifyPushResultRsp> => {
+  return request.post('/route/verifyPushResult', { body: params })
+}
+
+/** 获取最新推送请求 */
+export interface GetLatestPushReq {
+  instanceId: string
+}
+
+/**
+ * 获取实例最新推送记录
+ */
+export const getLatestPush = (params: GetLatestPushReq): Promise<GaRoutePushLogDO> => {
+  return request.post('/route/getLatestPush', { body: params })
+}
+
 // Route API object (for component using routeApi.xxx pattern)
 export const routeApi = {
   getList: getRouteList,

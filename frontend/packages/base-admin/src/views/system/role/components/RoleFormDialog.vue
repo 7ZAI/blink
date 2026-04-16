@@ -32,8 +32,8 @@
           <el-col :span="12">
             <el-form-item :label="t('common.status')" prop="status">
               <el-radio-group v-model="form.status">
-                <el-radio :value="0">{{ t('role.statusEnable') }}</el-radio>
-                <el-radio :value="1">{{ t('role.statusDisable') }}</el-radio>
+                <el-radio :value="0">{{ t('common.statusEnable') }}</el-radio>
+                <el-radio :value="1">{{ t('common.statusDisable') }}</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>

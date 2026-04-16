@@ -46,7 +46,8 @@ logging:
   level:
     root: INFO
     com.blink: DEBUG
-    com.alibaba.nacos: DEBUG
+    com.alibaba.nacos: WARN
+    com.alibaba.nacos.shaded: WARN
   file:
     path: ./gateway-admin/logs
 

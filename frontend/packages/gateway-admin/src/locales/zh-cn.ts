@@ -417,10 +417,6 @@ export default {
     pushStatusPushed: '已推送',
     pushStatusFailed: '推送失败',
     pushStatusUnknown: '未知',
-    pushStatusPushedFormat: '已推送({count}/{total})',
-    pushStatusNotPushedFormat: '未推送(0/{total})',
-    pushStatusPartialFormat: '部分失败({success}/{total})',
-    instancePushDetail: '实例推送详情',
     lastPushTime: '最后推送时间',
     // 新增功能相关
     batchStatus: '批量状态',
@@ -437,6 +433,19 @@ export default {
     // invalidJsonFormat 已在上方定义，此处删除重复
     importResultSuccess: '成功导入 {count} 条路由',
     importResultPartial: '成功导入 {success} 条，失败 {failed} 条',
+    // 导入预览相关
+    importStepInput: '输入数据',
+    importStepPreview: '预览确认',
+    importConflictWarning: '发现 {count} 个冲突',
+    conflictExists: '路由已存在',
+    conflictFormat: '格式错误',
+    conflict: '冲突',
+    conflictExistsMessage: '该路由ID已存在于当前分组',
+    importPreviewTitle: '待导入路由列表 ({count} 条)',
+    previewImport: '预览导入',
+    confirmImport: '确认导入',
+    noDataToImport: '没有可导入的数据',
+    missingRouteId: '路由缺少 routeId 字段',
     exportRoutes: '导出路由',
     selectRouteToExport: '请选择要导出的路由',
     exportSuccess: '导出成功，已复制到剪贴板',
@@ -596,9 +605,9 @@ export default {
     routeIdsPreview: '路由ID预览',
     moreRoutes: '还有 {count} 条...',
     noRoutes: '暂无路由',
-    confirmPush: '确认',
-    confirmPushConfirm: '确认该推送已生效？',
-    confirmSuccess: '确认成功',
+    // 页面联动
+    goToRoute: '查看路由',
+    goToPushHistory: '查看推送历史',
   },
   monitor: {
     title: '监控中心',

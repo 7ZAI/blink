@@ -94,24 +94,22 @@
       <slot v-if="showTabs" name="tabs" v-bind="tabsSlotProps">
         <!-- 默认标签页 -->
         <TabsView
+          ref="tabsViewRef"
           :tabs="tabs"
-          :cached-views="cachedViews"
           :active-path="activePath"
-          :route-integration="routeIntegration"
-          :auto-add-current-route="autoAddCurrentRoute"
-          :close-fallback-path="closeFallbackPath"
           :show-context-menu="showTabsContextMenu"
-          :title-map="titleMap"
           :max-tabs="maxTabs"
-          @add-tab="handleAddTab"
+          :overflow-warning-threshold="overflowWarningThreshold"
+          :min-tab-width="minTabWidth"
+          :max-tab-width="maxTabWidth"
+          @tab-click="handleTabClick"
           @close-tab="handleCloseTab"
           @close-other-tabs="handleCloseOtherTabs"
           @close-right-tabs="handleCloseRightTabs"
           @close-left-tabs="handleCloseLeftTabs"
           @close-all-tabs="handleCloseAllTabs"
           @refresh-tab="handleRefreshTab"
-          @del-cached-view="handleDelCachedView"
-          @add-cached-view="handleAddCachedView"
+          @max-tabs-reached="handleMaxTabsReached"
         />
       </slot>
 
@@ -190,22 +188,18 @@ export interface Props {
   // === 标签页配置 ===
   /** 标签页列表 */
   tabs?: TabItem[]
-  /** 缓存的视图名称列表 */
-  cachedViews?: string[]
   /** 当前激活路径 */
   activePath?: string
-  /** 是否集成路由 */
-  routeIntegration?: boolean
-  /** 是否自动添加当前路由 */
-  autoAddCurrentRoute?: boolean
-  /** 关闭标签页后的回退路径 */
-  closeFallbackPath?: string
   /** 是否显示标签页右键菜单 */
   showTabsContextMenu?: boolean
-  /** 标题映射表 */
-  titleMap?: Record<string, string>
-  /** 最大标签数量 */
+  /** 最大标签数量，默认 20 */
   maxTabs?: number
+  /** 标签溢出警告阈值 */
+  overflowWarningThreshold?: number
+  /** 标签最小宽度（像素） */
+  minTabWidth?: number
+  /** 标签最大宽度（像素） */
+  maxTabWidth?: number
 
   // === 侧边栏配置 ===
   /** 是否显示侧边栏 */
@@ -246,6 +240,8 @@ export interface Props {
   useRouterView?: boolean
   /** 是否启用 keep-alive */
   enableKeepAlive?: boolean
+  /** 缓存的视图名称列表 */
+  cachedViews?: string[]
 }
 
 /**
@@ -264,15 +260,14 @@ export interface Emits {
   (e: 'sidebar-width-change', width: number): void
 
   // === 标签页 ===
-  (e: 'add-tab', tab: TabItem): void
-  (e: 'close-tab', path: string): string | null
-  (e: 'close-other-tabs', path: string): void
-  (e: 'close-right-tabs', path: string): void
-  (e: 'close-left-tabs', path: string): void
+  (e: 'tab-click', tab: TabItem): void
+  (e: 'close-tab', tab: TabItem): void
+  (e: 'close-other-tabs', tab: TabItem): void
+  (e: 'close-right-tabs', tab: TabItem): void
+  (e: 'close-left-tabs', tab: TabItem): void
   (e: 'close-all-tabs'): void
-  (e: 'refresh-tab', name: string): void
-  (e: 'del-cached-view', name: string): void
-  (e: 'add-cached-view', name: string): void
+  (e: 'refresh-tab', tab: TabItem): void
+  (e: 'max-tabs-reached', currentCount: number, maxTabs: number): void
 }
 
 // ============================================
@@ -301,14 +296,12 @@ const props = withDefaults(defineProps<Props>(), {
   }),
   avatarResolver: undefined,
   tabs: () => [],
-  cachedViews: () => [],
   activePath: '',
-  routeIntegration: true,
-  autoAddCurrentRoute: true,
-  closeFallbackPath: '/dashboard',
   showTabsContextMenu: true,
-  titleMap: () => ({}),
   maxTabs: 20,
+  overflowWarningThreshold: 15,
+  minTabWidth: 80,
+  maxTabWidth: 160,
   showSidebar: true,
   resizable: true,
   defaultSidebarWidth: 220,
@@ -325,6 +318,7 @@ const props = withDefaults(defineProps<Props>(), {
   showTabs: true,
   useRouterView: true,
   enableKeepAlive: true,
+  cachedViews: () => [],
 })
 
 const emit = defineEmits<Emits>()
@@ -335,6 +329,7 @@ const slots = useSlots()
 // ============================================
 
 const sidebarRef = ref<InstanceType<typeof Sidebar>>()
+const tabsViewRef = ref<InstanceType<typeof TabsView>>()
 
 // ============================================
 // 插槽 Props
@@ -369,7 +364,6 @@ const headerSlotProps = computed(() => ({
 /** 标签页插槽 Props */
 const tabsSlotProps = computed(() => ({
   tabs: props.tabs,
-  cachedViews: props.cachedViews,
   activePath: props.activePath,
 }))
 
@@ -401,18 +395,15 @@ const handleSidebarCollapseChange = (collapsed: boolean) =>
 const handleSidebarWidthChange = (width: number) => emit('sidebar-width-change', width)
 
 // 标签页
-const handleAddTab = (tab: TabItem) => emit('add-tab', tab)
-const handleCloseTab = (path: string) => {
-  emit('close-tab', path)
-  return null
-}
-const handleCloseOtherTabs = (path: string) => emit('close-other-tabs', path)
-const handleCloseRightTabs = (path: string) => emit('close-right-tabs', path)
-const handleCloseLeftTabs = (path: string) => emit('close-left-tabs', path)
+const handleTabClick = (tab: TabItem) => emit('tab-click', tab)
+const handleCloseTab = (tab: TabItem) => emit('close-tab', tab)
+const handleCloseOtherTabs = (tab: TabItem) => emit('close-other-tabs', tab)
+const handleCloseRightTabs = (tab: TabItem) => emit('close-right-tabs', tab)
+const handleCloseLeftTabs = (tab: TabItem) => emit('close-left-tabs', tab)
 const handleCloseAllTabs = () => emit('close-all-tabs')
-const handleRefreshTab = (name: string) => emit('refresh-tab', name)
-const handleDelCachedView = (name: string) => emit('del-cached-view', name)
-const handleAddCachedView = (name: string) => emit('add-cached-view', name)
+const handleRefreshTab = (tab: TabItem) => emit('refresh-tab', tab)
+const handleMaxTabsReached = (currentCount: number, maxTabs: number) =>
+  emit('max-tabs-reached', currentCount, maxTabs)
 
 // ============================================
 // 全局状态注入
@@ -432,6 +423,12 @@ provide(LAYOUT_STATE_KEY, {
 defineExpose({
   toggleSidebar: () => sidebarRef.value?.toggleSidebar(),
   sidebarRef,
+  tabsViewRef,
+  /**
+   * 检查是否可以添加新标签
+   * @returns true 表示可以继续添加，false 表示已达到上限
+   */
+  canAddTab: () => tabsViewRef.value?.checkMaxTabs() ?? true,
 })
 </script>
 
@@ -455,6 +452,9 @@ defineExpose({
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
+  /* 修复 flex 子元素高度计算问题 */
+  min-height: 0;
+  flex: 1;
 
   > * {
     position: relative;

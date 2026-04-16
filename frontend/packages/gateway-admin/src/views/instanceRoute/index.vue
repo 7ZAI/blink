@@ -33,11 +33,11 @@
         <div class="stat-divider"></div>
         <div class="stat-item">
           <span class="stat-value online">{{ onlineInstances.length }}</span>
-          <span class="stat-label">{{ t('instanceRoute.online') }}</span>
+          <span class="stat-label">{{ t('common.statusOnline') }}</span>
         </div>
         <div class="stat-item">
           <span class="stat-value offline">{{ instances.length - onlineInstances.length }}</span>
-          <span class="stat-label">{{ t('instanceRoute.offline') }}</span>
+          <span class="stat-label">{{ t('common.statusOffline') }}</span>
         </div>
       </div>
 
@@ -57,7 +57,7 @@
             <div class="instance-info">
               <div class="instance-id">{{ instance.instanceId }}</div>
               <div class="instance-meta">
-                <span class="instance-address">{{ instance.uri }}</span>
+                <span>{{ instance.uri }}</span>
               </div>
             </div>
             <div class="instance-status-badge">
@@ -66,13 +66,13 @@
                 size="small"
                 effect="dark"
               >
-                {{ instance.status === 0 ? t('instanceRoute.online') : t('instanceRoute.offline') }}
+                {{ instance.status === 0 ? t('common.statusOnline') : t('common.statusOffline') }}
               </el-tag>
             </div>
           </div>
           <el-empty
             v-if="instances.length === 0 && !instanceLoading"
-            :description="t('instanceRoute.noOnlineInstances')"
+            :description="t('common.noOnlineInstances')"
             class="empty-state"
           />
         </el-scrollbar>
@@ -623,23 +623,26 @@ onMounted(() => {
   display: flex;
   gap: 16px;
   height: 100%;
+  min-height: 0;
   padding: 16px;
-  background: var(--el-bg-color-page);
+  background: var(--bg-color-page);
 }
 
 // 左侧面板
 .left-panel {
   width: 280px;
-  background: var(--el-bg-color);
+  background: var(--bg-color-card);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--el-border-color-light);
+  border: 1px solid var(--border-color-base);
+  min-height: 0;
+  overflow: hidden;
 
   .panel-header {
     padding: 14px 16px;
-    border-bottom: 1px solid var(--el-border-color-light);
+    border-bottom: 1px solid var(--border-color-base);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -669,7 +672,7 @@ onMounted(() => {
         margin: 0;
         font-size: 15px;
         font-weight: 600;
-        color: var(--el-text-color-primary);
+        color: var(--text-color-primary);
       }
     }
   }
@@ -679,8 +682,8 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: var(--el-fill-color-lighter);
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: var(--bg-color-page);
+    border-bottom: 1px solid var(--border-color-base);
 
     .stat-item {
       display: flex;
@@ -689,7 +692,7 @@ onMounted(() => {
 
       .stat-label {
         font-size: 12px;
-        color: var(--el-text-color-secondary);
+        color: var(--text-color-secondary);
       }
 
       .stat-value {
@@ -705,30 +708,32 @@ onMounted(() => {
     .stat-divider {
       width: 1px;
       height: 16px;
-      background: var(--el-border-color);
+      background: var(--border-color-base);
     }
   }
 
   .panel-content {
     flex: 1;
     overflow: hidden;
+    background: var(--bg-color-card);
   }
 
   .instance-item {
     padding: 12px 16px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    border-bottom: 1px solid var(--border-color-light);
     cursor: pointer;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 10px;
+    background: var(--bg-color-card);
 
     &:hover {
-      background: var(--el-fill-color-light);
+      background: var(--table-row-hover);
     }
 
     &.active {
-      background: var(--el-color-primary-light-9);
+      background: var(--table-row-hover);
       border-left: 3px solid var(--el-color-primary);
       padding-left: 13px;
     }
@@ -744,7 +749,7 @@ onMounted(() => {
 
       &.online {
         background: var(--el-color-success);
-        box-shadow: 0 0 6px var(--el-color-success-light-3);
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
       }
 
       &.offline {
@@ -759,14 +764,14 @@ onMounted(() => {
       .instance-id {
         font-size: 13px;
         font-weight: 500;
-        color: var(--el-text-color-primary);
+        color: var(--text-color-primary);
         margin-bottom: 2px;
         font-family: 'SF Mono', 'Monaco', monospace;
       }
 
       .instance-meta {
         font-size: 11px;
-        color: var(--el-text-color-secondary);
+        color: var(--text-color-secondary);
       }
     }
   }
@@ -783,21 +788,22 @@ onMounted(() => {
   grid-template-rows: 1fr auto auto;
   gap: 12px;
   overflow: hidden;
+  min-height: 0;
 }
 
 // 通用面板卡片样式
 .panel-card {
-  background: var(--el-bg-color);
+  background: var(--bg-color-card);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--card-shadow);
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--el-border-color-light);
+  border: 1px solid var(--border-color-base);
   overflow: hidden;
 
   .panel-header {
     padding: 12px 16px;
-    border-bottom: 1px solid var(--el-border-color-light);
+    border-bottom: 1px solid var(--border-color-base);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -839,7 +845,7 @@ onMounted(() => {
         margin: 0;
         font-size: 14px;
         font-weight: 600;
-        color: var(--el-text-color-primary);
+        color: var(--text-color-primary);
       }
 
       .instance-badge {
@@ -899,7 +905,8 @@ onMounted(() => {
 
 // 代码预览
 .code-preview {
-  background: var(--el-fill-color-light);
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
   padding: 12px;
   overflow: auto;
@@ -912,6 +919,7 @@ onMounted(() => {
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-all;
+    color: var(--el-text-color-primary);
   }
 }
 

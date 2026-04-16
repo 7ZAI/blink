@@ -53,20 +53,21 @@
 
       <template #tabs>
         <TabsView
-          :tabs="tabsStore.getTabs.map(convertTabItem)"
-          :cached-views="tabsStore.getCachedViews"
+          :tabs="convertedTabs"
           :active-path="tabsStore.getActiveTabPath || undefined"
-          :close-fallback-path="'/dashboard'"
-          :refresh-redirect-prefix="'/redirect'"
           :show-context-menu="true"
-          @add-tab="handleAddTab"
+          :max-tabs="20"
+          :overflow-warning-threshold="15"
+          :min-tab-width="80"
+          :max-tab-width="160"
+          @tab-click="handleTabClick"
           @close-tab="handleCloseTab"
           @close-other-tabs="handleCloseOtherTabs"
           @close-right-tabs="handleCloseRightTabs"
           @close-left-tabs="handleCloseLeftTabs"
           @close-all-tabs="handleCloseAllTabs"
-          @del-cached-view="handleDelCachedView"
-          @add-cached-view="handleAddCachedView"
+          @refresh-tab="handleRefreshTab"
+          @max-tabs-reached="handleMaxTabsReached"
         />
       </template>
     </MainLayout>
@@ -104,7 +105,8 @@ import { User, SwitchButton, Setting } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'
 import { Breadcrumb, MainLayout, TabsView, UserDropdown, ThemeSettings } from '@blink/components'
-import type { MenuItem, TabItem, ThemeColors } from '@blink/components'
+import type { MenuItem, ThemeColors } from '@blink/components'
+import type { TabItem } from '@/stores/tabs'
 import NotificationCenter from '@/components/NotificationCenter/index.vue'
 import { useAppStore } from '@/stores/app'
 import { useThemeStore } from '@/stores/theme'
@@ -127,12 +129,27 @@ const tabsStore = useTabsStore()
 const notificationStore = useNotificationStore()
 const systemConfigStore = useSystemConfigStore()
 
-// 监听路由变化，更新激活的标签页
+// 监听路由变化，自动添加标签并更新激活状态
 watch(
-  () => route.path,
-  (path) => {
-    if (path && tabsStore.getActiveTabPath !== path) {
-      tabsStore.setActiveTab(path)
+  () => route.fullPath,
+  (fullPath) => {
+    if (fullPath) {
+      // 自动添加当前路由为标签
+      const { name, path, meta, query } = route
+      if (name) {
+        tabsStore.addTab({
+          name: String(name),
+          path,
+          title: (meta?.title as string) || 'no-name',
+          fullPath,
+          query: query as Record<string, string>,
+          affix: meta?.affix as boolean,
+        })
+      }
+      // 更新激活标签
+      if (tabsStore.getActiveTabPath !== fullPath) {
+        tabsStore.setActiveTab(fullPath)
+      }
     }
   },
   { immediate: true }
@@ -205,18 +222,24 @@ const avatarResolver = (user: { avatar?: string }) => {
   return getLocalAvatarUrl(user.avatar)
 }
 
-// 转换 TabItem 格式
-const convertTabItem = (tab: any): TabItem => {
-  return {
+// 转换 TabItem 格式（支持新属性）
+const convertedTabs = computed(() => {
+  return tabsStore.getTabs.map((tab) => ({
     path: tab.path,
     name: tab.name,
-    title: tab.title,
+    title: tab.dynamicTitle || t(tab.title),
     fullPath: tab.fullPath,
     query: tab.query,
     params: tab.params,
     affix: tab.affix,
-  }
-}
+    closable: tab.closable,
+    icon: tab.icon,
+    status: tab.status,
+    badge: tab.badge,
+    tooltip: tab.tooltip,
+    isNew: tab.isNew,
+  }))
+})
 
 // 语言切换
 const handleLanguageChange = (lang: string) => {
@@ -299,43 +322,57 @@ const handlePresetDelete = (presetId: string) => {
 }
 
 // 标签页操作
-const handleAddTab = (tab: TabItem) => {
-  tabsStore.addTab({
-    name: tab.name,
-    path: tab.path,
-    title: tab.title,
-    fullPath: tab.fullPath,
-    query: tab.query as Record<string, string>,
-    affix: tab.affix,
-  })
+const handleTabClick = (tab: TabItem) => {
+  const targetPath = tab.fullPath || tab.path
+  if (targetPath !== route.fullPath) {
+    router.push(targetPath)
+  }
 }
 
-const handleCloseTab = (path: string) => {
-  tabsStore.closeTab(path)
+const handleCloseTab = (tab: TabItem) => {
+  const tabPath = tab.fullPath || tab.path
+  const nextPath = tabsStore.closeTab(tabPath)
+  if (nextPath) {
+    router.push(nextPath)
+  }
 }
 
-const handleCloseOtherTabs = (path: string) => {
-  tabsStore.closeOtherTabs(path)
+const handleCloseOtherTabs = (tab: TabItem) => {
+  const tabPath = tab.fullPath || tab.path
+  tabsStore.closeOtherTabs(tabPath)
 }
 
-const handleCloseRightTabs = (path: string) => {
-  tabsStore.closeRightTabs(path)
+const handleCloseRightTabs = (tab: TabItem) => {
+  const tabPath = tab.fullPath || tab.path
+  tabsStore.closeRightTabs(tabPath)
 }
 
-const handleCloseLeftTabs = (path: string) => {
-  tabsStore.closeLeftTabs(path)
+const handleCloseLeftTabs = (tab: TabItem) => {
+  const tabPath = tab.fullPath || tab.path
+  tabsStore.closeLeftTabs(tabPath)
 }
 
 const handleCloseAllTabs = () => {
   tabsStore.closeAllTabs()
+  router.push('/dashboard')
 }
 
-const handleDelCachedView = (name: string) => {
-  tabsStore.delCachedView(name)
+const handleRefreshTab = (tab: TabItem) => {
+  // 刷新当前标签：清除缓存并重新加载
+  tabsStore.delCachedView(tab.name)
+  if (tab.fullPath === route.fullPath) {
+    router.replace({
+      path: `/redirect${tab.path}`,
+      query: tab.query,
+    })
+  }
 }
 
-const handleAddCachedView = (name: string) => {
-  tabsStore.addCachedView(name)
+/**
+ * 达到最大标签数量时的处理
+ */
+const handleMaxTabsReached = (currentCount: number, maxTabs: number) => {
+  ElMessage.warning(t('tabs.maxTabsReached', { max: maxTabs }))
 }
 </script>
 

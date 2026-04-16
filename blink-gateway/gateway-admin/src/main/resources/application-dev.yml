@@ -64,8 +64,9 @@ sa-token:
   is-read-cookie: false
   is-read-body: false
   # Redis 存储 token 数据，解决服务重启后 token 失效问题
+  # 注意：必须与 spring.data.redis.database 保持一致（使用 database 0）
   alone-redis:
-    database: 2
+    database: 0
     host: 127.0.0.1
     port: 6379
     password: 123456

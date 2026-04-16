@@ -67,12 +67,8 @@
         size="small"
         class="history-table"
       >
-        <el-table-column prop="pushId" :label="t('pushHistory.pushId')" width="80" align="center">
-          <template #default="{ row }">
-            <span class="push-id">#{{ row.pushId }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="storageMode" :label="t('pushHistory.storageModeColumn')" width="100">
+        <!-- 存储方式：固定宽度，Tag 展示 -->
+        <el-table-column prop="storageMode" :label="t('pushHistory.storageModeColumn')" width="80" align="center">
           <template #default="{ row }">
             <el-tag
               :type="row.storageMode === 'redis' ? 'success' : 'warning'"
@@ -83,12 +79,14 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="routesGroup" :label="t('pushHistory.routesGroupColumn')" min-width="100">
+        <!-- 路由分组：弹性宽度 -->
+        <el-table-column prop="routesGroup" :label="t('pushHistory.routesGroupColumn')" min-width="80" show-overflow-tooltip>
           <template #default="{ row }">
             <span>{{ row.routesGroup || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="routeIds" :label="t('pushHistory.routeIdsColumn')" min-width="150">
+        <!-- 路由ID列表：弹性宽度，内容可能较长 -->
+        <el-table-column prop="routeIds" :label="t('pushHistory.routeIdsColumn')" min-width="100">
           <template #default="{ row }">
             <el-popover placement="top" trigger="hover" :width="300">
               <template #reference>
@@ -106,7 +104,8 @@
             </el-popover>
           </template>
         </el-table-column>
-        <el-table-column prop="pushMode" :label="t('pushHistory.pushModeColumn')" width="100">
+        <!-- 推送模式：固定宽度 -->
+        <el-table-column prop="pushMode" :label="t('pushHistory.pushModeColumn')" width="70" align="center">
           <template #default="{ row }">
             <el-tag
               :type="row.pushMode === 'broadcast' ? 'info' : 'primary'"
@@ -117,17 +116,20 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="instanceCount" :label="t('pushHistory.instanceCountColumn')" width="80" align="center">
+        <!-- 实例数：固定宽度，数字 -->
+        <el-table-column prop="instanceCount" :label="t('pushHistory.instanceCountColumn')" width="60" align="center">
           <template #default="{ row }">
             <span class="count-cell">{{ row.instanceCount || 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="successCount" :label="t('pushHistory.successCountColumn')" width="80" align="center">
+        <!-- 成功数：固定宽度，数字 -->
+        <el-table-column prop="successCount" :label="t('pushHistory.successCountColumn')" width="60" align="center">
           <template #default="{ row }">
             <span class="success-count">{{ row.successCount || 0 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="pushResult" :label="t('pushHistory.pushResultColumn')" width="100" align="center">
+        <!-- 推送结果：固定宽度 -->
+        <el-table-column prop="pushResult" :label="t('pushHistory.pushResultColumn')" width="70" align="center">
           <template #default="{ row }">
             <el-tag
               :type="getPushResultType(row.pushResult)"
@@ -138,8 +140,8 @@
             </el-tag>
           </template>
         </el-table-column>
-        <!-- 失败实例详情列 -->
-        <el-table-column :label="t('pushHistory.failedInstancesColumn')" min-width="120">
+        <!-- 失败实例：弹性宽度 -->
+        <el-table-column :label="t('pushHistory.failedInstancesColumn')" min-width="80">
           <template #default="{ row }">
             <template v-if="row.failedInstanceIds">
               <el-popover placement="top" trigger="hover" :width="450">
@@ -168,8 +170,8 @@
             <span v-else class="no-failed">-</span>
           </template>
         </el-table-column>
-        <!-- 确认状态列 -->
-        <el-table-column :label="t('pushHistory.confirmStatusColumn')" width="100" align="center">
+        <!-- 确认状态：固定宽度 -->
+        <el-table-column :label="t('pushHistory.confirmStatusColumn')" width="70" align="center">
           <template #default="{ row }">
             <el-tag
               :type="getConfirmStatusType(row.confirmStatus)"
@@ -180,16 +182,19 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="operatorName" :label="t('pushHistory.operatorColumn')" width="100">
+        <!-- 操作人：固定宽度 -->
+        <el-table-column prop="operatorName" :label="t('pushHistory.operatorColumn')" width="60" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="operator-cell">{{ row.operatorName || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="pushTime" :label="t('pushHistory.pushTimeColumn')" width="160">
+        <!-- 推送时间：固定宽度 -->
+        <el-table-column prop="pushTime" :label="t('pushHistory.pushTimeColumn')" width="150">
           <template #default="{ row }">
             <span class="time-cell">{{ row.pushTime }}</span>
           </template>
         </el-table-column>
+        <!-- 操作：固定宽度，固定在右侧 -->
         <el-table-column :label="t('pushHistory.actionColumn')" width="180" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
@@ -205,8 +210,8 @@
               </el-button>
               <el-button
                 type="primary"
-                link
                 size="small"
+                plain
                 @click="openSnapshotDialog(row)"
               >
                 <el-icon><View /></el-icon>
@@ -214,8 +219,8 @@
               </el-button>
               <el-button
                 type="warning"
-                link
                 size="small"
+                plain
                 @click="handleRollback(row)"
               >
                 <el-icon><RefreshLeft /></el-icon>
@@ -247,22 +252,32 @@
         {{ t('pushHistory.snapshotRoutesCount', { count: snapshotRoutes.length }) }}
       </div>
       <el-table :data="snapshotRoutes" border stripe size="small" class="snapshot-table">
-        <el-table-column prop="routeId" :label="t('pushHistory.routeIdColumn')" min-width="180">
+        <el-table-column prop="routeId" :label="t('common.routeIdColumn')" min-width="180">
           <template #default="{ row }">
-            <span class="route-id-cell">{{ row.routeId }}</span>
+            <div class="route-id-cell-wrapper">
+              <span class="route-id-cell">{{ row.routeId }}</span>
+              <el-button
+                type="primary"
+                link
+                size="small"
+                @click="goToRouteDetail(row.routeId)"
+              >
+                {{ t('pushHistory.goToRoute') }}
+              </el-button>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="routeName" :label="t('pushHistory.routeNameColumn')" min-width="150">
+        <el-table-column prop="routeName" :label="t('common.routeNameColumn')" min-width="150">
           <template #default="{ row }">
             <span>{{ row.routeName || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="uri" :label="t('pushHistory.uriColumn')" min-width="200">
+        <el-table-column prop="uri" :label="t('common.uriColumn')" min-width="200">
           <template #default="{ row }">
             <el-tag type="success" effect="plain" size="small">{{ row.uri }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="orderNum" :label="t('pushHistory.orderColumn')" width="80" align="center">
+        <el-table-column prop="orderNum" :label="t('common.orderColumn')" width="80" align="center">
           <template #default="{ row }">
             <el-tag type="info" effect="plain" size="small">{{ row.orderNum || 0 }}</el-tag>
           </template>
@@ -270,8 +285,71 @@
       </el-table>
       <el-empty
         v-if="snapshotRoutes.length === 0"
-        :description="t('pushHistory.noSnapshotData')"
+        :description="t('common.noData')"
       />
+    </el-dialog>
+
+    <!-- 回滚预览弹窗 -->
+    <el-dialog
+      v-model="rollbackPreviewVisible"
+      :title="t('pushHistory.rollbackPreview')"
+      width="900px"
+      class="rollback-preview-dialog"
+    >
+      <div class="rollback-preview-content">
+        <!-- 预览信息 -->
+        <div class="preview-info">
+          <el-alert type="warning" :closable="false">
+            <template #title>
+              {{ t('pushHistory.rollbackWarning') }}
+            </template>
+          </el-alert>
+        </div>
+
+        <!-- 推送记录信息 -->
+        <div v-if="rollbackTarget" class="push-info">
+          <el-descriptions :column="3" border size="small">
+            <el-descriptions-item :label="t('pushHistory.pushIdColumn')">
+              {{ rollbackTarget.pushId }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('pushHistory.pushTimeColumn')">
+              {{ rollbackTarget.pushTime }}
+            </el-descriptions-item>
+            <el-descriptions-item :label="t('pushHistory.operatorColumn')">
+              {{ rollbackTarget.operatorName || '-' }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <!-- 将要恢复的路由 -->
+        <div class="routes-preview">
+          <div class="section-title">{{ t('pushHistory.routesToRestore') }}</div>
+          <el-table :data="rollbackRoutes" border stripe size="small" max-height="300">
+            <el-table-column prop="routeId" :label="t('common.routeIdColumn')" min-width="150">
+              <template #default="{ row }">
+                <span class="route-id-cell">{{ row.routeId }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="routeName" :label="t('common.routeNameColumn')" min-width="120" />
+            <el-table-column prop="uri" :label="t('common.uriColumn')" min-width="180">
+              <template #default="{ row }">
+                <el-tag type="success" effect="plain" size="small">{{ row.uri }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="orderNum" :label="t('common.orderColumn')" width="80" align="center" />
+          </el-table>
+          <div v-if="rollbackRoutes.length === 0" class="empty-routes">
+            <el-empty :description="t('pushHistory.noRoutes')" size="small" />
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="rollbackPreviewVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="warning" :loading="rollbackLoading" @click="confirmRollback">
+          <el-icon><RefreshLeft /></el-icon>
+          {{ t('pushHistory.confirmRollback') }}
+        </el-button>
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -286,6 +364,7 @@
  */
 import { ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, ArrowRight, View, RefreshLeft, Check } from '@element-plus/icons-vue'
 import {
@@ -300,6 +379,7 @@ defineOptions({
 })
 
 const { t } = useI18n()
+const router = useRouter()
 
 // 搜索表单
 const searchForm = reactive({
@@ -320,6 +400,12 @@ const historyPage = ref({
 // 快照弹窗状态
 const snapshotDialogVisible = ref(false)
 const snapshotRoutes = ref<RouteDefinition[]>([])
+
+// 回滚预览状态
+const rollbackPreviewVisible = ref(false)
+const rollbackTarget = ref<GaRoutePushLogDO | null>(null)
+const rollbackRoutes = ref<RouteDefinition[]>([])
+const rollbackLoading = ref(false)
 
 // 加载推送历史
 async function loadPushHistory() {
@@ -351,8 +437,22 @@ function resetSearch() {
   loadPushHistory()
 }
 
-// 处理回滚
-async function handleRollback(row: GaRoutePushLogDO) {
+// 处理回滚 - 打开预览弹窗
+function handleRollback(row: GaRoutePushLogDO) {
+  rollbackTarget.value = row
+  // 解析路由快照
+  try {
+    rollbackRoutes.value = Array.isArray(row.routeSnapshot) ? row.routeSnapshot : []
+  } catch {
+    rollbackRoutes.value = []
+  }
+  rollbackPreviewVisible.value = true
+}
+
+// 确认回滚
+async function confirmRollback() {
+  if (!rollbackTarget.value) return
+
   try {
     await ElMessageBox.confirm(
       t('pushHistory.rollbackConfirm'),
@@ -363,18 +463,22 @@ async function handleRollback(row: GaRoutePushLogDO) {
     return
   }
 
-  const rollbackReq: RollbackPushReq = {
-    pushId: row.pushId,
-    pushMode: row.pushMode,
-    targetInstanceIds: row.targetInstanceIds ? JSON.parse(row.targetInstanceIds) : [],
-  }
-
+  rollbackLoading.value = true
   try {
+    const rollbackReq: RollbackPushReq = {
+      pushId: rollbackTarget.value.pushId,
+      pushMode: rollbackTarget.value.pushMode,
+      targetInstanceIds: rollbackTarget.value.targetInstanceIds ? JSON.parse(rollbackTarget.value.targetInstanceIds) : [],
+    }
+
     await routeApi.rollbackPush(rollbackReq)
-    ElMessage.success(t('pushHistory.rollbackSuccess'))
+    ElMessage.success(t('common.rollbackSuccess'))
+    rollbackPreviewVisible.value = false
     loadPushHistory()
   } catch (error) {
     ElMessage.error(t('message.fetchFailed'))
+  } finally {
+    rollbackLoading.value = false
   }
 }
 
@@ -407,6 +511,15 @@ function openSnapshotDialog(row: GaRoutePushLogDO) {
   } catch {
     ElMessage.warning(t('pushHistory.noRoutes'))
   }
+}
+
+// 跳转到路由详情
+function goToRouteDetail(routeId: string) {
+  snapshotDialogVisible.value = false
+  router.push({
+    path: '/route/repository',
+    query: { routeId },
+  })
 }
 
 // 解析路由ID JSON
@@ -482,7 +595,7 @@ onMounted(() => {
   flex-direction: column;
   height: 100%;
   padding: 20px;
-  background: var(--el-bg-color-page);
+  background: var(--bg-color-page);
   gap: 16px;
 }
 
@@ -491,11 +604,11 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  background: var(--el-bg-color);
+  background: var(--bg-color-card);
   border-radius: 12px;
   padding: 16px 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid var(--el-border-color-light);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color-base);
 
   .header-title {
     display: flex;
@@ -522,7 +635,7 @@ onMounted(() => {
       margin: 0;
       font-size: 18px;
       font-weight: 600;
-      color: var(--el-text-color-primary);
+      color: var(--text-color-primary);
     }
   }
 
@@ -546,38 +659,58 @@ onMounted(() => {
 // 表格容器
 .table-wrapper {
   flex: 1;
-  background: var(--el-bg-color);
+  background: var(--bg-color-card);
   border-radius: 12px;
   padding: 16px 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid var(--el-border-color-light);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--border-color-base);
   overflow: hidden;
   display: flex;
   flex-direction: column;
+
+  // 确保表格占满容器
+  :deep(.el-table) {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  :deep(.el-table__inner-wrapper) {
+    flex: 1;
+  }
+
+  :deep(.el-table__body-wrapper) {
+    flex: 1;
+    overflow-y: auto;
+  }
 }
 
 // 历史表格样式
 .history-table {
-  flex: 1;
-  overflow: auto;
+  width: 100%;
+  height: 100%;
 
   :deep(.el-table__header) {
     th {
-      background: var(--el-fill-color-light) !important;
+      background: var(--table-header-bg) !important;
       font-weight: 600;
+      color: var(--text-color-primary);
+      white-space: nowrap;
     }
   }
 
-  .push-id {
-    font-family: 'SF Mono', 'Monaco', monospace;
-    font-weight: 600;
-    color: var(--el-color-primary);
+  :deep(.el-table__body) {
+    tr {
+      &:hover > td {
+        background: var(--table-row-hover) !important;
+      }
+    }
   }
 
   .route-id-cell {
     font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
     font-size: 13px;
-    color: var(--el-text-color-primary);
+    color: var(--text-color-primary);
   }
 
   .count-cell {
@@ -598,7 +731,7 @@ onMounted(() => {
   .time-cell {
     font-size: 12px;
     font-family: 'SF Mono', 'Monaco', monospace;
-    color: var(--el-text-color-secondary);
+    color: var(--text-color-secondary);
   }
 
   .failed-tag {
@@ -606,7 +739,7 @@ onMounted(() => {
   }
 
   .no-failed {
-    color: var(--el-text-color-secondary);
+    color: var(--text-color-secondary);
   }
 }
 
@@ -625,7 +758,7 @@ onMounted(() => {
 
   .failed-item {
     padding: 8px 12px;
-    background: var(--el-fill-color-light);
+    background: var(--bg-color-page);
     border-radius: 6px;
     margin-bottom: 8px;
     display: flex;
@@ -636,7 +769,7 @@ onMounted(() => {
       font-family: 'SF Mono', 'Monaco', monospace;
       font-size: 12px;
       font-weight: 500;
-      color: var(--el-text-color-primary);
+      color: var(--text-color-primary);
     }
 
     .error-msg-text {
@@ -671,17 +804,29 @@ onMounted(() => {
   }
 }
 
+// 路由ID单元格
+.route-id-cell-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .route-id-cell {
+    font-family: 'SF Mono', 'Monaco', monospace;
+    font-size: 12px;
+  }
+}
+
 .route-ids-detail {
   .detail-header {
     font-weight: 600;
     margin-bottom: 8px;
-    color: var(--el-text-color-primary);
+    color: var(--text-color-primary);
   }
 
   .detail-list {
     font-size: 12px;
     font-family: 'SF Mono', 'Monaco', monospace;
-    color: var(--el-text-color-secondary);
+    color: var(--text-color-secondary);
     word-break: break-all;
     line-height: 1.6;
   }
@@ -690,7 +835,15 @@ onMounted(() => {
 // 操作按钮
 .action-buttons {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+
+  .el-button {
+    margin: 0;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
 }
 
 // 分页样式
@@ -705,19 +858,64 @@ onMounted(() => {
 .snapshot-dialog {
   .snapshot-info {
     padding: 12px 16px;
-    background: var(--el-fill-color-light);
+    background: var(--bg-color-page);
     border-radius: 8px;
     margin-bottom: 16px;
     font-size: 13px;
-    color: var(--el-text-color-secondary);
+    color: var(--text-color-secondary);
   }
 
   .snapshot-table {
+    :deep(.el-table__header) {
+      th {
+        background: var(--table-header-bg) !important;
+        font-weight: 600;
+        color: var(--text-color-primary);
+      }
+    }
+
     .route-id-cell {
       font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
       font-size: 13px;
-      color: var(--el-text-color-primary);
+      color: var(--text-color-primary);
     }
+  }
+}
+
+// 回滚预览弹窗样式
+.rollback-preview-dialog {
+  .rollback-preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .preview-info {
+    margin-bottom: 8px;
+  }
+
+  .push-info {
+    margin-bottom: 8px;
+  }
+
+  .routes-preview {
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-color-primary);
+      margin-bottom: 12px;
+      padding-left: 8px;
+      border-left: 3px solid var(--el-color-warning);
+    }
+
+    .empty-routes {
+      padding: 20px;
+    }
+  }
+
+  .route-id-cell {
+    font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+    font-size: 13px;
   }
 }
 </style>

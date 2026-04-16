@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useDictStore } from '@/stores/dict'
-import type { DictDataItem } from '@/api/dict'
+import type { DictDataItem, DictDataMapRsp } from '@/api/dict'
 
 // Mock dict API
 vi.mock('@/api/dict', () => ({
@@ -33,8 +33,8 @@ describe('Dict Store', () => {
     it('should return dict data for existing dict type', () => {
       const store = useDictStore()
       const mockData: DictDataItem[] = [
-        { dictType: 'status', dictValue: '1', dictLabel: '启用', listClass: 'success' },
-        { dictType: 'status', dictValue: '0', dictLabel: '禁用', listClass: 'danger' },
+        { dictValue: '1', dictLabel: '启用', listClass: 'success', isDefault: false },
+        { dictValue: '0', dictLabel: '禁用', listClass: 'danger', isDefault: false },
       ]
       store.dictDataMap = { status: mockData }
 
@@ -45,10 +45,10 @@ describe('Dict Store', () => {
   describe('loadDictData', () => {
     it('should call API and store dict data', async () => {
       const store = useDictStore()
-      const mockResponse = {
+      const mockResponse: DictDataMapRsp = {
         dictDataMap: {
           status: [
-            { dictType: 'status', dictValue: '1', dictLabel: '启用', listClass: 'success' },
+            { dictValue: '1', dictLabel: '启用', listClass: 'success', isDefault: false },
           ],
         },
       }
@@ -72,10 +72,10 @@ describe('Dict Store', () => {
 
     it('should not reload already loaded dict types', async () => {
       const store = useDictStore()
-      const mockResponse = {
+      const mockResponse: DictDataMapRsp = {
         dictDataMap: {
           status: [
-            { dictType: 'status', dictValue: '1', dictLabel: '启用', listClass: 'success' },
+            { dictValue: '1', dictLabel: '启用', listClass: 'success', isDefault: false },
           ],
         },
       }
@@ -102,7 +102,7 @@ describe('Dict Store', () => {
       const store = useDictStore()
       store.dictDataMap = {
         status: [
-          { dictType: 'status', dictValue: '1', dictLabel: '启用', listClass: '' },
+          { dictValue: '1', dictLabel: '启用', listClass: '', isDefault: false },
         ],
       }
 
@@ -113,7 +113,7 @@ describe('Dict Store', () => {
       const store = useDictStore()
       store.dictDataMap = {
         status: [
-          { dictType: 'status', dictValue: '1', dictLabel: '启用', listClass: '' },
+          { dictValue: '1', dictLabel: '启用', listClass: '', isDefault: false },
         ],
       }
 
@@ -131,7 +131,7 @@ describe('Dict Store', () => {
       const store = useDictStore()
       store.dictDataMap = {
         status: [
-          { dictType: 'status', dictValue: '1', dictLabel: '启用', listClass: '' },
+          { dictValue: '1', dictLabel: '启用', listClass: '', isDefault: false },
         ],
       }
 
@@ -142,7 +142,7 @@ describe('Dict Store', () => {
       const store = useDictStore()
       store.dictDataMap = {
         status: [
-          { dictType: 'status', dictValue: '1', dictLabel: '启用', listClass: '' },
+          { dictValue: '1', dictLabel: '启用', listClass: '', isDefault: false },
         ],
       }
 
@@ -160,7 +160,7 @@ describe('Dict Store', () => {
       const store = useDictStore()
       store.dictDataMap = {
         status: [
-          { dictType: 'status', dictValue: '1', dictLabel: '启用', listClass: 'success' },
+          { dictValue: '1', dictLabel: '启用', listClass: 'success', isDefault: false },
         ],
       }
 
@@ -172,7 +172,7 @@ describe('Dict Store', () => {
     it('should clear all dict data', () => {
       const store = useDictStore()
       store.dictDataMap = {
-        status: [{ dictType: 'status', dictValue: '1', dictLabel: '启用', listClass: '' }],
+        status: [{ dictValue: '1', dictLabel: '启用', listClass: '', isDefault: false }],
       }
 
       store.clearCache()
@@ -186,12 +186,12 @@ describe('Dict Store', () => {
       const store = useDictStore()
       // 先设置已加载状态
       store.dictDataMap = {
-        status: [{ dictType: 'status', dictValue: '0', dictLabel: '旧数据', listClass: '' }],
+        status: [{ dictValue: '0', dictLabel: '旧数据', listClass: '', isDefault: false }],
       }
 
-      const mockResponse = {
+      const mockResponse: DictDataMapRsp = {
         dictDataMap: {
-          status: [{ dictType: 'status', dictValue: '1', dictLabel: '新数据', listClass: '' }],
+          status: [{ dictValue: '1', dictLabel: '新数据', listClass: '', isDefault: false }],
         },
       }
       vi.mocked(getDictDataByTypes).mockResolvedValue(mockResponse)

@@ -417,10 +417,6 @@ export default {
     pushStatusPushed: 'Pushed',
     pushStatusFailed: 'Failed',
     pushStatusUnknown: 'Unknown',
-    pushStatusPushedFormat: 'Pushed({count}/{total})',
-    pushStatusNotPushedFormat: 'Not Pushed(0/{total})',
-    pushStatusPartialFormat: 'Partial({success}/{total})',
-    instancePushDetail: 'Instance Push Details',
     lastPushTime: 'Last Push Time',
     // New features
     batchStatus: 'Batch Status',
@@ -437,6 +433,19 @@ export default {
     // invalidJsonFormat already defined above, removed duplicate here
     importResultSuccess: 'Successfully imported {count} routes',
     importResultPartial: 'Success: {success}, Failed: {failed}',
+    // Import preview related
+    importStepInput: 'Input Data',
+    importStepPreview: 'Preview & Confirm',
+    importConflictWarning: 'Found {count} conflicts',
+    conflictExists: 'Route exists',
+    conflictFormat: 'Format error',
+    conflict: 'Conflict',
+    conflictExistsMessage: 'Route ID already exists in current group',
+    importPreviewTitle: 'Routes to import ({count} routes)',
+    previewImport: 'Preview Import',
+    confirmImport: 'Confirm Import',
+    noDataToImport: 'No data to import',
+    missingRouteId: 'Route missing routeId field',
     exportRoutes: 'Export Routes',
     selectRouteToExport: 'Select routes to export',
     exportSuccess: 'Export successful, copied to clipboard',
@@ -616,9 +625,9 @@ export default {
     routeNameColumn: 'Route Name',
     uriColumn: 'Target URI',
     orderColumn: 'Order',
-    confirmPush: 'Confirm',
-    confirmPushConfirm: 'Confirm this push has taken effect?',
-    confirmSuccess: 'Confirmed',
+    // Page linkage
+    goToRoute: 'View Route',
+    goToPushHistory: 'View Push History',
   },
   config: {
     title: 'Config Management',

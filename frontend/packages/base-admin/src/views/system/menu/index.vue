@@ -143,10 +143,10 @@
                 </el-tag>
                 <el-tag v-else type="info">{{ t('menu.statusHide') }}</el-tag>
               </el-descriptions-item>
-              <el-descriptions-item :label="t('menu.createTime')">
+              <el-descriptions-item :label="t('common.createTime')">
                 {{ currentMenu.createTime || '-' }}
               </el-descriptions-item>
-              <el-descriptions-item :label="t('menu.updateTime')">
+              <el-descriptions-item :label="t('common.updateTime')">
                 {{ currentMenu.updateTime || '-' }}
               </el-descriptions-item>
             </el-descriptions>

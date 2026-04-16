@@ -13,8 +13,8 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useDashboardStore } from '../dashboard'
-import { monitorApi } from '@/api/monitor'
-import type { TrafficHistoryResult, DashboardDataPayload } from '../dashboard'
+import { monitorApi, type TrafficHistoryResult } from '@/api/monitor'
+import type { DashboardDataPayload, StatisticsInfo } from '../dashboard'
 
 // Mock monitorApi
 vi.mock('@/api/monitor', () => ({
@@ -22,7 +22,28 @@ vi.mock('@/api/monitor', () => ({
     getInstanceList: vi.fn().mockResolvedValue({ instances: [] }),
     getTrafficHistory: vi.fn(),
   },
+  TrafficHistoryResult: {},
 }))
+
+// Helper: 创建完整的 StatisticsInfo 对象
+function createStatisticsInfo(partial: Partial<StatisticsInfo> = {}): StatisticsInfo {
+  return {
+    totalInstances: partial.totalInstances ?? 1,
+    healthyInstances: partial.healthyInstances ?? 1,
+    totalRequests: partial.totalRequests ?? 100,
+    successRequests: partial.successRequests ?? 95,
+    failedRequests: partial.failedRequests ?? 5,
+    avgResponseTime: partial.avgResponseTime ?? 50,
+    p50ResponseTime: partial.p50ResponseTime ?? 30,
+    p95ResponseTime: partial.p95ResponseTime ?? 45,
+    p99ResponseTime: partial.p99ResponseTime ?? 60,
+    maxResponseTime: partial.maxResponseTime ?? 100,
+    error4xxCount: partial.error4xxCount ?? 3,
+    error5xxCount: partial.error5xxCount ?? 2,
+    errorRate: partial.errorRate ?? 5,
+    currentQps: partial.currentQps ?? 10,
+  }
+}
 
 describe('Dashboard Store - 流量历史功能', () => {
   let store: ReturnType<typeof useDashboardStore>
@@ -50,7 +71,7 @@ describe('Dashboard Store - 流量历史功能', () => {
 
       // Then: 验证 store 状态
       expect(store.trafficHistory).toHaveLength(2)
-      expect(store.trafficHistory[0].count).toBe(100)
+      expect(store.trafficHistory![0]!.count).toBe(100)
       expect(store.trafficGranularity).toBe('MINUTE')
       expect(store.trafficHistoryLoading).toBe(false)
       expect(store.trafficHistoryError).toBeNull()
@@ -114,14 +135,7 @@ describe('Dashboard Store - 流量历史功能', () => {
       store.trafficTimeRange = {} // 无时间范围限制
 
       const payload: DashboardDataPayload = {
-        statistics: {
-          totalInstances: 1,
-          healthyInstances: 1,
-          totalRequests: 100,
-          successRequests: 95,
-          failedRequests: 5,
-          avgResponseTime: 50,
-        },
+        statistics: createStatisticsInfo(),
         instances: [],
         latestTraffic: { time: '10:01:00', count: 30, timestamp: 2000 },
         timestamp: 2000,
@@ -132,7 +146,7 @@ describe('Dashboard Store - 流量历史功能', () => {
 
       // Then: 验证数据追加
       expect(store.trafficHistory).toHaveLength(2)
-      expect(store.trafficHistory[1].count).toBe(30)
+      expect(store.trafficHistory![1]!.count).toBe(30)
       expect(store.statistics.totalRequests).toBe(100)
     })
 
@@ -142,7 +156,7 @@ describe('Dashboard Store - 流量历史功能', () => {
       store.trafficHistory = []
 
       const payload: DashboardDataPayload = {
-        statistics: { totalInstances: 1, healthyInstances: 1, totalRequests: 100, successRequests: 95, failedRequests: 5, avgResponseTime: 50 },
+        statistics: createStatisticsInfo(),
         instances: [],
         latestTraffic: { time: '10:01:00', count: 30, timestamp: 2000 },
         timestamp: 2000,
@@ -162,7 +176,7 @@ describe('Dashboard Store - 流量历史功能', () => {
       store.trafficHistory = []
 
       const payload: DashboardDataPayload = {
-        statistics: { totalInstances: 1, healthyInstances: 1, totalRequests: 100, successRequests: 95, failedRequests: 5, avgResponseTime: 50 },
+        statistics: createStatisticsInfo(),
         instances: [],
         latestTraffic: { time: '10:01:00', count: 30, timestamp: 3000 },
         timestamp: 3000,
@@ -189,7 +203,7 @@ describe('Dashboard Store - 流量历史功能', () => {
       }))
 
       const payload: DashboardDataPayload = {
-        statistics: { totalInstances: 1, healthyInstances: 1, totalRequests: 100, successRequests: 95, failedRequests: 5, avgResponseTime: 50 },
+        statistics: createStatisticsInfo(),
         instances: [],
         latestTraffic: { time: '11:00:00', count: 30, timestamp: 60000 },
         timestamp: 60000,
@@ -200,7 +214,7 @@ describe('Dashboard Store - 流量历史功能', () => {
 
       // Then: 验证数据保持在 60 条
       expect(store.trafficHistory).toHaveLength(60)
-      expect(store.trafficHistory[0].time).toBe('10:1:00') // 第一条被移除
+      expect(store.trafficHistory![0]!.time).toBe('10:1:00') // 第一条被移除
     })
 
     it('latestTraffic 为空时应跳过追加', () => {
@@ -209,7 +223,7 @@ describe('Dashboard Store - 流量历史功能', () => {
       store.trafficHistory = []
 
       const payload: DashboardDataPayload = {
-        statistics: { totalInstances: 1, healthyInstances: 1, totalRequests: 100, successRequests: 95, failedRequests: 5, avgResponseTime: 50 },
+        statistics: createStatisticsInfo(),
         instances: [],
         latestTraffic: undefined as any,
         timestamp: 2000,

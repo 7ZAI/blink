@@ -62,6 +62,31 @@ public class GatewayMetricsVO implements Serializable {
     private Long avgResponseTime;
 
     /**
+     * P50 响应时间 (ms)
+     */
+    private Long p50ResponseTime;
+
+    /**
+     * P95 响应时间 (ms)
+     */
+    private Long p95ResponseTime;
+
+    /**
+     * P99 响应时间 (ms)
+     */
+    private Long p99ResponseTime;
+
+    /**
+     * 最大响应时间 (ms)
+     */
+    private Long maxResponseTime;
+
+    /**
+     * 当前 QPS
+     */
+    private Integer currentQps;
+
+    /**
      * 当前连接数
      */
     private Integer activeConnections;

@@ -87,7 +87,7 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item :label="t('dataScope.status')">
+          <el-form-item :label="t('common.status')">
             <el-switch
               v-model="formData.status"
               :active-value="0"
@@ -100,7 +100,7 @@
         </el-col>
       </el-row>
 
-      <el-form-item :label="t('dataScope.remark')">
+      <el-form-item :label="t('common.remark')">
         <el-input
           v-model.trim="formData.remark"
           type="textarea"

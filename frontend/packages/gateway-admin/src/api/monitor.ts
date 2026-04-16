@@ -27,6 +27,55 @@ export interface InstanceInfo {
   lastHeartbeat?: string
 }
 
+// 实例详情信息（完整监控指标）
+export interface InstanceDetailInfo {
+  // 实例基本信息
+  instanceId: string
+  serviceId: string
+  host: string
+  port: number
+  uri: string
+  healthStatus: string
+  statusDesc: string
+  timestamp: number
+
+  // JVM 内存指标
+  heapUsed: number
+  heapMax: number
+  heapUsagePercent: number
+  nonHeapUsed: number
+  cpuUsage: number
+  memoryUsage: number
+
+  // GC 统计指标
+  youngGcCount: number
+  youngGcTime: number
+  oldGcCount: number
+  oldGcTime: number
+  totalGcCount: number
+  totalGcTime: number
+
+  // 线程指标
+  liveThreads: number
+  peakThreads: number
+  daemonThreads: number
+
+  // HTTP 统计指标
+  totalRequests: number
+  successRequests: number
+  failedRequests: number
+  successRate: number
+  avgResponseTime: number
+  // 响应时间分布指标
+  p50ResponseTime: number
+  p95ResponseTime: number
+  p99ResponseTime: number
+  maxResponseTime: number
+  // QPS 指标
+  currentQps: number
+  activeConnections: number
+}
+
 // 统计信息
 export interface StatisticsInfo {
   totalInstances: number
@@ -132,11 +181,19 @@ export const getInstanceList = (): Promise<InstanceListResult> => {
 }
 
 /**
- * 获取实例详情
+ * 获取实例详情（基础信息）
  * @param instanceId 实例ID
  */
 export const getInstanceDetail = (instanceId: string): Promise<InstanceInfo> => {
   return request.post('/gatewayInstance/getGatewayInstanceDetail', { body: { instanceId } })
+}
+
+/**
+ * 获取实例监控详情（完整 JVM/GC/HTTP 指标）
+ * @param instanceId 实例ID
+ */
+export const getMonitorInstanceDetail = (instanceId: string): Promise<InstanceDetailInfo> => {
+  return request.post('/monitor/getInstanceDetail', { body: { instanceId } })
 }
 
 /**
@@ -170,6 +227,7 @@ export const monitorApi = {
   getHealthStatus,
   getInstanceList,
   getInstanceDetail,
+  getMonitorInstanceDetail,
   offlineInstance,
   onlineInstance,
   getTrafficHistory,

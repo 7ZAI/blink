@@ -1,6 +1,15 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import type { RouteLocationNormalized } from 'vue-router'
 
+/**
+ * 标签状态类型
+ */
+export type TabStatus = 'normal' | 'loading' | 'error' | 'modified'
+
+/**
+ * 标签页项接口（扩展版）
+ */
 export interface TabItem {
   path: string
   name: string
@@ -9,6 +18,13 @@ export interface TabItem {
   query?: Record<string, any>
   params?: Record<string, any>
   affix?: boolean
+  closable?: boolean
+  icon?: string
+  status?: TabStatus
+  badge?: string | number
+  tooltip?: string
+  isNew?: boolean
+  dynamicTitle?: string
 }
 
 export const useTabsStore = defineStore('tabs', () => {
@@ -18,31 +34,76 @@ export const useTabsStore = defineStore('tabs', () => {
 
   const getTabs = computed(() => tabs.value)
   const getActiveTab = computed(() => activeTab.value)
+  const getActiveTabPath = computed(() => activeTab.value)
   const getCachedViews = computed(() => cachedViews.value)
 
+  /**
+   * 初始化固定标签
+   */
+  const initAffixTabs = (routes: RouteLocationNormalized[]) => {
+    routes.forEach((route) => {
+      if (route.meta?.affix && route.name) {
+        addTab({
+          path: route.path,
+          name: route.name as string,
+          title: (route.meta?.title as string) || (route.name as string),
+          fullPath: route.fullPath,
+          affix: true,
+        })
+      }
+    })
+  }
+
+  /**
+   * 获取缓存视图的 key
+   * 对于详情页，使用 name + query参数 作为唯一缓存 key
+   */
+  const getCacheKey = (tab?: TabItem): string => {
+    if (!tab) return ''
+    if (tab.query?.id) {
+      return `${tab.name}_${tab.query.id}`
+    }
+    if (tab.query?.instanceId) {
+      return `${tab.name}_${tab.query.instanceId}`
+    }
+    return tab.name || ''
+  }
+
+  /**
+   * 添加标签
+   * 使用 fullPath 作为唯一标识（包含 query 参数）
+   */
   const addTab = (tab: TabItem) => {
-    const exists = tabs.value.some((t) => t.path === tab.path)
+    // 使用 fullPath 判断唯一性，支持带 query 的详情页打开多个标签
+    const uniqueKey = tab.fullPath || tab.path
+    const exists = tabs.value.some((t) => (t.fullPath || t.path) === uniqueKey)
     if (!exists) {
       tabs.value.push(tab)
     }
-    activeTab.value = tab.path
-    if (tab.name && !cachedViews.value.includes(tab.name)) {
-      cachedViews.value.push(tab.name)
+    activeTab.value = uniqueKey
+    // 缓存视图使用 name + query 后缀，确保不同详情页独立缓存
+    const cacheKey = getCacheKey(tab)
+    if (tab.name && !cachedViews.value.includes(cacheKey)) {
+      cachedViews.value.push(cacheKey)
     }
   }
 
+  /**
+   * 关闭标签
+   */
   const closeTab = (path: string): string | null => {
-    const index = tabs.value.findIndex((t) => t.path === path)
+    // 支持 fullPath 匹配
+    const index = tabs.value.findIndex((t) => (t.fullPath || t.path) === path)
     if (index === -1) return null
 
-    const isActive = activeTab.value === path
     const closedTab = tabs.value[index]
-    const cachedName = closedTab?.name
+    if (closedTab?.affix) return null
 
+    const cacheKey = getCacheKey(closedTab)
     tabs.value.splice(index, 1)
 
-    if (cachedName) {
-      const cacheIndex = cachedViews.value.indexOf(cachedName)
+    if (cacheKey) {
+      const cacheIndex = cachedViews.value.indexOf(cacheKey)
       if (cacheIndex > -1) {
         cachedViews.value.splice(cacheIndex, 1)
       }
@@ -53,77 +114,139 @@ export const useTabsStore = defineStore('tabs', () => {
       return '/dashboard'
     }
 
-    if (isActive) {
+    if (activeTab.value === path) {
       const nextTab = tabs.value[Math.min(index, tabs.value.length - 1)]
       if (nextTab) {
-        activeTab.value = nextTab.path
-        return nextTab.path
+        activeTab.value = nextTab.fullPath || nextTab.path
+        return nextTab.fullPath || nextTab.path
       }
     }
 
     return null
   }
 
+  /**
+   * 关闭其他标签
+   */
   const closeOtherTabs = (path: string) => {
-    tabs.value = tabs.value.filter((t) => t.path === path || t.affix)
-    cachedViews.value = cachedViews.value.filter((name) => {
-      return tabs.value.some((t) => t.name === name)
+    tabs.value = tabs.value.filter((t) => (t.fullPath || t.path) === path || t.affix)
+    cachedViews.value = cachedViews.value.filter((key) => {
+      return tabs.value.some((t) => getCacheKey(t) === key)
     })
     activeTab.value = path
   }
 
-  const closeRightTabs = (path: string) => {
-    const index = tabs.value.findIndex((t) => t.path === path)
-    if (index === -1) return
-
-    tabs.value = tabs.value.filter((t, i) => i <= index || t.affix)
-    cachedViews.value = cachedViews.value.filter((name) => {
-      return tabs.value.some((t) => t.name === name)
-    })
-
-    // 如果当前激活的标签页被关闭，跳转到指定标签页
-    if (!tabs.value.some((t) => t.path === activeTab.value)) {
-      activeTab.value = path
-    }
-  }
-
+  /**
+   * 关闭左侧标签
+   */
   const closeLeftTabs = (path: string) => {
-    const index = tabs.value.findIndex((t) => t.path === path)
+    const index = tabs.value.findIndex((t) => (t.fullPath || t.path) === path)
     if (index === -1) return
 
-    tabs.value = tabs.value.filter((t, i) => i >= index || t.affix)
-    cachedViews.value = cachedViews.value.filter((name) => {
-      return tabs.value.some((t) => t.name === name)
+    const leftTabs = tabs.value.slice(0, index)
+    leftTabs.forEach((t) => {
+      if (!t.affix) {
+        const tabIndex = tabs.value.findIndex((tab) => (tab.fullPath || tab.path) === (t.fullPath || t.path))
+        if (tabIndex > -1) {
+          tabs.value.splice(tabIndex, 1)
+          const cacheKey = getCacheKey(t)
+          if (cacheKey) {
+            const cacheIndex = cachedViews.value.indexOf(cacheKey)
+            if (cacheIndex > -1) {
+              cachedViews.value.splice(cacheIndex, 1)
+            }
+          }
+        }
+      }
     })
 
     // 如果当前激活的标签页被关闭，跳转到指定标签页
-    if (!tabs.value.some((t) => t.path === activeTab.value)) {
+    if (!tabs.value.some((t) => (t.fullPath || t.path) === activeTab.value)) {
       activeTab.value = path
     }
   }
 
+  /**
+   * 关闭右侧标签
+   */
+  const closeRightTabs = (path: string) => {
+    const index = tabs.value.findIndex((t) => (t.fullPath || t.path) === path)
+    if (index === -1) return
+
+    const rightTabs = tabs.value.slice(index + 1)
+    rightTabs.forEach((t) => {
+      if (!t.affix) {
+        const tabIndex = tabs.value.findIndex((tab) => (tab.fullPath || tab.path) === (t.fullPath || t.path))
+        if (tabIndex > -1) {
+          tabs.value.splice(tabIndex, 1)
+          const cacheKey = getCacheKey(t)
+          if (cacheKey) {
+            const cacheIndex = cachedViews.value.indexOf(cacheKey)
+            if (cacheIndex > -1) {
+              cachedViews.value.splice(cacheIndex, 1)
+            }
+          }
+        }
+      }
+    })
+
+    // 如果当前激活的标签页被关闭，跳转到指定标签页
+    if (!tabs.value.some((t) => (t.fullPath || t.path) === activeTab.value)) {
+      activeTab.value = path
+    }
+  }
+
+  /**
+   * 关闭所有标签
+   */
   const closeAllTabs = () => {
     tabs.value = tabs.value.filter((t) => t.affix)
-    cachedViews.value = cachedViews.value.filter((name) => {
-      return tabs.value.some((t) => t.name === name)
+    cachedViews.value = cachedViews.value.filter((key) => {
+      return tabs.value.some((t) => getCacheKey(t) === key)
     })
-    activeTab.value = tabs.value[0]?.path || ''
+    activeTab.value = tabs.value[0]?.fullPath || tabs.value[0]?.path || ''
   }
 
+  /**
+   * 设置当前激活标签
+   */
   const setActiveTab = (path: string) => {
     activeTab.value = path
   }
 
-  const delCachedView = (name: string) => {
+  /**
+   * 刷新标签 - 删除缓存
+   */
+  const refreshTab = (name: string) => {
     const index = cachedViews.value.indexOf(name)
     if (index > -1) {
       cachedViews.value.splice(index, 1)
     }
   }
 
+  /**
+   * 删除缓存视图（refreshTab 别名，兼容 TabsView）
+   */
+  const delCachedView = (name: string) => {
+    refreshTab(name)
+  }
+
+  /**
+   * 添加缓存视图
+   */
   const addCachedView = (name: string) => {
     if (!cachedViews.value.includes(name)) {
       cachedViews.value.push(name)
+    }
+  }
+
+  /**
+   * 更新标签标题
+   */
+  const updateTabTitle = (path: string, title: string) => {
+    const tab = tabs.value.find((t) => (t.fullPath || t.path) === path)
+    if (tab) {
+      tab.dynamicTitle = title
     }
   }
 
@@ -133,15 +256,20 @@ export const useTabsStore = defineStore('tabs', () => {
     cachedViews,
     getTabs,
     getActiveTab,
+    getActiveTabPath,
     getCachedViews,
+    initAffixTabs,
     addTab,
     closeTab,
     closeOtherTabs,
-    closeRightTabs,
     closeLeftTabs,
+    closeRightTabs,
     closeAllTabs,
     setActiveTab,
     delCachedView,
+    refreshTab,
     addCachedView,
+    updateTabTitle,
+    getCacheKey,
   }
 })

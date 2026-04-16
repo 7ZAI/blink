@@ -1,5 +1,6 @@
 package com.blink.gateway.admin.dto;
 
+import cn.hutool.core.util.ObjectUtil;
 import lombok.Data;
 
 import java.io.Serial;
@@ -69,12 +70,12 @@ public class InstanceStatusSnapshot implements Serializable {
         }
 
         // 在线状态变化（最重要）
-        if (!this.status.equals(previous.status)) {
+        if (!ObjectUtil.equal(this.status, previous.status)) {
             return StatusChangeType.STATUS_CHANGED;
         }
 
         // 健康状态变化
-        if (!this.healthStatus.equals(previous.healthStatus)) {
+        if (!ObjectUtil.equal(this.healthStatus, previous.healthStatus)) {
             return StatusChangeType.HEALTH_CHANGED;
         }
 

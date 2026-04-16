@@ -1,11 +1,13 @@
 package com.blink.gateway.admin.service;
 
 import com.blink.framework.common.data.ResponseDTO;
+import com.blink.gateway.admin.dto.req.GetGatewayInstanceDetailReq;
 import com.blink.gateway.admin.dto.req.GetGatewayMetricsReq;
 import com.blink.gateway.admin.dto.req.QueryGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.QueryHealthStatusReq;
 import com.blink.gateway.admin.dto.req.QueryStatisticsReq;
 import com.blink.gateway.admin.dto.rsp.GatewayHealthStatusRsp;
+import com.blink.gateway.admin.dto.rsp.GatewayInstanceDetailRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayMetricsRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayStatisticsRsp;
@@ -48,4 +50,13 @@ public interface MonitorService {
      * @return 指标数据
      */
     ResponseDTO<GatewayMetricsRsp> getGatewayMetrics(GetGatewayMetricsReq req);
+
+    /**
+     * 获取网关实例详情
+     * 包含完整的 JVM/GC/线程/HTTP 指标
+     *
+     * @param req 请求参数（instanceId）
+     * @return 实例详情
+     */
+    ResponseDTO<GatewayInstanceDetailRsp> getInstanceDetail(GetGatewayInstanceDetailReq req);
 }

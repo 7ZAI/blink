@@ -1,0 +1,78 @@
+# Blink 测试环境配置
+# 用于单元测试和集成测试的默认配置
+
+spring:
+  profiles:
+    active: test
+
+  # H2 内存数据库配置（用于 Repository 测试）
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # H2 Console（开发调试用）
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # JPA/Hibernate 配置
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+
+  # Redis 配置（Testcontainers 会动态覆盖）
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 3000ms
+
+  # 禁用不必要的自动配置（加快测试启动）
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
+  # Nacos 配置（测试环境禁用）
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+
+  # Dubbo 配置（测试环境禁用）
+  dubbo:
+    registry:
+      address: N/A
+    scan:
+      base-packages: com.blink
+
+# 日志级别
+logging:
+  level:
+    root: INFO
+    com.blink: DEBUG
+    org.springframework: WARN
+    org.hibernate: INFO
+    org.testcontainers: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0

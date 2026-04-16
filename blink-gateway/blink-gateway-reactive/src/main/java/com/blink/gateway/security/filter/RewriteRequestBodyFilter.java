@@ -73,7 +73,7 @@ public class RewriteRequestBodyFilter implements WebFilter {
                             return Mono.error(new BlinkException(BlinkErrorCodeEnum.SYS_ERROR.getCode()));
                         }
 
-                        RequestDTO<?> requestDTO = JacksonUtil.parseMessyJson(bodyStr, RequestDTO.class);
+                        RequestDTO<?> requestDTO = JacksonUtil.fromJson(bodyStr, RequestDTO.class);
                         //组装元数据
                         this.assembleReqDTO(requestDTO, channelInfo, requestId, traceId, exchange);
 

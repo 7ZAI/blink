@@ -2,13 +2,29 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { RouteLocationNormalized } from 'vue-router'
 
+/**
+ * 标签状态类型
+ */
+export type TabStatus = 'normal' | 'loading' | 'error' | 'modified'
+
+/**
+ * 标签页项接口（扩展版）
+ */
 export interface TabItem {
   path: string
   name: string
   title: string
   fullPath: string
   query?: Record<string, string>
+  params?: Record<string, string>
   affix?: boolean
+  closable?: boolean
+  icon?: string
+  status?: TabStatus
+  badge?: string | number
+  tooltip?: string
+  isNew?: boolean
+  dynamicTitle?: string
 }
 
 export const useTabsStore = defineStore('tabs', () => {
@@ -39,33 +55,54 @@ export const useTabsStore = defineStore('tabs', () => {
 
   /**
    * 添加标签
+   * 使用 fullPath 作为唯一标识（包含 query 参数）
    */
   const addTab = (tab: TabItem) => {
-    const exists = tabs.value.some((t) => t.path === tab.path)
+    // 使用 fullPath 判断唯一性，支持带 query 的详情页打开多个标签
+    const uniqueKey = tab.fullPath || tab.path
+    const exists = tabs.value.some((t) => (t.fullPath || t.path) === uniqueKey)
     if (!exists) {
       tabs.value.push(tab)
     }
-    activeTabPath.value = tab.path
-    if (tab.name && !cachedViews.value.includes(tab.name)) {
-      cachedViews.value.push(tab.name)
+    activeTabPath.value = uniqueKey
+    // 缓存视图使用 name + query 后缀，确保不同详情页独立缓存
+    const cacheKey = getCacheKey(tab)
+    if (tab.name && !cachedViews.value.includes(cacheKey)) {
+      cachedViews.value.push(cacheKey)
     }
+  }
+
+  /**
+   * 获取缓存视图的 key
+   * 对于详情页，使用 name + instanceId 作为唯一缓存 key
+   */
+  const getCacheKey = (tab?: TabItem): string => {
+    if (!tab) return ''
+    if (tab.query?.id) {
+      return `${tab.name}_${tab.query.id}`
+    }
+    if (tab.query?.instanceId) {
+      return `${tab.name}_${tab.query.instanceId}`
+    }
+    return tab.name || ''
   }
 
   /**
    * 关闭标签
    */
   const closeTab = (path: string): string | null => {
-    const index = tabs.value.findIndex((t) => t.path === path)
+    // 支持 fullPath 匹配
+    const index = tabs.value.findIndex((t) => (t.fullPath || t.path) === path)
     if (index === -1) return null
 
     const closedTab = tabs.value[index]
     if (closedTab?.affix) return null
 
-    const cachedName = closedTab?.name
+    const cacheKey = getCacheKey(closedTab)
     tabs.value.splice(index, 1)
 
-    if (cachedName) {
-      const cacheIndex = cachedViews.value.indexOf(cachedName)
+    if (cacheKey) {
+      const cacheIndex = cachedViews.value.indexOf(cacheKey)
       if (cacheIndex > -1) {
         cachedViews.value.splice(cacheIndex, 1)
       }
@@ -79,8 +116,8 @@ export const useTabsStore = defineStore('tabs', () => {
     if (activeTabPath.value === path) {
       const nextTab = tabs.value[Math.min(index, tabs.value.length - 1)]
       if (nextTab) {
-        activeTabPath.value = nextTab.path
-        return nextTab.path
+        activeTabPath.value = nextTab.fullPath || nextTab.path
+        return nextTab.fullPath || nextTab.path
       }
     }
 
@@ -91,9 +128,9 @@ export const useTabsStore = defineStore('tabs', () => {
    * 关闭其他标签
    */
   const closeOtherTabs = (path: string) => {
-    tabs.value = tabs.value.filter((t) => t.path === path || t.affix)
-    cachedViews.value = cachedViews.value.filter((name) => {
-      return tabs.value.some((t) => t.name === name)
+    tabs.value = tabs.value.filter((t) => (t.fullPath || t.path) === path || t.affix)
+    cachedViews.value = cachedViews.value.filter((key) => {
+      return tabs.value.some((t) => getCacheKey(t) === key)
     })
     activeTabPath.value = path
   }
@@ -102,17 +139,18 @@ export const useTabsStore = defineStore('tabs', () => {
    * 关闭左侧标签
    */
   const closeLeftTabs = (path: string) => {
-    const index = tabs.value.findIndex((t) => t.path === path)
+    const index = tabs.value.findIndex((t) => (t.fullPath || t.path) === path)
     if (index === -1) return
 
     const leftTabs = tabs.value.slice(0, index)
     leftTabs.forEach((t) => {
       if (!t.affix) {
-        const tabIndex = tabs.value.findIndex((tab) => tab.path === t.path)
+        const tabIndex = tabs.value.findIndex((tab) => (tab.fullPath || tab.path) === (t.fullPath || t.path))
         if (tabIndex > -1) {
           tabs.value.splice(tabIndex, 1)
-          if (t.name) {
-            const cacheIndex = cachedViews.value.indexOf(t.name)
+          const cacheKey = getCacheKey(t)
+          if (cacheKey) {
+            const cacheIndex = cachedViews.value.indexOf(cacheKey)
             if (cacheIndex > -1) {
               cachedViews.value.splice(cacheIndex, 1)
             }
@@ -126,17 +164,18 @@ export const useTabsStore = defineStore('tabs', () => {
    * 关闭右侧标签
    */
   const closeRightTabs = (path: string) => {
-    const index = tabs.value.findIndex((t) => t.path === path)
+    const index = tabs.value.findIndex((t) => (t.fullPath || t.path) === path)
     if (index === -1) return
 
     const rightTabs = tabs.value.slice(index + 1)
     rightTabs.forEach((t) => {
       if (!t.affix) {
-        const tabIndex = tabs.value.findIndex((tab) => tab.path === t.path)
+        const tabIndex = tabs.value.findIndex((tab) => (tab.fullPath || tab.path) === (t.fullPath || t.path))
         if (tabIndex > -1) {
           tabs.value.splice(tabIndex, 1)
-          if (t.name) {
-            const cacheIndex = cachedViews.value.indexOf(t.name)
+          const cacheKey = getCacheKey(t)
+          if (cacheKey) {
+            const cacheIndex = cachedViews.value.indexOf(cacheKey)
             if (cacheIndex > -1) {
               cachedViews.value.splice(cacheIndex, 1)
             }
@@ -151,10 +190,10 @@ export const useTabsStore = defineStore('tabs', () => {
    */
   const closeAllTabs = () => {
     tabs.value = tabs.value.filter((t) => t.affix)
-    cachedViews.value = cachedViews.value.filter((name) => {
-      return tabs.value.some((t) => t.name === name)
+    cachedViews.value = cachedViews.value.filter((key) => {
+      return tabs.value.some((t) => getCacheKey(t) === key)
     })
-    activeTabPath.value = tabs.value[0]?.path || ''
+    activeTabPath.value = tabs.value[0]?.fullPath || tabs.value[0]?.path || ''
   }
 
   /**
@@ -190,6 +229,16 @@ export const useTabsStore = defineStore('tabs', () => {
     }
   }
 
+  /**
+   * 更新标签标题
+   */
+  const updateTabTitle = (path: string, title: string) => {
+    const tab = tabs.value.find((t) => (t.fullPath || t.path) === path)
+    if (tab) {
+      tab.dynamicTitle = title
+    }
+  }
+
   return {
     tabs,
     activeTabPath,
@@ -208,5 +257,7 @@ export const useTabsStore = defineStore('tabs', () => {
     delCachedView,
     refreshTab,
     addCachedView,
+    updateTabTitle,
+    getCacheKey,
   }
 })
