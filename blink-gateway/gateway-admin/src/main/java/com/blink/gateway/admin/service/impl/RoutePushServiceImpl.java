@@ -6,7 +6,6 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.blink.datasource.utils.PageUtils;
 import com.blink.framework.common.data.EmptyBody;
 import com.blink.framework.common.data.ResponseDTO;
@@ -60,6 +59,8 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.blink.gateway.admin.constants.ConfigValueConstant.INSTANCE_STATUS_ONLINE;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.PARAMETER_NOT_NULL;
@@ -1005,5 +1006,138 @@ public class RoutePushServiceImpl implements RoutePushService {
         log.info("[RoutePush] 确认推送成功 | pushId: {}, operator: {}", req.getPushId(), operatorName);
 
         return ResponseDTO.newSuccessInstance();
+    }
+
+    @Override
+    public ResponseDTO<VerifyPushResultRsp> verifyPushResult(VerifyPushResultReq req) {
+        if (req.getPushId() == null) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 查询推送记录
+        GaRoutePushLogDO pushLog = gaRoutePushLogMapper.selectById(req.getPushId());
+        if (pushLog == null) {
+            BlinkException.throwBusinessException(PUSH_LOG_NOT_EXIST);
+        }
+
+        VerifyPushResultRsp rsp = new VerifyPushResultRsp();
+        rsp.setPushId(req.getPushId());
+
+        // 解析目标实例
+        List<String> targetInstanceIds = new ArrayList<>();
+        if (StrUtil.isNotBlank(pushLog.getTargetInstanceIds())) {
+            try {
+                targetInstanceIds = JacksonUtil.fromJson(pushLog.getTargetInstanceIds(),
+                    new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+            } catch (Exception e) {
+                log.warn("[RoutePush] 解析目标实例列表失败 | pushId: {}", req.getPushId());
+            }
+        }
+
+        // 如果指定了实例ID，只验证该实例
+        if (StrUtil.isNotBlank(req.getInstanceId())) {
+            targetInstanceIds = List.of(req.getInstanceId());
+        }
+
+        // 解析路由快照
+        List<GaRouteDO> routeSnapshot = pushLog.getRouteSnapshot();
+        if (routeSnapshot == null || routeSnapshot.isEmpty()) {
+            rsp.setConsistent(false);
+            rsp.setErrorMessage("推送记录无路由快照");
+            return ResponseDTO.newSuccessInstance(rsp);
+        }
+
+        // 验证每个实例的路由配置
+        List<VerifyPushResultRsp.InstanceVerifyResult> results = new ArrayList<>();
+        boolean allConsistent = true;
+
+        for (String instanceId : targetInstanceIds) {
+            VerifyPushResultRsp.InstanceVerifyResult result = new VerifyPushResultRsp.InstanceVerifyResult();
+            result.setInstanceId(instanceId);
+
+            try {
+                // 从实例获取实际路由
+                InstanceRoutesRsp instanceRoutesRsp = getInstanceRoutesFromActuatorInternal(instanceId);
+                if (StrUtil.isNotBlank(instanceRoutesRsp.getError())) {
+                    result.setConsistent(false);
+                    result.setErrorMessage(instanceRoutesRsp.getError());
+                    allConsistent = false;
+                } else if (CollUtil.isEmpty(instanceRoutesRsp.getRows())) {
+                    // 空路由列表处理
+                    result.setConsistent(false);
+                    result.setErrorMessage("实例路由列表为空");
+                    allConsistent = false;
+                } else {
+                    // 比对路由数量
+                    List<GaRouteDO> actualRoutes = instanceRoutesRsp.getRows();
+                    Set<String> expectedRouteIds = routeSnapshot.stream()
+                        .map(GaRouteDO::getRouteId)
+                        .collect(Collectors.toSet());
+                    Set<String> actualRouteIds = actualRoutes.stream()
+                        .map(GaRouteDO::getRouteId)
+                        .collect(Collectors.toSet());
+
+                    if (expectedRouteIds.equals(actualRouteIds)) {
+                        result.setConsistent(true);
+                        result.setRouteCount(actualRoutes.size());
+                    } else {
+                        result.setConsistent(false);
+                        result.setExpectedCount(routeSnapshot.size());
+                        result.setActualCount(actualRoutes.size());
+                        result.setMissingRoutes(expectedRouteIds.stream()
+                            .filter(id -> !actualRouteIds.contains(id))
+                            .collect(Collectors.toList()));
+                        allConsistent = false;
+                    }
+                }
+            } catch (Exception e) {
+                result.setConsistent(false);
+                result.setErrorMessage("验证失败：" + e.getMessage());
+                allConsistent = false;
+            }
+
+            results.add(result);
+        }
+
+        rsp.setConsistent(allConsistent);
+        rsp.setInstanceResults(results);
+
+        log.info("[RoutePush] 验证推送结果 | pushId: {}, instanceCount: {}, consistent: {}",
+            req.getPushId(), results.size(), allConsistent);
+
+        return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    /**
+     * 内部方法：从实例获取路由
+     *
+     * @param instanceId 实例ID
+     * @return 实例路由响应，获取失败时返回包含错误信息的响应
+     */
+    private InstanceRoutesRsp getInstanceRoutesFromActuatorInternal(String instanceId) {
+        GetInstanceRoutesFromActuatorReq req = new GetInstanceRoutesFromActuatorReq();
+        req.setInstanceId(instanceId);
+        ResponseDTO<InstanceRoutesRsp> response = getInstanceRoutesFromActuator(req);
+        return ObjectUtil.isNotNull(response) ? response.getBody() : new InstanceRoutesRsp();
+    }
+
+    @Override
+    public ResponseDTO<GaRoutePushLogDO> getLatestPush(GetLatestPushReq req) {
+        if (StrUtil.isBlank(req.getInstanceId())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 查询该实例相关的最新推送记录
+        LambdaQueryWrapper<GaRoutePushLogDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.apply("JSON_CONTAINS(target_instance_ids, {0})", "\"" + req.getInstanceId() + "\"")
+            .orderByDesc(GaRoutePushLogDO::getPushTime)
+            .last("LIMIT 1");
+
+        GaRoutePushLogDO latestPush = gaRoutePushLogMapper.selectOne(queryWrapper);
+
+        log.info("[RoutePush] 获取实例最新推送记录 | instanceId: {}, found: {}",
+            req.getInstanceId(), latestPush != null);
+
+        return ResponseDTO.newSuccessInstance(latestPush);
     }
 }

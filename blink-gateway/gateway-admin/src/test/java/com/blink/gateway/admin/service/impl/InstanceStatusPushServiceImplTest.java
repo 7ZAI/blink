@@ -240,8 +240,8 @@ class InstanceStatusPushServiceImplTest {
             service.pushStatusChange("instance-1", 1);
 
             // Then: 应广播推送
-            ArgumentCaptor<SseMessage<InstanceStatusPayload>> captor =
-                    ArgumentCaptor.forClass(SseMessage.class);
+            @SuppressWarnings("unchecked")
+            ArgumentCaptor<SseMessage<InstanceStatusPayload>> captor = ArgumentCaptor.forClass(SseMessage.class);
             verify(sseConnectionPool).broadcast(captor.capture());
 
             SseMessage<InstanceStatusPayload> msg = captor.getValue();
@@ -252,6 +252,7 @@ class InstanceStatusPushServiceImplTest {
 
         @Test
         @DisplayName("无指标数据时仍应推送状态变化")
+        @SuppressWarnings("unchecked")
         void shouldPushStatusChangeEvenWithoutMetrics() {
             // Given: Redis 中无实例指标
             when(redisClient.hGetStringMap(anyString())).thenReturn(null);
@@ -317,6 +318,7 @@ class InstanceStatusPushServiceImplTest {
 
         @Test
         @DisplayName("无实例时不应发送")
+        @SuppressWarnings("unchecked")
         void shouldNotSendWhenNoInstances() {
             // Given: Redis 中无实例
             when(redisClient.hGetStringMap(INSTANCE_LIST_KEY)).thenReturn(null);

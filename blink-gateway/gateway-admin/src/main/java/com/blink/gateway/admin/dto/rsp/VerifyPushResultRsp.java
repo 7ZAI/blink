@@ -4,7 +4,6 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 验证推送结果响应
@@ -24,28 +23,25 @@ public class VerifyPushResultRsp {
     private Long pushId;
 
     /**
-     * 验证结果
-     * 0 - 一致
-     * 1 - 部分不一致
-     * 2 - 完全不一致
+     * 是否一致
      */
-    private Integer verifyResult;
+    private Boolean consistent;
 
     /**
-     * 结果摘要
+     * 错误信息
      */
-    private String summary;
+    private String errorMessage;
 
     /**
-     * 各实例验证详情
+     * 各实例验证结果
      */
-    private List<InstanceVerifyDetail> instanceDetails;
+    private List<InstanceVerifyResult> instanceResults;
 
     /**
-     * 实例验证详情
+     * 实例验证结果
      */
     @Data
-    public static class InstanceVerifyDetail {
+    public static class InstanceVerifyResult {
 
         /**
          * 实例ID
@@ -53,75 +49,33 @@ public class VerifyPushResultRsp {
         private String instanceId;
 
         /**
-         * 验证结果
-         * 0 - 一致
-         * 1 - 不一致
+         * 是否一致
          */
-        private Integer result;
+        private Boolean consistent;
 
         /**
-         * 推送的路由数量
+         * 路由数量
          */
-        private Integer pushedCount;
+        private Integer routeCount;
 
         /**
-         * 实际路由数量
+         * 期望数量
+         */
+        private Integer expectedCount;
+
+        /**
+         * 实际数量
          */
         private Integer actualCount;
 
         /**
-         * 匹配的路由数量
+         * 缺失的路由
          */
-        private Integer matchedCount;
+        private List<String> missingRoutes;
 
         /**
-         * 缺失的路由（推送了但实例没有）
+         * 错误信息
          */
-        private List<RouteDiff> missingRoutes;
-
-        /**
-         * 多余的路由（实例有但未推送）
-         */
-        private List<RouteDiff> extraRoutes;
-
-        /**
-         * 配置不一致的路由
-         */
-        private List<RouteDiff> mismatchedRoutes;
-    }
-
-    /**
-     * 路由差异
-     */
-    @Data
-    public static class RouteDiff {
-
-        /**
-         * 路由ID
-         */
-        private String routeId;
-
-        /**
-         * 差异类型
-         * MISSING - 缺失
-         * EXTRA - 多余
-         * MISMATCH - 配置不一致
-         */
-        private String diffType;
-
-        /**
-         * 描述
-         */
-        private String description;
-
-        /**
-         * 推送的配置
-         */
-        private Map<String, Object> pushedConfig;
-
-        /**
-         * 实际配置
-         */
-        private Map<String, Object> actualConfig;
+        private String errorMessage;
     }
 }
