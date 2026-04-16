@@ -4,6 +4,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 指标消息 DTO
@@ -192,6 +193,13 @@ public class MetricsMessage implements Serializable {
      * 健康状态（UP/DOWN）
      */
     private String healthStatus;
+
+    // ==================== 熔断器指标 ====================
+
+    /**
+     * 熔断器指标列表
+     */
+    private List<CircuitBreakerMetric> circuitBreakers;
 
     /**
      * 消息类型常量
