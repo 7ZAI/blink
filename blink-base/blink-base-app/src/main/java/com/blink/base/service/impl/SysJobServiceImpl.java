@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,7 @@ public class SysJobServiceImpl implements SysJobService {
     private final SysJobMapper sysJobMapper;
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public SysJobRsp getJobList(QuerySysJobReq req) {
         LambdaQueryWrapper<SysJobDO> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(ObjectUtil.isNotNull(req.getJobName()), SysJobDO::getJobName, req.getJobName())
@@ -45,11 +47,14 @@ public class SysJobServiceImpl implements SysJobService {
         SysJobRsp rsp = new SysJobRsp();
         PageUtils.queryPage(req, () -> sysJobMapper.selectList(wrapper), rsp);
 
-        // 转换 DO 到 VO
-        if (CollUtil.isNotEmpty(rsp.getRows())) {
-            List<SysJobVO> voList = rsp.getRows().stream()
-                    .map(d -> BeanUtil.copyProperties(d, SysJobVO.class))
-                    .collect(Collectors.toList());
+        // 转换 DO 到 VO（由于泛型擦除，PageUtils设置的是List<SysJobDO>）
+        List rawList = rsp.getRows();
+        if (CollUtil.isNotEmpty(rawList)) {
+            List<SysJobVO> voList = new ArrayList<>();
+            for (Object obj : rawList) {
+                SysJobDO jobDO = (SysJobDO) obj;
+                voList.add(BeanUtil.copyProperties(jobDO, SysJobVO.class));
+            }
             rsp.setRows(voList);
         }
 
