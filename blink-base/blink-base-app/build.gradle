@@ -23,6 +23,9 @@ dependencies {
     implementation 'com.blink:blink-log-spring-boot-starter:1.0.0-SNAPSHOT'
     implementation 'com.blink:blink-base-api-dubbo:1.0.0-SNAPSHOT'
 
+    // 定时任务调度 API
+    implementation project(':blink-job:blink-job-api')
+
     implementation 'com.alibaba.nacos:nacos-encryption-plugin:2.2.1'
 
     implementation 'org.springframework.boot:spring-boot-starter-actuator'

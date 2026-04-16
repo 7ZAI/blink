@@ -500,6 +500,23 @@ public interface BaseErrCodeConstant {
      */
     String LEAVE_CANNOT_CANCEL = "LEAVE0005";
 
+    // ==================== 定时任务错误码 ====================
+
+    /**
+     * 定时任务不存在
+     */
+    String JOB_NOT_EXIST = "JOB0001";
+
+    /**
+     * 任务名称已存在
+     */
+    String JOB_NAME_EXISTS = "JOB0002";
+
+    /**
+     * 任务执行失败
+     */
+    String JOB_EXECUTION_FAILED = "JOB0003";
+
 
     /***************************错误码---end ********************************/
 

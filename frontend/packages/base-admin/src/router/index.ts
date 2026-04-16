@@ -214,6 +214,18 @@ const router = createRouter({
               component: () => import('@/views/system/operation-log/index.vue'),
               meta: { title: 'menu.operationLog', icon: 'Document' },
             },
+            {
+              path: 'job',
+              name: 'SystemJob',
+              component: () => import('@/views/system/job/index.vue'),
+              meta: { title: 'menu.job', icon: 'Timer' },
+            },
+            {
+              path: 'job/log',
+              name: 'SystemJobLog',
+              component: () => import('@/views/system/job/log/index.vue'),
+              meta: { title: 'menu.jobLog', icon: 'Document' },
+            },
           ],
         },
         {

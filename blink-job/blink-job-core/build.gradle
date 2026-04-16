@@ -1,0 +1,31 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+}
+
+dependencies {
+    // 依赖 API 模块
+    implementation project(':blink-job:blink-job-api')
+
+    // 依赖框架公共模块
+    implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
+
+    // Spring 基础
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    // 工具类
+    implementation 'cn.hutool:hutool-core'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId = 'com.blink'
+            artifactId = 'blink-job-core'
+            version = '1.0.0-SNAPSHOT'
+        }
+    }
+}

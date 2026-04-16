@@ -177,6 +177,8 @@ export default {
     dictType: 'Dict Type',
     dictData: 'Dict Data',
     operationLog: 'Operation Log',
+    job: 'Scheduled Job',
+    jobLog: 'Job Log',
     title: 'Menu Management',
     menuName: 'Menu Name',
     menuEnName: 'Menu English Name',
