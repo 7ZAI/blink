@@ -1,9 +1,13 @@
 package com.blink.gateway.monitor;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.blink.gateway.monitor.dto.CircuitBreakerMetric;
 import com.blink.gateway.monitor.dto.MetricsMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
@@ -24,7 +28,9 @@ import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,6 +56,7 @@ public class MetricsReporterImpl implements MetricsReporter {
     private final ReactiveStringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final MonitorConfigHolder configHolder;
+    private final CircuitBreakerRegistry circuitBreakerRegistry;
 
     @Value("${spring.application.name:gateway-reactive}")
     private String serviceId;
@@ -66,11 +73,13 @@ public class MetricsReporterImpl implements MetricsReporter {
     public MetricsReporterImpl(MeterRegistry meterRegistry,
                                ReactiveStringRedisTemplate redisTemplate,
                                BuildProperties buildProperties,
-                               MonitorConfigHolder configHolder) {
+                               MonitorConfigHolder configHolder,
+                               CircuitBreakerRegistry circuitBreakerRegistry) {
         this.meterRegistry = meterRegistry;
         this.redisTemplate = redisTemplate;
         this.objectMapper = new ObjectMapper();
         this.configHolder = configHolder;
+        this.circuitBreakerRegistry = circuitBreakerRegistry;
     }
 
     /**
@@ -83,7 +92,7 @@ public class MetricsReporterImpl implements MetricsReporter {
 
     /**
      * 初始化实例信息
-     * instanceId 格式：host#port##groupName@@serviceId（与 Nacos 实例 ID 格式一致）
+     * instanceId 格式：serviceId:host:port（与 gateway-admin 保持一致）
      */
     private void initInstanceInfo() {
         if (instanceId.get() == null) {
@@ -98,15 +107,14 @@ public class MetricsReporterImpl implements MetricsReporter {
                 }
                 hostAddress.set(host);
 
-                // 生成与 Nacos 实例 ID 格式一致的 instanceId
-                // 格式：host#port##groupName@@serviceId
-                String id = host + "#" + port + "##DEFAULT_GROUP@@" + serviceId;
+                // 生成统一的 instanceId 格式：serviceId:host:port
+                String id = serviceId + ":" + host + ":" + port;
                 instanceId.set(id);
                 log.info("[MetricsReporter] 实例信息初始化完成 | instanceId: {}, host: {}, port: {}", id, host, port);
             } catch (Exception e) {
                 log.error("[MetricsReporter] 获取主机地址失败", e);
                 hostAddress.set("unknown");
-                instanceId.set("unknown#" + port + "##DEFAULT_GROUP@@" + serviceId);
+                instanceId.set(serviceId + ":unknown:" + port);
             }
         }
     }
@@ -211,6 +219,9 @@ public class MetricsReporterImpl implements MetricsReporter {
 
         // 采集 HTTP 指标
         collectHttpMetrics(message);
+
+        // 采集熔断器指标
+        collectCircuitBreakerMetrics(message);
 
         // 健康状态默认 UP（实际健康检查由 Actuator 提供）
         message.setHealthStatus("UP");
@@ -424,6 +435,75 @@ public class MetricsReporterImpl implements MetricsReporter {
     }
 
     /**
+     * 采集熔断器指标
+     */
+    private void collectCircuitBreakerMetrics(MetricsMessage message) {
+        if (circuitBreakerRegistry == null) {
+            log.debug("[MetricsReporter] CircuitBreakerRegistry 未注入，跳过熔断器指标采集");
+            return;
+        }
+
+        List<CircuitBreakerMetric> metrics = new ArrayList<>();
+
+        // 获取所有已注册的熔断器配置名称
+        for (String name : circuitBreakerRegistry.getConfigurationNames()) {
+            try {
+                CircuitBreaker cb = circuitBreakerRegistry.circuitBreaker(name);
+                CircuitBreaker.Metrics cbMetrics = cb.getMetrics();
+
+                CircuitBreakerMetric metric = new CircuitBreakerMetric();
+                metric.setName(name);
+                metric.setState(cb.getState().name());
+                metric.setFailureRate(cbMetrics.getFailureRate());
+                metric.setSlowCallRate(cbMetrics.getSlowCallRate());
+                metric.setNumberOfCalls(cbMetrics.getNumberOfCalls());
+                metric.setNumberOfFailedCalls(cbMetrics.getNumberOfFailedCalls());
+                metric.setNumberOfSlowCalls(cbMetrics.getNumberOfSlowCalls());
+                metric.setNumberOfSuccessfulCalls(cbMetrics.getNumberOfSuccessfulCalls());
+                metric.setTimestamp(System.currentTimeMillis());
+
+                // 状态转换时间需要通过事件监听获取，这里暂不设置
+                metric.setStateTransitionTime(null);
+
+                metrics.add(metric);
+            } catch (Exception e) {
+                log.warn("[MetricsReporter] 获取熔断器指标失败 | name: {}, error: {}", name, e.getMessage());
+            }
+        }
+
+        // 也获取所有已创建的熔断器实例
+        for (CircuitBreaker cb : circuitBreakerRegistry.getAllCircuitBreakers()) {
+            String name = cb.getName();
+            // 避免重复添加
+            if (metrics.stream().noneMatch(m -> m.getName().equals(name))) {
+                try {
+                    CircuitBreaker.Metrics cbMetrics = cb.getMetrics();
+
+                    CircuitBreakerMetric metric = new CircuitBreakerMetric();
+                    metric.setName(name);
+                    metric.setState(cb.getState().name());
+                    metric.setFailureRate(cbMetrics.getFailureRate());
+                    metric.setSlowCallRate(cbMetrics.getSlowCallRate());
+                    metric.setNumberOfCalls(cbMetrics.getNumberOfCalls());
+                    metric.setNumberOfFailedCalls(cbMetrics.getNumberOfFailedCalls());
+                    metric.setNumberOfSlowCalls(cbMetrics.getNumberOfSlowCalls());
+                    metric.setNumberOfSuccessfulCalls(cbMetrics.getNumberOfSuccessfulCalls());
+                    metric.setTimestamp(System.currentTimeMillis());
+                    metric.setStateTransitionTime(null);
+
+                    metrics.add(metric);
+                } catch (Exception e) {
+                    log.warn("[MetricsReporter] 获取熔断器实例指标失败 | name: {}, error: {}", name, e.getMessage());
+                }
+            }
+        }
+
+        message.setCircuitBreakers(metrics);
+
+        log.debug("[MetricsReporter] 采集熔断器指标完成 | count: {}", metrics.size());
+    }
+
+    /**
      * 查找指定标签的 Gauge
      */
     private Gauge findGauge(String name, String tagKey, String tagValue) {
@@ -557,6 +637,16 @@ public class MetricsReporterImpl implements MetricsReporter {
         // 实时 QPS
         if (message.getCurrentQps() != null) {
             data.put("currentQps", String.valueOf(message.getCurrentQps()));
+        }
+
+        // 熔断器指标
+        if (CollUtil.isNotEmpty(message.getCircuitBreakers())) {
+            try {
+                String circuitBreakersJson = objectMapper.writeValueAsString(message.getCircuitBreakers());
+                data.put("circuitBreakers", circuitBreakersJson);
+            } catch (JsonProcessingException e) {
+                log.error("[MetricsReporter] 序列化熔断器指标失败", e);
+            }
         }
 
         return data;
