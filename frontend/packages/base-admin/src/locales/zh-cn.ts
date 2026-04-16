@@ -176,6 +176,8 @@ export default {
     dictType: '字典类型',
     dictData: '字典数据',
     operationLog: '操作日志',
+    job: '定时任务',
+    jobLog: '执行日志',
     title: '菜单管理',
     menuName: '菜单名称',
     menuEnName: '菜单英文名',
