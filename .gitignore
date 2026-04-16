@@ -46,7 +46,7 @@ out/
 .worktrees/
 
 ### 知识文档目录 ###
-docs/knowledge/
+docs/
 
 ### 前端 ###
 # Dependencies
