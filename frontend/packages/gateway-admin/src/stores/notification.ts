@@ -6,6 +6,7 @@ import { notificationApi } from '@/api/notification'
 import type { NotificationItem } from '@/api/notification'
 import type { InstanceStatusData } from '@/composables/useInstanceStatus'
 import type { DashboardDataPayload } from '@/stores/dashboard'
+import type { CircuitBreakerDataPayload } from '@/stores/circuitBreaker'
 import { useDashboardStore } from '@/stores/dashboard'
 
 export interface NotificationStoreItem extends NotificationItem {
@@ -29,6 +30,26 @@ export function unregisterInstanceStatusCallback(callback: (data: InstanceStatus
   const index = instanceStatusCallbacks.indexOf(callback)
   if (index > -1) {
     instanceStatusCallbacks.splice(index, 1)
+  }
+}
+
+// 熔断器数据更新回调列表（用于通知 circuitBreaker store）
+const circuitBreakerCallbacks: ((data: CircuitBreakerDataPayload) => void)[] = []
+
+/**
+ * 注册熔断器数据更新回调
+ */
+export function registerCircuitBreakerCallback(callback: (data: CircuitBreakerDataPayload) => void) {
+  circuitBreakerCallbacks.push(callback)
+}
+
+/**
+ * 移除熔断器数据更新回调
+ */
+export function unregisterCircuitBreakerCallback(callback: (data: CircuitBreakerDataPayload) => void) {
+  const index = circuitBreakerCallbacks.indexOf(callback)
+  if (index > -1) {
+    circuitBreakerCallbacks.splice(index, 1)
   }
 }
 
@@ -223,6 +244,7 @@ export const useNotificationStore = defineStore('notification', () => {
     NOTIFICATION: 'notification',
     INSTANCE_STATUS: 'instance_status',
     DASHBOARD_DATA: 'dashboard_data',
+    CIRCUIT_BREAKER_DATA: 'circuit_breaker_data',
   }
 
   const handleSseMessage = (rawMsg: any) => {
@@ -255,6 +277,18 @@ export const useNotificationStore = defineStore('notification', () => {
       // 获取 dashboard store 并更新数据
       const dashboardStore = useDashboardStore()
       dashboardStore.handleDashboardData(dashboardData)
+      return
+    }
+
+    // 熔断器数据推送：更新 circuitBreaker store
+    if (sseType === SSE_MESSAGE_TYPE.CIRCUIT_BREAKER_DATA) {
+      const cbData = rawMsg.data as CircuitBreakerDataPayload
+      console.log('[Notification] 收到熔断器数据推送 | healthScore:', cbData.healthScore)
+
+      // 通知所有注册的熔断器回调
+      for (const callback of circuitBreakerCallbacks) {
+        callback(cbData)
+      }
       return
     }
 
