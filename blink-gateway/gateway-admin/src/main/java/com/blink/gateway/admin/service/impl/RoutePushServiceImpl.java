@@ -33,6 +33,7 @@ import com.blink.gateway.admin.dto.rsp.RouteInstancePushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
+import com.blink.gateway.admin.dto.InstanceRouteConfig;
 import com.blink.gateway.admin.entity.GaRouteDO;
 import com.blink.gateway.admin.entity.GaRoutePushLogDO;
 import com.blink.gateway.admin.entity.GaRouteInstanceRelaDO;
@@ -1164,5 +1165,43 @@ public class RoutePushServiceImpl implements RoutePushService {
             req.getInstanceId(), latestPush != null);
 
         return ResponseDTO.newSuccessInstance(latestPush);
+    }
+
+    /**
+     * 从实例配置获取路由存储模式
+     * 优先从最近的推送记录获取配置，否则使用默认配置
+     *
+     * @param instanceId 实例ID
+     * @return 实例路由配置
+     */
+    private InstanceRouteConfig getStorageModeFromInstanceConfig(String instanceId) {
+        InstanceRouteConfig config = new InstanceRouteConfig();
+
+        // 尝试从最近的推送记录获取配置
+        LambdaQueryWrapper<GaRoutePushLogDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.apply("JSON_CONTAINS(target_instance_ids, {0})", "\"" + instanceId + "\"")
+            .orderByDesc(GaRoutePushLogDO::getPushTime)
+            .last("LIMIT 1");
+
+        GaRoutePushLogDO latestPush = gaRoutePushLogMapper.selectOne(queryWrapper);
+
+        if (latestPush != null && StrUtil.isNotBlank(latestPush.getStorageMode())) {
+            config.setStorageMode(latestPush.getStorageMode());
+            config.setRoutesGroup(latestPush.getRoutesGroup());
+            config.setNacosDataId(latestPush.getNacosDataId());
+            config.setNacosGroup(latestPush.getNacosGroup());
+            log.debug("[RoutePush] 从推送记录获取实例配置 | instanceId: {}, storageMode: {}",
+                instanceId, config.getStorageMode());
+        } else {
+            // 使用默认配置
+            config.setStorageMode(RouteConstant.STORAGE_MODE_REDIS);
+            config.setRoutesGroup(RouteConstant.DEFAULT_ROUTES_GROUP);
+            config.setNacosDataId(RouteConstant.DEFAULT_NACOS_DATA_ID);
+            config.setNacosGroup(RouteConstant.DEFAULT_NACOS_GROUP);
+            log.debug("[RoutePush] 使用默认实例配置 | instanceId: {}, storageMode: {}",
+                instanceId, config.getStorageMode());
+        }
+
+        return config;
     }
 }

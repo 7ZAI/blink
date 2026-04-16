@@ -10,7 +10,6 @@ import com.blink.gateway.admin.dto.req.CloneRouteReq;
 import com.blink.gateway.admin.dto.req.ConfirmPushReq;
 import com.blink.gateway.admin.dto.req.ExportRoutesReq;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
-<<<<<<< Updated upstream
 import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
 import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.ImportRoutesReq;
@@ -30,7 +29,6 @@ import com.blink.gateway.admin.dto.req.SaveRouteReq;
 import com.blink.gateway.admin.dto.req.SyncRoutesReq;
 import com.blink.gateway.admin.dto.req.UpdateRouteReq;
 import com.blink.gateway.admin.dto.req.VerifyPushResultReq;
-<<<<<<< Updated upstream
 import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
@@ -42,7 +40,6 @@ import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
 import com.blink.gateway.admin.dto.rsp.RouteInstancePushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.RoutesGroupStatsRsp;
-import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
@@ -396,17 +393,6 @@ public class RouteController {
     public ResponseDTO<InstanceRoutesRsp> getInstanceRoutesFromActuator(
         @RequestBody @Validated RequestDTO<GetInstanceRoutesFromActuatorReq> reqDto) {
         return routePushService.getInstanceRoutesFromActuator(reqDto.getBody());
-    }
-
-    /**
-     * 获取实例最新推送记录
-     *
-     * @param reqDto 请求参数
-     * @return 最新推送记录
-     */
-    @PostMapping("/getLatestPush")
-    public ResponseDTO<GaRoutePushLogDO> getLatestPush(@RequestBody @Validated RequestDTO<GetLatestPushReq> reqDto) {
-        return routePushService.getLatestPush(reqDto.getBody());
     }
 
     /**

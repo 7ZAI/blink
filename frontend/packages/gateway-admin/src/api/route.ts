@@ -718,4 +718,8 @@ export const routeApi = {
   getRouteInstancePushStatus,
   // 确认推送
   confirmPush,
+  // 推送结果验证
+  verifyPushResult,
+  // 获取最新推送
+  getLatestPush,
 }

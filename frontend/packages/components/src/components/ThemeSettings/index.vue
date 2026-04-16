@@ -230,6 +230,7 @@ import {
   MAX_CUSTOM_PRESETS,
   DEFAULT_THEME_CONFIG,
   FONT_SIZE_CONFIG,
+  DEFAULT_SYSTEM_CONFIG,
 } from '@/config/themes'
 
 defineOptions({
@@ -255,6 +256,7 @@ const props = withDefaults(defineProps<ThemeSettingsProps>(), {
       smallSize: FONT_SIZE_CONFIG.small.default,
     },
     animationsEnabled: true,
+    system: DEFAULT_SYSTEM_CONFIG,
   }),
   customPresets: () => [],
   readonly: false,
@@ -262,20 +264,17 @@ const props = withDefaults(defineProps<ThemeSettingsProps>(), {
 })
 
 // Emits
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: FullThemeConfig): void
-  (e: 'update:mode', value: 'light' | 'dark'): void
-  (e: 'preset-change', presetId: string): void
-  (e: 'color-change', colors: ThemeColors): void
-  (
-    e: 'font-change',
-    font: { family: string; baseSize: number; largeSize: number; smallSize: number }
-  ): void
-  (e: 'animation-change', enabled: boolean): void
-  (e: 'preset-save', preset: CustomPreset): void
-  (e: 'preset-delete', presetId: string): void
-  (e: 'mode-change', mode: 'light' | 'dark'): void
-}>()
+const emit = defineEmits([
+  'update:modelValue',
+  'update:mode',
+  'preset-change',
+  'color-change',
+  'font-change',
+  'animation-change',
+  'preset-save',
+  'preset-delete',
+  'mode-change',
+])
 
 const { t, locale } = useI18n()
 
@@ -288,6 +287,7 @@ const localConfig = reactive<FullThemeConfig>({
   colors: { ...props.modelValue.colors },
   font: { ...props.modelValue.font },
   animationsEnabled: props.modelValue.animationsEnabled,
+  system: { ...props.modelValue.system },
 })
 
 // Current preset ID (can be preset or custom)
@@ -364,6 +364,7 @@ watch(
       colors: { ...newValue.colors },
       font: { ...newValue.font },
       animationsEnabled: newValue.animationsEnabled,
+      system: { ...newValue.system },
     })
   },
   { deep: true }

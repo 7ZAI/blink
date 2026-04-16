@@ -825,8 +825,9 @@ async function confirmPush() {
 
     // 获取最新推送记录用于后续校验
     try {
-      if (selectedInstanceIds.value.length > 0) {
-        const latestPush = await routeApi.getLatestPush({ instanceId: selectedInstanceIds.value[0] })
+      const firstInstanceId = selectedInstanceIds.value[0]
+      if (firstInstanceId) {
+        const latestPush = await routeApi.getLatestPush({ instanceId: firstInstanceId })
         latestPushId.value = latestPush?.pushId || null
       }
     } catch {

@@ -184,8 +184,8 @@ const fetchData = async () => {
     }
 
     const res = await getLogList(searchForm)
-    tableData.value = res.data?.data?.rows || []
-    total.value = res.data?.data?.total || 0
+    tableData.value = res.data?.body?.rows || []
+    total.value = res.data?.body?.total || 0
   } finally {
     loading.value = false
   }

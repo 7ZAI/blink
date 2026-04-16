@@ -15,8 +15,12 @@
       <slot v-bind="scope" />
     </template>
 
-    <template v-else-if="formatter" #default="{ row, column }">
-      {{ formatter(row, column, prop ? row[prop] : undefined) }}
+    <template v-else-if="formatter && prop" #default="{ row, column }">
+      {{ (formatter as NonNullable<typeof formatter>)(row, column, row[prop as string]) }}
+    </template>
+
+    <template v-else-if="prop" #default="{ row }">
+      {{ row[prop as string] }}
     </template>
 
     <template v-if="$slots.header" #header="scope">
@@ -32,7 +36,8 @@ defineOptions({
   name: 'BlinkTableColumn',
 })
 
-withDefaults(defineProps<BlinkTableColumnProps>(), {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const props = withDefaults(defineProps<BlinkTableColumnProps>(), {
   showOverflowTooltip: true,
 })
 </script>

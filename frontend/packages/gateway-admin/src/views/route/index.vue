@@ -2048,7 +2048,7 @@ const handleImportPreview = async () => {
     importConflicts.value = []
 
     // 检测与现有路由的冲突
-    const existingRouteIds = new Set(routeList.value.map(r => r.routeId))
+    const existingRouteIds = new Set(tableData.value.map((r: RouteDefinition) => r.routeId))
     for (const route of parsedData) {
       if (!route.routeId) {
         importConflicts.value.push({
@@ -2375,12 +2375,12 @@ onMounted(() => {
 })
 
 // 监听数据加载完成后，高亮定位到指定路由
-watch(routeList, () => {
-  if (highlightRouteId.value && routeList.value.length > 0) {
-    const targetRoute = routeList.value.find(r => r.routeId === highlightRouteId.value)
+watch(tableData, () => {
+  if (highlightRouteId.value && tableData.value.length > 0) {
+    const targetRoute = tableData.value.find((r: RouteDefinition) => r.routeId === highlightRouteId.value)
     if (targetRoute) {
       // 打开路由详情
-      handleViewDetail(targetRoute)
+      handleDetail(targetRoute)
       // 清除高亮标记
       highlightRouteId.value = null
     }

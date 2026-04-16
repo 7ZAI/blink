@@ -227,16 +227,16 @@ const props = withDefaults(defineProps<Props>(), {
   maxTabWidth: 160,
 })
 
-const emit = defineEmits<{
-  (e: 'tab-click', tab: TabItem): void
-  (e: 'close-tab', tab: TabItem): void
-  (e: 'close-other-tabs', tab: TabItem): void
-  (e: 'close-right-tabs', tab: TabItem): void
-  (e: 'close-left-tabs', tab: TabItem): void
-  (e: 'close-all-tabs'): void
-  (e: 'refresh-tab', tab: TabItem): void
-  (e: 'max-tabs-reached', currentCount: number, maxTabs: number): void
-}>()
+const emit = defineEmits([
+  'tab-click',
+  'close-tab',
+  'close-other-tabs',
+  'close-right-tabs',
+  'close-left-tabs',
+  'close-all-tabs',
+  'refresh-tab',
+  'max-tabs-reached',
+])
 
 const route = useRoute()
 

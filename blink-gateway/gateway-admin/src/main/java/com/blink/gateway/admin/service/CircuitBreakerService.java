@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.constants.CircuitBreakerConstant;
+import com.blink.gateway.admin.constants.RedisKeyConstant;
 import com.blink.gateway.admin.dto.req.GetCircuitBreakerDetailReq;
 import com.blink.gateway.admin.dto.req.GetCircuitBreakerHistoryReq;
 import com.blink.gateway.admin.dto.req.GetCircuitBreakerOverviewReq;
@@ -57,7 +58,7 @@ public class CircuitBreakerService {
      */
     public List<InstanceSummaryRsp> getInstanceList() {
         // 获取所有在线实例
-        Map<String, Object> instanceList = redisClient.hGetStringMap(CircuitBreakerConstant.INSTANCE_LIST_KEY);
+        Map<String, Object> instanceList = redisClient.hGetStringMap(RedisKeyConstant.GATEWAY_INSTANCE_LIST_KEY);
 
         if (CollUtil.isEmpty(instanceList)) {
             return Collections.emptyList();
@@ -144,7 +145,7 @@ public class CircuitBreakerService {
      * @return 熔断器汇总
      */
     private InstanceSummaryRsp.CircuitBreakerSummary getCircuitBreakerSummary(String instanceId) {
-        String cbKey = CircuitBreakerConstant.CB_KEY_PREFIX + instanceId;
+        String cbKey = RedisKeyConstant.CIRCUIT_BREAKER_KEY_PREFIX + instanceId;
         Map<String, Object> cbData = redisClient.hGetStringMap(cbKey);
 
         InstanceSummaryRsp.CircuitBreakerSummary summary = new InstanceSummaryRsp.CircuitBreakerSummary();
@@ -226,7 +227,7 @@ public class CircuitBreakerService {
         CircuitBreakerOverviewRsp rsp = new CircuitBreakerOverviewRsp();
         rsp.setTotalInstances(1);
 
-        String cbKey = CircuitBreakerConstant.CB_KEY_PREFIX + instanceId;
+        String cbKey = RedisKeyConstant.CIRCUIT_BREAKER_KEY_PREFIX + instanceId;
         Map<String, Object> cbData = redisClient.hGetStringMap(cbKey);
 
         if (CollUtil.isEmpty(cbData)) {
@@ -294,7 +295,7 @@ public class CircuitBreakerService {
         CircuitBreakerOverviewRsp rsp = new CircuitBreakerOverviewRsp();
 
         // 获取所有在线实例
-        Map<String, Object> instanceList = redisClient.hGetStringMap(CircuitBreakerConstant.INSTANCE_LIST_KEY);
+        Map<String, Object> instanceList = redisClient.hGetStringMap(RedisKeyConstant.GATEWAY_INSTANCE_LIST_KEY);
 
         if (CollUtil.isEmpty(instanceList)) {
             rsp.setCircuitBreakers(Collections.emptyList());
@@ -314,7 +315,7 @@ public class CircuitBreakerService {
         int totalHalfOpen = 0;
 
         for (String instanceId : instanceList.keySet()) {
-            String cbKey = CircuitBreakerConstant.CB_KEY_PREFIX + instanceId;
+            String cbKey = RedisKeyConstant.CIRCUIT_BREAKER_KEY_PREFIX + instanceId;
             Map<String, Object> cbData = redisClient.hGetStringMap(cbKey);
 
             if (CollUtil.isEmpty(cbData)) {
@@ -565,7 +566,7 @@ public class CircuitBreakerService {
      * @return 实例状态列表
      */
     private List<CircuitBreakerInstanceRsp> getInstancesByName(String instanceId, String name) {
-        String cbKey = CircuitBreakerConstant.CB_KEY_PREFIX + instanceId;
+        String cbKey = RedisKeyConstant.CIRCUIT_BREAKER_KEY_PREFIX + instanceId;
         String json = (String) redisClient.hGetField(cbKey, name);
 
         if (StrUtil.isBlank(json)) {
@@ -592,7 +593,7 @@ public class CircuitBreakerService {
      * @return 实例状态列表
      */
     private List<CircuitBreakerInstanceRsp> getAllInstancesByName(String name) {
-        Map<String, Object> instanceList = redisClient.hGetStringMap(CircuitBreakerConstant.INSTANCE_LIST_KEY);
+        Map<String, Object> instanceList = redisClient.hGetStringMap(RedisKeyConstant.GATEWAY_INSTANCE_LIST_KEY);
 
         if (CollUtil.isEmpty(instanceList)) {
             return Collections.emptyList();
@@ -631,7 +632,7 @@ public class CircuitBreakerService {
             return Collections.emptyList();
         }
 
-        String historyKey = CircuitBreakerConstant.CB_KEY_PREFIX + "history:" + instanceId + ":" + name;
+        String historyKey = RedisKeyConstant.CIRCUIT_BREAKER_HISTORY_KEY_PREFIX + instanceId + ":" + name;
         int queryLimit = limit != null && limit > 0 ? limit : CircuitBreakerConstant.DEFAULT_HISTORY_LIMIT;
 
         List<Object> historyList = redisClient.lRange(historyKey, 0, queryLimit - 1);
