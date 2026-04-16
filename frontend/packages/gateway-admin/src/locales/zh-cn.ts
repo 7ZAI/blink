@@ -638,6 +638,13 @@ export default {
     numberOfFailedCalls: '失败数',
     numberOfSuccessfulCalls: '成功数',
     numberOfSlowCalls: '慢调用数',
+    // 新增多实例监控相关
+    aggregateView: '聚合视图',
+    instances: '实例',
+    healthScore: '健康度',
+    stateTransitionHistory: '状态转换历史',
+    noHistory: '暂无状态转换历史',
+    reason: '原因',
   },
   dataSync: {
     title: '数据同步',
@@ -761,6 +768,7 @@ export default {
     closeLeft: '关闭左侧',
     closeRight: '关闭右侧',
     closeAll: '关闭全部',
+    maxTabsReached: '标签数量已达上限 {max}，请先关闭部分标签后再打开新页面',
   },
   system: {
     title: '系统管理',
@@ -1381,11 +1389,15 @@ export default {
     peakThreads: '峰值线程',
     daemonThreads: '守护线程',
     httpStatistics: 'HTTP 统计',
+    requestStatistics: '请求统计',
+    responseTimeDistribution: '响应时间分布',
     totalRequests: '总请求数',
     successRequests: '成功请求数',
     failedRequests: '失败请求数',
     successRate: '成功率',
     avgResponseTime: '平均响应时间',
+    maxResponseTime: '最大响应时间',
+    currentQps: '实时 QPS',
 
     // 统计卡片
     totalInstances: '总实例数',

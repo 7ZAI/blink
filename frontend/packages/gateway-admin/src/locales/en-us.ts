@@ -75,6 +75,8 @@ export default {
     statusShutdown: 'Shutdown',
     statusEnable: 'Enable',
     statusDisable: 'Disable',
+    online: 'Online',
+    offlineStatus: 'Offline',
     // Instance related (extracted to common)
     instanceId: 'Instance ID',
     instanceAddress: 'Instance Address',
@@ -761,6 +763,13 @@ export default {
     numberOfFailedCalls: 'Failed Calls',
     numberOfSuccessfulCalls: 'Success Calls',
     numberOfSlowCalls: 'Slow Calls',
+    // Multi-instance monitoring
+    aggregateView: 'Aggregate View',
+    instances: 'instances',
+    healthScore: 'Health Score',
+    stateTransitionHistory: 'State Transition History',
+    noHistory: 'No state transition history',
+    reason: 'Reason',
   },
   dataSync: {
     title: 'Data Sync',
@@ -884,6 +893,7 @@ export default {
     closeLeft: 'Close Left',
     closeRight: 'Close Right',
     closeAll: 'Close All',
+    maxTabsReached: 'Maximum tabs limit ({max}) reached, please close some tabs before opening new ones',
   },
   system: {
     title: 'System',
@@ -1418,11 +1428,15 @@ export default {
     peakThreads: 'Peak Threads',
     daemonThreads: 'Daemon Threads',
     httpStatistics: 'HTTP Statistics',
+    requestStatistics: 'Request Statistics',
+    responseTimeDistribution: 'Response Time Distribution',
     totalRequests: 'Total Requests',
     successRequests: 'Success Requests',
     failedRequests: 'Failed Requests',
     successRate: 'Success Rate',
     avgResponseTime: 'Avg Response Time',
+    maxResponseTime: 'Max Response Time',
+    currentQps: 'Current QPS',
 
     // Stat cards
     totalInstances: 'Total Instances',

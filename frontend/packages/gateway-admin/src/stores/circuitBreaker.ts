@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, readonly } from 'vue'
+import { ref, computed } from 'vue'
 import {
   circuitBreakerApi,
   type CircuitBreakerOverviewNew,
@@ -172,12 +172,12 @@ export const useCircuitBreakerStore = defineStore('circuitBreaker', () => {
 
   return {
     // 状态
-    overview: readonly(overview),
-    instances: readonly(instances),
-    selectedInstanceId: readonly(selectedInstanceId),
-    detail: readonly(detail),
-    loading: readonly(loading),
-    detailLoading: readonly(detailLoading),
+    overview,
+    instances,
+    selectedInstanceId,
+    detail,
+    loading,
+    detailLoading,
 
     // 计算属性
     hasOpenCircuitBreaker,
