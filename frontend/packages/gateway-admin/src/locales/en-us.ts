@@ -1494,15 +1494,22 @@ export default {
     forceOfflineWarning: 'Force offline will immediately interrupt ongoing requests!',
     statusDraining: 'Draining',
     drainingHint: 'Instance is draining traffic, will be offline soon',
-    // Instance group related
-    groupKey: 'Group',
-    storageMode: 'Storage Mode',
-    groupKeyPlaceholder: 'Select group',
+    // Route group related
+    groupKey: 'Route Group',
+    storageMode: 'Route Storage',
+    groupKeyPlaceholder: 'Select route group',
     storageModeRedis: 'Redis',
     storageModeNacos: 'Nacos',
+    // Group switch
+    switchGroup: 'Switch Group',
+    currentGroup: 'Current Group',
+    targetGroup: 'Target Group',
+    switchGroupSuccess: 'Group switched successfully',
+    switchGroupConfirm: 'Are you sure to switch instance to group "{group}"?',
+    switchGroupOnlineWarning: 'Online instance cannot switch group',
   },
-  instanceGroup: {
-    title: 'Instance Group',
+  routeGroup: {
+    title: 'Route Group',
     groupKey: 'Group Key',
     groupName: 'Group Name',
     groupKeyPlaceholder: 'Enter group key',

@@ -1448,15 +1448,22 @@ export default {
     forceOfflineWarning: '强制下线将立即中断正在处理的请求！',
     statusDraining: '排空',
     drainingHint: '实例正在排空流量，稍后将自动下线',
-    // 实例分组相关
-    groupKey: '分组',
-    storageMode: '存储方式',
-    groupKeyPlaceholder: '请选择分组',
+    // 路由分组相关
+    groupKey: '路由分组',
+    storageMode: '路由存储',
+    groupKeyPlaceholder: '请选择路由分组',
     storageModeRedis: 'Redis',
     storageModeNacos: 'Nacos',
+    // 分组切换相关
+    switchGroup: '切换分组',
+    currentGroup: '当前分组',
+    targetGroup: '目标分组',
+    switchGroupSuccess: '分组切换成功',
+    switchGroupConfirm: '确定将实例切换到分组「{group}」吗？',
+    switchGroupOnlineWarning: '在线实例不允许切换分组',
   },
-  instanceGroup: {
-    title: '实例分组',
+  routeGroup: {
+    title: '路由分组',
     groupKey: '分组标识',
     groupName: '分组名称',
     groupKeyPlaceholder: '请输入分组标识',
