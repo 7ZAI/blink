@@ -185,6 +185,16 @@
                 <el-icon><CircleCheck /></el-icon>
                 {{ t('instance.onlineInstance') }}
               </el-button>
+              <el-button
+                v-if="row.status === INSTANCE_STATUS.OFFLINE || row.status === INSTANCE_STATUS.SHUTDOWN"
+                type="primary"
+                link
+                size="small"
+                @click="handleSwitchGroup(row)"
+              >
+                <el-icon><Switch /></el-icon>
+                {{ t('instance.switchGroup') }}
+              </el-button>
               <el-button type="danger" link size="small" @click="handleDelete(row)">
                 <el-icon><Delete /></el-icon>
                 {{ t('common.delete') }}
@@ -276,6 +286,41 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 切换分组弹窗 -->
+    <el-dialog
+      v-model="switchGroupDialogVisible"
+      :title="t('instance.switchGroup')"
+      width="500px"
+      :close-on-click-modal="false"
+      :lock-scroll="false"
+    >
+      <el-form :model="switchGroupForm" label-width="100px">
+        <el-form-item :label="t('common.instanceId')">
+          <el-input v-model="switchGroupForm.instanceId" disabled />
+        </el-form-item>
+        <el-form-item :label="t('instance.currentGroup')">
+          <el-input v-model="switchGroupForm.currentGroup" disabled />
+        </el-form-item>
+        <el-form-item :label="t('instance.targetGroup')" required>
+          <el-select v-model="switchGroupForm.targetGroupKey" :placeholder="t('common.pleaseSelect')" style="width: 100%">
+            <el-option
+              v-for="group in groupOptions"
+              :key="group.groupKey"
+              :label="group.groupName"
+              :value="group.groupKey"
+              :disabled="group.groupKey === switchGroupForm.currentGroup"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="switchGroupDialogVisible = false">{{ t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="submitting" @click="confirmSwitchGroup">
+          {{ t('common.confirm') }}
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -297,6 +342,7 @@ import {
   Delete,
   InfoFilled,
   WarningFilled,
+  Switch,
 } from '@element-plus/icons-vue'
 import {
   queryInstanceList,
@@ -305,10 +351,11 @@ import {
   offlineInstance,
   gracefulOfflineInstance,
   refreshInstanceStatus,
+  switchInstanceGroup,
   type InstanceInfo,
   INSTANCE_STATUS,
 } from '@/api/instance'
-import { getEnabledInstanceGroups, type InstanceGroup } from '@/api/instanceGroup'
+import { getEnabledRouteGroups, type RouteGroup } from '@/api/routeGroup'
 import { usePermission } from '@/composables/usePermission'
 import { useInstanceStatus } from '@/composables/useInstanceStatus'
 
@@ -369,7 +416,7 @@ const loading = ref(false)
 const refreshing = ref(false)
 const submitting = ref(false)
 const instanceList = ref<InstanceInfo[]>([])
-const groupOptions = ref<InstanceGroup[]>([])
+const groupOptions = ref<RouteGroup[]>([])
 
 const pagination = reactive({
   pageNum: 1,
@@ -422,6 +469,45 @@ const offlineForm = reactive({
   reason: '',
   mode: 'force' as 'force' | 'graceful',
 })
+
+// ==================== 切换分组弹窗 ====================
+
+const switchGroupDialogVisible = ref(false)
+
+const switchGroupForm = reactive({
+  instanceId: '',
+  currentGroup: '',
+  targetGroupKey: '',
+})
+
+const handleSwitchGroup = (row: InstanceInfo) => {
+  switchGroupForm.instanceId = row.instanceId
+  switchGroupForm.currentGroup = row.groupKey || 'default'
+  switchGroupForm.targetGroupKey = ''
+  switchGroupDialogVisible.value = true
+}
+
+const confirmSwitchGroup = async () => {
+  if (!switchGroupForm.targetGroupKey) {
+    ElMessage.warning(t('common.pleaseSelect'))
+    return
+  }
+
+  submitting.value = true
+  try {
+    await switchInstanceGroup({
+      instanceId: switchGroupForm.instanceId,
+      targetGroupKey: switchGroupForm.targetGroupKey,
+    })
+    ElMessage.success(t('instance.switchGroupSuccess'))
+    switchGroupDialogVisible.value = false
+    loadData()
+  } catch (error) {
+    console.error('Switch group error:', error)
+  } finally {
+    submitting.value = false
+  }
+}
 
 // ==================== 辅助方法 ====================
 
@@ -625,7 +711,7 @@ const handleOnline = (row: InstanceInfo) => {
 
 const loadGroupOptions = async () => {
   try {
-    const result = await getEnabledInstanceGroups()
+    const result = await getEnabledRouteGroups()
     groupOptions.value = result || []
   } catch (error) {
     console.error('Load group options error:', error)
