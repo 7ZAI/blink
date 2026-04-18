@@ -88,6 +88,16 @@
               <el-option :label="t('instance.statusDraining')" :value="3" />
             </el-select>
           </el-form-item>
+          <el-form-item :label="t('instance.groupKey')">
+            <el-select v-model="searchForm.groupKey" :placeholder="t('instance.groupKeyPlaceholder')" clearable style="width: 140px">
+              <el-option
+                v-for="group in groupOptions"
+                :key="group.groupKey"
+                :label="group.groupName"
+                :value="group.groupKey"
+              />
+            </el-select>
+          </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">
               <el-icon><Search /></el-icon>
@@ -121,6 +131,20 @@
         </el-table-column>
         <el-table-column prop="host" :label="t('instance.host')" width="150" show-overflow-tooltip />
         <el-table-column prop="port" :label="t('common.port')" width="90" align="center" />
+        <el-table-column :label="t('instance.groupKey')" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.groupKey" type="info" effect="plain" size="small">{{ row.groupKey }}</el-tag>
+            <span v-else class="empty-text">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('instance.storageMode')" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.storageMode" :type="row.storageMode === 'redis' ? 'success' : 'warning'" effect="plain" size="small">
+              {{ row.storageMode === 'redis' ? t('instance.storageModeRedis') : t('instance.storageModeNacos') }}
+            </el-tag>
+            <span v-else class="empty-text">-</span>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('common.status')" width="90" align="center">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" effect="light" size="small">
@@ -284,6 +308,7 @@ import {
   type InstanceInfo,
   INSTANCE_STATUS,
 } from '@/api/instance'
+import { getEnabledInstanceGroups, type InstanceGroup } from '@/api/instanceGroup'
 import { usePermission } from '@/composables/usePermission'
 import { useInstanceStatus } from '@/composables/useInstanceStatus'
 
@@ -344,6 +369,7 @@ const loading = ref(false)
 const refreshing = ref(false)
 const submitting = ref(false)
 const instanceList = ref<InstanceInfo[]>([])
+const groupOptions = ref<InstanceGroup[]>([])
 
 const pagination = reactive({
   pageNum: 1,
@@ -355,6 +381,7 @@ const searchForm = reactive({
   serviceId: '',
   host: '',
   status: undefined as number | undefined,
+  groupKey: '',
 })
 
 const statistics = reactive({
@@ -507,6 +534,7 @@ const handleReset = () => {
   searchForm.serviceId = ''
   searchForm.host = ''
   searchForm.status = undefined
+  searchForm.groupKey = ''
   pagination.pageNum = 1
   loadData()
 }
@@ -593,10 +621,22 @@ const handleOnline = (row: InstanceInfo) => {
     })
 }
 
+// ==================== 加载分组列表 ====================
+
+const loadGroupOptions = async () => {
+  try {
+    const result = await getEnabledInstanceGroups()
+    groupOptions.value = result || []
+  } catch (error) {
+    console.error('Load group options error:', error)
+  }
+}
+
 // ==================== 生命周期 ====================
 
 onMounted(() => {
   loadData()
+  loadGroupOptions()
   // SSE 连接由 MainLayout 统一管理，无需在组件中手动连接
 })
 

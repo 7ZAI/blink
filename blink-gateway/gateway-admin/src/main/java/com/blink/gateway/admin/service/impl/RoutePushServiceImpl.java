@@ -164,11 +164,18 @@ public class RoutePushServiceImpl implements RoutePushService {
             && CollUtil.isNotEmpty(req.getTargetInstanceIds())) {
             targetInstanceIds = req.getTargetInstanceIds();
         } else {
-            // 广播模式：获取所有在线实例
+            // 广播模式：获取指定分组的在线实例
+            String routesGroup = req.getRoutesGroup();
+            if (StrUtil.isBlank(routesGroup)) {
+                routesGroup = RouteConstant.DEFAULT_ROUTES_GROUP;
+            }
+            final String finalRoutesGroup = routesGroup;
             ResponseDTO<GatewayInstanceListRsp> instancesRsp = gatewayInstanceService.getGatewayInstances();
             if (instancesRsp.getBody() != null && instancesRsp.getBody().getInstances() != null) {
                 targetInstanceIds = instancesRsp.getBody().getInstances().stream()
                     .filter(inst -> inst.getStatus().equals(INSTANCE_STATUS_ONLINE))
+                    .filter(inst -> StrUtil.equals(inst.getGroupKey(), finalRoutesGroup)
+                        || (StrUtil.isBlank(inst.getGroupKey()) && StrUtil.equals(finalRoutesGroup, RouteConstant.DEFAULT_ROUTES_GROUP)))
                     .map(GatewayInstanceVO::getInstanceId)
                     .toList();
             }
