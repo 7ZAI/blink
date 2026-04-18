@@ -1469,6 +1469,7 @@ export default {
     groupNameRequired: '分组名称不能为空',
     groupKeyExists: '分组标识已存在',
     hasInstances: '该分组下存在实例，无法删除',
+    defaultGroupCannotDisable: '默认分组不可禁用',
   },
   alert: {
     // 页面标题

@@ -58,8 +58,8 @@
           <template #default="{ row }">
             <el-switch
               v-model="row.status"
-              :active-value="0"
-              :inactive-value="1"
+              :active-value="1"
+              :inactive-value="0"
               :disabled="row.groupKey === DEFAULT_GROUP_KEY"
               @change="handleStatusChange(row)"
             />
@@ -336,15 +336,17 @@ const handleDelete = (row: InstanceGroup) => {
 
 const handleStatusChange = async (row: InstanceGroup) => {
   // 默认分组不可禁用
-  if (row.groupKey === DEFAULT_GROUP_KEY && row.status === 1) {
-    row.status = 0 // 恢复状态
-    ElMessage.warning(t('instanceGroup.hasInstances'))
+  if (row.groupKey === DEFAULT_GROUP_KEY && row.status === 0) {
+    row.status = 1 // 恢复状态
+    ElMessage.warning(t('instanceGroup.defaultGroupCannotDisable'))
     return
   }
 
   try {
     await updateInstanceGroup({
       groupId: row.groupId,
+      groupKey: row.groupKey,
+      groupName: row.groupName,
       status: row.status,
     })
     ElMessage.success(t('common.success'))

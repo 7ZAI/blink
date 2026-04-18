@@ -1515,6 +1515,7 @@ export default {
     groupNameRequired: 'Group name is required',
     groupKeyExists: 'Group key already exists',
     hasInstances: 'Cannot delete group with instances',
+    defaultGroupCannotDisable: 'Default group cannot be disabled',
   },
   alert: {
     // Page title
