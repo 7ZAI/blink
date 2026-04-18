@@ -9,6 +9,7 @@ import com.blink.gateway.admin.dto.req.GetInstanceDetailReq;
 import com.blink.gateway.admin.dto.req.OfflineGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.OnlineGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceReq;
+import com.blink.gateway.admin.dto.req.SwitchInstanceGroupReq;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.rsp.InstanceDetailRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceListRsp;
@@ -141,5 +142,18 @@ public class GatewayInstanceController {
     @PostMapping("/refreshInstanceStatus")
     public ResponseDTO<EmptyBody> refreshInstanceStatus(@RequestBody RequestDTO<EmptyBody> reqDto) {
         return gatewayInstanceService.refreshInstanceStatus();
+    }
+
+    /**
+     * 切换实例分组
+     * 将实例从当前分组切换到目标分组（仅限离线/下线状态实例）
+     *
+     * @param reqDto 请求参数
+     * @return 操作结果
+     */
+    @RecordLog(type = LogType.OPERATION, description = "切换实例分组")
+    @PostMapping("/switchInstanceGroup")
+    public ResponseDTO<EmptyBody> switchInstanceGroup(@RequestBody @Validated RequestDTO<SwitchInstanceGroupReq> reqDto) {
+        return gatewayInstanceService.switchInstanceGroup(reqDto.getBody());
     }
 }
