@@ -15,6 +15,7 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.framework.redis.mq.StreamMessage;
 import com.blink.gateway.admin.component.NacosInstanceHttpClient;
+import com.blink.gateway.admin.component.NacosConfigComponent;
 import com.blink.gateway.dto.InstanceOfflineMsg;
 import com.blink.gateway.dto.InstanceOnlineMsg;
 import com.blink.gateway.admin.dto.req.DeleteInstanceReq;
@@ -23,6 +24,7 @@ import com.blink.gateway.admin.dto.req.GetInstanceDetailReq;
 import com.blink.gateway.admin.dto.req.OfflineGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.OnlineGatewayInstanceReq;
 import com.blink.gateway.admin.dto.req.QueryInstanceReq;
+import com.blink.gateway.admin.dto.req.SwitchInstanceGroupReq;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
 import com.blink.gateway.admin.dto.rsp.InstanceDetailRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceListRsp;
@@ -46,6 +48,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.DumperOptions;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -54,6 +58,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -74,6 +79,10 @@ import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_NOT_REA
 import static com.blink.gateway.admin.constants.ErrCodeConstant.OFFLINE_INSTANCE_FAILED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.ONLINE_INSTANCE_FAILED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.QUERY_INSTANCE_LIST_FAILED;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_ONLINE_CANNOT_SWITCH;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.TARGET_GROUP_CONFIG_NOT_EXIST;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_CONFIG_NOT_EXIST;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.SWITCH_GROUP_FAILED;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_PREFIX;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_STREAM_EVENT;
 import static com.blink.gateway.admin.constants.ScheduleConstant.INSTANCE_SYNC_CRON;
@@ -102,6 +111,9 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
 
     @Resource
     private NacosInstanceHttpClient nacosInstanceHttpClient;
+
+    @Resource
+    private NacosConfigComponent nacosConfigComponent;
 
     @Value("${spring.cloud.nacos.discovery.namespace:public}")
     private String namespaceId;
@@ -1120,6 +1132,154 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
         } catch (Exception e) {
             log.error("[GatewayInstance] 上线指令发送失败 | target: {}, error: {}", targetInstance, e.getMessage(), e);
             throw new BlinkException("发送上线指令失败：" + e.getMessage(), e, ONLINE_INSTANCE_FAILED);
+        }
+    }
+
+    // ==================== 实例分组切换 ====================
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseDTO<EmptyBody> switchInstanceGroup(SwitchInstanceGroupReq req) {
+        try {
+            String instanceId = req.getInstanceId();
+            String targetGroupKey = req.getTargetGroupKey();
+
+            // 1. 查询实例信息
+            LambdaQueryWrapper<GatewayInstanceDO> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(GatewayInstanceDO::getInstanceId, instanceId);
+            GatewayInstanceDO instanceDO = gatewayInstanceMapper.selectOne(queryWrapper);
+
+            if (ObjectUtil.isNull(instanceDO)) {
+                BlinkException.throwBusinessException(GATEWAY_INSTANCE_NOT_EXIST);
+            }
+
+            // 2. 校验实例状态（必须是离线或下线状态）
+            if (INSTANCE_STATUS_ONLINE.equals(instanceDO.getStatus())
+                    || INSTANCE_STATUS_DRAINING.equals(instanceDO.getStatus())) {
+                log.warn("[GatewayInstance] 在线实例不允许切换分组 | instanceId: {}, status: {}",
+                        instanceId, instanceDO.getStatus());
+                BlinkException.throwBusinessException(INSTANCE_ONLINE_CANNOT_SWITCH);
+            }
+
+            // 3. 校验目标分组配置是否存在
+            validateTargetGroupConfig(targetGroupKey, instanceDO.getStorageMode());
+
+            // 4. 更新 Nacos 配置文件中的分组
+            String oldGroupKey = instanceDO.getGroupKey();
+            updateInstanceGroupConfig(instanceId, targetGroupKey);
+
+            // 5. 更新数据库
+            instanceDO.setGroupKey(targetGroupKey);
+            gatewayInstanceMapper.updateById(instanceDO);
+
+            log.info("[GatewayInstance] 实例分组切换成功 | instanceId: {}, oldGroup: {}, newGroup: {}",
+                    instanceId, oldGroupKey, targetGroupKey);
+
+            return ResponseDTO.newSuccessInstance();
+        } catch (BlinkException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[GatewayInstance] 切换实例分组失败 | error: {}", e.getMessage(), e);
+            throw new BlinkException("切换实例分组失败：" + e.getMessage(), e, SWITCH_GROUP_FAILED);
+        }
+    }
+
+    /**
+     * 校验目标分组配置是否存在
+     *
+     * @param targetGroupKey 目标分组标识
+     * @param storageMode    存储模式
+     */
+    private void validateTargetGroupConfig(String targetGroupKey, String storageMode) {
+        // 如果是默认分组，直接通过
+        if ("default".equals(targetGroupKey)) {
+            return;
+        }
+
+        // 根据存储模式校验配置是否存在
+        if ("redis".equals(storageMode)) {
+            // Redis 模式：检查 Key 是否存在
+            String routeKey = "blink:gateway:routes:" + targetGroupKey + ":default";
+            boolean exists = redisClient.hasKey(routeKey);
+            if (!exists) {
+                log.warn("[GatewayInstance] 目标分组配置不存在 | storageMode: redis, routeKey: {}", routeKey);
+                BlinkException.throwBusinessException(TARGET_GROUP_CONFIG_NOT_EXIST);
+            }
+        } else if ("nacos".equals(storageMode)) {
+            // Nacos 模式：检查配置文件是否存在
+            String dataId = "gateway-routes-" + targetGroupKey + ".json";
+            String config = nacosConfigComponent.getConfig(dataId, "DEFAULT_GROUP");
+            if (StrUtil.isBlank(config)) {
+                log.warn("[GatewayInstance] 目标分组配置不存在 | storageMode: nacos, dataId: {}", dataId);
+                BlinkException.throwBusinessException(TARGET_GROUP_CONFIG_NOT_EXIST);
+            }
+        }
+
+        log.info("[GatewayInstance] 目标分组配置校验通过 | targetGroupKey: {}, storageMode: {}",
+                targetGroupKey, storageMode);
+    }
+
+    /**
+     * 更新实例配置文件中的分组字段
+     *
+     * @param instanceId     实例ID
+     * @param targetGroupKey 目标分组标识
+     */
+    private void updateInstanceGroupConfig(String instanceId, String targetGroupKey) {
+        String dataId = "blink-gateway-" + instanceId + ".yaml";
+        String group = "DEFAULT_GROUP";
+
+        // 1. 获取当前配置
+        String configContent = nacosConfigComponent.getConfig(dataId, group);
+        if (StrUtil.isBlank(configContent)) {
+            log.warn("[GatewayInstance] 实例配置文件不存在 | dataId: {}", dataId);
+            BlinkException.throwBusinessException(INSTANCE_CONFIG_NOT_EXIST);
+        }
+
+        // 2. 解析 YAML 并修改 group 字段
+        String updatedConfig = updateYamlGroupField(configContent, targetGroupKey);
+
+        // 3. 发布更新后的配置
+        nacosConfigComponent.configPublisher(dataId, group, updatedConfig);
+
+        log.info("[GatewayInstance] Nacos 配置更新成功 | dataId: {}, newGroup: {}", dataId, targetGroupKey);
+    }
+
+    /**
+     * 更新 YAML 配置中的 group 字段
+     *
+     * @param yamlContent    原始 YAML 内容
+     * @param targetGroupKey 目标分组标识
+     * @return 更新后的 YAML 内容
+     */
+    @SuppressWarnings("unchecked")
+    private String updateYamlGroupField(String yamlContent, String targetGroupKey) {
+        try {
+            Yaml yaml = new Yaml();
+            Map<String, Object> yamlMap = yaml.load(yamlContent);
+
+            if (yamlMap == null) {
+                yamlMap = new LinkedHashMap<>();
+            }
+
+            // 获取或创建 blink.gateway.dynamicRoute 路径
+            Map<String, Object> blinkMap = (Map<String, Object>) yamlMap.computeIfAbsent("blink", k -> new LinkedHashMap<>());
+            Map<String, Object> gatewayMap = (Map<String, Object>) blinkMap.computeIfAbsent("gateway", k -> new LinkedHashMap<>());
+            Map<String, Object> dynamicRouteMap = (Map<String, Object>) gatewayMap.computeIfAbsent("dynamicRoute", k -> new LinkedHashMap<>());
+
+            // 更新 group 字段
+            dynamicRouteMap.put("group", targetGroupKey);
+
+            // 重新序列化为 YAML
+            DumperOptions options = new DumperOptions();
+            options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+            options.setPrettyFlow(true);
+            Yaml outputYaml = new Yaml(options);
+
+            return outputYaml.dump(yamlMap);
+        } catch (Exception e) {
+            log.error("[GatewayInstance] 解析 YAML 配置失败 | error: {}", e.getMessage(), e);
+            throw new BlinkException("解析配置文件失败：" + e.getMessage(), e, SWITCH_GROUP_FAILED);
         }
     }
 }
