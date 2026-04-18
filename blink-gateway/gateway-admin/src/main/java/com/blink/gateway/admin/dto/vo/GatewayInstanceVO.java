@@ -71,4 +71,14 @@ public class GatewayInstanceVO implements Serializable {
      * 最后心跳时间
      */
     private LocalDateTime lastHeartbeat;
+
+    /**
+     * 分组标识
+     */
+    private String groupKey;
+
+    /**
+     * 存储方式：redis/nacos
+     */
+    private String storageMode;
 }

@@ -28,4 +28,9 @@ public class QueryInstanceReq extends Page {
      * 0-在线，1-离线，2-下线
      */
     private Byte status;
+
+    /**
+     * 分组标识（可选，用于过滤）
+     */
+    private String groupKey;
 }
