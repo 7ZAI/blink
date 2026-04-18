@@ -101,6 +101,13 @@ public class LogProperties {
         private boolean enableControllerLog = true;
 
         /**
+         * 是否开启 Dubbo 服务切面日志
+         * <p>
+         * 开启则所有 @DubboService 标注的服务生效
+         */
+        private boolean enableDubboLog = true;
+
+        /**
          * 入参日志长度上限
          * <p>
          * 超过该长度的字符将被省略显示为 ...

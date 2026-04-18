@@ -449,4 +449,21 @@ public interface ErrCodeConstant {
      * 实例配置未找到（无法确定路由模式）
      */
     String INSTANCE_CONFIG_NOT_FOUND = "GATE0200";
+
+    // ============ 实例分组错误码 GATE0210-GATE0219 ============
+
+    /**
+     * 实例分组不存在
+     */
+    String INSTANCE_GROUP_NOT_EXIST = "GATE0210";
+
+    /**
+     * 分组标识已存在
+     */
+    String INSTANCE_GROUP_KEY_EXISTS = "GATE0211";
+
+    /**
+     * 分组下存在实例，无法删除
+     */
+    String INSTANCE_GROUP_HAS_INSTANCES = "GATE0212";
 }

@@ -1,6 +1,7 @@
 package com.blink.log.config;
 
 import com.blink.log.aop.BlinkControllerLogAspect;
+import com.blink.log.aop.BlinkDubboLogAspect;
 import com.blink.log.aop.LogExecutionAspect;
 import com.blink.log.aop.OperationLogAspect;
 import com.blink.log.function.LogConverter;
@@ -89,6 +90,22 @@ public class LogAutoConfiguration {
         return new BlinkControllerLogAspect(logProperties);
     }
 
+    /**
+     * 配置 Dubbo 服务控制台日志切面
+     * <p>
+     * 受 blink.log.console.enable-dubbo-log 配置控制，默认关闭
+     * 需要在配置文件中显式启用：blink.log.console.enable-dubbo-log: true
+     *
+     * @param logProperties 日志配置属性
+     * @return Dubbo 日志切面
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(prefix = "blink.log.console", name = "enable-dubbo-log", havingValue = "true")
+    public BlinkDubboLogAspect blinkDubboLogAspect(LogProperties logProperties) {
+        log.info("初始化 Dubbo 服务控制台日志切面 - BlinkDubboLogAspect 已启用");
+        return new BlinkDubboLogAspect(logProperties);
+    }
 
     /**
      * 注解@LogExecution 方法日志切面

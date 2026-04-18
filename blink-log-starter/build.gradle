@@ -33,6 +33,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'com.blink:blink-framework-common:1.0.0-SNAPSHOT'
 
+    // Dubbo 可选依赖，用于 Dubbo 服务日志切面
+    compileOnly 'org.apache.dubbo:dubbo:3.3.0'
+
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     // ============ 测试框架 ============

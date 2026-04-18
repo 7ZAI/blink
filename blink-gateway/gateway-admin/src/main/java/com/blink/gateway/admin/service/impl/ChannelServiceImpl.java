@@ -100,6 +100,7 @@ public class ChannelServiceImpl implements ChannelService {
                 new LambdaQueryWrapper<GaChannelDO>()
                         .eq(StrUtil.isNotBlank(req.getChannelId()), GaChannelDO::getChannelId, req.getChannelId())
                         .eq(StrUtil.isNotBlank(req.getChannelName()), GaChannelDO::getChannelName, req.getChannelName())
+                        .eq(StrUtil.isNotBlank(req.getAppKey()), GaChannelDO::getAppKey, req.getAppKey())
         );
 
         ChannelVO channelVO = new ChannelVO();

@@ -1,5 +1,7 @@
 package com.blink.gateway.config.prop;
 
+import com.blink.gateway.event.ChangeType;
+import com.blink.gateway.event.DynamicRouteConfigChangedEvent;
 import com.blink.gateway.event.EnableStreamEvent;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
+import java.util.Objects;
 
 import static com.blink.gateway.constant.GatewayConstant.*;
 import static com.blink.gateway.constant.RedisConstans.*;
@@ -56,6 +59,10 @@ public class BlinkGatewayProperties {
      */
     private String instanceId;
 
+    /**
+     * 实例分组
+     */
+    private String instanceGroup;
 
     /**
      * 本地缓存开关 默认开启
@@ -76,8 +83,56 @@ public class BlinkGatewayProperties {
         return dynamicroute;
     }
 
-    public void setDynamicroute(DynamicRoute dynamicroute) {
-        this.dynamicroute = dynamicroute;
+    public void setDynamicroute(DynamicRoute newValue) {
+        DynamicRoute oldValue = this.dynamicroute;
+        this.dynamicroute = newValue;
+
+        // 检测配置变化
+        ChangeType changeType = detectChange(oldValue, newValue);
+        if (changeType != null) {
+            eventPublisher.publishEvent(
+                new DynamicRouteConfigChangedEvent(oldValue, newValue, changeType)
+            );
+        }
+    }
+
+    /**
+     * 检测配置变化类型
+     *
+     * @param oldValue 旧配置
+     * @param newValue 新配置
+     * @return 变化类型，无变化返回 null
+     */
+    private ChangeType detectChange(DynamicRoute oldValue, DynamicRoute newValue) {
+        // 首次初始化，不触发事件
+        if (oldValue == null) {
+            return null;
+        }
+
+        String oldMode = oldValue.getMode();
+        String newMode = newValue.getMode();
+
+        // mode 变化
+        if (!Objects.equals(oldMode, newMode)) {
+            return ChangeType.MODE_SWITCH;
+        }
+
+        // Nacos 配置变化
+        if ("nacos".equals(newMode)) {
+            if (!Objects.equals(oldValue.getNacos().getDataId(), newValue.getNacos().getDataId())
+                || !Objects.equals(oldValue.getNacos().getGroup(), newValue.getNacos().getGroup())) {
+                return ChangeType.NACOS_CONFIG_CHANGE;
+            }
+        }
+
+        // Redis 配置变化
+        if ("redis".equals(newMode)) {
+            if (!Objects.equals(oldValue.getRedis().getRouteSuffix(), newValue.getRedis().getRouteSuffix())) {
+                return ChangeType.REDIS_CONFIG_CHANGE;
+            }
+        }
+
+        return null;
     }
 
     public String getChannelConfigId() {
@@ -114,6 +169,14 @@ public class BlinkGatewayProperties {
 
     public void setInstanceId(@NotBlank(message = "实例id不能为空") String instanceId) {
         this.instanceId = instanceId;
+    }
+
+    public String getInstanceGroup() {
+        return instanceGroup;
+    }
+
+    public void setInstanceGroup(String instanceGroup) {
+        this.instanceGroup = instanceGroup;
     }
 
     /**
