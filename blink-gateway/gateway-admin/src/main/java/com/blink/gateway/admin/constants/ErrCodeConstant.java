@@ -450,20 +450,64 @@ public interface ErrCodeConstant {
      */
     String INSTANCE_CONFIG_NOT_FOUND = "GATE0200";
 
-    // ============ 实例分组错误码 GATE0210-GATE0219 ============
+    // ============ 路由分组错误码 GATE0210-GATE0219 ============
 
     /**
-     * 实例分组不存在
+     * 路由分组不存在
      */
-    String INSTANCE_GROUP_NOT_EXIST = "GATE0210";
+    String ROUTE_GROUP_NOT_EXIST = "GATE0210";
 
     /**
      * 分组标识已存在
      */
-    String INSTANCE_GROUP_KEY_EXISTS = "GATE0211";
+    String ROUTE_GROUP_KEY_EXISTS = "GATE0211";
 
     /**
      * 分组下存在实例，无法删除
      */
-    String INSTANCE_GROUP_HAS_INSTANCES = "GATE0212";
+    String ROUTE_GROUP_HAS_INSTANCES = "GATE0212";
+
+    // ============ 渠道配置错误码 GATE0220-GATE0229 ============
+
+    /**
+     * 获取渠道配置文件失败
+     */
+    String CHANNEL_CONFIG_GET_FAILED = "GATE0220";
+
+    /**
+     * 渠道配置不存在
+     */
+    String CHANNEL_CONFIG_NOT_EXIST = "GATE0221";
+
+    /**
+     * 渠道配置文件为空
+     */
+    String CHANNEL_CONFIG_EMPTY = "GATE0222";
+
+    /**
+     * 发布渠道配置失败
+     */
+    String CHANNEL_CONFIG_PUBLISH_FAILED = "GATE0223";
+
+    // ============ 实例分组切换错误码 GATE0224-GATE0229 ============
+
+    /**
+     * 在线实例不允许切换分组
+     */
+    String INSTANCE_ONLINE_CANNOT_SWITCH = "GATE0224";
+
+    /**
+     * 目标分组配置不存在
+     */
+    String TARGET_GROUP_CONFIG_NOT_EXIST = "GATE0225";
+
+    /**
+     * 实例配置文件不存在
+     */
+    String INSTANCE_CONFIG_NOT_EXIST = "GATE0226";
+
+    /**
+     * 切换分组失败
+     */
+    String SWITCH_GROUP_FAILED = "GATE0227";
 }
