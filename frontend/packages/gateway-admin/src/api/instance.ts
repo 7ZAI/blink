@@ -206,6 +206,21 @@ export const refreshInstanceStatus = (): Promise<void> => {
   return request.post('/gatewayInstance/refreshInstanceStatus', { body: {} })
 }
 
+/**
+ * 切换实例分组请求参数
+ */
+export interface SwitchInstanceGroupParams {
+  instanceId: string
+  targetGroupKey: string
+}
+
+/**
+ * 切换实例分组
+ */
+export const switchInstanceGroup = (params: SwitchInstanceGroupParams): Promise<void> => {
+  return request.post('/gatewayInstance/switchInstanceGroup', { body: params })
+}
+
 // ==================== API 对象导出 ====================
 
 export const instanceApi = {
@@ -216,4 +231,5 @@ export const instanceApi = {
   offlineInstance,
   gracefulOfflineInstance,
   refreshInstanceStatus,
+  switchInstanceGroup,
 }
