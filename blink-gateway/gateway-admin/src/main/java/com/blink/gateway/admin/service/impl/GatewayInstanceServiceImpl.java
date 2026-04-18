@@ -122,6 +122,18 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     @Value("${blink.gateway.instance.drain-wait-seconds:30}")
     private Integer drainWaitSeconds;
 
+    /**
+     * 默认分组标识
+     */
+    @Value("${blink.gateway.instance.default-group-key:default}")
+    private String defaultGroupKey;
+
+    /**
+     * 默认存储方式
+     */
+    @Value("${blink.gateway.instance.default-storage-mode:redis}")
+    private String defaultStorageMode;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final WebClient webClient = WebClient.builder()
@@ -641,8 +653,16 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             newInstance.setUri(instance.getUri().toString());
             newInstance.setStatus(INSTANCE_STATUS_ONLINE);
             newInstance.setOnlineTime(LocalDateTime.now());
+
+            // 从元数据读取分组和存储方式配置
+            Map<String, String> metadata = instance.getMetadata();
+            String groupKey = metadata != null ? metadata.getOrDefault("groupKey", defaultGroupKey) : defaultGroupKey;
+            String storageMode = metadata != null ? metadata.getOrDefault("storageMode", defaultStorageMode) : defaultStorageMode;
+            newInstance.setGroupKey(groupKey);
+            newInstance.setStorageMode(storageMode);
+
             gatewayInstanceMapper.insert(newInstance);
-            log.info("[GatewayInstance] 新增网关实例 | instanceId: {}", instanceId);
+            log.info("[GatewayInstance] 新增网关实例 | instanceId: {}, groupKey: {}, storageMode: {}", instanceId, groupKey, storageMode);
         }
     }
 
@@ -823,9 +843,11 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     /**
      * 将 DO 转换为 InstanceInfoVO
      */
-    private InstanceInfoVO convertToInstanceInfoVO(GatewayInstanceDO instanceDO) {
-        InstanceInfoVO vo = BeanUtil.copyProperties(instanceDO, InstanceInfoVO.class);
-        vo.setStatusDesc(getStatusDesc(instanceDO.getStatus()));
+    private InstanceInfoVO convertToInstanceInfoVO(GatewayInstanceDO doct) {
+        InstanceInfoVO vo = BeanUtil.copyProperties(doct, InstanceInfoVO.class);
+        vo.setStatusDesc(getStatusDesc(doct.getStatus()));
+        vo.setGroupKey(doct.getGroupKey());
+        vo.setStorageMode(doct.getStorageMode());
         return vo;
     }
 

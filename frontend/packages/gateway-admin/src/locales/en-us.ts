@@ -1494,6 +1494,27 @@ export default {
     forceOfflineWarning: 'Force offline will immediately interrupt ongoing requests!',
     statusDraining: 'Draining',
     drainingHint: 'Instance is draining traffic, will be offline soon',
+    // Instance group related
+    groupKey: 'Group',
+    storageMode: 'Storage Mode',
+    groupKeyPlaceholder: 'Select group',
+    storageModeRedis: 'Redis',
+    storageModeNacos: 'Nacos',
+  },
+  instanceGroup: {
+    title: 'Instance Group',
+    groupKey: 'Group Key',
+    groupName: 'Group Name',
+    groupKeyPlaceholder: 'Enter group key',
+    groupNamePlaceholder: 'Enter group name',
+    remarkPlaceholder: 'Enter remark',
+    addGroup: 'Add Group',
+    editGroup: 'Edit Group',
+    deleteConfirm: 'Are you sure you want to delete this group? This action cannot be undone',
+    groupKeyRequired: 'Group key is required',
+    groupNameRequired: 'Group name is required',
+    groupKeyExists: 'Group key already exists',
+    hasInstances: 'Cannot delete group with instances',
   },
   alert: {
     // Page title

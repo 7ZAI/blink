@@ -30,6 +30,8 @@ export interface InstanceInfo {
   metadata?: string
   status: number
   statusDesc: string
+  groupKey?: string
+  storageMode?: string
   onlineTime?: string
   offlineTime?: string
   createTime?: string
@@ -110,6 +112,7 @@ export interface QueryInstanceParams {
   serviceId?: string
   host?: string
   status?: number
+  groupKey?: string
 }
 
 /**

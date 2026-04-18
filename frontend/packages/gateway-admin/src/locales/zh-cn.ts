@@ -1448,6 +1448,27 @@ export default {
     forceOfflineWarning: '强制下线将立即中断正在处理的请求！',
     statusDraining: '排空',
     drainingHint: '实例正在排空流量，稍后将自动下线',
+    // 实例分组相关
+    groupKey: '分组',
+    storageMode: '存储方式',
+    groupKeyPlaceholder: '请选择分组',
+    storageModeRedis: 'Redis',
+    storageModeNacos: 'Nacos',
+  },
+  instanceGroup: {
+    title: '实例分组',
+    groupKey: '分组标识',
+    groupName: '分组名称',
+    groupKeyPlaceholder: '请输入分组标识',
+    groupNamePlaceholder: '请输入分组名称',
+    remarkPlaceholder: '请输入备注说明',
+    addGroup: '新增分组',
+    editGroup: '编辑分组',
+    deleteConfirm: '确定要删除该分组吗？删除后不可恢复',
+    groupKeyRequired: '分组标识不能为空',
+    groupNameRequired: '分组名称不能为空',
+    groupKeyExists: '分组标识已存在',
+    hasInstances: '该分组下存在实例，无法删除',
   },
   alert: {
     // 页面标题

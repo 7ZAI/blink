@@ -64,6 +64,16 @@ public class InstanceInfoVO implements Serializable {
     private String statusDesc;
 
     /**
+     * 分组标识
+     */
+    private String groupKey;
+
+    /**
+     * 存储方式
+     */
+    private String storageMode;
+
+    /**
      * 上线时间
      */
     private LocalDateTime onlineTime;
