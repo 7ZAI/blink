@@ -13,6 +13,11 @@ public enum ChangeType {
     MODE_SWITCH,
 
     /**
+     * 路由分组变化：group 变化
+     */
+    ROUTE_GROUP_CHANGE,
+
+    /**
      * Nacos 配置变化：dataId 或 group 变化
      */
     NACOS_CONFIG_CHANGE,

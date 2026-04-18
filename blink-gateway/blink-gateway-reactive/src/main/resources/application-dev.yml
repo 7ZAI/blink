@@ -137,6 +137,9 @@ info:
 #    eventStreamEnable: false
 #    dynamicRoute:
 #      mode: close
+#      group: default        # 路由分组，用于区分不同网关实例组
+#                            # Redis 模式：routeKey = gateway:dynamic-routes:{group}:{routeSuffix}
+#                            # Nacos 模式：dataId = {dataId}-{group}
 #      nacos:
 #        dataId: gateway-routes
 #        group: DEFAULT_GROUP

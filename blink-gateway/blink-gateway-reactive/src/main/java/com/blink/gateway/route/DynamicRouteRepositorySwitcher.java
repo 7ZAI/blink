@@ -56,6 +56,9 @@ public class DynamicRouteRepositorySwitcher {
                 case MODE_SWITCH:
                     handleModeSwitch(event.getOldValue(), newConfig);
                     break;
+                case ROUTE_GROUP_CHANGE:
+                    handleRouteGroupChange(newConfig);
+                    break;
                 case NACOS_CONFIG_CHANGE:
                     handleNacosConfigChange(newConfig);
                     break;
@@ -96,6 +99,25 @@ public class DynamicRouteRepositorySwitcher {
             createNacosBeans(newConfig);
         } else if ("redis".equals(newMode)) {
             createRedisBeans(newConfig);
+        }
+    }
+
+    /**
+     * 处理路由分组变化
+     * 路由分组变化时，需要重建对应的 Repository 和 Listener
+     */
+    private void handleRouteGroupChange(DynamicRoute config) {
+        String mode = config.getMode();
+        log.info("[DynamicRoute] 路由分组变化，当前模式: {}, 新分组: {}", mode, config.getGroup());
+
+        if ("nacos".equals(mode)) {
+            // Nacos 模式：重建 Repository 和 Listener（dataId 会包含分组后缀）
+            destroyNacosBeans();
+            createNacosBeans(config);
+        } else if ("redis".equals(mode)) {
+            // Redis 模式：重建 Repository（routeKey 会包含分组）
+            destroyRedisBeans();
+            createRedisBeans(config);
         }
     }
 

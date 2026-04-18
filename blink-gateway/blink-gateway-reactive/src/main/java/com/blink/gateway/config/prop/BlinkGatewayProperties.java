@@ -59,10 +59,7 @@ public class BlinkGatewayProperties {
      */
     private String instanceId;
 
-    /**
-     * 实例分组
-     */
-    private String instanceGroup;
+
 
     /**
      * 本地缓存开关 默认开启
@@ -86,6 +83,16 @@ public class BlinkGatewayProperties {
     public void setDynamicroute(DynamicRoute newValue) {
         DynamicRoute oldValue = this.dynamicroute;
         this.dynamicroute = newValue;
+
+        // 将 group 值传递给 Redis 和 Nacos 配置
+        if (newValue != null) {
+            if (newValue.getRedis() != null) {
+                newValue.getRedis().setRouteGroup(newValue.getGroup());
+            }
+            if (newValue.getNacos() != null) {
+                newValue.getNacos().setRouteGroup(newValue.getGroup());
+            }
+        }
 
         // 检测配置变化
         ChangeType changeType = detectChange(oldValue, newValue);
@@ -117,9 +124,14 @@ public class BlinkGatewayProperties {
             return ChangeType.MODE_SWITCH;
         }
 
+        // 路由分组变化
+        if (!Objects.equals(oldValue.getGroup(), newValue.getGroup())) {
+            return ChangeType.ROUTE_GROUP_CHANGE;
+        }
+
         // Nacos 配置变化
         if ("nacos".equals(newMode)) {
-            if (!Objects.equals(oldValue.getNacos().getDataId(), newValue.getNacos().getDataId())
+            if (!Objects.equals(oldValue.getNacos().getOriginalDataId(), newValue.getNacos().getOriginalDataId())
                 || !Objects.equals(oldValue.getNacos().getGroup(), newValue.getNacos().getGroup())) {
                 return ChangeType.NACOS_CONFIG_CHANGE;
             }
@@ -171,14 +183,6 @@ public class BlinkGatewayProperties {
         this.instanceId = instanceId;
     }
 
-    public String getInstanceGroup() {
-        return instanceGroup;
-    }
-
-    public void setInstanceGroup(String instanceGroup) {
-        this.instanceGroup = instanceGroup;
-    }
-
     /**
      * 获取消费者组名称
      * 格式：appName:instanceId
@@ -201,6 +205,14 @@ public class BlinkGatewayProperties {
         private String mode = "nacos";
 
         /**
+         * 路由分组
+         * 用于区分不同网关实例组的路由配置
+         * - Redis 模式：参与 routeKey 拼接，格式为 gateway:dynamic-routes:{group}:{routeSuffix}
+         * - Nacos 模式：参与 dataId 拼接，格式为 {dataId}-{group}.json
+         */
+        private String group = "default";
+
+        /**
          * Nacos配置相关属性
          */
         private Nacos nacos = new Nacos();
@@ -215,6 +227,14 @@ public class BlinkGatewayProperties {
 
         public void setMode(String mode) {
             this.mode = mode;
+        }
+
+        public String getGroup() {
+            return group;
+        }
+
+        public void setGroup(String group) {
+            this.group = group;
         }
 
         public Nacos getNacos() {
@@ -241,8 +261,33 @@ public class BlinkGatewayProperties {
             private String dataId = NACOS_GATEWAY_ROUTES_DEFAULT_DATAID;
             private String group = NACOS_GATEWAY_ROUTES_DEFAULT_GROUP;
 
+            /**
+             * 路由分组（由 DynamicRoute.group 传入）
+             * 不通过配置文件直接设置，由外部传入
+             */
+            private String routeGroup;
+
             // getter和setter
+            /**
+             * 获取 dataId
+             * 如果设置了 routeGroup，则返回格式为 {dataId}-{routeGroup}
+             * 例如：gateway-routes-group-a
+             *
+             * @return dataId
+             */
             public String getDataId() {
+                if (routeGroup != null && !routeGroup.isEmpty() && !"default".equals(routeGroup)) {
+                    return dataId + "-" + routeGroup;
+                }
+                return dataId;
+            }
+
+            /**
+             * 获取原始 dataId（不包含分组后缀）
+             *
+             * @return 原始 dataId
+             */
+            public String getOriginalDataId() {
                 return dataId;
             }
 
@@ -256,6 +301,15 @@ public class BlinkGatewayProperties {
 
             public void setGroup(String group) {
                 this.group = group;
+            }
+
+            /**
+             * 设置路由分组
+             *
+             * @param routeGroup 路由分组
+             */
+            public void setRouteGroup(String routeGroup) {
+                this.routeGroup = routeGroup;
             }
         }
 
@@ -276,21 +330,46 @@ public class BlinkGatewayProperties {
 
             private String routeSuffix = "default";
 
+            /**
+             * 路由分组（由 DynamicRoute.group 传入）
+             * 不通过配置文件直接设置，由外部传入
+             */
+            private String routeGroup;
 
             public String getRouteSuffix() {
                 return routeSuffix;
             }
 
+            /**
+             * 获取完整的路由 Redis Key
+             * 格式：gateway:dynamic-routes:{group}:{routeSuffix}
+             * 例如：gateway:dynamic-routes:group-a:default
+             *
+             * @return Redis Key
+             */
             public String getRouteKey() {
-                return ROUTE_PROFIX + this.routeSuffix;
+                StringBuilder keyBuilder = new StringBuilder(ROUTE_PROFIX);
+                // 添加路由分组
+                if (routeGroup != null && !routeGroup.isEmpty()) {
+                    keyBuilder.append(routeGroup).append(":");
+                }
+                // 添加路由后缀
+                keyBuilder.append(this.routeSuffix);
+                return keyBuilder.toString();
             }
 
             public void setRouteSuffix(String routeSuffix) {
-
                 this.routeSuffix = routeSuffix;
             }
 
-
+            /**
+             * 设置路由分组
+             *
+             * @param routeGroup 路由分组
+             */
+            public void setRouteGroup(String routeGroup) {
+                this.routeGroup = routeGroup;
+            }
         }
     }
 
