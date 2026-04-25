@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
+      '@blink/components': resolve(__dirname, 'src/lib-index.ts'),
     },
   },
   server: {
