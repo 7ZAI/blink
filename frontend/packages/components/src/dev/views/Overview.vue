@@ -249,7 +249,7 @@ import {
   Rank,
   FullScreen,
   Setting,
-  Shield,
+  Lock,
   PictureFilled,
   ChatDotSquare,
   Tickets,
@@ -276,7 +276,7 @@ const functionalComponents = ref([
   { name: 'LanguageSwitch', desc: '语言切换器', path: '/functional/language-switch', icon: ChatDotSquare },
   { name: 'FullscreenToggle', desc: '全屏切换按钮', path: '/functional/fullscreen-toggle', icon: FullScreen },
   { name: 'ThemeSettings', desc: '主题设置面板', path: '/functional/theme-settings', icon: Setting },
-  { name: 'CaptchaSlider', desc: '滑块验证码', path: '/functional/captcha-slider', icon: Shield },
+  { name: 'CaptchaSlider', desc: '滑块验证码', path: '/functional/captcha-slider', icon: Lock },
   { name: 'IconSelector', desc: '图标选择器', path: '/functional/icon-selector', icon: PictureFilled },
 ])
 
