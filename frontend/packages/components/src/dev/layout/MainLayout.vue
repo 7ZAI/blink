@@ -22,11 +22,13 @@
           :router="true"
           class="sidebar-menu"
         >
-          <template v-for="item in menuItems" :key="item.path">
+          <template v-for="item in parsedMenuItems" :key="item.path">
             <!-- 有子菜单 -->
             <el-sub-menu v-if="item.children && item.children.length > 0" :index="item.path">
               <template #title>
-                <el-icon class="menu-icon"><component :is="item.meta?.icon" /></el-icon>
+                <el-icon class="menu-icon">
+                  <component :is="item.iconComponent" v-if="item.iconComponent" />
+                </el-icon>
                 <span>{{ item.meta?.title }}</span>
               </template>
               <el-menu-item
@@ -41,7 +43,9 @@
             </el-sub-menu>
             <!-- 无子菜单 -->
             <el-menu-item v-else :index="item.path">
-              <el-icon class="menu-icon"><component :is="item.meta?.icon" /></el-icon>
+              <el-icon class="menu-icon">
+                <component :is="item.iconComponent" v-if="item.iconComponent" />
+              </el-icon>
               <template #title>
                 <span class="menu-title">{{ item.meta?.title }}</span>
               </template>
@@ -111,6 +115,20 @@ import {
   Document,
   Expand,
   Fold,
+  Menu,
+  UserFilled,
+  FolderOpened,
+  Sunny,
+  Rank,
+  FullScreen,
+  Setting,
+  Shield,
+  PictureFilled,
+  ChatDotSquare,
+  Tickets,
+  Operation,
+  Star,
+  Check,
 } from '@element-plus/icons-vue'
 import routes from '../routes'
 
@@ -119,10 +137,51 @@ const route = useRoute()
 const sidebarCollapsed = ref(false)
 const currentRoute = computed(() => route.path)
 
+// 图标映射
+const iconMap: Record<string, any> = {
+  HomeFilled,
+  Grid,
+  Tools,
+  Briefcase,
+  Monitor,
+  Menu,
+  UserFilled,
+  FolderOpened,
+  Sunny,
+  Rank,
+  FullScreen,
+  Setting,
+  Shield,
+  PictureFilled,
+  ChatDotSquare,
+  Tickets,
+  Operation,
+  Document,
+  Star,
+  Check,
+}
+
+// 获取图标组件
+const getIconComponent = (iconName: string | undefined) => {
+  if (!iconName) return null
+  return iconMap[iconName] || null
+}
+
 // 菜单项
 const menuItems = computed(() => {
   const homeRoute = routes.find((r) => r.path === '/')
   return homeRoute?.children || []
+})
+
+// 带图标解析的菜单项
+const parsedMenuItems = computed(() => {
+  return menuItems.value.map(item => ({
+    ...item,
+    iconComponent: getIconComponent(item.meta?.icon as string),
+    children: item.children?.map(child => ({
+      ...child,
+    }))
+  }))
 })
 
 // 面包屑
