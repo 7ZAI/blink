@@ -149,3 +149,49 @@ export { useSubmitGuard } from './composables/useSubmitGuard'
 
 export { dataFadeDirective, listFadeDirective, tableFadeDirective } from './directives/dataFade'
 export { default as rippleDirective } from './directives/ripple'
+
+// ============================================
+// BlinkTaskDialog 组件导出
+// ============================================
+
+// 组件导出
+export { default as BlinkTaskDialog } from './components/BlinkTaskDialog/index.vue'
+
+// 子组件导出（可选）
+export { default as BlinkTaskProgressBar } from './components/BlinkTaskDialog/components/ProgressBar.vue'
+export { default as BlinkTaskStepsIndicator } from './components/BlinkTaskDialog/components/StepsIndicator.vue'
+export { default as BlinkTaskSpinner } from './components/BlinkTaskDialog/components/Spinner.vue'
+export { default as BlinkTaskResultPanel } from './components/BlinkTaskDialog/components/ResultPanel.vue'
+
+// Composable 导出
+export { useTaskRunner } from './components/BlinkTaskDialog/composables/useTaskRunner'
+
+// 类型导出
+export type {
+  TaskState,
+  TaskStatus as BlinkTaskStatus,
+  TaskProgress,
+  TaskResult,
+  TaskRunnerOptions,
+  TaskRunnerReturn,
+  StartOptions,
+  ProgressUpdate,
+  TaskFunction,
+  ResultAction,
+  StepInfo,
+  StepStatus as BlinkStepStatus,
+  ProgressType,
+  BlinkTaskDialogProps,
+  BlinkTaskDialogEmits,
+  RunTaskDialogResult,
+} from './components/BlinkTaskDialog/types'
+
+// 便捷函数导出
+export { runTaskDialog, showTaskDialog } from './components/BlinkTaskDialog/functions/index'
+
+// 国际化导出
+export { zhCn as taskDialogZhCn } from './components/BlinkTaskDialog/locale/zh-cn'
+export { enUs as taskDialogEnUs } from './components/BlinkTaskDialog/locale/en-us'
+
+// Re-export enums for direct access
+export { TaskStatus, StepStatus } from './components/BlinkTaskDialog/types'
