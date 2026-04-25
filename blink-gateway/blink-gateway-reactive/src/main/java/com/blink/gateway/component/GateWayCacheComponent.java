@@ -43,6 +43,9 @@ public class GateWayCacheComponent {
     @Resource
     private GatewayAdminDubboService gatewayAdminDubboService;
 
+    @Resource
+    private ChannelConfigCache channelConfigCache;
+
     private final HashMap<String, String> localCacheKeyMapping;
 
     public GateWayCacheComponent() {
@@ -105,12 +108,20 @@ public class GateWayCacheComponent {
 
     /**
      * 从缓存中获取渠道信息
+     * 优先从 Nacos 本地缓存获取，未命中时回退到多级缓存
      *
      * @param appKey 渠道appkey
      * @return Mono<ChannelInfoRedisDO>
      */
     public Mono<ChannelInfoRedisDO> getChannelInfoFromCache(String appKey) {
+        // 优先从 Nacos 本地缓存获取
+        ChannelInfoRedisDO cached = channelConfigCache.getChannelInfo(appKey);
+        if (cached != null) {
+            log.debug("[ChannelInfo] 从 Nacos 本地缓存获取 | appKey: {}", appKey);
+            return Mono.just(cached);
+        }
 
+        // 回退到多级缓存（本地缓存 → Redis → Dubbo）
         String cacheKey = BLINK_CHANNEL_PREFIX + appKey;
 
         return multiLevelCacheComponent.get(GatewayConstant.CONSISTENT_CACHE,

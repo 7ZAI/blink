@@ -34,6 +34,11 @@ export interface InstanceInfo {
   storageMode?: string
   onlineTime?: string
   offlineTime?: string
+  offlineReason?: string
+  offlineType?: string
+  inRegistry?: boolean
+  statusConflict?: string
+  healthStatus?: string // UP/DOWN/OFFLINE
   createTime?: string
   updateTime?: string
 }

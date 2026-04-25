@@ -38,11 +38,14 @@ public class GatewayInstanceController {
     private GatewayInstanceService gatewayInstanceService;
 
     /**
-     * 获取网关实例列表
+     * 获取网关实例列表（已废弃）
      *
+     * @deprecated 该接口只查询 Nacos 注册中心，无法看到下线实例。
+     *             请使用 {@link #queryInstanceList} 接口。
      * @param reqDto 请求参数
      * @return 实例列表
      */
+    @Deprecated
     @PostMapping("/getGatewayInstances")
     public ResponseDTO<GatewayInstanceListRsp> getGatewayInstances(@RequestBody RequestDTO<EmptyBody> reqDto) {
         return gatewayInstanceService.getGatewayInstances();

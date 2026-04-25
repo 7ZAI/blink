@@ -13,8 +13,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-discovery'
     implementation 'com.alibaba.cloud:spring-cloud-starter-alibaba-nacos-config'
-    // Nacos NamingService 用于实例管理
-    implementation 'com.alibaba.nacos:nacos-client:2.3.2'
+
     // Dubbo 依赖
     implementation 'org.apache.dubbo:dubbo-spring-boot-starter'
 

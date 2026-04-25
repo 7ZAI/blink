@@ -5,13 +5,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 分页查询实例分组列表请求参数
+ * 分页查询路由分组列表请求参数
  *
  * @author binblink
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class QueryInstanceGroupReq extends Page {
+public class QueryRouteGroupReq extends Page {
 
     /**
      * 分组标识（模糊查询）

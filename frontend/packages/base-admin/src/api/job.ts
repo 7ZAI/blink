@@ -102,73 +102,41 @@ export interface QuerySysJobLogReq {
 // ==================== API 接口 ====================
 
 /** 获取任务列表 */
-export function getJobList(data: QuerySysJobReq) {
-  return request<ApiResponse<PageResult<SysJobVO>>>({
-    url: '/job/getJobList',
-    method: 'post',
-    data
-  })
+export function getJobList(data: QuerySysJobReq): Promise<PageResult<SysJobVO>> {
+  return request.post('/job/getJobList', { body: data }) as Promise<PageResult<SysJobVO>>
 }
 
 /** 新增任务 */
-export function addJob(data: AddSysJobReq) {
-  return request<ApiResponse<void>>({
-    url: '/job/addJob',
-    method: 'post',
-    data
-  })
+export function addJob(data: AddSysJobReq): Promise<void> {
+  return request.post('/job/addJob', { body: data }) as Promise<void>
 }
 
 /** 更新任务 */
-export function updateJob(data: UpdateSysJobReq) {
-  return request<ApiResponse<void>>({
-    url: '/job/updateJob',
-    method: 'post',
-    data
-  })
+export function updateJob(data: UpdateSysJobReq): Promise<void> {
+  return request.post('/job/updateJob', { body: data }) as Promise<void>
 }
 
 /** 删除任务 */
-export function deleteJob(data: DeleteSysJobReq) {
-  return request<ApiResponse<void>>({
-    url: '/job/deleteJob',
-    method: 'post',
-    data
-  })
+export function deleteJob(data: DeleteSysJobReq): Promise<void> {
+  return request.post('/job/deleteJob', { body: data }) as Promise<void>
 }
 
 /** 暂停任务 */
-export function pauseJob(data: JobIdReq) {
-  return request<ApiResponse<void>>({
-    url: '/job/pauseJob',
-    method: 'post',
-    data
-  })
+export function pauseJob(data: JobIdReq): Promise<void> {
+  return request.post('/job/pauseJob', { body: data }) as Promise<void>
 }
 
 /** 恢复任务 */
-export function resumeJob(data: JobIdReq) {
-  return request<ApiResponse<void>>({
-    url: '/job/resumeJob',
-    method: 'post',
-    data
-  })
+export function resumeJob(data: JobIdReq): Promise<void> {
+  return request.post('/job/resumeJob', { body: data }) as Promise<void>
 }
 
 /** 立即执行 */
-export function triggerJob(data: JobIdReq) {
-  return request<ApiResponse<void>>({
-    url: '/job/triggerJob',
-    method: 'post',
-    data
-  })
+export function triggerJob(data: JobIdReq): Promise<void> {
+  return request.post('/job/triggerJob', { body: data }) as Promise<void>
 }
 
 /** 获取日志列表 */
-export function getLogList(data: QuerySysJobLogReq) {
-  return request<ApiResponse<PageResult<SysJobLogVO>>>({
-    url: '/job/getLogList',
-    method: 'post',
-    data
-  })
+export function getLogList(data: QuerySysJobLogReq): Promise<PageResult<SysJobLogVO>> {
+  return request.post('/job/getLogList', { body: data }) as Promise<PageResult<SysJobLogVO>>
 }

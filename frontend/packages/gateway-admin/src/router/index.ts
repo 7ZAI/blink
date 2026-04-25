@@ -270,6 +270,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'route.title' },
         children: [
           {
+            path: 'group',
+            name: 'RouteGroup',
+            component: () => import('@/views/routeGroup/index.vue'),
+            meta: { title: 'routeGroup.title' },
+          },
+          {
             path: 'repository',
             name: 'RouteRepository',
             component: () => import('@/views/route/index.vue'),

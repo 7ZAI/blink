@@ -8,9 +8,11 @@ import com.blink.framework.redis.mq.StreamMessage;
 import com.blink.gateway.component.GateWayCacheComponent;
 import com.blink.gateway.component.GatewayInstanceStateManager;
 import com.blink.gateway.component.MultiLevelCacheComponent;
+import com.blink.gateway.component.ChannelConfigCache;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.constant.GatewayConstant;
 import com.blink.gateway.dto.CacheMsg;
+import com.blink.gateway.dto.ChannelNacosRefreshMsg;
 import com.blink.gateway.dto.InstanceOfflineMsg;
 import com.blink.gateway.dto.InstanceOnlineMsg;
 import com.blink.gateway.dto.MonitorConfigMsg;
@@ -83,6 +85,9 @@ public class CommonEventStreamListener implements CommandLineRunner {
 
     @Resource
     private GatewayInstanceStateManager instanceStateManager;
+
+    @Resource
+    private ChannelConfigCache channelConfigCache;
 
     @Value("${blink.gateway.instance-id:01}")
     private String instanceId;
@@ -354,6 +359,20 @@ public class CommonEventStreamListener implements CommandLineRunner {
                 return Mono.just(smr);
             } catch (Exception e) {
                 log.error("[InstanceOnline] 实例上线指令处理失败 | error: {}", e.getMessage(), e);
+                smr.setHandledResult(false);
+                return Mono.just(smr);
+            }
+        }
+        // 渠道配置刷新
+        if (message.getPayload() instanceof ChannelNacosRefreshMsg refreshMsg) {
+            try {
+                channelNacosRefreshHandler(refreshMsg);
+                smr.setHandledResult(true);
+                log.info("[ChannelConfigSync] 渠道配置刷新成功 | type: {}, appKey: {}",
+                        refreshMsg.getRefreshType(), refreshMsg.getAppKey());
+                return Mono.just(smr);
+            } catch (Exception e) {
+                log.error("[ChannelConfigSync] 渠道配置刷新失败 | error: {}", e.getMessage(), e);
                 smr.setHandledResult(false);
                 return Mono.just(smr);
             }
@@ -664,6 +683,36 @@ public class CommonEventStreamListener implements CommandLineRunner {
     private String getCurrentInstanceIdentifier() {
         String localHost = GateWayUtil.getLocalIp();
         return localHost + ":" + serverPort;
+    }
+
+    /**
+     * 渠道配置刷新处理
+     * 处理 gateway-admin 推送的渠道配置变更
+     *
+     * @param refreshMsg 刷新消息
+     */
+    private void channelNacosRefreshHandler(ChannelNacosRefreshMsg refreshMsg) {
+        String refreshType = refreshMsg.getRefreshType();
+        String appKey = refreshMsg.getAppKey();
+
+        log.info("[ChannelConfigSync] 收到刷新消息 | type: {}, appKey: {}", refreshType, appKey);
+
+        switch (refreshType) {
+            case ChannelNacosRefreshMsg.REFRESH_TYPE_ALL:
+                // 全量刷新
+                channelConfigCache.refreshAll();
+                break;
+            case ChannelNacosRefreshMsg.REFRESH_TYPE_SINGLE:
+                // 单个刷新
+                channelConfigCache.refreshSingle(appKey);
+                break;
+            case ChannelNacosRefreshMsg.REFRESH_TYPE_DELETE:
+                // 删除缓存
+                channelConfigCache.evict(appKey);
+                break;
+            default:
+                log.warn("[ChannelConfigSync] 未知的刷新类型 | type: {}", refreshType);
+        }
     }
 
     // TODO 定期扫描 PEL 重新投递或者放入死信队列

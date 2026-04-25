@@ -7,13 +7,13 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 实例分组视图对象
+ * 路由分组视图对象
  *
  * @author binblink
  * @since 2026-04-18
  */
 @Data
-public class InstanceGroupVO implements Serializable {
+public class RouteGroupVO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -34,9 +34,10 @@ public class InstanceGroupVO implements Serializable {
     private String groupName;
 
     /**
-     * 状态：1启用 0禁用
+     * 绑定的实例数量
+     * 用于判断分组状态：>0 表示已启用（有实例绑定），=0 表示未启用
      */
-    private Byte status;
+    private Integer instanceCount;
 
     /**
      * 备注说明

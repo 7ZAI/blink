@@ -8,21 +8,15 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 更新实例分组请求参数
+ * 新增路由分组请求参数
  *
  * @author binblink
  */
 @Data
-public class UpdateInstanceGroupReq implements Serializable {
+public class AddRouteGroupReq implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
-
-    /**
-     * 分组ID
-     */
-    @NotNull(message = "分组ID不能为空")
-    private Integer groupId;
 
     /**
      * 分组标识（业务唯一键）
@@ -37,10 +31,9 @@ public class UpdateInstanceGroupReq implements Serializable {
     private String groupName;
 
     /**
-     * 状态：1启用 0禁用
+     * 状态：1启用 0禁用，默认启用
      */
-    @NotNull(message = "状态不能为空")
-    private Byte status;
+    private Byte status = 1;
 
     /**
      * 备注说明

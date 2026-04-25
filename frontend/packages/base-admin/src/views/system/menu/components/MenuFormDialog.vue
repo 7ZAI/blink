@@ -184,8 +184,8 @@ const rules: FormRules = {
   url: [
     {
       validator: (rule, value, callback) => {
-        // 目录和页面菜单URL必填
-        if ((form.type === 1 || form.type === 2) && !value?.trim()) {
+        // 只有页面菜单(type=2)URL必填，目录(type=1)不需要URL
+        if (form.type === 2 && !value?.trim()) {
           callback(new Error(t('common.pleaseInput') + t('menu.url')))
         } else {
           callback()

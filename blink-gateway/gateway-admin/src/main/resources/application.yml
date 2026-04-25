@@ -69,6 +69,7 @@ blink:
       key-prefix: "blink:lock:"
       watchdog-enabled: true
   gateway:
+    service-prefix: gateway-app
     monitor:
       collect-interval-ms: 30000       # 采集间隔（毫秒）
       actuator-username: admin         # actuator 认证用户名

@@ -1,5 +1,6 @@
 package com.blink.gateway.admin.dto.req;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.io.Serial;
@@ -19,5 +20,6 @@ public class OnlineGatewayInstanceReq implements Serializable {
     /**
      * 实例 ID
      */
+    @NotBlank(message = "实例ID不能为空")
     private String instanceId;
 }

@@ -7,12 +7,12 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 获取实例分组详情请求参数
+ * 删除路由分组请求参数
  *
  * @author binblink
  */
 @Data
-public class GetInstanceGroupReq implements Serializable {
+public class DeleteRouteGroupReq implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

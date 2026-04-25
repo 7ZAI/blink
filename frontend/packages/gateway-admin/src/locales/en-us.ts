@@ -1415,6 +1415,20 @@ export default {
     createTime: 'Create Time',
     updateTime: 'Update Time',
 
+    // Offline reason and type
+    offlineReason: 'Offline Reason',
+    offlineType: 'Offline Type',
+    offlineTypeManual: 'Manual',
+    offlineTypeFault: 'Fault',
+    offlineTypeDraining: 'Draining',
+
+    // Health and registry status
+    healthStatus: 'Health Status',
+    registryStatus: 'Registry Status',
+    inRegistry: 'Registered',
+    notInRegistry: 'Not Registered',
+    statusConflict: 'Status Conflict',
+
     // Actions
     deleteInstance: 'Delete Instance',
     onlineInstance: 'Online Instance',
@@ -1470,11 +1484,7 @@ export default {
     onlineSuccess: 'Instance is now online',
     offlineSuccess: 'Instance is now offline',
 
-    // Offline reason and type
-    offlineReason: 'Offline Reason',
-    offlineType: 'Offline Type',
-    offlineTypeManual: 'Manual Offline',
-    offlineTypeFault: 'Fault Offline',
+    // Offline reason placeholder
     offlineReasonPlaceholder: 'Enter offline reason (optional)',
 
     // Last instance protection
@@ -1512,6 +1522,7 @@ export default {
     title: 'Route Group',
     groupKey: 'Group Key',
     groupName: 'Group Name',
+    instanceCount: 'Instance Count',
     groupKeyPlaceholder: 'Enter group key',
     groupNamePlaceholder: 'Enter group name',
     remarkPlaceholder: 'Enter remark',

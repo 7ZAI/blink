@@ -60,7 +60,7 @@ public class UpdateSysMenuReq implements Serializable {
 
 
     /**
-     * 菜单地址（type=1目录或type=2页面时必填）
+     * 菜单地址（仅type=2页面时必填，目录type=1不需要）
      */
     @FieldConstraint(name = "url", message = BaseErrCodeConstant.PARAMETER_OUT_RANGE)
     private String url;

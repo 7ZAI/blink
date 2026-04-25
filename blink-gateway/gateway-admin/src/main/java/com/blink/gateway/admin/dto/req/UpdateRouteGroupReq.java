@@ -8,15 +8,21 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 新增实例分组请求参数
+ * 更新路由分组请求参数
  *
  * @author binblink
  */
 @Data
-public class AddInstanceGroupReq implements Serializable {
+public class UpdateRouteGroupReq implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
+
+    /**
+     * 分组ID
+     */
+    @NotNull(message = "分组ID不能为空")
+    private Integer groupId;
 
     /**
      * 分组标识（业务唯一键）

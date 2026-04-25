@@ -510,4 +510,31 @@ public interface ErrCodeConstant {
      * 切换分组失败
      */
     String SWITCH_GROUP_FAILED = "GATE0227";
+
+    // ============ 实例状态校验错误码 GATE0230-GATE0239 ============
+
+    /**
+     * 实例已在线
+     */
+    String INSTANCE_ALREADY_ONLINE = "GATE0230";
+
+    /**
+     * 实例已下线
+     */
+    String INSTANCE_ALREADY_OFFLINE = "GATE0231";
+
+    /**
+     * 实例故障离线，无法操作
+     */
+    String INSTANCE_FAULT_OFFLINE = "GATE0232";
+
+    /**
+     * 实例排空中
+     */
+    String INSTANCE_DRAINING = "GATE0233";
+
+    /**
+     * 实例状态不允许该操作
+     */
+    String INSTANCE_STATUS_INVALID = "GATE0234";
 }

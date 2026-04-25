@@ -35,6 +35,7 @@ import com.blink.gateway.admin.entity.GaChannelDO;
 import com.blink.gateway.admin.mapper.GaChannelMapper;
 import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
 import com.blink.gateway.admin.service.ChannelAsyncSyncService;
+import com.blink.gateway.admin.service.ChannelConfigSyncService;
 import com.blink.gateway.admin.service.ChannelSecretSyncService;
 import com.blink.gateway.admin.service.ChannelService;
 import com.blink.gateway.dto.req.QueryOneChannelReq;
@@ -79,6 +80,9 @@ public class ChannelServiceImpl implements ChannelService {
 
     @Resource
     private ChannelSecretSyncService channelSecretSyncService;
+
+    @Resource
+    private ChannelConfigSyncService channelConfigSyncService;
 
     @Override
     public ResponseDTO<QueryChannelRsp> getChannelList(QueryChannelReq req) throws BlinkException {
@@ -184,6 +188,9 @@ public class ChannelServiceImpl implements ChannelService {
         // 异步同步渠道信息到网关（新增缓存，operator="A"）
         channelAsyncSyncService.syncAddChannel(blinkChannelDO.getAppKey(), channelInfo, operatorUser, operatorName);
 
+        // 异步同步渠道配置到 Nacos
+        channelConfigSyncService.addChannelConfigAsync(blinkChannelDO, operatorUser, operatorName);
+
         log.info("[Channel] 新增渠道成功 | channelId: {}, channelName: {}, appKey: {}, operatorUser: {}",
                 blinkChannelDO.getChannelId(), blinkChannelDO.getChannelName(), blinkChannelDO.getAppKey(), operatorUser);
 
@@ -210,6 +217,9 @@ public class ChannelServiceImpl implements ChannelService {
 
         // 异步同步渠道信息到网关（直接更新缓存，operator="M"，不再先删除 Redis 缓存）
         channelAsyncSyncService.syncModifyChannel(channel.getAppKey(), channelInfo, operatorUser, operatorName);
+
+        // 异步同步渠道配置到 Nacos
+        channelConfigSyncService.modifyChannelConfigAsync(channel, operatorUser, operatorName);
 
         log.info("[Channel] 更新渠道成功 | channelId: {}, appKey: {}, operatorUser: {}", channel.getChannelId(), channel.getAppKey(), operatorUser);
 
@@ -246,6 +256,9 @@ public class ChannelServiceImpl implements ChannelService {
 
         // 异步删除渠道密钥配置
         channelSecretSyncService.deleteChannelSecretConfigAsync(blinkChannelDO.getAppKey());
+
+        // 异步删除 Nacos 渠道配置
+        channelConfigSyncService.deleteChannelConfigAsync(blinkChannelDO.getAppKey(), operatorUser, operatorName);
 
         log.info("[Channel] 删除渠道成功 | channelId: {}, appKey: {}, operatorUser: {}", req.getChannelId(), blinkChannelDO.getAppKey(), operatorUser);
 

@@ -1375,6 +1375,14 @@ export default {
     offlineType: '下线类型',
     offlineTypeManual: '主动下线',
     offlineTypeFault: '被动下线',
+    offlineTypeDraining: '排空中',
+
+    // 健康状态
+    healthStatus: '健康状态',
+    registryStatus: '注册状态',
+    inRegistry: '已注册',
+    notInRegistry: '未注册',
+    statusConflict: '状态冲突',
 
     // 操作
     deleteInstance: '删除',
@@ -1466,6 +1474,7 @@ export default {
     title: '路由分组',
     groupKey: '分组标识',
     groupName: '分组名称',
+    instanceCount: '实例数量',
     groupKeyPlaceholder: '请输入分组标识',
     groupNamePlaceholder: '请输入分组名称',
     remarkPlaceholder: '请输入备注说明',

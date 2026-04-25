@@ -84,6 +84,35 @@ public class InstanceInfoVO implements Serializable {
     private LocalDateTime offlineTime;
 
     /**
+     * 下线原因
+     */
+    private String offlineReason;
+
+    /**
+     * 下线类型: MANUAL-主动/FAULT-被动/DRAINING-排空中
+     */
+    private String offlineType;
+
+    /**
+     * 是否在注册中心（Nacos 实时状态）
+     */
+    private Boolean inRegistry;
+
+    /**
+     * 状态冲突提示（数据库状态与实际状态不一致时）
+     */
+    private String statusConflict;
+
+    /**
+     * 健康状态（UP/DOWN/UNKNOWN/OFFLINE）
+     * UP: 实例健康且在注册中心
+     * DOWN: 实例不健康或不在注册中心
+     * UNKNOWN: 无法确定健康状态
+     * OFFLINE: 实例已离线/下线
+     */
+    private String healthStatus;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;

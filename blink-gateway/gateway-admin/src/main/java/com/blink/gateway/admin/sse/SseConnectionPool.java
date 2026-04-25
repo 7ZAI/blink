@@ -5,9 +5,11 @@ import cn.hutool.core.util.StrUtil;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.constants.RedisKeyConstant;
 import com.blink.gateway.admin.dto.SseConfig;
+import com.blink.gateway.admin.service.InstanceStatusPushService;
 import jakarta.annotation.Resource;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -56,6 +58,10 @@ public class SseConnectionPool {
 
     @Resource
     private SseConfig sseConfig;
+
+    @Lazy
+    @Resource
+    private InstanceStatusPushService instanceStatusPushService;
 
     /**
      * 连接包装类
@@ -143,6 +149,13 @@ public class SseConnectionPool {
 
         log.info("[SSE] 新连接建立 | userId: {}, 用户连接数: {}, 总连接数: {}",
                 userId, getUserConnectionCount(userId), getTotalConnectionCount());
+
+        // 连接建立后发送完整实例状态数据给用户
+        try {
+            instanceStatusPushService.sendFullStatusToUser(userId);
+        } catch (Exception e) {
+            log.warn("[SSE] 发送完整状态失败 | userId: {}, error: {}", userId, e.getMessage());
+        }
 
         return emitter;
     }

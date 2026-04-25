@@ -1,64 +1,5 @@
 <template>
   <div class="instance-page">
-    <!-- 统计卡片 -->
-    <el-row :gutter="20" class="stats-row">
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card" shadow="never">
-          <div class="stat-content">
-            <div class="stat-icon total">
-              <el-icon><Monitor /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.totalInstances }}</div>
-              <div class="stat-label">{{ t('instance.totalInstances') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card" shadow="never">
-          <div class="stat-content">
-            <div class="stat-icon online">
-              <el-icon><CircleCheck /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.onlineInstances }}</div>
-              <div class="stat-label">{{ t('instance.onlineInstances') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card" shadow="never">
-          <div class="stat-content">
-            <div class="stat-icon healthy">
-              <el-icon><SuccessFilled /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">{{ statistics.healthyInstances }}</div>
-              <div class="stat-label">{{ t('instance.healthyInstances') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card" shadow="never">
-          <div class="stat-content">
-            <div class="stat-icon cpu">
-              <el-icon><Cpu /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-value">
-                {{ statistics.avgCpuUsage }}
-                <span class="stat-unit">%</span>
-              </div>
-              <div class="stat-label">{{ t('instance.avgCpuUsage') }}</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
     <!-- 实例列表 -->
     <el-card class="page-card" shadow="never">
       <!-- 搜索区域 -->
@@ -85,7 +26,6 @@
               <el-option :label="t('common.statusOnline')" :value="0" />
               <el-option :label="t('common.statusOffline')" :value="1" />
               <el-option :label="t('common.statusShutdown')" :value="2" />
-              <el-option :label="t('instance.statusDraining')" :value="3" />
             </el-select>
           </el-form-item>
           <el-form-item :label="t('instance.groupKey')">
@@ -150,6 +90,40 @@
             <el-tag :type="getStatusType(row.status)" effect="light" size="small">
               {{ row.statusDesc || getStatusText(row.status) }}
             </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('instance.healthStatus')" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="getHealthStatusType(row.healthStatus)" effect="light" size="small">
+              {{ row.healthStatus || 'UNKNOWN' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('instance.registryStatus')" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.inRegistry" type="success" effect="plain" size="small">
+              {{ t('instance.inRegistry') }}
+            </el-tag>
+            <el-tag v-else type="info" effect="plain" size="small">
+              {{ t('instance.notInRegistry') }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('instance.statusConflict')" min-width="180" show-overflow-tooltip>
+          <template #default="{ row }">
+            <el-text v-if="row.statusConflict" type="warning" size="small">
+              <el-icon><WarningFilled /></el-icon>
+              {{ row.statusConflict }}
+            </el-text>
+            <span v-else class="empty-text">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('instance.offlineType')" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag v-if="row.offlineType" :type="getOfflineTypeColor(row.offlineType)" effect="plain" size="small">
+              {{ getOfflineTypeText(row.offlineType) }}
+            </el-tag>
+            <span v-else class="empty-text">-</span>
           </template>
         </el-table-column>
         <el-table-column prop="onlineTime" :label="t('instance.onlineTime')" width="160" show-overflow-tooltip>
@@ -226,25 +200,6 @@
       :close-on-click-modal="false"
       :lock-scroll="false"
     >
-      <!-- 最后实例警告（测试环境临时禁用） -->
-      <!-- <el-alert
-        v-if="isLastInstance"
-        :title="t('instance.lastInstanceWarning')"
-        type="error"
-        :closable="false"
-        show-icon
-        class="offline-warning-alert"
-      /> -->
-      <!-- 剩余实例提示 -->
-      <el-alert
-        v-if="remainingOnlineCount <= 2"
-        :title="t('instance.remainingInstancesWarning', { count: remainingOnlineCount })"
-        type="warning"
-        :closable="false"
-        show-icon
-        class="offline-warning-alert"
-      />
-
       <el-form :model="offlineForm" label-width="100px" class="offline-form">
         <el-form-item :label="t('common.instanceId')">
           <el-input v-model="offlineForm.instanceId" disabled />
@@ -330,10 +285,6 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
-  Monitor,
-  CircleCheck,
-  SuccessFilled,
-  Cpu,
   Refresh,
   Search,
   RefreshLeft,
@@ -357,58 +308,12 @@ import {
 } from '@/api/instance'
 import { getEnabledRouteGroups, type RouteGroup } from '@/api/routeGroup'
 import { usePermission } from '@/composables/usePermission'
-import { useInstanceStatus } from '@/composables/useInstanceStatus'
 
 defineOptions({ name: 'InstanceManagement' })
 
 const { t } = useI18n()
 const router = useRouter()
 const { hasPermission: checkPermission } = usePermission()
-
-// ==================== SSE 实时状态 ====================
-
-const {
-  instances: sseInstances,
-  stats: sseStats,
-  isConnected: sseConnected,
-} = useInstanceStatus({
-  onStatusChange: (data) => {
-    // SSE 状态变化时更新统计数据
-    if (data.stats) {
-      statistics.totalInstances = data.stats.total
-      statistics.onlineInstances = data.stats.online
-      statistics.healthyInstances = data.stats.healthy
-      statistics.avgCpuUsage = Math.round(data.stats.avgCpuUsage)
-    }
-
-    // 更新列表中已存在实例的状态
-    if (data.hasChange && data.changedInstanceIds?.length) {
-      updateInstanceStatusFromSse(data)
-    }
-  },
-})
-
-/**
- * 从 SSE 数据更新实例列表中的状态
- */
-const updateInstanceStatusFromSse = (data: { instances: Array<{ instanceId: string; status: number; healthStatus: string; cpuUsage?: number; heapUsagePercent?: number }>; changedInstanceIds?: string[] }) => {
-  if (!data.changedInstanceIds?.length) return
-
-  const changedIds = new Set(data.changedInstanceIds)
-  instanceList.value = instanceList.value.map((instance) => {
-    if (changedIds.has(instance.instanceId)) {
-      const sseInstance = data.instances.find((i) => i.instanceId === instance.instanceId)
-      if (sseInstance) {
-        return {
-          ...instance,
-          status: sseInstance.status,
-          statusDesc: getStatusText(sseInstance.status),
-        }
-      }
-    }
-    return instance
-  })
-}
 
 // ==================== 数据状态 ====================
 
@@ -431,38 +336,11 @@ const searchForm = reactive({
   groupKey: '',
 })
 
-const statistics = reactive({
-  totalInstances: 0,
-  onlineInstances: 0,
-  healthyInstances: 0,
-  avgCpuUsage: 0,
-})
-
 // ==================== 弹窗状态 ====================
 
 const offlineDialogVisible = ref(false)
 
 const currentInstance = ref<InstanceInfo | null>(null)
-
-// ==================== 下线实例保护 ====================
-
-/**
- * 剩余在线实例数量（从 SSE 获取实时数据）
- */
-const remainingOnlineCount = computed(() => {
-  return statistics.onlineInstances
-})
-
-/**
- * 是否为最后一个在线实例（即将下线的实例是最后一个在线实例）
- */
-const isLastInstance = computed(() => {
-  // 如果当前实例是在线或排空状态，且在线数量只有1个，则为最后一个
-  if (currentInstance.value && (currentInstance.value.status === INSTANCE_STATUS.ONLINE || currentInstance.value.status === INSTANCE_STATUS.DRAINING)) {
-    return remainingOnlineCount.value <= 1
-  }
-  return false
-})
 
 const offlineForm = reactive({
   instanceId: '',
@@ -541,6 +419,54 @@ const getStatusText = (status: number): string => {
   }
 }
 
+/**
+ * 健康状态颜色
+ */
+const getHealthStatusType = (healthStatus: string): 'success' | 'danger' | 'warning' | 'info' => {
+  switch (healthStatus) {
+    case 'UP':
+      return 'success'
+    case 'DOWN':
+      return 'danger'
+    case 'OFFLINE':
+      return 'warning'
+    default:
+      return 'info'
+  }
+}
+
+/**
+ * 下线类型颜色
+ */
+const getOfflineTypeColor = (offlineType: string): 'primary' | 'warning' | 'danger' | 'info' => {
+  switch (offlineType) {
+    case 'MANUAL':
+      return 'primary'
+    case 'FAULT':
+      return 'danger'
+    case 'DRAINING':
+      return 'warning'
+    default:
+      return 'info'
+  }
+}
+
+/**
+ * 下线类型文本
+ */
+const getOfflineTypeText = (offlineType: string): string => {
+  switch (offlineType) {
+    case 'MANUAL':
+      return t('instance.offlineTypeManual')
+    case 'FAULT':
+      return t('instance.offlineTypeFault')
+    case 'DRAINING':
+      return t('instance.offlineTypeDraining')
+    default:
+      return offlineType
+  }
+}
+
 const formatTime = (time: string): string => {
   if (!time) return '-'
   return time.replace('T', ' ').substring(0, 19)
@@ -576,13 +502,6 @@ const loadData = async () => {
     const result = await queryInstanceList(params)
     instanceList.value = result?.rows || []
     pagination.total = result?.total || 0
-
-    // 计算统计数据
-    const onlineCount = instanceList.value.filter(i => i.status === INSTANCE_STATUS.ONLINE).length
-    statistics.totalInstances = pagination.total
-    statistics.onlineInstances = onlineCount
-    statistics.healthyInstances = onlineCount // 简化处理，在线即健康
-    statistics.avgCpuUsage = 0 // 需要从监控接口获取
   } catch (error) {
     console.error('Load data error:', error)
     ElMessage.error(t('common.loadFailed'))
@@ -718,15 +637,30 @@ const loadGroupOptions = async () => {
   }
 }
 
+// ==================== 初始化加载（先刷新再查询） ====================
+
+const initLoad = async () => {
+  loading.value = true
+  try {
+    // 先从 Nacos 同步实例状态到数据库
+    await refreshInstanceStatus()
+    // 再加载列表
+    await loadData()
+  } catch (error) {
+    console.error('Init load error:', error)
+    // 刷新失败时仍然尝试加载列表
+    await loadData()
+  } finally {
+    loading.value = false
+  }
+}
+
 // ==================== 生命周期 ====================
 
 onMounted(() => {
-  loadData()
+  initLoad()
   loadGroupOptions()
-  // SSE 连接由 MainLayout 统一管理，无需在组件中手动连接
 })
-
-// onUnmounted 不再需要，SSE 连接由 MainLayout 管理
 </script>
 
 <style scoped lang="scss">
@@ -734,63 +668,6 @@ onMounted(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-
-  .stats-row {
-    flex-shrink: 0;
-  }
-
-  .stat-card {
-    margin-bottom: 0;
-
-    .stat-content {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-
-    .stat-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 22px;
-      flex-shrink: 0;
-
-      &.total { background: linear-gradient(135deg, #409eff, #66b1ff); }
-      &.online { background: linear-gradient(135deg, #67c23a, #85ce61); }
-      &.healthy { background: linear-gradient(135deg, #19be6b, #47cb89); }
-      &.cpu { background: linear-gradient(135deg, #e6a23c, #f0c78a); }
-    }
-
-    .stat-info {
-      flex: 1;
-      min-width: 0;
-
-      .stat-value {
-        font-size: 24px;
-        font-weight: 600;
-        color: var(--text-color-primary);
-        line-height: 1.2;
-
-        .stat-unit {
-          font-size: 12px;
-          font-weight: normal;
-          color: var(--text-color-secondary);
-          margin-left: 2px;
-        }
-      }
-
-      .stat-label {
-        font-size: 13px;
-        color: var(--text-color-regular);
-        margin-top: 4px;
-      }
-    }
-  }
 
   .page-card {
     flex: 1;
@@ -850,10 +727,6 @@ onMounted(() => {
     :deep(.el-button) {
       margin: 0;
     }
-  }
-
-  .offline-warning-alert {
-    margin-bottom: 16px;
   }
 
   .offline-form {

@@ -13,15 +13,15 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 网关实例分组持久化对象
+ * 网关路由分组持久化对象
  *
  * @author binblink
  * @since 2026-04-18
  */
 @Getter
 @Setter
-@TableName("gateway_instance_group")
-public class GatewayInstanceGroupDO implements Serializable {
+@TableName("gateway_route_group")
+public class GatewayRouteGroupDO implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

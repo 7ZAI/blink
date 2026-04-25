@@ -77,8 +77,8 @@ public class SysMenuServiceImpl implements SysMenuService {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_OUT_RANGE);
         }
 
-        // 目录和页面菜单URL必填
-        if ((menuType.equals(CommonConstants.MENU_DIRECTORY) || menuType.equals(CommonConstants.MENU_PAGE))
+        // 只有页面菜单(type=2)URL必填，目录(type=1)不需要URL
+        if (menuType.equals(CommonConstants.MENU_PAGE)
                 && StrUtil.isBlank(saveParam.getUrl())) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
         }
@@ -249,8 +249,8 @@ public class SysMenuServiceImpl implements SysMenuService {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_OUT_RANGE);
         }
 
-        // 目录和页面菜单URL必填
-        if ((menuType.equals(CommonConstants.MENU_DIRECTORY) || menuType.equals(CommonConstants.MENU_PAGE))
+        // 只有页面菜单(type=2)URL必填，目录(type=1)不需要URL
+        if (menuType.equals(CommonConstants.MENU_PAGE)
                 && StrUtil.isBlank(updateParam.getUrl())) {
             BlinkException.throwBusinessException(BaseErrCodeConstant.PARAMETER_NOT_NULL);
         }

@@ -1,31 +1,25 @@
 <template>
-  <div class="instance-group-page">
+  <div class="route-group-page">
     <!-- 分组列表 -->
     <el-card class="page-card" shadow="never">
       <!-- 搜索区域 -->
       <div class="search-area">
         <el-form :inline="true" :model="searchForm" class="search-form">
-          <el-form-item :label="t('instanceGroup.groupKey')">
+          <el-form-item :label="t('routeGroup.groupKey')">
             <el-input
               v-model="searchForm.groupKey"
-              :placeholder="t('instanceGroup.groupKeyPlaceholder')"
+              :placeholder="t('routeGroup.groupKeyPlaceholder')"
               clearable
               @keyup.enter="handleSearch"
             />
           </el-form-item>
-          <el-form-item :label="t('instanceGroup.groupName')">
+          <el-form-item :label="t('routeGroup.groupName')">
             <el-input
               v-model="searchForm.groupName"
-              :placeholder="t('instanceGroup.groupNamePlaceholder')"
+              :placeholder="t('routeGroup.groupNamePlaceholder')"
               clearable
               @keyup.enter="handleSearch"
             />
-          </el-form-item>
-          <el-form-item :label="t('common.status')">
-            <el-select v-model="searchForm.status" :placeholder="t('common.pleaseSelect')" clearable style="width: 140px">
-              <el-option :label="t('common.statusEnable')" :value="0" />
-              <el-option :label="t('common.statusDisable')" :value="1" />
-            </el-select>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">
@@ -48,21 +42,22 @@
 
       <!-- 表格 -->
       <el-table :data="groupList" v-loading="loading" stripe class="group-table">
-        <el-table-column prop="groupKey" :label="t('instanceGroup.groupKey')" min-width="120" show-overflow-tooltip>
+        <el-table-column prop="groupKey" :label="t('routeGroup.groupKey')" min-width="120" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="group-key">{{ row.groupKey }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="groupName" :label="t('instanceGroup.groupName')" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="groupName" :label="t('routeGroup.groupName')" min-width="150" show-overflow-tooltip />
         <el-table-column :label="t('common.status')" width="100" align="center">
           <template #default="{ row }">
-            <el-switch
-              v-model="row.status"
-              :active-value="1"
-              :inactive-value="0"
-              :disabled="row.groupKey === DEFAULT_GROUP_KEY"
-              @change="handleStatusChange(row)"
-            />
+            <el-tag :type="row.instanceCount > 0 ? 'success' : 'info'" effect="plain" size="small">
+              {{ row.instanceCount > 0 ? t('common.statusEnable') : t('common.statusDisable') }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column :label="t('routeGroup.instanceCount')" width="100" align="center">
+          <template #default="{ row }">
+            <span>{{ row.instanceCount || 0 }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="remark" :label="t('common.remark')" min-width="200" show-overflow-tooltip>
@@ -77,24 +72,19 @@
             <span v-else class="empty-text">-</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('common.operation')" width="160" fixed="right">
+        <el-table-column :label="t('common.operation')" width="100" fixed="right">
           <template #default="{ row }">
-            <div class="operation-buttons">
-              <el-button type="primary" link size="small" @click="handleEdit(row)">
-                <el-icon><Edit /></el-icon>
-                {{ t('common.edit') }}
-              </el-button>
-              <el-button
-                v-if="row.groupKey !== DEFAULT_GROUP_KEY"
-                type="danger"
-                link
-                size="small"
-                @click="handleDelete(row)"
-              >
-                <el-icon><Delete /></el-icon>
-                {{ t('common.delete') }}
-              </el-button>
-            </div>
+            <el-button
+              v-if="row.groupKey !== DEFAULT_GROUP_KEY && row.instanceCount === 0"
+              type="danger"
+              link
+              size="small"
+              @click="handleDelete(row)"
+            >
+              <el-icon><Delete /></el-icon>
+              {{ t('common.delete') }}
+            </el-button>
+            <span v-else class="empty-text">-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -113,10 +103,10 @@
       </div>
     </el-card>
 
-    <!-- 新增/编辑弹窗 -->
+    <!-- 新增弹窗 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? t('instanceGroup.editGroup') : t('instanceGroup.addGroup')"
+      :title="t('routeGroup.addGroup')"
       width="500px"
       :close-on-click-modal="false"
       :lock-scroll="false"
@@ -129,18 +119,17 @@
         label-width="100px"
         class="group-form"
       >
-        <el-form-item :label="t('instanceGroup.groupKey')" prop="groupKey">
+        <el-form-item :label="t('routeGroup.groupKey')" prop="groupKey">
           <el-input
             v-model="formData.groupKey"
-            :placeholder="t('instanceGroup.groupKeyPlaceholder')"
-            :disabled="isEdit"
+            :placeholder="t('routeGroup.groupKeyPlaceholder')"
             maxlength="50"
           />
         </el-form-item>
-        <el-form-item :label="t('instanceGroup.groupName')" prop="groupName">
+        <el-form-item :label="t('routeGroup.groupName')" prop="groupName">
           <el-input
             v-model="formData.groupName"
-            :placeholder="t('instanceGroup.groupNamePlaceholder')"
+            :placeholder="t('routeGroup.groupNamePlaceholder')"
             maxlength="100"
           />
         </el-form-item>
@@ -149,7 +138,7 @@
             v-model="formData.remark"
             type="textarea"
             :rows="3"
-            :placeholder="t('instanceGroup.remarkPlaceholder')"
+            :placeholder="t('routeGroup.remarkPlaceholder')"
             maxlength="500"
           />
         </el-form-item>
@@ -172,29 +161,27 @@ import {
   Search,
   RefreshLeft,
   Plus,
-  Edit,
   Delete,
 } from '@element-plus/icons-vue'
 import {
-  queryInstanceGroupList,
-  addInstanceGroup,
-  updateInstanceGroup,
-  deleteInstanceGroup,
-  type InstanceGroup,
-} from '@/api/instanceGroup'
+  queryRouteGroupList,
+  addRouteGroup,
+  deleteRouteGroup,
+  type RouteGroup,
+} from '@/api/routeGroup'
 
-defineOptions({ name: 'InstanceGroupManagement' })
+defineOptions({ name: 'RouteGroupManagement' })
 
 const { t } = useI18n()
 
-// 默认分组标识（不可删除、不可禁用）
+// 默认分组标识（不可删除）
 const DEFAULT_GROUP_KEY = 'default'
 
 // ==================== 数据状态 ====================
 
 const loading = ref(false)
 const submitting = ref(false)
-const groupList = ref<InstanceGroup[]>([])
+const groupList = ref<RouteGroup[]>([])
 
 const pagination = reactive({
   pageNum: 1,
@@ -205,17 +192,14 @@ const pagination = reactive({
 const searchForm = reactive({
   groupKey: '',
   groupName: '',
-  status: undefined as number | undefined,
 })
 
 // ==================== 弹窗状态 ====================
 
 const dialogVisible = ref(false)
-const isEdit = ref(false)
 const formRef = ref<FormInstance>()
 
 const formData = reactive({
-  groupId: 0,
   groupKey: '',
   groupName: '',
   remark: '',
@@ -225,11 +209,11 @@ const formData = reactive({
 
 const formRules = computed<FormRules>(() => ({
   groupKey: [
-    { required: true, message: t('instanceGroup.groupKeyRequired'), trigger: 'blur' },
+    { required: true, message: t('routeGroup.groupKeyRequired'), trigger: 'blur' },
     { min: 1, max: 50, message: t('validation.length', { min: 1, max: 50 }), trigger: 'blur' },
   ],
   groupName: [
-    { required: true, message: t('instanceGroup.groupNameRequired'), trigger: 'blur' },
+    { required: true, message: t('routeGroup.groupNameRequired'), trigger: 'blur' },
     { min: 1, max: 100, message: t('validation.length', { min: 1, max: 100 }), trigger: 'blur' },
   ],
 }))
@@ -251,7 +235,7 @@ const loadData = async () => {
       pageSize: pagination.pageSize,
       ...searchForm,
     }
-    const result = await queryInstanceGroupList(params)
+    const result = await queryRouteGroupList(params)
     groupList.value = result?.rows || []
     pagination.total = result?.total || 0
   } catch (error) {
@@ -272,7 +256,6 @@ const handleSearch = () => {
 const handleReset = () => {
   searchForm.groupKey = ''
   searchForm.groupName = ''
-  searchForm.status = undefined
   pagination.pageNum = 1
   loadData()
 }
@@ -292,69 +275,25 @@ const handleCurrentChange = (page: number) => {
 // ==================== 新增 ====================
 
 const handleAdd = () => {
-  isEdit.value = false
-  formData.groupId = 0
   formData.groupKey = ''
   formData.groupName = ''
   formData.remark = ''
   dialogVisible.value = true
 }
 
-// ==================== 编辑 ====================
-
-const handleEdit = (row: InstanceGroup) => {
-  isEdit.value = true
-  formData.groupId = row.groupId
-  formData.groupKey = row.groupKey
-  formData.groupName = row.groupName
-  formData.remark = row.remark || ''
-  dialogVisible.value = true
-}
-
 // ==================== 删除 ====================
 
-const handleDelete = (row: InstanceGroup) => {
-  // 默认分组不可删除
-  if (row.groupKey === DEFAULT_GROUP_KEY) {
-    ElMessage.warning(t('instanceGroup.hasInstances'))
-    return
-  }
-
-  ElMessageBox.confirm(t('instanceGroup.deleteConfirm'), t('message.tips'), { type: 'warning' })
+const handleDelete = (row: RouteGroup) => {
+  ElMessageBox.confirm(t('routeGroup.deleteConfirm'), t('message.tips'), { type: 'warning' })
     .then(async () => {
       try {
-        await deleteInstanceGroup({ groupId: row.groupId })
+        await deleteRouteGroup({ groupId: row.groupId })
         ElMessage.success(t('common.success'))
         loadData()
       } catch (error) {
         console.error('Delete group error:', error)
       }
     })
-}
-
-// ==================== 状态切换 ====================
-
-const handleStatusChange = async (row: InstanceGroup) => {
-  // 默认分组不可禁用
-  if (row.groupKey === DEFAULT_GROUP_KEY && row.status === 0) {
-    row.status = 1 // 恢复状态
-    ElMessage.warning(t('instanceGroup.defaultGroupCannotDisable'))
-    return
-  }
-
-  try {
-    await updateInstanceGroup({
-      groupId: row.groupId,
-      groupKey: row.groupKey,
-      groupName: row.groupName,
-      status: row.status,
-    })
-    ElMessage.success(t('common.success'))
-  } catch (error) {
-    console.error('Update status error:', error)
-    // 恢复原状态
-    row.status = row.status === 0 ? 1 : 0
-  }
 }
 
 // ==================== 弹窗关闭 ====================
@@ -371,21 +310,11 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
-    if (isEdit.value) {
-      // 编辑
-      await updateInstanceGroup({
-        groupId: formData.groupId,
-        groupName: formData.groupName,
-        remark: formData.remark,
-      })
-    } else {
-      // 新增
-      await addInstanceGroup({
-        groupKey: formData.groupKey,
-        groupName: formData.groupName,
-        remark: formData.remark,
-      })
-    }
+    await addRouteGroup({
+      groupKey: formData.groupKey,
+      groupName: formData.groupName,
+      remark: formData.remark,
+    })
     ElMessage.success(t('common.success'))
     dialogVisible.value = false
     loadData()
@@ -404,7 +333,7 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.instance-group-page {
+.route-group-page {
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -457,16 +386,6 @@ onMounted(() => {
 
   .empty-text {
     color: var(--el-text-color-placeholder);
-  }
-
-  .operation-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px 8px;
-
-    :deep(.el-button) {
-      margin: 0;
-    }
   }
 
   .group-form {

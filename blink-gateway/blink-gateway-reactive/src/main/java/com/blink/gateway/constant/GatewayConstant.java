@@ -232,6 +232,21 @@ public interface GatewayConstant {
     Long NACOS_SECRET_CONFIG_TIMEOUT_MS = 50000L;
 
     /**
+     * 渠道配置文件nacos上的dataId
+     */
+    String CHANNEL_CONFIG_DATA_ID = "channel-config.json";
+
+    /**
+     * 渠道配置文件nacos上的group
+     */
+    String CHANNEL_CONFIG_GROUP = "DEFAULT_GROUP";
+
+    /**
+     * Nacos 渠道配置获取超时时间（毫秒）
+     */
+    Long NACOS_CHANNEL_CONFIG_TIMEOUT_MS = 50000L;
+
+    /**
      * 日志响应体最大打印长度（字节）
      */
     Integer LOG_RESPONSE_BODY_MAX_LENGTH = 3000;

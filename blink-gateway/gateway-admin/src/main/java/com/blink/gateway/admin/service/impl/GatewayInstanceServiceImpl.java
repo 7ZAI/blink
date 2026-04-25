@@ -14,7 +14,7 @@ import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.framework.redis.mq.StreamMessage;
-import com.blink.gateway.admin.component.NacosInstanceHttpClient;
+import com.blink.framework.redis.lock.DistributedLockClient;
 import com.blink.gateway.admin.component.NacosConfigComponent;
 import com.blink.gateway.dto.InstanceOfflineMsg;
 import com.blink.gateway.dto.InstanceOnlineMsg;
@@ -47,6 +47,8 @@ import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.DumperOptions;
@@ -58,9 +60,11 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.blink.gateway.admin.constants.ConfigValueConstant.DEFAULT_DRAIN_WAIT_SECONDS;
@@ -73,20 +77,24 @@ import static com.blink.gateway.admin.constants.ErrCodeConstant.DELETE_INSTANCE_
 import static com.blink.gateway.admin.constants.ErrCodeConstant.GET_INSTANCE_DETAIL_FAILED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.GET_INSTANCE_LIST_FAILED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.GATEWAY_INSTANCE_NOT_EXIST;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_ALREADY_OFFLINE;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_ALREADY_ONLINE;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_DRAINING;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_FAULT_OFFLINE;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_ONLINE_CANNOT_DELETE;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_ONLINE_CANNOT_SWITCH;
+import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_STATUS_INVALID;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.LAST_INSTANCE_CANNOT_OFFLINE;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_NOT_READY;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.OFFLINE_INSTANCE_FAILED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.ONLINE_INSTANCE_FAILED;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.QUERY_INSTANCE_LIST_FAILED;
-import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_ONLINE_CANNOT_SWITCH;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.TARGET_GROUP_CONFIG_NOT_EXIST;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.INSTANCE_CONFIG_NOT_EXIST;
 import static com.blink.gateway.admin.constants.ErrCodeConstant.SWITCH_GROUP_FAILED;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_METRICS_PREFIX;
 import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_STREAM_EVENT;
 import static com.blink.gateway.admin.constants.ScheduleConstant.INSTANCE_SYNC_CRON;
-import static com.blink.gateway.admin.constants.ServiceConstant.GATEWAY_SERVICE_NAME;
 
 /**
  * 网关实例管理服务实现
@@ -107,10 +115,13 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     private RedisClient redisClient;
 
     @Resource
-    private NamingMaintainService namingMaintainService;
+    private DistributedLockClient distributedLockClient;
 
     @Resource
-    private NacosInstanceHttpClient nacosInstanceHttpClient;
+    private TransactionTemplate transactionTemplate;
+
+    @Resource
+    private NamingMaintainService namingMaintainService;
 
     @Resource
     private NacosConfigComponent nacosConfigComponent;
@@ -120,13 +131,6 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
 
     @Value("${spring.cloud.nacos.discovery.group:DEFAULT_GROUP}")
     private String groupName;
-
-    /**
-     * 实例更新方式：http（使用 Nacos Open API）或 sdk（使用 Nacos SDK）
-     * 默认使用 sdk，通过反向传参规避 SDK 的参数顺序 bug
-     */
-    @Value("${blink.gateway.instance.update-mode:sdk}")
-    private String instanceUpdateMode;
 
     /**
      * 流量排空等待时间（秒）
@@ -146,45 +150,34 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     @Value("${blink.gateway.instance.default-storage-mode:redis}")
     private String defaultStorageMode;
 
+    /**
+     * 网关服务名称（用于从 Nacos 获取实例列表）
+     */
+    @Value("${blink.gateway.instance.gateway-service-name:gateway-app}")
+    private String gatewayServiceName;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private final WebClient webClient = WebClient.builder()
             .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
             .build();
 
+    @Resource
+    private RestTemplate restTemplate;
+
+    /**
+     * 获取网关实例列表（已废弃）
+     *
+     * @deprecated 该接口只查询 Nacos 注册中心，无法看到下线实例。
+     *             请使用 {@link #queryInstanceList} 接口，支持从数据库查询所有实例状态。
+     * @return 实例列表
+     */
+    @Deprecated
     @Override
     public ResponseDTO<GatewayInstanceListRsp> getGatewayInstances() {
-        try {
-            List<ServiceInstance> instances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);
-            List<GatewayInstanceVO> instanceList = new ArrayList<>();
-
-            for (ServiceInstance instance : instances) {
-                GatewayInstanceVO vo = new GatewayInstanceVO();
-                // 统一使用 serviceId:host:port 格式
-                String instanceId = instance.getServiceId() + ":" + instance.getHost() + ":" + instance.getPort();
-                vo.setInstanceId(instanceId);
-                vo.setServiceId(instance.getServiceId());
-                vo.setHost(instance.getHost());
-                vo.setPort(instance.getPort());
-                vo.setUri(instance.getUri().toString());
-                vo.setStatus(INSTANCE_STATUS_ONLINE);
-                vo.setStatusDesc("在线");
-                instanceList.add(vo);
-            }
-
-            GatewayInstanceListRsp rsp = new GatewayInstanceListRsp();
-            rsp.setTotal(instanceList.size());
-            rsp.setInstances(instanceList);
-
-            log.info("[GatewayInstance] 获取网关实例列表成功 | total: {}", instanceList.size());
-
-            return ResponseDTO.newSuccessInstance(rsp);
-        } catch (BlinkException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("[GatewayInstance] 获取网关实例列表失败 | error: {}", e.getMessage(), e);
-            throw new BlinkException("获取网关实例列表失败：" + e.getMessage(), e, GET_INSTANCE_LIST_FAILED);
-        }
+        log.warn("[GatewayInstance] getGatewayInstances 接口已废弃，请使用 queryInstanceList");
+        BlinkException.throwBusinessException(INSTANCE_STATUS_INVALID);
+        return null; // unreachable，但需要满足编译器要求
     }
 
     @Override
@@ -199,7 +192,7 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
 
             if (ObjectUtil.isNull(instanceDO)) {
                 // 尝试从注册中心获取
-                List<ServiceInstance> instances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);
+                List<ServiceInstance> instances = discoveryClient.getInstances(gatewayServiceName);
                 for (ServiceInstance instance : instances) {
                     // 统一使用 serviceId:host:port 格式比对
                     String registryInstanceId = instance.getServiceId() + ":" + instance.getHost() + ":" + instance.getPort();
@@ -236,8 +229,20 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public ResponseDTO<EmptyBody> offlineInstance(OfflineGatewayInstanceReq req) {
+        String instanceId = req.getInstanceId();
+        String lockKey = "instance:offline:" + instanceId;
+
+        return distributedLockClient.executeWithLock(lockKey, () -> doOfflineInstance(req));
+    }
+
+    /**
+     * 执行实例下线操作（已在分布式锁保护下）
+     *
+     * @param req 下线请求参数
+     * @return 操作结果
+     */
+    private ResponseDTO<EmptyBody> doOfflineInstance(OfflineGatewayInstanceReq req) {
         try {
             String instanceId = req.getInstanceId();
 
@@ -254,35 +259,45 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
                 }
             }
 
-            // 唯一实例保护：检查在线实例数量
-            // TODO: 测试环境临时禁用，生产环境需恢复
-            // Long onlineCount = gatewayInstanceMapper.selectCount(
-            //         new LambdaQueryWrapper<GatewayInstanceDO>()
-            //                 .eq(GatewayInstanceDO::getStatus, INSTANCE_STATUS_ONLINE)
-            // );
-            // if (onlineCount <= 1) {
-            //     log.warn("[GatewayInstance] 拒绝下线操作：这是最后一个在线实例 | instanceId: {}, onlineCount: {}", instanceId, onlineCount);
-            //     BlinkException.throwBusinessException(LAST_INSTANCE_CANNOT_OFFLINE);
-            // }
+            // 状态校验：只允许 ONLINE(0) 状态下线
+            Byte status = instanceDO.getStatus();
+            if (INSTANCE_STATUS_SHUTDOWN.equals(status)) {
+                log.warn("[GatewayInstance] 实例已下线，拒绝下线操作 | instanceId: {}, status: {}", instanceId, status);
+                BlinkException.throwBusinessException(INSTANCE_ALREADY_OFFLINE);
+            }
+            if (INSTANCE_STATUS_OFFLINE.equals(status)) {
+                log.warn("[GatewayInstance] 实例故障离线，拒绝下线操作 | instanceId: {}, status: {}", instanceId, status);
+                BlinkException.throwBusinessException(INSTANCE_FAULT_OFFLINE);
+            }
+            if (INSTANCE_STATUS_DRAINING.equals(status)) {
+                log.warn("[GatewayInstance] 实例排空中，拒绝重复下线操作 | instanceId: {}, status: {}", instanceId, status);
+                BlinkException.throwBusinessException(INSTANCE_DRAINING);
+            }
 
-            // 发送强制下线指令到 Redis Stream
+            // 发送强制下线指令到 Redis Stream（在事务外执行）
             String targetInstance = instanceDO.getHost() + ":" + instanceDO.getPort();
             sendOfflineMessage(targetInstance, "FORCE", 0, req.getReason());
             log.info("[GatewayInstance] 强制下线指令已发送到 Redis Stream | targetInstance: {}", targetInstance);
 
-            // 通过 Nacos API 设置实例 enabled=false（作为兜底）
+            // 通过 Nacos API 设置实例 enabled=false（HTTP 请求，在事务外执行）
             try {
                 updateInstanceEnabled(instanceDO.getHost(), instanceDO.getPort(), false);
             } catch (Exception e) {
                 log.warn("[GatewayInstance] Nacos 实例禁用失败，依赖 Redis Stream 指令 | instanceId: {}, error: {}", instanceId, e.getMessage());
             }
 
-            // 更新数据库状态为下线
-            instanceDO.setStatus(INSTANCE_STATUS_SHUTDOWN);
-            instanceDO.setOfflineTime(LocalDateTime.now());
-            instanceDO.setOfflineReason(req.getReason());
-            instanceDO.setOfflineType("MANUAL");  // 主动下线
-            gatewayInstanceMapper.updateById(instanceDO);
+            // 数据库更新操作（在事务内执行）
+            final Integer instanceDbId = instanceDO.getId();
+            final String offlineReason = req.getReason();
+            transactionTemplate.executeWithoutResult(s -> {
+                GatewayInstanceDO updateDO = new GatewayInstanceDO();
+                updateDO.setId(instanceDbId);
+                updateDO.setStatus(INSTANCE_STATUS_SHUTDOWN);
+                updateDO.setOfflineTime(LocalDateTime.now());
+                updateDO.setOfflineReason(offlineReason);
+                updateDO.setOfflineType("MANUAL");
+                gatewayInstanceMapper.updateById(updateDO);
+            });
 
             log.info("[GatewayInstance] 网关实例强制下线成功 | instanceId: {}, reason: {}", instanceId, req.getReason());
 
@@ -296,8 +311,20 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public ResponseDTO<EmptyBody> gracefulOfflineInstance(OfflineGatewayInstanceReq req) {
+        String instanceId = req.getInstanceId();
+        String lockKey = "instance:offline:" + instanceId;
+
+        return distributedLockClient.executeWithLock(lockKey, () -> doGracefulOfflineInstance(req));
+    }
+
+    /**
+     * 执行优雅下线操作（已在分布式锁保护下）
+     *
+     * @param req 下线请求参数
+     * @return 操作结果
+     */
+    private ResponseDTO<EmptyBody> doGracefulOfflineInstance(OfflineGatewayInstanceReq req) {
         try {
             String instanceId = req.getInstanceId();
 
@@ -313,15 +340,20 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
                 }
             }
 
-            // 唯一实例保护：检查在线实例数量
-            Long onlineCount = gatewayInstanceMapper.selectCount(
-                    new LambdaQueryWrapper<GatewayInstanceDO>()
-                            .eq(GatewayInstanceDO::getStatus, INSTANCE_STATUS_ONLINE)
-            );
-//            if (onlineCount <= 1) {
-//                log.warn("[GatewayInstance] 拒绝优雅下线操作：这是最后一个在线实例 | instanceId: {}, onlineCount: {}", instanceId, onlineCount);
-//                BlinkException.throwBusinessException(LAST_INSTANCE_CANNOT_OFFLINE);
-//            }
+            // 状态校验：只允许 ONLINE(0) 状态优雅下线
+            Byte status = instanceDO.getStatus();
+            if (INSTANCE_STATUS_SHUTDOWN.equals(status)) {
+                log.warn("[GatewayInstance] 实例已下线，拒绝优雅下线操作 | instanceId: {}, status: {}", instanceId, status);
+                BlinkException.throwBusinessException(INSTANCE_ALREADY_OFFLINE);
+            }
+            if (INSTANCE_STATUS_OFFLINE.equals(status)) {
+                log.warn("[GatewayInstance] 实例故障离线，拒绝优雅下线操作 | instanceId: {}, status: {}", instanceId, status);
+                BlinkException.throwBusinessException(INSTANCE_FAULT_OFFLINE);
+            }
+            if (INSTANCE_STATUS_DRAINING.equals(status)) {
+                log.warn("[GatewayInstance] 实例排空中，拒绝重复优雅下线操作 | instanceId: {}, status: {}", instanceId, status);
+                BlinkException.throwBusinessException(INSTANCE_DRAINING);
+            }
 
             int waitSeconds = ObjectUtil.isNotNull(drainWaitSeconds) ? drainWaitSeconds : DEFAULT_DRAIN_WAIT_SECONDS;
             log.info("[GatewayInstance] 开始优雅下线流程 | instanceId: {}, drainWaitSeconds: {}s", instanceId, waitSeconds);
@@ -332,27 +364,29 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             final Integer dbId = instanceDO.getId();
             final String reason = req.getReason();
 
-            // 第一步：更新数据库状态为 DRAINING（排空中）
-            instanceDO.setStatus(INSTANCE_STATUS_DRAINING);
-            instanceDO.setOfflineReason(reason);
-            instanceDO.setOfflineType("DRAINING");  // 排空下线
-            gatewayInstanceMapper.updateById(instanceDO);
+            // 第一步：更新数据库状态为 DRAINING（在事务内执行）
+            transactionTemplate.executeWithoutResult(s -> {
+                GatewayInstanceDO updateDO = new GatewayInstanceDO();
+                updateDO.setId(dbId);
+                updateDO.setStatus(INSTANCE_STATUS_DRAINING);
+                updateDO.setOfflineReason(reason);
+                updateDO.setOfflineType("DRAINING");
+                gatewayInstanceMapper.updateById(updateDO);
+            });
             log.info("[GatewayInstance] 实例状态更新为 DRAINING | instanceId: {}", instanceId);
 
-            // 第二步：发送下线指令到 Redis Stream，由网关实例自行处理流量排空
-            // 目标实例标识格式：host:port
+            // 第二步：发送下线指令到 Redis Stream（在事务外执行）
             String targetInstance = host + ":" + port;
             sendOfflineMessage(targetInstance, "GRACEFUL", waitSeconds, reason);
             log.info("[GatewayInstance] 下线指令已发送到 Redis Stream | targetInstance: {}, type: GRACEFUL", targetInstance);
 
             // 第三步：等待排空时间（异步执行，不阻塞请求）
-            // 使用 CompletableFuture 异步处理
             java.util.concurrent.CompletableFuture.runAsync(() -> {
                 try {
                     log.info("[GatewayInstance] 等待流量排空... | instanceId: {}, waitSeconds: {}s", instanceId, waitSeconds);
                     Thread.sleep(waitSeconds * 1000L);
 
-                    // 第四步：排空完成后，尝试设置 Nacos enabled=false（可选，作为兜底）
+                    // 第四步：排空完成后，尝试设置 Nacos enabled=false（HTTP 请求）
                     try {
                         updateInstanceEnabled(host, port, false);
                         log.info("[GatewayInstance] Nacos 实例已禁用 | instanceId: {}", instanceId);
@@ -360,13 +394,15 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
                         log.warn("[GatewayInstance] Nacos 实例禁用失败 | instanceId: {}, error: {}", instanceId, e.getMessage());
                     }
 
-                    // 第五步：更新数据库状态为 SHUTDOWN
-                    GatewayInstanceDO updateDO = new GatewayInstanceDO();
-                    updateDO.setId(dbId);
-                    updateDO.setStatus(INSTANCE_STATUS_SHUTDOWN);
-                    updateDO.setOfflineTime(LocalDateTime.now());
-                    updateDO.setOfflineType("MANUAL");  // 最终标记为主动下线完成
-                    gatewayInstanceMapper.updateById(updateDO);
+                    // 第五步：更新数据库状态为 SHUTDOWN（异步线程中独立事务）
+                    transactionTemplate.executeWithoutResult(s -> {
+                        GatewayInstanceDO updateDO = new GatewayInstanceDO();
+                        updateDO.setId(dbId);
+                        updateDO.setStatus(INSTANCE_STATUS_SHUTDOWN);
+                        updateDO.setOfflineTime(LocalDateTime.now());
+                        updateDO.setOfflineType("MANUAL");
+                        gatewayInstanceMapper.updateById(updateDO);
+                    });
 
                     log.info("[GatewayInstance] 优雅下线完成 | instanceId: {}", instanceId);
                 } catch (InterruptedException e) {
@@ -389,11 +425,21 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public ResponseDTO<EmptyBody> onlineInstance(OnlineGatewayInstanceReq req) {
-        try {
-            String instanceId = req.getInstanceId();
+        String instanceId = req.getInstanceId();
+        String lockKey = "instance:online:" + instanceId;
 
+        return distributedLockClient.executeWithLock(lockKey, () -> doOnlineInstance(instanceId));
+    }
+
+    /**
+     * 执行实例上线操作（已在分布式锁保护下）
+     *
+     * @param instanceId 实例ID
+     * @return 操作结果
+     */
+    private ResponseDTO<EmptyBody> doOnlineInstance(String instanceId) {
+        try {
             // 根据 instanceId 字段查询实例（不能用 selectById，因为主键是 id）
             LambdaQueryWrapper<GatewayInstanceDO> queryWrapper = new LambdaQueryWrapper<>();
             queryWrapper.eq(GatewayInstanceDO::getInstanceId, instanceId);
@@ -403,7 +449,18 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
                 BlinkException.throwBusinessException(GATEWAY_INSTANCE_NOT_EXIST);
             }
 
-            // 健康检查预检：验证实例是否真正可用
+            // 状态校验：只允许 OFFLINE(1) 和 SHUTDOWN(2) 状态上线
+            Byte status = instanceDO.getStatus();
+            if (INSTANCE_STATUS_ONLINE.equals(status)) {
+                log.warn("[GatewayInstance] 实例已在线，拒绝上线操作 | instanceId: {}, status: {}", instanceId, status);
+                BlinkException.throwBusinessException(INSTANCE_ALREADY_ONLINE);
+            }
+            if (INSTANCE_STATUS_DRAINING.equals(status)) {
+                log.warn("[GatewayInstance] 实例排空中，拒绝上线操作 | instanceId: {}, status: {}", instanceId, status);
+                BlinkException.throwBusinessException(INSTANCE_DRAINING);
+            }
+
+            // 健康检查预检：验证实例是否真正可用（HTTP 请求，在事务外执行）
             HealthDetailVO healthDetail = fetchHealthDetail(instanceDO.getUri());
             if (ObjectUtil.isNull(healthDetail)) {
                 log.warn("[GatewayInstance] 实例健康检查失败，无法获取健康状态 | instanceId: {}, uri: {}", instanceId, instanceDO.getUri());
@@ -416,12 +473,12 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
 
             log.info("[GatewayInstance] 实例健康检查通过 | instanceId: {}, healthStatus: {}", instanceId, healthDetail.getStatus());
 
-            // 发送上线指令到 Redis Stream，让网关实例恢复接收请求
+            // 发送上线指令到 Redis Stream（在事务外执行）
             String targetInstance = instanceDO.getHost() + ":" + instanceDO.getPort();
             sendOnlineMessage(targetInstance);
             log.info("[GatewayInstance] 上线指令已发送到 Redis Stream | targetInstance: {}", targetInstance);
 
-            // 通过 Nacos API 设置实例 enabled=true（作为兜底）
+            // 通过 Nacos API 设置实例 enabled=true（HTTP 请求，在事务外执行）
             try {
                 updateInstanceEnabled(instanceDO.getHost(), instanceDO.getPort(), true);
                 log.info("[GatewayInstance] Nacos 实例已启用 | instanceId: {}", instanceId);
@@ -429,12 +486,17 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
                 log.warn("[GatewayInstance] Nacos 实例启用失败，依赖 Redis Stream 指令 | instanceId: {}, error: {}", instanceId, e.getMessage());
             }
 
-            // 更新数据库状态为在线
-            instanceDO.setStatus(INSTANCE_STATUS_ONLINE);
-            instanceDO.setOnlineTime(LocalDateTime.now());
-            instanceDO.setOfflineReason(null);  // 清空下线原因
-            instanceDO.setOfflineType(null);    // 清空下线类型
-            gatewayInstanceMapper.updateById(instanceDO);
+            // 数据库更新操作（在事务内执行）
+            final Integer instanceDbId = instanceDO.getId();
+            transactionTemplate.executeWithoutResult(status1 -> {
+                GatewayInstanceDO updateDO = new GatewayInstanceDO();
+                updateDO.setId(instanceDbId);
+                updateDO.setStatus(INSTANCE_STATUS_ONLINE);
+                updateDO.setOnlineTime(LocalDateTime.now());
+                updateDO.setOfflineReason(null);
+                updateDO.setOfflineType(null);
+                gatewayInstanceMapper.updateById(updateDO);
+            });
 
             log.info("[GatewayInstance] 网关实例上线成功 | instanceId: {}", instanceId);
 
@@ -448,31 +510,13 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     }
 
     /**
-     * 通过 Nacos API 更新实例的 enabled 状态
+     * 通过 Nacos SDK 更新实例的 enabled 状态
      *
      * @param ip      实例IP
      * @param port    实例端口
      * @param enabled 是否启用
      */
     private void updateInstanceEnabled(String ip, Integer port, boolean enabled) {
-        if ("http".equalsIgnoreCase(instanceUpdateMode)) {
-            // 使用 HTTP API 方式，避免 SDK 版本兼容性问题
-            nacosInstanceHttpClient.updateInstanceEnabled(GATEWAY_SERVICE_NAME, ip, port, enabled);
-        } else {
-            // 使用 SDK 方式
-            updateInstanceEnabledBySdk(ip, port, enabled);
-        }
-    }
-
-    /**
-     * 通过 Nacos SDK 更新实例的 enabled 状态
-     * 注意：Nacos SDK 2.3.2 存在参数顺序 bug，需要反向传入参数
-     *
-     * @param ip      实例IP
-     * @param port    实例端口
-     * @param enabled 是否启用
-     */
-    private void updateInstanceEnabledBySdk(String ip, Integer port, boolean enabled) {
         try {
             Instance instance = new Instance();
             instance.setIp(ip);
@@ -480,13 +524,11 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             instance.setEnabled(enabled);
             instance.setEphemeral(true);
 
-            // Nacos SDK 2.3.2 的 updateInstance(groupName, serviceName, instance) 方法存在参数顺序 bug
-            // 实际内部会将 groupName 和 serviceName 互换，因此这里需要反向传入参数
-            namingMaintainService.updateInstance(GATEWAY_SERVICE_NAME, groupName, instance);
+            namingMaintainService.updateInstance(gatewayServiceName, groupName, instance);
 
-            log.info("[GatewayInstance] Nacos SDK 实例状态更新成功 | ip: {}, port: {}, enabled: {}", ip, port, enabled);
+            log.info("[GatewayInstance] Nacos 实例状态更新成功 | ip: {}, port: {}, enabled: {}", ip, port, enabled);
         } catch (NacosException e) {
-            log.error("[GatewayInstance] Nacos SDK 实例状态更新失败 | ip: {}, port: {}, enabled: {}, error: {}",
+            log.error("[GatewayInstance] Nacos 实例状态更新失败 | ip: {}, port: {}, enabled: {}, error: {}",
                     ip, port, enabled, e.getMessage(), e);
             throw new BlinkException("Nacos 实例状态更新失败：" + e.getMessage(), e,
                     enabled ? ONLINE_INSTANCE_FAILED : OFFLINE_INSTANCE_FAILED);
@@ -494,31 +536,13 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     }
 
     /**
-     * 通过 Nacos API 更新实例的权重
+     * 通过 Nacos SDK 更新实例的权重
      *
      * @param ip     实例IP
      * @param port   实例端口
      * @param weight 权重值（0-100，0表示不接收新流量）
      */
     private void updateInstanceWeight(String ip, Integer port, double weight) {
-        if ("http".equalsIgnoreCase(instanceUpdateMode)) {
-            // 使用 HTTP API 方式，避免 SDK 版本兼容性问题
-            nacosInstanceHttpClient.updateInstanceWeight(GATEWAY_SERVICE_NAME, ip, port, weight);
-        } else {
-            // 使用 SDK 方式
-            updateInstanceWeightBySdk(ip, port, weight);
-        }
-    }
-
-    /**
-     * 通过 Nacos SDK 更新实例的权重
-     * 注意：Nacos SDK 2.3.2 存在参数顺序 bug，需要反向传入参数
-     *
-     * @param ip     实例IP
-     * @param port   实例端口
-     * @param weight 权重值（0-100，0表示不接收新流量）
-     */
-    private void updateInstanceWeightBySdk(String ip, Integer port, double weight) {
         try {
             Instance instance = new Instance();
             instance.setIp(ip);
@@ -526,13 +550,11 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             instance.setWeight(weight);
             instance.setEphemeral(true);
 
-            // Nacos SDK 2.3.2 的 updateInstance(groupName, serviceName, instance) 方法存在参数顺序 bug
-            // 实际内部会将 groupName 和 serviceName 互换，因此这里需要反向传入参数
-            namingMaintainService.updateInstance(GATEWAY_SERVICE_NAME, groupName, instance);
+            namingMaintainService.updateInstance(gatewayServiceName, groupName, instance);
 
-            log.info("[GatewayInstance] Nacos SDK 实例权重更新成功 | ip: {}, port: {}, weight: {}", ip, port, weight);
+            log.info("[GatewayInstance] Nacos 实例权重更新成功 | ip: {}, port: {}, weight: {}", ip, port, weight);
         } catch (NacosException e) {
-            log.error("[GatewayInstance] Nacos SDK 实例权重更新失败 | ip: {}, port: {}, weight: {}, error: {}",
+            log.error("[GatewayInstance] Nacos 实例权重更新失败 | ip: {}, port: {}, weight: {}, error: {}",
                     ip, port, weight, e.getMessage(), e);
             throw new BlinkException("Nacos 实例权重更新失败：" + e.getMessage(), e, OFFLINE_INSTANCE_FAILED);
         }
@@ -574,7 +596,7 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
      */
     private void doSyncInstanceStatus() {
         // 获取注册中心的所有实例
-        List<ServiceInstance> registryInstances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);
+        List<ServiceInstance> registryInstances = discoveryClient.getInstances(gatewayServiceName);
         // 使用统一格式 serviceId:host:port 作为 key
         Map<String, ServiceInstance> registryMap = registryInstances.stream()
                 .collect(Collectors.toMap(
@@ -685,7 +707,7 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
      * @return 实例信息，不存在则返回null
      */
     private GatewayInstanceDO findInstanceFromRegistry(String instanceId) {
-        List<ServiceInstance> instances = discoveryClient.getInstances(GATEWAY_SERVICE_NAME);
+        List<ServiceInstance> instances = discoveryClient.getInstances(gatewayServiceName);
         for (ServiceInstance instance : instances) {
             // 统一使用 serviceId:host:port 格式比对
             String registryInstanceId = instance.getServiceId() + ":" + instance.getHost() + ":" + instance.getPort();
@@ -739,6 +761,9 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             if (ObjectUtil.isNotNull(req.getStatus())) {
                 queryWrapper.eq(GatewayInstanceDO::getStatus, req.getStatus());
             }
+            if (StrUtil.isNotBlank(req.getGroupKey())) {
+                queryWrapper.eq(GatewayInstanceDO::getGroupKey, req.getGroupKey());
+            }
 
             // 排序：按更新时间降序
             queryWrapper.orderByDesc(GatewayInstanceDO::getUpdateTime);
@@ -747,9 +772,12 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             Page<GatewayInstanceDO> page = new Page<>(req.getPageNum(), req.getPageSize());
             Page<GatewayInstanceDO> resultPage = gatewayInstanceMapper.selectPage(page, queryWrapper);
 
-            // 转换为 VO
+            // 获取 Nacos 注册中心的实例列表（用于实时状态补充）
+            Set<String> registryInstanceIds = getRegistryInstanceIds();
+
+            // 转换为 VO（补充实时状态和冲突检测）
             List<InstanceInfoVO> voList = resultPage.getRecords().stream()
-                    .map(this::convertToInstanceInfoVO)
+                    .map(db -> convertToInstanceInfoVOWithRegistry(db, registryInstanceIds))
                     .collect(Collectors.toList());
 
             // 构建响应
@@ -861,6 +889,98 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
         vo.setGroupKey(doct.getGroupKey());
         vo.setStorageMode(doct.getStorageMode());
         return vo;
+    }
+
+    /**
+     * 获取 Nacos 注册中心的实例 ID 集合
+     *
+     * @return 实例 ID 集合（格式：serviceId:host:port）
+     */
+    private Set<String> getRegistryInstanceIds() {
+        try {
+            List<ServiceInstance> instances = discoveryClient.getInstances(gatewayServiceName);
+            return instances.stream()
+                    .map(i -> i.getServiceId() + ":" + i.getHost() + ":" + i.getPort())
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            log.warn("[GatewayInstance] 获取 Nacos 实例列表失败 | error: {}", e.getMessage());
+            return new HashSet<>();
+        }
+    }
+
+    /**
+     * 将 DO 转换为 InstanceInfoVO，补充 Nacos 实时状态和冲突检测
+     *
+     * @param dbInstance         数据库实例
+     * @param registryInstanceIds Nacos 实例 ID 集合
+     * @return 补充实时状态的 VO
+     */
+    private InstanceInfoVO convertToInstanceInfoVOWithRegistry(GatewayInstanceDO dbInstance, Set<String> registryInstanceIds) {
+        InstanceInfoVO vo = BeanUtil.copyProperties(dbInstance, InstanceInfoVO.class);
+        vo.setStatusDesc(getStatusDesc(dbInstance.getStatus()));
+        vo.setGroupKey(dbInstance.getGroupKey());
+        vo.setStorageMode(dbInstance.getStorageMode());
+
+        // 检查是否在注册中心
+        boolean inRegistry = registryInstanceIds.contains(dbInstance.getInstanceId());
+        vo.setInRegistry(inRegistry);
+
+        // 确定健康状态（基于数据库状态和注册中心状态）
+        String healthStatus = determineHealthStatus(dbInstance.getStatus(), inRegistry);
+        vo.setHealthStatus(healthStatus);
+
+        // 状态冲突检测（基于健康状态）
+        String statusConflict = detectStatusConflict(dbInstance.getStatus(), inRegistry, healthStatus);
+        vo.setStatusConflict(statusConflict);
+
+        return vo;
+    }
+
+    /**
+     * 确定实例健康状态
+     *
+     * @param dbStatus   数据库状态
+     * @param inRegistry 是否在注册中心
+     * @return 健康状态（UP/DOWN/OFFLINE）
+     */
+    private String determineHealthStatus(Byte dbStatus, boolean inRegistry) {
+        // 离线、下线、排空状态 -> OFFLINE
+        if (!INSTANCE_STATUS_ONLINE.equals(dbStatus)) {
+            return "OFFLINE";
+        }
+        // 在线且在注册中心 -> UP（Nacos 已做健康检查）
+        if (inRegistry) {
+            return "UP";
+        }
+        // 在线但不在注册中心 -> DOWN
+        return "DOWN";
+    }
+
+    /**
+     * 检测数据库状态与实际状态冲突
+     *
+     * @param dbStatus    数据库状态
+     * @param inRegistry  是否在注册中心
+     * @param healthStatus 健康状态
+     * @return 冲突提示信息，无冲突返回 null
+     */
+    private String detectStatusConflict(Byte dbStatus, boolean inRegistry, String healthStatus) {
+        // 数据库显示在线，但健康状态非 UP
+        if (INSTANCE_STATUS_ONLINE.equals(dbStatus) && !"UP".equals(healthStatus)) {
+            return "数据库状态与注册中心不一致：数据库显示在线，但实例未注册";
+        }
+
+        // 数据库显示下线，但实例健康在线（已在注册中心）
+        if (INSTANCE_STATUS_SHUTDOWN.equals(dbStatus) && "UP".equals(healthStatus)) {
+            return "实例已恢复运行，但数据库仍显示下线，请执行上线操作";
+        }
+
+        // 数据库显示离线(FAULT)，但实例已恢复健康
+        if (INSTANCE_STATUS_OFFLINE.equals(dbStatus) && "UP".equals(healthStatus)) {
+            return "实例已自动恢复，建议手动执行上线操作";
+        }
+
+        return null;
     }
 
     /**
@@ -1010,17 +1130,20 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
 
     /**
      * 从 Actuator 获取健康状态详情
+     * 使用 RestTemplate 进行同步 HTTP 请求，避免 WebClient 的异步分发导致 SaToken 上下文丢失
      */
     @SuppressWarnings("unchecked")
     private HealthDetailVO fetchHealthDetail(String uri) {
         try {
+            // URI 白名单校验（防止 SSRF）
+            if (!isUriAllowed(uri)) {
+                log.warn("[GatewayInstance] URI 不在白名单范围内，拒绝健康检查 | uri: {}", uri);
+                return null;
+            }
+
             String healthUrl = uri + "/actuator/health";
-            String response = webClient.get()
-                    .uri(healthUrl)
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .timeout(Duration.ofSeconds(HEALTH_CHECK_TIMEOUT_SECONDS))
-                    .block();
+            // 使用 RestTemplate 同步请求，避免 WebClient 异步问题
+            String response = restTemplate.getForObject(healthUrl, String.class);
 
             if (StrUtil.isBlank(response)) {
                 return null;
@@ -1058,6 +1181,79 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             log.warn("[GatewayInstance] 获取健康状态详情失败 | uri: {}, error: {}", uri, e.getMessage());
             return null;
         }
+    }
+
+    /**
+     * 校验 URI 是否允许访问（防止 SSRF 攻击）
+     * <p>
+     * 禁止访问以下地址：
+     * - localhost (127.0.0.0/8)
+     * - 0.0.0.0 (本网络)
+     * - 内部元数据地址 (169.254.0.0/16)
+     * </p>
+     *
+     * @param uri 要校验的 URI
+     * @return 允许访问返回 true，否则返回 false
+     */
+    private boolean isUriAllowed(String uri) {
+        if (StrUtil.isBlank(uri)) {
+            return false;
+        }
+
+        try {
+            // 解析 URI 获取主机地址
+            java.net.URI parsedUri = new java.net.URI(uri);
+            String host = parsedUri.getHost();
+
+            if (StrUtil.isBlank(host)) {
+                log.warn("[GatewayInstance] URI 解析失败，缺少主机地址 | uri: {}", uri);
+                return false;
+            }
+
+            // 禁止 localhost 相关地址
+            if ("localhost".equalsIgnoreCase(host) || host.startsWith("127.") || "0.0.0.0".equals(host)) {
+                log.warn("[GatewayInstance] 禁止访问 localhost 地址 | host: {}", host);
+                return false;
+            }
+
+            // 禁止元数据服务地址（AWS/GCP 等云环境）
+            if (host.startsWith("169.254.")) {
+                log.warn("[GatewayInstance] 禁止访问元数据服务地址 | host: {}", host);
+                return false;
+            }
+
+            // 如果是 IP 地址，校验是否为私有地址的特殊情况
+            if (isIpAddress(host)) {
+                // 允许私有网络地址（网关实例通常在私有网络中）
+                // 但禁止特殊的内网保留地址
+                if (host.startsWith("0.")) {
+                    log.warn("[GatewayInstance] 禁止访问本网络地址 | host: {}", host);
+                    return false;
+                }
+            }
+
+            return true;
+        } catch (Exception e) {
+            log.warn("[GatewayInstance] URI 解析异常 | uri: {}, error: {}", uri, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 判断是否为 IP 地址格式
+     *
+     * @param host 主机名或 IP 地址
+     * @return 是 IP 地址返回 true
+     */
+    private boolean isIpAddress(String host) {
+        // IPv4 格式校验
+        String ipv4Pattern = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+        if (host.matches(ipv4Pattern)) {
+            return true;
+        }
+        // IPv6 格式校验（简化版）
+        String ipv6Pattern = "^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^::$|^::1$|^([0-9a-fA-F]{1,4}:){1,7}:$|^([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}$";
+        return host.matches(ipv6Pattern);
     }
 
     // ==================== Redis Stream 消息发送 ====================
@@ -1200,7 +1396,7 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
         if ("redis".equals(storageMode)) {
             // Redis 模式：检查 Key 是否存在
             String routeKey = "blink:gateway:routes:" + targetGroupKey + ":default";
-            boolean exists = redisClient.hasKey(routeKey);
+            boolean exists = redisClient.exists(routeKey);
             if (!exists) {
                 log.warn("[GatewayInstance] 目标分组配置不存在 | storageMode: redis, routeKey: {}", routeKey);
                 BlinkException.throwBusinessException(TARGET_GROUP_CONFIG_NOT_EXIST);
