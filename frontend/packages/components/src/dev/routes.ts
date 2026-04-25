@@ -121,6 +121,12 @@ const routes: RouteRecordRaw[] = [
             component: () => import('./views/business/UserDropdownDemo.vue'),
             meta: { title: '用户下拉' },
           },
+          {
+            path: 'blink-task-dialog',
+            name: 'BlinkTaskDialog',
+            component: () => import('./views/business/BlinkTaskDialogDemo.vue'),
+            meta: { title: '任务进度弹窗' },
+          },
         ],
       },
       // 测试工具
