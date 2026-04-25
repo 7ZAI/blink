@@ -1,8 +1,8 @@
 <!-- src/components/BlinkTaskDialog/components/ResultPanel.vue -->
 <template>
-  <div class="blink-result-panel" :class="resultClass">
+  <div class="blink-result-panel" :class="resultClass" role="status" aria-live="polite">
     <!-- 结果图标 -->
-    <div class="blink-result-panel__icon">
+    <div class="blink-result-panel__icon" aria-hidden="true">
       <el-icon :size="48">
         <component :is="resultIcon" />
       </el-icon>
@@ -174,12 +174,7 @@ const formatDataDetail = computed(() => {
  * @param action 操作按钮配置
  */
 const handleAction = (action: ResultAction) => {
-  // 触发 action 事件，让父组件处理
   emit('action', action)
-  // 如果 action 有 handler，也执行它
-  if (action.handler) {
-    action.handler()
-  }
 }
 </script>
 
