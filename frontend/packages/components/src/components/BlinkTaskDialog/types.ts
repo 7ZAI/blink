@@ -1,3 +1,4 @@
+// src/components/BlinkTaskDialog/types.ts
 import type { Ref } from 'vue'
 
 /**
@@ -172,7 +173,14 @@ export interface BlinkTaskDialogProps {
 }
 
 /**
- * BlinkTaskDialog Emits
+ * BlinkTaskDialog 组件 Emits 类型
+ *
+ * 事件说明：
+ * - update:modelValue: 双向绑定更新弹窗显示状态
+ * - cancel: 取消任务按钮点击
+ * - background: 后台执行按钮点击
+ * - close: 关闭弹窗
+ * - action: 点击结果操作按钮
  */
 export interface BlinkTaskDialogEmits {
   (e: 'update:modelValue', value: boolean): void  // 更新显示状态
@@ -192,9 +200,3 @@ export interface RunTaskDialogResult<T = any> {
   error: Error | null
 }
 
-/**
- * showTaskDialog 参数（继承 StartOptions）
- */
-export interface ShowTaskDialogOptions extends StartOptions {
-  // 继承所有 StartOptions 字段
-}
