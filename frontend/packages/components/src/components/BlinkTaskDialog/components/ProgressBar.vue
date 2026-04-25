@@ -6,6 +6,10 @@
       <div
         class="blink-progress-bar__fill"
         :style="{ width: `${clampedPercent}%` }"
+        role="progressbar"
+        :aria-valuenow="clampedPercent"
+        aria-valuemin="0"
+        aria-valuemax="100"
       />
     </div>
 
@@ -27,7 +31,7 @@
  * 进度值会自动限制在 0-100 范围内。
  *
  * @author binblink
- * @since 2024-01-xx
+ * @since 2026-04-25
  */
 import { computed } from 'vue'
 
@@ -162,22 +166,14 @@ const formatTime = (ms: number): string => {
   }
 }
 
-// 深色模式适配
-.dark .blink-progress-bar {
-  &__track {
-    background-color: var(--border-color-light);
-  }
+// 无障碍访问：减少动画模式支持
+@media (prefers-reduced-motion: reduce) {
+  .blink-progress-bar__fill {
+    transition: none;
 
-  &__fill {
-    background-color: var(--primary-color);
-  }
-
-  &__percent {
-    color: var(--text-color-regular);
-  }
-
-  &__estimated {
-    color: var(--text-color-secondary);
+    &::after {
+      animation: none;
+    }
   }
 }
 </style>
