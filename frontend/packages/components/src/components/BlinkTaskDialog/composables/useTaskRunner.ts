@@ -311,7 +311,7 @@ export function useTaskRunner(options: TaskRunnerOptions = {}): TaskRunnerReturn
       const result = await taskFn(updateProgress, abortController.signal)
 
       // 检查是否被取消
-      if (abortController.signal.aborted) {
+      if (abortController?.signal.aborted) {
         return null
       }
 
