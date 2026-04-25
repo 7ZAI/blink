@@ -13,6 +13,11 @@ import {
 } from '../types'
 
 /**
+ * 计时器更新间隔（毫秒）
+ */
+const TIMER_UPDATE_INTERVAL = 100
+
+/**
  * 创建默认进度状态
  */
 export function createDefaultProgress(): TaskProgress {
@@ -55,10 +60,21 @@ export function useTaskRunner(options: TaskRunnerOptions = {}): TaskRunnerReturn
   // 内部状态管理
   let abortController: AbortController | null = null
   let timerInterval: number | null = null
+  let autoCloseTimer: ReturnType<typeof setTimeout> | null = null
   let startTimestamp: number = 0
   let pauseTimestamp: number = 0
   let pausedElapsedTime: number = 0
   let currentTaskOptions: StartOptions | null = null
+
+  /**
+   * 清理自动关闭计时器
+   */
+  function clearAutoCloseTimer(): void {
+    if (autoCloseTimer !== null) {
+      clearTimeout(autoCloseTimer)
+      autoCloseTimer = null
+    }
+  }
 
   /**
    * 清理计时器
@@ -80,7 +96,7 @@ export function useTaskRunner(options: TaskRunnerOptions = {}): TaskRunnerReturn
       if (state.value.status === TaskStatus.RUNNING) {
         state.value.elapsedTime = Date.now() - startTimestamp + pausedElapsedTime
       }
-    }, 100) // 每100ms更新一次
+    }, TIMER_UPDATE_INTERVAL) // 每100ms更新一次
   }
 
   /**
@@ -222,8 +238,9 @@ export function useTaskRunner(options: TaskRunnerOptions = {}): TaskRunnerReturn
     const delay = currentTaskOptions?.autoCloseDelay ?? options.autoCloseDelay ?? 1500
 
     if (behavior === 'auto-close') {
-      setTimeout(() => {
+      autoCloseTimer = setTimeout(() => {
         state.value.visible = false
+        autoCloseTimer = null
       }, delay)
     }
   }
@@ -301,15 +318,25 @@ export function useTaskRunner(options: TaskRunnerOptions = {}): TaskRunnerReturn
       // 任务完成
       handleComplete(result)
       return result
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 区分取消和真正的错误
-      if (error.name === 'AbortError' || abortController?.signal.aborted) {
+      if (
+        (error instanceof Error && error.name === 'AbortError') ||
+        abortController?.signal.aborted
+      ) {
         // 任务被取消，不作为失败处理
         return null
       }
 
-      handleFailure(error)
-      throw error
+      if (error instanceof Error) {
+        handleFailure(error)
+        throw error
+      }
+
+      // 非Error类型的异常，包装为Error
+      const wrappedError = new Error(String(error))
+      handleFailure(wrappedError)
+      throw wrappedError
     }
   }
 
@@ -392,6 +419,7 @@ export function useTaskRunner(options: TaskRunnerOptions = {}): TaskRunnerReturn
 
     // 清理计时器
     clearTimer()
+    clearAutoCloseTimer()
 
     // 重置状态
     state.value = createDefaultState()
@@ -407,6 +435,7 @@ export function useTaskRunner(options: TaskRunnerOptions = {}): TaskRunnerReturn
   // 组件卸载时清理
   onUnmounted(() => {
     clearTimer()
+    clearAutoCloseTimer()
     if (abortController && state.value.status === TaskStatus.RUNNING) {
       abortController.abort()
     }
