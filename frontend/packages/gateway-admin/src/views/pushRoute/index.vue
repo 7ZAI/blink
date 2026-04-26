@@ -1,5 +1,4 @@
 <template>
-  <!-- 推送路由页面 -->
   <div class="push-route-page">
     <!-- 页面头部 -->
     <div class="page-header">
@@ -12,292 +11,169 @@
           <p class="subtitle">{{ t('pushRoute.subtitle') }}</p>
         </div>
       </div>
-      <div class="header-right">
-        <div class="action-buttons">
-          <el-button type="primary" :loading="pushing" :disabled="!canPush" @click="handlePush">
-            <el-icon><Promotion /></el-icon>
-            {{ t('pushRoute.push') }}
-          </el-button>
-          <el-button type="success" :loading="pushing" @click="handleFullPush">
-            <el-icon><Upload /></el-icon>
-            {{ t('pushRoute.fullPush') }}
-          </el-button>
-          <el-button
-            type="info"
-            :disabled="!canValidate"
-            @click="handleValidate"
+      <div class="header-center">
+        <el-select
+          v-model="selectedGroup"
+          :placeholder="t('pushRoute.selectGroupPlaceholder')"
+          clearable
+          filterable
+          style="width: 280px"
+          @change="handleGroupChange"
+        >
+          <el-option
+            v-for="group in routeGroups"
+            :key="group.groupKey"
+            :label="group.groupName"
+            :value="group.groupKey"
           >
-            <el-icon><CircleCheck /></el-icon>
-            {{ t('pushRoute.validate') }}
-          </el-button>
-        </div>
+            <span class="group-option">
+              <span class="group-name">{{ group.groupName }}</span>
+              <el-tag size="small" effect="plain" type="info">
+                {{ group.groupKey }}
+              </el-tag>
+            </span>
+          </el-option>
+        </el-select>
+      </div>
+      <div class="header-right">
+        <el-button
+          type="primary"
+          :disabled="!selectedGroup"
+          @click="handleOpenDiffDialog"
+        >
+          <el-icon><Promotion /></el-icon>
+          {{ t('pushRoute.push') }}
+        </el-button>
       </div>
     </div>
 
-    <!-- 主要内容区 -->
-    <div class="main-content">
-      <!-- 左侧：路由列表 + 结果面板 -->
-      <div class="left-column">
-        <!-- 路由列表 -->
-        <div class="left-panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <BlinkIcon icon="mdi:routes" size="18" />
-              <span>{{ t('pushRoute.routesFromRepository') }}</span>
-            </div>
-            <div class="panel-actions">
-              <el-input
-                v-model="routeSearchKeyword"
-                :placeholder="t('common.search')"
-                clearable
-                size="small"
-                style="width: 180px"
-              >
-                <template #prefix>
-                  <el-icon><Search /></el-icon>
-                </template>
-              </el-input>
-              <el-checkbox
-                v-model="selectAllRoutes"
-                :indeterminate="isRoutesIndeterminate"
-                @change="handleSelectAllRoutes as any"
-              >
-                {{ t('common.selectAll') }}
-              </el-checkbox>
-            </div>
+    <!-- 主内容区（三列布局） -->
+    <div class="main-content" v-loading="pageLoading">
+      <!-- 仓库路由列（左列） -->
+      <div class="column repository-column">
+        <div class="column-header">
+          <div class="column-title">
+            <BlinkIcon icon="mdi:database" size="18" />
+            <span>{{ t('pushRoute.repositoryRoutesCount', { count: repositoryRoutes.length }) }}</span>
           </div>
-          <div class="panel-stats">
-            <span class="stat-item">
-              {{ t('pushRoute.selectedRoutes', { count: selectedRouteIds.length }) }}
-            </span>
-            <span class="stat-divider">|</span>
-            <span class="stat-item">
-              {{ t('pushRoute.totalRoutes', { count: filteredRoutes.length }) }}
-            </span>
-          </div>
-          <div class="panel-body" v-loading="routesLoading">
-            <el-scrollbar>
-              <div v-if="filteredRoutes.length === 0" class="empty-state">
-                <el-empty :description="t('pushRoute.noRoutes')" size="small" />
-              </div>
-              <div v-else class="route-list">
-                <div
-                  v-for="route in filteredRoutes"
-                  :key="route.routeId"
-                  class="route-item"
-                  :class="{ 'is-selected': selectedRouteIds.includes(route.routeId) }"
-                >
-                  <el-checkbox
-                    :model-value="selectedRouteIds.includes(route.routeId)"
-                    @change="toggleRouteSelection(route.routeId)"
-                  />
-                  <div class="route-info" @click="toggleRouteSelection(route.routeId)">
-                    <span class="route-id">{{ route.routeId }}</span>
-                    <span class="route-name">{{ route.routeName || '-' }}</span>
-                    <el-tag size="small" effect="plain" type="success" class="route-uri">{{ route.uri }}</el-tag>
-                    <el-tag
-                      :type="route.status === 1 ? 'success' : 'danger'"
-                      size="small"
-                      effect="light"
-                    >
-                      {{ route.status === 1 ? t('common.statusEnable') : t('common.statusDisable') }}
-                    </el-tag>
-                    <el-tag
-                      :type="getPushStatusType(route.pushStatus)"
-                      size="small"
-                      effect="plain"
-                    >
-                      {{ getPushStatusText(route.pushStatus) }}
-                    </el-tag>
-                  </div>
-                  <el-button
-                    type="primary"
-                    link
-                    size="small"
-                    @click.stop="showRouteDetail(route)"
-                  >
-                    <el-icon><View /></el-icon>
-                    {{ t('common.detail') }}
-                  </el-button>
-                </div>
-              </div>
-            </el-scrollbar>
-          </div>
+          <el-input
+            v-model="repoSearchKeyword"
+            :placeholder="t('common.search')"
+            clearable
+            size="small"
+            style="width: 150px"
+          >
+            <template #prefix>
+              <el-icon><Search /></el-icon>
+            </template>
+          </el-input>
         </div>
-
-        <!-- 推送结果区域 -->
-        <div class="result-panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <BlinkIcon :icon="getResultPanelIcon()" size="18" />
-              <span>{{ getResultPanelTitle() }}</span>
+        <div class="column-body">
+          <el-scrollbar>
+            <div v-if="filteredRepoRoutes.length === 0" class="empty-state">
+              <el-empty :description="t('pushRoute.noRoutes')" size="small" />
             </div>
-            <div class="panel-actions">
-              <el-radio-group v-model="resultTab" size="small">
-                <el-radio-button value="preview">{{ t('pushRoute.routePreview') }}</el-radio-button>
-                <el-radio-button value="push">{{ t('pushRoute.pushResult') }}</el-radio-button>
-                <el-radio-button value="validate" :disabled="!validateResult">
-                  {{ t('pushRoute.validateResult') }}
-                </el-radio-button>
-              </el-radio-group>
-              <template v-if="resultTab === 'preview' || resultTab === 'push'">
-                <el-radio-group v-model="resultFormat" size="small">
-                  <el-radio-button value="json">JSON</el-radio-button>
-                  <el-radio-button value="yaml">YAML</el-radio-button>
-                </el-radio-group>
-                <el-button size="small" text @click="copyResult">
-                  <el-icon><CopyDocument /></el-icon>
-                  {{ t('common.copy') }}
-                </el-button>
-              </template>
+            <div v-else class="route-list">
+              <div
+                v-for="route in filteredRepoRoutes"
+                :key="route.routeId"
+                class="route-item"
+              >
+                <span class="route-id">{{ route.routeId }}</span>
+                <span class="route-name">{{ route.routeName || '-' }}</span>
+                <el-tag size="small" effect="plain" type="success" class="route-uri">
+                  {{ route.uri }}
+                </el-tag>
+                <el-tag
+                  :type="route.status === 1 ? 'success' : 'danger'"
+                  size="small"
+                  effect="light"
+                >
+                  {{ route.status === 1 ? t('common.statusEnable') : t('common.statusDisable') }}
+                </el-tag>
+                <el-tag
+                  :type="getPushStatusType(route.pushStatus)"
+                  size="small"
+                  effect="plain"
+                >
+                  {{ getPushStatusText(route.pushStatus) }}
+                </el-tag>
+              </div>
             </div>
-          </div>
-          <div class="panel-body">
-            <!-- 路由预览 -->
-            <template v-if="resultTab === 'preview'">
-              <div v-if="selectedRoutesData.length === 0" class="empty-result">
-                <el-empty :description="t('pushRoute.noRoutesSelected')" size="small" />
-              </div>
-              <div v-else class="route-preview">
-                <div class="preview-header">
-                  <el-tag type="info" effect="plain" size="small">
-                    {{ t('pushRoute.selectedRoutesCount', { count: selectedRoutesData.length }) }}
-                  </el-tag>
-                  <el-tag v-if="selectedInstanceIds.length > 0" type="success" effect="plain" size="small">
-                    {{ t('pushRoute.targetInstancesCount', { count: selectedInstanceIds.length }) }}
-                  </el-tag>
-                </div>
-                <div class="code-block">
-                  <pre>{{ formattedRoutesPreview }}</pre>
-                </div>
-              </div>
-            </template>
-
-            <!-- 推送结果 -->
-            <template v-else-if="resultTab === 'push'">
-              <div v-if="!pushResult" class="empty-result">
-                <el-empty :description="t('pushRoute.noResult')" size="small" />
-              </div>
-              <template v-else>
-                <div v-if="pushResult.success" class="result-success">
-                  <div class="success-header">
-                    <el-icon class="success-icon"><CircleCheckFilled /></el-icon>
-                    <span>{{ t('pushRoute.pushSuccess') }}</span>
-                  </div>
-                  <div class="code-block">
-                    <pre>{{ formattedPushResult }}</pre>
-                  </div>
-                  <!-- 跳转到推送历史 -->
-                  <div class="push-history-link">
-                    <el-button type="primary" link @click="goToPushHistory">
-                      <el-icon><Clock /></el-icon>
-                      {{ t('pushHistory.goToPushHistory') }}
-                    </el-button>
-                  </div>
-                </div>
-                <div v-else class="result-error">
-                  <div class="error-header">
-                    <el-icon class="error-icon"><CircleCloseFilled /></el-icon>
-                    <span>{{ t('pushRoute.pushFailed') }}</span>
-                  </div>
-                  <div class="error-detail">
-                    <div v-for="(error, idx) in pushResult.errors" :key="idx" class="error-item">
-                      <span class="error-instance">{{ error.instanceId }}:</span>
-                      <span class="error-message">{{ error.message }}</span>
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </template>
-
-            <!-- 校验结果 -->
-            <template v-else-if="resultTab === 'validate' && validateResult">
-              <div v-if="validateResult.consistent" class="validate-success">
-                <div class="success-header">
-                  <el-icon class="success-icon"><CircleCheckFilled /></el-icon>
-                  <span>{{ t('pushRoute.validateSuccess') }}</span>
-                </div>
-                <div class="validate-info">
-                  {{ t('pushRoute.validateConsistent') }}
-                </div>
-              </div>
-              <div v-else class="validate-error">
-                <div class="error-header">
-                  <el-icon class="error-icon"><WarningFilled /></el-icon>
-                  <span>{{ t('pushRoute.validateFailed') }}</span>
-                </div>
-                <div class="validate-diff">
-                  <div v-for="diff in validateResult.differences" :key="diff.instanceId" class="diff-item">
-                    <div class="diff-header">
-                      <span class="instance-id">{{ diff.instanceId }}</span>
-                      <el-tag size="small" type="warning">{{ diff.type }}</el-tag>
-                    </div>
-                    <div class="diff-detail">
-                      <div class="diff-row">
-                        <span class="label">{{ t('pushRoute.expected') }}:</span>
-                        <span class="value">{{ diff.expected }}</span>
-                      </div>
-                      <div class="diff-row">
-                        <span class="label">{{ t('pushRoute.actual') }}:</span>
-                        <span class="value">{{ diff.actual }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </template>
-          </div>
+          </el-scrollbar>
         </div>
       </div>
 
-      <!-- 右侧：实例列表 -->
-      <div class="right-panel">
-        <div class="panel-header">
-          <div class="panel-title">
-            <BlinkIcon icon="mdi:server-network" size="18" />
-            <span>{{ t('pushRoute.gatewayInstances') }}</span>
+      <!-- 实例路由列（中列） -->
+      <div class="column instance-column">
+        <div class="column-header">
+          <div class="column-title">
+            <BlinkIcon icon="mdi:server" size="18" />
+            <span>{{ t('pushRoute.instanceRoutesCount', { count: instanceRoutes.length }) }}</span>
           </div>
-          <div class="panel-actions">
-            <el-checkbox
-              v-model="selectAllInstances"
-              :indeterminate="isInstancesIndeterminate"
-              @change="handleSelectAllInstances as any"
-            >
-              {{ t('common.selectAll') }}
-            </el-checkbox>
+          <div class="column-source">
+            <el-tag v-if="instanceRouteSource" size="small" effect="plain" type="info">
+              {{ instanceRouteSource.storageMode }}
+            </el-tag>
+            <el-tag v-if="instanceRouteSource?.fromActuator" size="small" effect="light">
+              {{ t('pushRoute.loadFromActuator') }}
+            </el-tag>
           </div>
         </div>
-        <div class="panel-stats">
-          <span class="stat-item">
-            {{ t('pushRoute.selectedInstances', { count: selectedInstanceIds.length }) }}
-          </span>
-          <span class="stat-divider">|</span>
-          <span class="stat-item online">
-            {{ t('pushRoute.onlineInstances', { count: onlineInstances.length }) }}
-          </span>
-        </div>
-        <div class="panel-body" v-loading="instancesLoading">
+        <div class="column-body">
           <el-scrollbar>
-            <div v-if="instances.length === 0" class="empty-state">
-              <el-empty :description="t('pushRoute.noInstances')" size="small" />
+            <div v-if="!selectedGroup" class="empty-state">
+              <el-empty :description="t('pushRoute.selectGroup')" size="small" />
+            </div>
+            <div v-else-if="instanceRouteError" class="empty-state error-state">
+              <el-empty :description="t('pushRoute.noInstanceRoutes')" size="small" />
+              <div class="error-message">{{ instanceRouteError }}</div>
+            </div>
+            <div v-else-if="filteredInstanceRoutes.length === 0" class="empty-state">
+              <el-empty :description="t('pushRoute.noRoutes')" size="small" />
+            </div>
+            <div v-else class="route-list instance-route-list">
+              <div
+                v-for="route in filteredInstanceRoutes"
+                :key="route.routeId"
+                class="route-item"
+              >
+                <span class="route-id">{{ route.routeId }}</span>
+                <el-tag size="small" effect="plain" type="info" class="route-uri">
+                  {{ route.uri }}
+                </el-tag>
+              </div>
+            </div>
+          </el-scrollbar>
+        </div>
+      </div>
+
+      <!-- 关联实例列（右列） -->
+      <div class="column instances-column">
+        <div class="column-header">
+          <div class="column-title">
+            <BlinkIcon icon="mdi:server-network" size="18" />
+            <span>{{ t('pushRoute.associatedInstances') }}</span>
+          </div>
+          <span class="online-count">
+            {{ t('pushRoute.onlineInstances', { count: associatedInstances.filter(i => i.status === 0).length }) }}
+          </span>
+        </div>
+        <div class="column-body">
+          <el-scrollbar>
+            <div v-if="!selectedGroup" class="empty-state">
+              <el-empty :description="t('pushRoute.selectGroup')" size="small" />
+            </div>
+            <div v-else-if="associatedInstances.length === 0" class="empty-state">
+              <el-empty :description="t('pushRoute.noOnlineInstance')" size="small" />
             </div>
             <div v-else class="instance-list">
               <div
-                v-for="instance in instances"
+                v-for="instance in associatedInstances"
                 :key="instance.instanceId"
                 class="instance-item"
-                :class="{
-                  'is-selected': selectedInstanceIds.includes(instance.instanceId),
-                  'is-offline': instance.status !== 0
-                }"
-                @click="toggleInstanceSelection(instance.instanceId, instance.status === 0)"
+                :class="{ 'is-offline': instance.status !== 0 }"
               >
-                <el-checkbox
-                  :model-value="selectedInstanceIds.includes(instance.instanceId)"
-                  :disabled="instance.status !== 0"
-                  @click.stop
-                  @change="toggleInstanceSelection(instance.instanceId, instance.status === 0)"
-                />
                 <div class="instance-indicator" :class="instance.status === 0 ? 'online' : 'offline'"></div>
                 <div class="instance-info">
                   <div class="instance-id">{{ instance.instanceId }}</div>
@@ -308,7 +184,10 @@
                   size="small"
                   effect="dark"
                 >
-                  {{ instance.status === 0 ? t('common.online') : t('common.offline') }}
+                  {{ instance.status === 0 ? t('common.statusOnline') : t('common.statusOffline') }}
+                </el-tag>
+                <el-tag v-if="instance.storageMode" size="small" effect="plain" type="warning">
+                  {{ instance.storageMode }}
                 </el-tag>
               </div>
             </div>
@@ -317,449 +196,241 @@
       </div>
     </div>
 
-    <!-- 备注输入弹窗 -->
-    <el-dialog
-      v-model="remarkDialogVisible"
-      :title="t('pushRoute.pushConfirm')"
-      width="500px"
-      :close-on-click-modal="false"
-      :lock-scroll="false"
-      @open="lockBodyScroll"
-      @closed="unlockBodyScroll"
-    >
-      <el-form label-width="80px">
-        <el-form-item :label="t('pushRoute.remark')">
-          <el-input
-            v-model="pushRemark"
-            type="textarea"
-            :rows="3"
-            :placeholder="t('pushRoute.remarkPlaceholder')"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="remarkDialogVisible = false">{{ t('common.cancel') }}</el-button>
-        <el-button type="primary" :loading="pushing" @click="confirmPush">
-          {{ t('common.confirm') }}
-        </el-button>
-      </template>
-    </el-dialog>
+    <!-- 路由差异对比对话框 -->
+    <RouteDiffDialog
+      v-model="diffDialogVisible"
+      :routes-group="selectedGroup"
+      @confirm-push="handleConfirmPush"
+    />
 
-    <!-- 路由详情弹窗 -->
-    <el-dialog
-      v-model="routeDetailVisible"
-      :title="t('pushRoute.routeDetail')"
-      width="700px"
-      :close-on-click-modal="false"
-      :lock-scroll="false"
-      class="route-detail-dialog"
-      @open="lockBodyScroll"
-      @closed="unlockBodyScroll"
-    >
-      <div v-if="currentRouteDetail" class="route-detail-content">
-        <el-descriptions :column="2" border size="small">
-          <el-descriptions-item :label="t('route.routeId')">
-            <span class="mono-text">{{ currentRouteDetail.routeId }}</span>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('route.routeName')">
-            {{ currentRouteDetail.routeName || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('route.routeGroup')">
-            <el-tag size="small" effect="plain" type="info">{{ currentRouteDetail.routesGroup || 'default' }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('route.uri')">
-            <el-tag size="small" effect="plain" type="success">{{ currentRouteDetail.uri }}</el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('route.order')">
-            {{ currentRouteDetail.orderNum || 0 }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('common.status')">
-            <el-tag :type="currentRouteDetail.status === 1 ? 'success' : 'danger'" size="small" effect="light">
-              {{ currentRouteDetail.status === 1 ? t('common.statusEnable') : t('common.statusDisable') }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('route.pushStatus')">
-            <el-tag :type="getPushStatusType(currentRouteDetail.pushStatus)" size="small" effect="plain">
-              {{ getPushStatusText(currentRouteDetail.pushStatus) }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('route.lastPushTime')">
-            {{ currentRouteDetail.lastPushTime || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('common.remark')" :span="2">
-            {{ currentRouteDetail.remark || '-' }}
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <!-- 断言配置 -->
-        <div class="detail-section">
-          <div class="section-title">{{ t('route.predicates') }}</div>
-          <div v-if="currentRouteDetail.predicates?.length" class="predicate-list">
-            <div v-for="(p, idx) in currentRouteDetail.predicates" :key="idx" class="predicate-item">
-              <el-tag type="primary" effect="light" size="small">{{ p.name }}</el-tag>
-              <span class="predicate-args">{{ formatPredicateArgs(p) }}</span>
-            </div>
-          </div>
-          <div v-else class="empty-section">-</div>
-        </div>
-
-        <!-- 过滤器配置 -->
-        <div class="detail-section">
-          <div class="section-title">{{ t('route.filters') }}</div>
-          <div v-if="currentRouteDetail.filters?.length" class="filter-list">
-            <div v-for="(f, idx) in currentRouteDetail.filters" :key="idx" class="filter-item">
-              <el-tag type="warning" effect="light" size="small">{{ f.name }}</el-tag>
-              <span class="filter-args">{{ formatFilterArgs(f) }}</span>
-            </div>
-          </div>
-          <div v-else class="empty-section">-</div>
-        </div>
-
-        <!-- JSON 预览 -->
-        <div class="detail-section">
-          <div class="section-title">JSON (Spring Cloud Gateway)</div>
-          <div class="json-preview">
-            <pre>{{ JSON.stringify(currentRouteDetail ? convertToGatewayRouteDefinition(currentRouteDetail) : null, null, 2) }}</pre>
-          </div>
-        </div>
-      </div>
-    </el-dialog>
+    <!-- 任务进度弹窗 -->
+    <BlinkTaskDialog
+      v-model="taskState.visible"
+      :status="taskState.status"
+      :progress="taskState.progress"
+      :title="t('pushRoute.pushToInstances', { count: pushInstanceIds.length })"
+      :message="taskState.message"
+      :result="taskState.result"
+      :error="taskState.error"
+      :elapsed-time="taskState.elapsedTime"
+      :steps="pushSteps"
+      :cancellable="true"
+      :backgroundable="true"
+      :close-on-complete="false"
+      @cancel="handleCancelTask"
+      @background="handleBackground"
+      @close="handleTaskDialogClose"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 /**
- * 推送路由页面
- * 从路由仓库选择路由推送到指定的网关实例
+ * 路由推送页面 - 重构版本
+ * 分组驱动的推送流程，三列布局展示
  *
  * @author binblink
  * @since 2024-01-01
  */
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Promotion, Search } from '@element-plus/icons-vue'
 import {
-  Promotion,
-  Upload,
-  CircleCheck,
-  Search,
-  CopyDocument,
-  CircleCheckFilled,
-  CircleCloseFilled,
-  WarningFilled,
-  View,
-} from '@element-plus/icons-vue'
+  BlinkTaskDialog,
+  useTaskRunner,
+  TaskStatus,
+  type ProgressUpdate,
+} from '@blink/components'
 import {
   routeApi,
   type RouteDefinition,
-  type GatewayInstanceVO,
-  type PushRoutesReq,
+  type GroupInstanceRoutesRsp,
 } from '@/api/route'
-import yaml from 'js-yaml'
+import {
+  routeGroupApi,
+  type RouteGroup,
+} from '@/api/routeGroup'
+import {
+  queryInstanceList,
+  type InstanceInfo,
+} from '@/api/instance'
+import RouteDiffDialog from './components/RouteDiffDialog.vue'
 
 defineOptions({
   name: 'PushRoute',
 })
 
 const { t } = useI18n()
-const router = useRouter()
 
-// 路由列表状态
-const routesLoading = ref(false)
-const warehouseRoutes = ref<RouteDefinition[]>([])
-const routeSearchKeyword = ref('')
-const selectedRouteIds = ref<string[]>([])
+// ============================================
+// 页面状态
+// ============================================
 
-// 实例列表状态
-const instancesLoading = ref(false)
-const instances = ref<GatewayInstanceVO[]>([])
-const selectedInstanceIds = ref<string[]>([])
+const pageLoading = ref(false)
+const selectedGroup = ref<string>('')
 
-// 推送状态
-const pushing = ref(false)
-const validating = ref(false)
-const remarkDialogVisible = ref(false)
-const pushRemark = ref('')
+// 路由分组列表
+const routeGroups = ref<RouteGroup[]>([])
 
-// 路由详情状态
-const routeDetailVisible = ref(false)
-const currentRouteDetail = ref<RouteDefinition | null>(null)
+// 仓库路由（左列）
+const repositoryRoutes = ref<RouteDefinition[]>([])
+const repoSearchKeyword = ref('')
 
-// 结果状态
-const resultTab = ref<'preview' | 'push' | 'validate'>('preview')
-const resultFormat = ref<'json' | 'yaml'>('json')
-const pushResult = ref<{
-  success: boolean
-  data?: any
-  errors?: Array<{ instanceId: string; message: string }>
-} | null>(null)
-const validateResult = ref<{
-  consistent: boolean
-  summary?: string
-  instanceDetails?: any[]
-  differences?: Array<{
-    instanceId: string
-    type: string
-    expected: string
-    actual: string
-  }>
-} | null>(null)
-// 最新推送记录ID（用于校验）
-const latestPushId = ref<number | null>(null)
+// 实例路由（中列）
+const instanceRouteSource = ref<GroupInstanceRoutesRsp | null>(null)
+const instanceRoutes = ref<RouteDefinition[]>([])
+const instanceRouteError = ref<string>('')
 
+// 关联实例（右列）
+const associatedInstances = ref<InstanceInfo[]>([])
+
+// ============================================
+// 差异对话框状态
+// ============================================
+
+const diffDialogVisible = ref(false)
+const pushInstanceIds = ref<string[]>([])
+
+// ============================================
+// 任务进度状态
+// ============================================
+
+const pushSteps = [
+  t('pushRoute.stepPushRoutes'),
+  t('pushRoute.stepNotifyChange'),
+  t('pushRoute.stepWaitEffect'),
+  t('pushRoute.stepVerifyResult'),
+]
+
+const { state: taskState, start, cancel } = useTaskRunner({
+  onComplete: (result: any) => {
+    // 校验结果处理
+    handleVerifyResult(result)
+  },
+  onCancel: () => {
+    ElMessage.warning(t('common.cancelled'))
+  },
+  onError: (error: Error) => {
+    ElMessage.error(`${t('message.operationFailed')}: ${error.message}`)
+  },
+})
+
+// ============================================
 // 计算属性
-const filteredRoutes = computed(() => {
-  if (!routeSearchKeyword.value) return warehouseRoutes.value
-  const keyword = routeSearchKeyword.value.toLowerCase()
-  return warehouseRoutes.value.filter(route =>
+// ============================================
+
+const filteredRepoRoutes = computed(() => {
+  if (!repoSearchKeyword.value) return repositoryRoutes.value
+  const keyword = repoSearchKeyword.value.toLowerCase()
+  return repositoryRoutes.value.filter(route =>
     route.routeId.toLowerCase().includes(keyword) ||
     (route.routeName?.toLowerCase().includes(keyword)) ||
     route.uri.toLowerCase().includes(keyword)
   )
 })
 
-const onlineInstances = computed(() =>
-  instances.value.filter(inst => inst.status === 0)
-)
-
-const selectAllRoutes = computed({
-  get: () => {
-    return filteredRoutes.value.length > 0 &&
-      filteredRoutes.value.every(r => selectedRouteIds.value.includes(r.routeId))
-  },
-  set: () => {}
+const filteredInstanceRoutes = computed(() => {
+  return instanceRoutes.value
 })
 
-const isRoutesIndeterminate = computed(() => {
-  const selected = selectedRouteIds.value.filter(id =>
-    filteredRoutes.value.some(r => r.routeId === id)
-  )
-  return selected.length > 0 && selected.length < filteredRoutes.value.length
-})
+// ============================================
+// 加载方法
+// ============================================
 
-const selectAllInstances = computed({
-  get: () => {
-    return onlineInstances.value.length > 0 &&
-      onlineInstances.value.every(i => selectedInstanceIds.value.includes(i.instanceId))
-  },
-  set: () => {}
-})
-
-const isInstancesIndeterminate = computed(() => {
-  const selected = selectedInstanceIds.value.filter(id =>
-    onlineInstances.value.some(i => i.instanceId === id)
-  )
-  return selected.length > 0 && selected.length < onlineInstances.value.length
-})
-
-const canPush = computed(() =>
-  selectedRouteIds.value.length > 0 && selectedInstanceIds.value.length > 0
-)
-
-const canValidate = computed(() =>
-  pushResult.value?.success === true
-)
-
-// 选中的路由数据
-const selectedRoutesData = computed(() =>
-  warehouseRoutes.value.filter(r => selectedRouteIds.value.includes(r.routeId))
-)
-
-/**
- * 将路由数据转换为 Spring Cloud Gateway 路由定义格式
- * Spring Cloud Gateway RouteDefinition 包含:
- * - id: 路由ID
- * - uri: 目标URI
- * - predicates: 断言配置数组
- * - filters: 过滤器配置数组
- * - order: 顺序
- * - metadata: 元数据
- */
-function convertToGatewayRouteDefinition(route: RouteDefinition) {
-  const gatewayRoute: {
-    id: string
-    uri: string
-    predicates: Array<{ name: string; args: Record<string, any> }>
-    filters: Array<{ name: string; args: Record<string, any> }>
-    order: number
-    metadata?: Record<string, any>
-  } = {
-    id: route.routeId,
-    uri: route.uri,
-    predicates: [],
-    filters: [],
-    order: route.orderNum || 0,
-  }
-
-  // 转换断言配置
-  if (route.predicates && Array.isArray(route.predicates)) {
-    gatewayRoute.predicates = route.predicates.map(p => ({
-      name: p.name,
-      args: p.args || {},
-    }))
-  }
-
-  // 转换过滤器配置
-  if (route.filters && Array.isArray(route.filters)) {
-    gatewayRoute.filters = route.filters.map(f => ({
-      name: f.name,
-      args: f.args || {},
-    }))
-  }
-
-  // 只在有元数据时添加
-  if (route.metadata && Object.keys(route.metadata).length > 0) {
-    gatewayRoute.metadata = route.metadata
-  }
-
-  return gatewayRoute
-}
-
-// 格式化路由预览
-const formattedRoutesPreview = computed(() => {
-  const routes = selectedRoutesData.value
-  if (routes.length === 0) return ''
-
-  // 转换为 Spring Cloud Gateway 路由定义格式
-  const gatewayRoutes = routes.map(convertToGatewayRouteDefinition)
-
-  const previewData = {
-    routes: gatewayRoutes,
-    pushConfig: {
-      targetInstances: selectedInstanceIds.value,
-      pushMode: selectedInstanceIds.value.length === onlineInstances.value.length ? 'broadcast' : 'specified',
-      timestamp: new Date().toISOString(),
-    }
-  }
-
-  if (resultFormat.value === 'yaml') {
-    try {
-      return yaml.dump(previewData, { indent: 2, lineWidth: -1 })
-    } catch {
-      return JSON.stringify(previewData, null, 2)
-    }
-  }
-  return JSON.stringify(previewData, null, 2)
-})
-
-const formattedPushResult = computed(() => {
-  if (!pushResult.value?.data) return ''
-  if (resultFormat.value === 'yaml') {
-    try {
-      return yaml.dump(pushResult.value.data, { indent: 2, lineWidth: -1 })
-    } catch {
-      return JSON.stringify(pushResult.value.data, null, 2)
-    }
-  }
-  return JSON.stringify(pushResult.value.data, null, 2)
-})
-
-// 获取结果面板图标
-function getResultPanelIcon(): string {
-  switch (resultTab.value) {
-    case 'preview':
-      return 'mdi:eye'
-    case 'push':
-      return pushResult.value?.success ? 'mdi:check-circle' : 'mdi:close-circle'
-    case 'validate':
-      return validateResult.value?.consistent ? 'mdi:check-circle' : 'mdi:alert-circle'
-    default:
-      return 'mdi:eye'
-  }
-}
-
-// 获取结果面板标题
-function getResultPanelTitle(): string {
-  switch (resultTab.value) {
-    case 'preview':
-      return t('pushRoute.routePreview')
-    case 'push':
-      return t('pushRoute.pushResult')
-    case 'validate':
-      return t('pushRoute.validateResult')
-    default:
-      return t('pushRoute.routePreview')
-  }
-}
-
-// 加载路由仓库
-async function loadWarehouseRoutes() {
-  routesLoading.value = true
+// 加载路由分组列表
+async function loadRouteGroups() {
   try {
-    // 加载所有启用的路由，用于推送选择
-    // 如果路由数量超过2000，需要实现分页加载
+    const groups = await routeGroupApi.getEnabledRouteGroups()
+    routeGroups.value = groups || []
+  } catch (error) {
+    console.error('[PushRoute] Failed to load route groups:', error)
+    routeGroups.value = []
+  }
+}
+
+// 处理分组选择变化
+async function handleGroupChange(groupKey: string) {
+  if (!groupKey) {
+    // 清空数据
+    repositoryRoutes.value = []
+    instanceRoutes.value = []
+    instanceRouteSource.value = null
+    instanceRouteError.value = ''
+    associatedInstances.value = []
+    return
+  }
+
+  pageLoading.value = true
+  try {
+    // 并行加载三列数据
+    await Promise.all([
+      loadRepositoryRoutes(groupKey),
+      loadInstanceRoutes(groupKey),
+      loadAssociatedInstances(groupKey),
+    ])
+  } finally {
+    pageLoading.value = false
+  }
+}
+
+// 加载仓库路由（左列）
+async function loadRepositoryRoutes(groupKey: string) {
+  try {
     const result = await routeApi.getList({
+      routesGroup: groupKey,
+      status: 1, // 只加载启用状态的路由
       pageNum: 1,
-      pageSize: 2000, // 加载足够多的路由
-      status: 1, // 只加载启用的路由
+      pageSize: 500,
     })
-    warehouseRoutes.value = Array.isArray(result?.rows) ? result.rows : []
-
-    // 如果返回数量等于 pageSize，提示用户可能存在更多路由
-    if (warehouseRoutes.value.length >= 2000) {
-      ElMessage.warning(t('pushRoute.tooManyRoutes'))
-    }
+    repositoryRoutes.value = result?.rows || []
   } catch (error) {
-    ElMessage.error(t('message.fetchFailed'))
-    warehouseRoutes.value = []
-  } finally {
-    routesLoading.value = false
+    console.error('[PushRoute] Failed to load repository routes:', error)
+    repositoryRoutes.value = []
   }
 }
 
-// 加载实例列表
-async function loadInstances() {
-  instancesLoading.value = true
+// 加载实例路由（中列）
+async function loadInstanceRoutes(groupKey: string) {
+  instanceRouteError.value = ''
+  instanceRouteSource.value = null
+  instanceRoutes.value = []
+
   try {
-    const result = await routeApi.getOnlineGatewayInstances()
-    instances.value = Array.isArray(result) ? result : []
+    const result = await routeApi.getGroupInstanceRoutes({
+      routesGroup: groupKey,
+    })
+    instanceRouteSource.value = result
+    instanceRoutes.value = result?.rows || []
+
+    if (result?.error) {
+      instanceRouteError.value = result.error
+    }
+  } catch (error: any) {
+    console.error('[PushRoute] Failed to load instance routes:', error)
+    instanceRouteError.value = error?.message || t('pushRoute.loadFailed')
+  }
+}
+
+// 加载关联实例（右列）
+async function loadAssociatedInstances(groupKey: string) {
+  try {
+    const result = await queryInstanceList({
+      groupKey: groupKey,
+      pageNum: 1,
+      pageSize: 100,
+    })
+    associatedInstances.value = result?.rows || []
   } catch (error) {
-    ElMessage.error(t('message.fetchFailed'))
-    instances.value = []
-  } finally {
-    instancesLoading.value = false
+    console.error('[PushRoute] Failed to load associated instances:', error)
+    associatedInstances.value = []
   }
 }
 
-// 路由选择
-function toggleRouteSelection(routeId: string) {
-  const index = selectedRouteIds.value.indexOf(routeId)
-  if (index > -1) {
-    selectedRouteIds.value.splice(index, 1)
-  } else {
-    selectedRouteIds.value.push(routeId)
-  }
-}
+// ============================================
+// 推送状态辅助方法
+// ============================================
 
-function handleSelectAllRoutes(val: boolean) {
-  if (val) {
-    selectedRouteIds.value = filteredRoutes.value.map(r => r.routeId)
-  } else {
-    selectedRouteIds.value = []
-  }
-}
-
-// 实例选择
-function toggleInstanceSelection(instanceId: string, isOnline: boolean) {
-  if (!isOnline) return
-  const index = selectedInstanceIds.value.indexOf(instanceId)
-  if (index > -1) {
-    selectedInstanceIds.value.splice(index, 1)
-  } else {
-    selectedInstanceIds.value.push(instanceId)
-  }
-}
-
-function handleSelectAllInstances(val: boolean) {
-  if (val) {
-    selectedInstanceIds.value = onlineInstances.value.map(i => i.instanceId)
-  } else {
-    selectedInstanceIds.value = []
-  }
-}
-
-// 推送状态
 function getPushStatusType(pushStatus: number | undefined): 'info' | 'success' | 'danger' | 'warning' {
   if (pushStatus === undefined || pushStatus === 0) return 'info'
   if (pushStatus === 1) return 'success'
@@ -774,280 +445,184 @@ function getPushStatusText(pushStatus: number | undefined): string {
   return t('route.pushStatusUnknown')
 }
 
-// 显示路由详情
-function showRouteDetail(route: RouteDefinition) {
-  currentRouteDetail.value = route
-  routeDetailVisible.value = true
-}
+// ============================================
+// 推送流程
+// ============================================
 
-// 格式化断言参数
-function formatPredicateArgs(predicate: { name: string; args?: Record<string, any> }): string {
-  if (!predicate.args) return '-'
-  const args = Object.entries(predicate.args)
-    .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
-    .join(', ')
-  return args || '-'
-}
-
-// 格式化过滤器参数
-function formatFilterArgs(filter: { name: string; args?: Record<string, any> }): string {
-  if (!filter.args) return '-'
-  const args = Object.entries(filter.args)
-    .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
-    .join(', ')
-  return args || '-'
-}
-
-// 推送操作
-function handlePush() {
-  if (!canPush.value) {
-    ElMessage.warning(t('pushRoute.selectRoutesAndInstances'))
+// 打开差异对比对话框
+function handleOpenDiffDialog() {
+  if (!selectedGroup.value) {
+    ElMessage.warning(t('pushRoute.selectGroup'))
     return
   }
-  pushRemark.value = ''
-  remarkDialogVisible.value = true
+  diffDialogVisible.value = true
 }
 
-async function confirmPush() {
-  pushing.value = true
-  pushResult.value = null
-  validateResult.value = null
-  latestPushId.value = null
+// 确认推送（从差异对话框）
+function handleConfirmPush(data: { routesGroup: string; instanceIds: string[] }) {
+  pushInstanceIds.value = data.instanceIds
+  diffDialogVisible.value = false
 
-  try {
-    const req: PushRoutesReq = {
-      routeIds: selectedRouteIds.value,
-      pushMode: 'specified',
-      targetInstanceIds: selectedInstanceIds.value,
-      remark: pushRemark.value,
-    }
-    await routeApi.pushRoutes(req)
-
-    // 获取最新推送记录用于后续校验
-    try {
-      const firstInstanceId = selectedInstanceIds.value[0]
-      if (firstInstanceId) {
-        const latestPush = await routeApi.getLatestPush({ instanceId: firstInstanceId })
-        latestPushId.value = latestPush?.pushId || null
-      }
-    } catch {
-      // 忽略获取推送记录失败
-    }
-
-    pushResult.value = {
-      success: true,
-      data: {
-        pushedRoutes: selectedRouteIds.value.length,
-        targetInstances: selectedInstanceIds.value.length,
-        timestamp: new Date().toISOString(),
-      }
-    }
-
-    ElMessage.success(t('pushRoute.pushSuccess'))
-    remarkDialogVisible.value = false
-
-    // 刷新路由列表更新推送状态
-    loadWarehouseRoutes()
-  } catch (error: any) {
-    pushResult.value = {
-      success: false,
-      errors: [{
-        instanceId: 'unknown',
-        message: error?.message || t('pushRoute.pushFailed')
-      }]
-    }
-    ElMessage.error(t('pushRoute.pushFailed'))
-  } finally {
-    pushing.value = false
-  }
+  // 开始执行推送任务
+  startPushTask(data.routesGroup, data.instanceIds)
 }
 
-// 全实例推送
-async function handleFullPush() {
-  try {
-    await ElMessageBox.confirm(
-      t('pushRoute.fullPushConfirm'),
-      t('message.tips'),
-      { type: 'warning' }
-    )
-  } catch {
-    return
-  }
+// 开始推送任务
+async function startPushTask(routesGroup: string, instanceIds: string[]) {
+  await start({
+    task: async (onProgress: (progress: ProgressUpdate) => void, signal?: AbortSignal) => {
+      let pushId: number | null = null
 
-  pushing.value = true
-  pushResult.value = null
-  validateResult.value = null
-
-  try {
-    // 全量推送：推送所有启用状态的路由到所有在线实例
-    // 如果选择了路由，推送选中的；否则推送所有启用的路由
-    if (selectedRouteIds.value.length > 0) {
-      // 推送选中的路由
-      const req: PushRoutesReq = {
-        routeIds: [...selectedRouteIds.value],
-        pushMode: 'broadcast',
-        remark: 'Full push from push route page - selected routes',
-      }
-      await routeApi.pushRoutes(req)
-
-      pushResult.value = {
-        success: true,
-        data: {
-          pushedRoutes: selectedRouteIds.value.length,
-          targetInstances: onlineInstances.value.length,
-          timestamp: new Date().toISOString(),
-        }
-      }
-    } else {
-      // 未选择路由时，调用全量推送接口推送所有启用路由
-      await routeApi.fullPushRoutes({
-        storageMode: 'nacos', // 默认使用 nacos
+      // 步骤 1: 推送路由
+      onProgress({
+        step: 0,
+        stepMessage: t('pushRoute.stepPushRoutesDesc'),
+        message: t('pushRoute.stepPushRoutesDesc'),
       })
 
-      pushResult.value = {
-        success: true,
-        data: {
-          pushedRoutes: 'all enabled routes',
-          targetInstances: onlineInstances.value.length,
-          timestamp: new Date().toISOString(),
-        }
-      }
-    }
+      try {
+        // 获取分组下第一个实例的 storageMode
+        const firstInstance = associatedInstances.value.find(i => instanceIds.includes(i.instanceId))
+        const storageMode = firstInstance?.storageMode || 'redis'
 
-    ElMessage.success(t('pushRoute.pushSuccess'))
-    loadWarehouseRoutes()
-  } catch (error: any) {
-    pushResult.value = {
-      success: false,
-      errors: [{
-        instanceId: 'unknown',
-        message: error?.message || t('pushRoute.pushFailed')
-      }]
-    }
-    ElMessage.error(t('pushRoute.pushFailed'))
-  } finally {
-    pushing.value = false
-  }
-}
+        await routeApi.fullPushRoutes({
+          storageMode,
+          routesGroup: routesGroup,
+        })
 
-// 校验操作
-async function handleValidate() {
-  if (!canValidate.value) return
-
-  // 如果没有推送记录ID，无法校验
-  if (!latestPushId.value) {
-    ElMessage.warning(t('pushRoute.noPushRecord'))
-    return
-  }
-
-  validating.value = true
-  validateResult.value = null
-
-  try {
-    const result = await routeApi.verifyPushResult({
-      pushId: latestPushId.value,
-    })
-
-    // 转换验证结果
-    validateResult.value = {
-      consistent: result.verifyResult === 0,
-      summary: result.summary,
-      instanceDetails: result.instanceDetails,
-      differences: []
-    }
-
-    // 如果有不一致的实例，提取差异信息
-    if (result.instanceDetails) {
-      for (const detail of result.instanceDetails) {
-        if (detail.result !== 0) {
-          // 合并所有差异
-          const missingRoutes = detail.missingRoutes || []
-          const extraRoutes = detail.extraRoutes || []
-          const mismatchedRoutes = detail.mismatchedRoutes || []
-
-          for (const route of [...missingRoutes, ...extraRoutes, ...mismatchedRoutes]) {
-            validateResult.value.differences!.push({
-              instanceId: detail.instanceId,
-              type: route.diffType,
-              expected: route.pushedConfig ? JSON.stringify(route.pushedConfig) : '-',
-              actual: route.actualConfig ? JSON.stringify(route.actualConfig) : '-',
-            })
+        // 获取推送记录 ID（用于后续校验）
+        try {
+          const firstInstanceId = instanceIds[0]
+          if (firstInstanceId) {
+            const latestPush = await routeApi.getLatestPush({ instanceId: firstInstanceId })
+            pushId = latestPush?.pushId
           }
+        } catch {
+          // 忽略获取推送记录失败
+        }
+      } catch (error: any) {
+        throw new Error(`${t('pushRoute.stepPushRoutes')}: ${error.message}`)
+      }
+
+      if (signal?.aborted) return null
+
+      // 步骤 2: 通知变更（已在 fullPushRoutes 中完成）
+      onProgress({
+        step: 1,
+        stepMessage: t('pushRoute.stepNotifyChangeDesc'),
+        message: t('pushRoute.stepNotifyChangeDesc'),
+      })
+      await delay(500) // 等待消息发送
+
+      if (signal?.aborted) return null
+
+      // 步骤 3: 等待生效
+      onProgress({
+        step: 2,
+        stepMessage: t('pushRoute.stepWaitEffectDesc'),
+        message: t('pushRoute.stepWaitEffectDesc'),
+      })
+      await delay(3000) // 等待实例刷新
+
+      if (signal?.aborted) return null
+
+      // 步骤 4: 校验结果
+      onProgress({
+        step: 3,
+        stepMessage: t('pushRoute.stepVerifyResultDesc'),
+        message: t('pushRoute.stepVerifyResultDesc'),
+      })
+
+      if (!pushId) {
+        return { verified: false, reason: t('pushRoute.noPushRecord') }
+      }
+
+      try {
+        const verifyResult = await routeApi.verifyPushResult({ pushId })
+        const isConsistent = verifyResult.verifyResult === 0
+
+        return {
+          verified: isConsistent,
+          pushId,
+          instanceDetails: verifyResult.instanceDetails,
+          summary: verifyResult.summary,
+        }
+      } catch (error: any) {
+        return {
+          verified: false,
+          reason: error.message,
         }
       }
-    }
+    },
+    title: t('pushRoute.pushToInstances', { count: instanceIds.length }),
+    message: t('pushRoute.stepPushRoutesDesc'),
+    steps: pushSteps,
+    cancellable: true,
+    backgroundable: true,
+  })
+}
 
-    resultTab.value = 'validate'
-
-    if (validateResult.value.consistent) {
-      ElMessage.success(t('pushRoute.validateSuccess'))
-    } else {
-      ElMessage.warning(t('pushRoute.validateFailed'))
+// 处理校验结果
+function handleVerifyResult(result: any) {
+  if (result?.verified) {
+    ElMessage.success(t('pushRoute.verifySuccess'))
+    taskState.value.visible = false
+    // 刷新路由列表
+    if (selectedGroup.value) {
+      loadRepositoryRoutes(selectedGroup.value)
     }
-  } catch (error: any) {
-    validateResult.value = {
-      consistent: false,
-      differences: [{
-        instanceId: 'unknown',
-        type: 'error',
-        expected: '-',
-        actual: error?.message || t('message.fetchFailed'),
-      }]
-    }
-    resultTab.value = 'validate'
-    ElMessage.error(t('message.fetchFailed'))
-  } finally {
-    validating.value = false
+  } else {
+    ElMessage.warning(t('pushRoute.verifyFailed'))
+    // 校验失败时阻止关闭，显示差异
+    // 用户需要手动点击"重新推送"或"强制关闭"
   }
 }
 
-// 复制结果
-async function copyResult() {
-  let content = ''
-  if (resultTab.value === 'preview') {
-    content = formattedRoutesPreview.value
-  } else if (resultTab.value === 'push') {
-    content = formattedPushResult.value
-  }
-  if (!content) return
-  try {
-    await navigator.clipboard.writeText(content)
-    ElMessage.success(t('common.copy') + ' ' + t('common.success'))
-  } catch {
-    ElMessage.error(t('common.copy') + ' ' + t('common.failed'))
+// 处理取消任务
+function handleCancelTask() {
+  cancel()
+}
+
+// 处理后台执行
+function handleBackground() {
+  taskState.value.visible = false
+  ElMessage.info(t('common.success'))
+}
+
+// 处理任务弹窗关闭（校验未通过时需确认）
+async function handleTaskDialogClose() {
+  if (taskState.value.result?.verified === false) {
+    try {
+      await ElMessageBox.confirm(
+        t('pushRoute.forceCloseConfirm'),
+        t('message.tips'),
+        { type: 'warning' }
+      )
+      taskState.value.visible = false
+    } catch {
+      // 用户取消关闭
+    }
   }
 }
 
-// 跳转到推送历史
-function goToPushHistory() {
-  router.push('/route/push-history')
+// ============================================
+// 工具函数
+// ============================================
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-// 监听推送成功后启用校验按钮
-watch(() => pushResult.value?.success, (success) => {
-  if (success) {
-    // 推送成功后可以校验
-  }
-})
-
+// ============================================
 // 初始化
+// ============================================
+
 onMounted(() => {
-  loadWarehouseRoutes()
-  loadInstances()
+  loadRouteGroups()
 })
-
-// 弹窗防抖动 - 手动锁定滚动条
-const lockBodyScroll = () => {
-  document.body.classList.add('dialog-open')
-}
-
-const unlockBodyScroll = () => {
-  document.body.classList.remove('dialog-open')
-}
 </script>
 
 <style scoped lang="scss">
-// 推送路由页面
 .push-route-page {
   display: flex;
   flex-direction: column;
@@ -1100,15 +675,33 @@ const unlockBodyScroll = () => {
     }
   }
 
+  .header-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   .header-right {
-    .action-buttons {
-      display: flex;
-      gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .group-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+
+    .group-name {
+      flex: 1;
     }
   }
 }
 
-// 主要内容区
+// 主内容区（三列布局）
 .main-content {
   flex: 1;
   display: flex;
@@ -1116,17 +709,8 @@ const unlockBodyScroll = () => {
   min-height: 0;
 }
 
-// 左侧列（路由列表 + 结果面板）
-.left-column {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-}
-
-// 左侧面板（路由列表）- 减少高度
-.left-panel {
+// 通用列样式
+.column {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1136,131 +720,56 @@ const unlockBodyScroll = () => {
   border: 1px solid var(--border-color-base);
   overflow: hidden;
   min-height: 0;
-  max-height: 50%;
-}
 
-// 结果面板
-.result-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-color-card);
-  border-radius: 12px;
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--border-color-base);
-  overflow: hidden;
-  min-height: 0;
-}
-
-// 右侧面板（实例列表）
-.right-panel {
-  width: 380px;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-color-card);
-  border-radius: 12px;
-  box-shadow: var(--card-shadow);
-  border: 1px solid var(--border-color-base);
-  overflow: hidden;
-}
-
-// 面板头部
-.panel-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border-color-base);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--bg-color-page);
-  flex-shrink: 0;
-
-  .panel-title {
+  .column-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color-base);
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-    font-weight: 600;
-    color: var(--text-color-primary);
-  }
+    background: var(--bg-color-page);
+    flex-shrink: 0;
 
-  .panel-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-}
+    .column-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text-color-primary);
+    }
 
-// 面板统计
-.panel-stats {
-  padding: 8px 16px;
-  background: var(--bg-color);
-  border-bottom: 1px solid var(--border-color-light);
-  font-size: 12px;
-  color: var(--text-color-secondary);
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
+    .column-source {
+      display: flex;
+      gap: 8px;
+    }
 
-  .stat-item {
-    &.online {
+    .online-count {
       color: var(--el-color-success);
-      font-weight: 500;
+      font-size: 14px;
     }
   }
 
-  .stat-divider {
-    color: var(--border-color-base);
-  }
-}
-
-// 面板内容
-.panel-body {
-  flex: 1;
-  overflow: hidden;
-  background: var(--bg-color-card);
-}
-
-.empty-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-}
-
-.empty-result {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-
-// 路由列表
-.route-list {
-  .route-item {
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border-color-light);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: all 0.2s ease;
+  .column-body {
+    flex: 1;
+    overflow: hidden;
     background: var(--bg-color-card);
+  }
+}
 
-    &:hover {
-      background: var(--table-row-hover);
-    }
-
-    &.is-selected {
-      background: var(--table-row-hover);
-      border-left: 3px solid var(--el-color-primary);
-      padding-left: 13px;
-    }
-
-    .route-info {
-      flex: 1;
+// 仓库路由列特殊样式
+.repository-column {
+  .route-list {
+    .route-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-color-light);
       display: flex;
       align-items: center;
       gap: 12px;
-      cursor: pointer;
-      min-width: 0;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--table-row-hover);
+      }
 
       .route-id {
         font-family: 'SF Mono', 'Monaco', monospace;
@@ -1285,7 +794,7 @@ const unlockBodyScroll = () => {
       }
 
       .route-uri {
-        max-width: 200px;
+        max-width: 150px;
         overflow: hidden;
         text-overflow: ellipsis;
       }
@@ -1293,319 +802,114 @@ const unlockBodyScroll = () => {
   }
 }
 
-// 实例列表
-.instance-list {
-  .instance-item {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border-color-light);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: var(--bg-color-card);
+// 实例路由列特殊样式
+.instance-column {
+  background: var(--el-fill-color-lighter);
 
-    &:hover {
-      background: var(--table-row-hover);
-    }
-
-    &.is-selected {
-      background: var(--table-row-hover);
-      border-left: 3px solid var(--el-color-primary);
-      padding-left: 13px;
-    }
-
-    &.is-offline {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    .instance-indicator {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-
-      &.online {
-        background: var(--el-color-success);
-        box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
-      }
-
-      &.offline {
-        background: var(--el-color-danger);
-      }
-    }
-
-    .instance-info {
-      flex: 1;
-      min-width: 0;
-
-      .instance-id {
-        font-family: 'SF Mono', 'Monaco', monospace;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--text-color-primary);
-        margin-bottom: 2px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .instance-uri {
-        font-size: 11px;
-        color: var(--text-color-secondary);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-    }
-  }
-}
-
-// 成功结果
-.result-success,
-.validate-success {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-
-  .success-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    color: var(--el-color-success);
-    font-weight: 500;
-    flex-shrink: 0;
-
-    .success-icon {
-      font-size: 20px;
-    }
-  }
-
-  .code-block {
-    flex: 1;
-    background: var(--bg-color-page);
-    border: 1px solid var(--border-color-light);
-    border-radius: 8px;
-    padding: 12px;
-    overflow: auto;
-
-    pre {
-      margin: 0;
-      font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-      font-size: 12px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-all;
-      color: var(--text-color-primary);
-    }
-  }
-
-  .push-history-link {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border-color-light);
-    flex-shrink: 0;
-  }
-
-  .validate-info {
-    padding: 12px 16px;
-    background: var(--el-color-success-light-9);
-    border-radius: 8px;
-    border-left: 3px solid var(--el-color-success);
-    color: var(--el-color-success-dark-2);
-  }
-}
-
-// 路由预览
-.route-preview {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-
-  .preview-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    flex-shrink: 0;
-  }
-
-  .code-block {
-    flex: 1;
-    background: var(--bg-color-page);
-    border: 1px solid var(--border-color-light);
-    border-radius: 8px;
-    padding: 12px;
-    overflow: auto;
-
-    pre {
-      margin: 0;
-      font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-      font-size: 12px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      word-break: break-all;
-      color: var(--text-color-primary);
-    }
-  }
-}
-
-// 错误结果
-.result-error,
-.validate-error {
-  height: 100%;
-  overflow: auto;
-
-  .error-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    color: var(--el-color-danger);
-    font-weight: 500;
-
-    .error-icon {
-      font-size: 20px;
-    }
-  }
-
-  .error-detail {
-    .error-item {
-      padding: 10px 12px;
-      background: var(--el-color-danger-light-9);
-      border-radius: 6px;
-      margin-bottom: 8px;
-      border-left: 3px solid var(--el-color-danger);
-
-      .error-instance {
-        font-family: 'SF Mono', 'Monaco', monospace;
-        font-weight: 500;
-        color: var(--text-color-primary);
-      }
-
-      .error-message {
-        color: var(--el-color-danger);
-        margin-left: 8px;
-      }
-    }
-  }
-}
-
-// 校验差异
-.validate-diff {
-  .diff-item {
-    padding: 12px;
-    background: var(--el-color-warning-light-9);
-    border-radius: 8px;
-    margin-bottom: 12px;
-    border-left: 3px solid var(--el-color-warning);
-
-    .diff-header {
+  .instance-route-list {
+    .route-item {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-color-light);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
+      gap: 12px;
+      transition: all 0.2s ease;
 
-      .instance-id {
+      &:hover {
+        background: var(--table-row-hover);
+      }
+
+      .route-id {
         font-family: 'SF Mono', 'Monaco', monospace;
-        font-weight: 500;
+        font-size: 13px;
+        color: var(--text-color-primary);
+        min-width: 150px;
       }
     }
+  }
 
-    .diff-detail {
-      .diff-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 8px;
-        margin-bottom: 6px;
-        font-size: 12px;
+  .error-state {
+    .error-message {
+      color: var(--el-color-danger);
+      font-size: 12px;
+      padding: 8px 16px;
+      background: var(--el-color-danger-light-9);
+      border-radius: 4px;
+      margin-top: 8px;
+    }
+  }
+}
 
-        .label {
-          color: var(--text-color-secondary);
-          min-width: 60px;
+// 关联实例列特殊样式
+.instances-column {
+  flex: 0.8;
+
+  .instance-list {
+    .instance-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color-light);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: var(--table-row-hover);
+      }
+
+      &.is-offline {
+        opacity: 0.6;
+      }
+
+      .instance-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+
+        &.online {
+          background: var(--el-color-success);
+          box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
         }
 
-        .value {
-          flex: 1;
-          word-break: break-all;
+        &.offline {
+          background: var(--el-color-danger);
+        }
+      }
+
+      .instance-info {
+        flex: 1;
+        min-width: 0;
+
+        .instance-id {
+          font-family: 'SF Mono', 'Monaco', monospace;
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--text-color-primary);
+          margin-bottom: 2px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .instance-uri {
+          font-size: 11px;
+          color: var(--text-color-secondary);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
       }
     }
   }
 }
 
-// 路由详情弹窗
-.route-detail-dialog {
-  .route-detail-content {
-    .mono-text {
-      font-family: 'SF Mono', 'Monaco', monospace;
-    }
-
-    .detail-section {
-      margin-top: 16px;
-
-      .section-title {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-color-primary);
-        margin-bottom: 8px;
-        padding-left: 8px;
-        border-left: 3px solid var(--el-color-primary);
-      }
-
-      .empty-section {
-        color: var(--text-color-secondary);
-        font-size: 12px;
-        padding: 8px 12px;
-        background: var(--bg-color-page);
-        border-radius: 4px;
-      }
-
-      .predicate-list,
-      .filter-list {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-
-        .predicate-item,
-        .filter-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 8px 12px;
-          background: var(--bg-color-page);
-          border-radius: 6px;
-
-          .predicate-args,
-          .filter-args {
-            font-size: 12px;
-            color: var(--text-color-secondary);
-            font-family: 'SF Mono', 'Monaco', monospace;
-          }
-        }
-      }
-
-      .json-preview {
-        background: var(--bg-color-page);
-        border: 1px solid var(--border-color-light);
-        border-radius: 8px;
-        padding: 12px;
-        overflow: auto;
-        max-height: 200px;
-
-        pre {
-          margin: 0;
-          font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
-          font-size: 12px;
-          line-height: 1.6;
-          white-space: pre-wrap;
-          word-break: break-all;
-          color: var(--text-color-primary);
-        }
-      }
-    }
-  }
+// 空状态
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
 }
 </style>
