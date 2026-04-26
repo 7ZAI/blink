@@ -31,8 +31,9 @@ import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
 import com.blink.gateway.admin.dto.rsp.RouteInstancePushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
-import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
-import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
+import com.blink.gateway.admin.dto.req.QueryInstanceReq;
+import com.blink.gateway.admin.dto.rsp.QueryInstanceListRsp;
+import com.blink.gateway.admin.dto.vo.InstanceInfoVO;
 import com.blink.gateway.admin.dto.InstanceRouteConfig;
 import com.blink.gateway.admin.entity.GaRouteDO;
 import com.blink.gateway.admin.entity.GaRoutePushLogDO;
@@ -170,13 +171,15 @@ public class RoutePushServiceImpl implements RoutePushService {
                 routesGroup = RouteConstant.DEFAULT_ROUTES_GROUP;
             }
             final String finalRoutesGroup = routesGroup;
-            ResponseDTO<GatewayInstanceListRsp> instancesRsp = gatewayInstanceService.getGatewayInstances();
-            if (instancesRsp.getBody() != null && instancesRsp.getBody().getInstances() != null) {
-                targetInstanceIds = instancesRsp.getBody().getInstances().stream()
-                    .filter(inst -> inst.getStatus().equals(INSTANCE_STATUS_ONLINE))
-                    .filter(inst -> StrUtil.equals(inst.getGroupKey(), finalRoutesGroup)
-                        || (StrUtil.isBlank(inst.getGroupKey()) && StrUtil.equals(finalRoutesGroup, RouteConstant.DEFAULT_ROUTES_GROUP)))
-                    .map(GatewayInstanceVO::getInstanceId)
+            QueryInstanceReq queryReq = new QueryInstanceReq();
+            queryReq.setStatus(INSTANCE_STATUS_ONLINE);
+            queryReq.setGroupKey(finalRoutesGroup);
+            queryReq.setPageNum(1);
+            queryReq.setPageSize(1000);
+            ResponseDTO<QueryInstanceListRsp> instancesRsp = gatewayInstanceService.queryInstanceList(queryReq);
+            if (instancesRsp.getBody() != null && instancesRsp.getBody().getRows() != null) {
+                targetInstanceIds = instancesRsp.getBody().getRows().stream()
+                    .map(InstanceInfoVO::getInstanceId)
                     .toList();
             }
         }
@@ -903,12 +906,15 @@ public class RoutePushServiceImpl implements RoutePushService {
         }
 
         // 获取所有在线实例
-        ResponseDTO<GatewayInstanceListRsp> instancesRsp = gatewayInstanceService.getGatewayInstances();
+        QueryInstanceReq queryReq = new QueryInstanceReq();
+        queryReq.setStatus(INSTANCE_STATUS_ONLINE);
+        queryReq.setPageNum(1);
+        queryReq.setPageSize(1000);  // 获取所有在线实例
+        ResponseDTO<QueryInstanceListRsp> instancesRsp = gatewayInstanceService.queryInstanceList(queryReq);
         List<String> allInstanceIds = new ArrayList<>();
-        if (instancesRsp.getBody() != null && instancesRsp.getBody().getInstances() != null) {
-            allInstanceIds = instancesRsp.getBody().getInstances().stream()
-                .filter(inst -> inst.getStatus().equals(INSTANCE_STATUS_ONLINE))
-                .map(GatewayInstanceVO::getInstanceId)
+        if (instancesRsp.getBody() != null && instancesRsp.getBody().getRows() != null) {
+            allInstanceIds = instancesRsp.getBody().getRows().stream()
+                .map(InstanceInfoVO::getInstanceId)
                 .toList();
         }
 
