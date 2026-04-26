@@ -173,15 +173,20 @@ const menuItems = computed(() => {
   return homeRoute?.children || []
 })
 
-// 带图标解析的菜单项
+// 带图标解析和路径修正的菜单项
 const parsedMenuItems = computed(() => {
-  return menuItems.value.map(item => ({
-    ...item,
-    iconComponent: getIconComponent(item.meta?.icon as string),
-    children: item.children?.map(child => ({
-      ...child,
-    }))
-  }))
+  return menuItems.value.map(item => {
+    // 确保父路径有前导斜杠
+    const itemPath = item.path.startsWith('/') ? item.path : `/${item.path}`
+    return {
+      ...item,
+      path: itemPath,
+      iconComponent: getIconComponent(item.meta?.icon as string),
+      children: item.children?.map(child => ({
+        ...child,
+      }))
+    }
+  })
 })
 
 // 面包屑

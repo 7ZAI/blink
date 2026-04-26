@@ -20,6 +20,7 @@ const routes: RouteRecordRaw[] = [
         path: 'layout',
         name: 'Layout',
         meta: { title: '布局组件', icon: 'Grid' },
+        redirect: '/layout/main-layout',
         children: [
           {
             path: 'main-layout',
@@ -58,6 +59,7 @@ const routes: RouteRecordRaw[] = [
         path: 'functional',
         name: 'Functional',
         meta: { title: '功能组件', icon: 'Tools' },
+        redirect: '/functional/theme-toggle',
         children: [
           {
             path: 'theme-toggle',
@@ -102,6 +104,7 @@ const routes: RouteRecordRaw[] = [
         path: 'business',
         name: 'Business',
         meta: { title: '业务组件', icon: 'Briefcase' },
+        redirect: '/business/blink-dialog',
         children: [
           {
             path: 'blink-dialog',
@@ -134,6 +137,7 @@ const routes: RouteRecordRaw[] = [
         path: 'testing',
         name: 'Testing',
         meta: { title: '测试工具', icon: 'Monitor' },
+        redirect: '/testing/coverage',
         children: [
           {
             path: 'coverage',
