@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 import com.blink.framework.common.utils.JacksonUtil;
 
@@ -1111,11 +1112,78 @@ public class RouteServiceImpl implements RouteService {
 
     @Override
     public ResponseDTO<GroupInstanceRoutesRsp> getGroupInstanceRoutes(GetGroupInstanceRoutesReq req) {
-        // TODO: Task 4 will implement this method
+        // 参数校验
+        if (StrUtil.isBlank(req.getRoutesGroup())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
         GroupInstanceRoutesRsp rsp = new GroupInstanceRoutesRsp();
-        rsp.setRows(new ArrayList<>());
-        rsp.setTotal(0);
-        rsp.setFromActuator(false);
+        rsp.setTimestamp(LocalDateTime.now());
+        rsp.setFromActuator(true);
+
+        // 1. 查询分组下第一个在线实例
+        QueryInstanceReq queryReq = new QueryInstanceReq();
+        queryReq.setGroupKey(req.getRoutesGroup());
+        queryReq.setStatus(INSTANCE_STATUS_ONLINE);
+        queryReq.setPageNum(1);
+        queryReq.setPageSize(1);
+
+        ResponseDTO<QueryInstanceListRsp> instanceListRsp = gatewayInstanceService.queryInstanceList(queryReq);
+        if (ObjectUtil.isNull(instanceListRsp.getBody())
+            || CollUtil.isEmpty(instanceListRsp.getBody().getRows())) {
+            log.warn("[Route] 当前分组无在线实例，无法获取实例路由 | routesGroup: {}", req.getRoutesGroup());
+            rsp.setRows(new ArrayList<>());
+            rsp.setTotal(0);
+            rsp.setError("当前分组无在线实例");
+            return ResponseDTO.newSuccessInstance(rsp);
+        }
+
+        InstanceInfoVO firstInstance = instanceListRsp.getBody().getRows().get(0);
+        String instanceId = firstInstance.getInstanceId();
+        String storageMode = firstInstance.getStorageMode();
+
+        rsp.setInstanceId(instanceId);
+        rsp.setStorageMode(storageMode);
+
+        log.info("[Route] 自动选择在线实例获取路由 | routesGroup: {}, instanceId: {}, storageMode: {}",
+            req.getRoutesGroup(), instanceId, storageMode);
+
+        // 2. 从实例获取路由
+        GetInstanceRoutesFromActuatorReq actuatorReq = new GetInstanceRoutesFromActuatorReq();
+        actuatorReq.setInstanceId(instanceId);
+
+        try {
+            ResponseDTO<InstanceRoutesRsp> instanceRoutesRsp = routePushService.getInstanceRoutesFromActuator(actuatorReq);
+
+            if (ObjectUtil.isNull(instanceRoutesRsp) || ObjectUtil.isNull(instanceRoutesRsp.getBody())) {
+                log.warn("[Route] 从实例获取路由失败 | instanceId: {}", instanceId);
+                rsp.setRows(new ArrayList<>());
+                rsp.setTotal(0);
+                rsp.setError("从实例获取路由失败");
+                return ResponseDTO.newSuccessInstance(rsp);
+            }
+
+            InstanceRoutesRsp instanceRoutes = instanceRoutesRsp.getBody();
+            List<GaRouteDO> routes = instanceRoutes.getRows();
+
+            rsp.setRows(routes);
+            rsp.setTotal(instanceRoutes.getTotal());
+            rsp.setFromActuator(instanceRoutes.getFromActuator());
+
+            if (StrUtil.isNotBlank(instanceRoutes.getError())) {
+                rsp.setError(instanceRoutes.getError());
+            }
+
+            log.info("[Route] 成功获取分组实例路由 | routesGroup: {}, instanceId: {}, count: {}",
+                req.getRoutesGroup(), instanceId, rsp.getTotal());
+
+        } catch (Exception e) {
+            log.error("[Route] 获取实例路由异常 | instanceId: {}, error: {}", instanceId, e.getMessage(), e);
+            rsp.setRows(new ArrayList<>());
+            rsp.setTotal(0);
+            rsp.setError("获取实例路由异常: " + e.getMessage());
+        }
+
         return ResponseDTO.newSuccessInstance(rsp);
     }
 }
