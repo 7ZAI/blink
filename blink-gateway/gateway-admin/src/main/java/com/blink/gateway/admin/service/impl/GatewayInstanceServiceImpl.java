@@ -941,19 +941,27 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
      *
      * @param dbStatus   数据库状态
      * @param inRegistry 是否在注册中心
-     * @return 健康状态（UP/DOWN/OFFLINE）
+     * @return 健康状态（UP/DOWN/OFFLINE/DRAINING）
      */
     private String determineHealthStatus(Byte dbStatus, boolean inRegistry) {
-        // 离线、下线、排空状态 -> OFFLINE
-        if (!INSTANCE_STATUS_ONLINE.equals(dbStatus)) {
-            return "OFFLINE";
+        // 排空状态 -> DRAINING（正在优雅下线）
+        if (INSTANCE_STATUS_DRAINING.equals(dbStatus)) {
+            return "DRAINING";
         }
-        // 在线且在注册中心 -> UP（Nacos 已做健康检查）
+
+        // 在注册中心存在 -> UP（Nacos 已做健康检查）
         if (inRegistry) {
             return "UP";
         }
-        // 在线但不在注册中心 -> DOWN
-        return "DOWN";
+
+        // 不在注册中心，根据数据库状态判断
+        if (INSTANCE_STATUS_ONLINE.equals(dbStatus)) {
+            // 在线但不在注册中心 -> DOWN
+            return "DOWN";
+        }
+
+        // 离线、下线状态且不在注册中心 -> OFFLINE
+        return "OFFLINE";
     }
 
     /**
@@ -1334,50 +1342,62 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     // ==================== 实例分组切换 ====================
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public ResponseDTO<EmptyBody> switchInstanceGroup(SwitchInstanceGroupReq req) {
-        try {
-            String instanceId = req.getInstanceId();
-            String targetGroupKey = req.getTargetGroupKey();
+        String instanceId = req.getInstanceId();
+        String targetGroupKey = req.getTargetGroupKey();
 
-            // 1. 查询实例信息
-            LambdaQueryWrapper<GatewayInstanceDO> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(GatewayInstanceDO::getInstanceId, instanceId);
-            GatewayInstanceDO instanceDO = gatewayInstanceMapper.selectOne(queryWrapper);
+        // 1. 查询实例信息（事务外）
+        LambdaQueryWrapper<GatewayInstanceDO> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(GatewayInstanceDO::getInstanceId, instanceId);
+        GatewayInstanceDO instanceDO = gatewayInstanceMapper.selectOne(queryWrapper);
 
-            if (ObjectUtil.isNull(instanceDO)) {
-                BlinkException.throwBusinessException(GATEWAY_INSTANCE_NOT_EXIST);
-            }
-
-            // 2. 校验实例状态（必须是离线或下线状态）
-            if (INSTANCE_STATUS_ONLINE.equals(instanceDO.getStatus())
-                    || INSTANCE_STATUS_DRAINING.equals(instanceDO.getStatus())) {
-                log.warn("[GatewayInstance] 在线实例不允许切换分组 | instanceId: {}, status: {}",
-                        instanceId, instanceDO.getStatus());
-                BlinkException.throwBusinessException(INSTANCE_ONLINE_CANNOT_SWITCH);
-            }
-
-            // 3. 校验目标分组配置是否存在
-            validateTargetGroupConfig(targetGroupKey, instanceDO.getStorageMode());
-
-            // 4. 更新 Nacos 配置文件中的分组
-            String oldGroupKey = instanceDO.getGroupKey();
-            updateInstanceGroupConfig(instanceId, targetGroupKey);
-
-            // 5. 更新数据库
-            instanceDO.setGroupKey(targetGroupKey);
-            gatewayInstanceMapper.updateById(instanceDO);
-
-            log.info("[GatewayInstance] 实例分组切换成功 | instanceId: {}, oldGroup: {}, newGroup: {}",
-                    instanceId, oldGroupKey, targetGroupKey);
-
-            return ResponseDTO.newSuccessInstance();
-        } catch (BlinkException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("[GatewayInstance] 切换实例分组失败 | error: {}", e.getMessage(), e);
-            throw new BlinkException("切换实例分组失败：" + e.getMessage(), e, SWITCH_GROUP_FAILED);
+        if (ObjectUtil.isNull(instanceDO)) {
+            BlinkException.throwBusinessException(GATEWAY_INSTANCE_NOT_EXIST);
         }
+
+        // 2. 校验实例状态（必须是离线或下线状态）
+        if (INSTANCE_STATUS_ONLINE.equals(instanceDO.getStatus())
+                || INSTANCE_STATUS_DRAINING.equals(instanceDO.getStatus())) {
+            log.warn("[GatewayInstance] 在线实例不允许切换分组 | instanceId: {}, status: {}",
+                    instanceId, instanceDO.getStatus());
+            BlinkException.throwBusinessException(INSTANCE_ONLINE_CANNOT_SWITCH);
+        }
+
+        // 3. 校验目标分组配置是否存在（事务外）
+        validateTargetGroupConfig(targetGroupKey, instanceDO.getStorageMode());
+
+        // 4. 记录旧分组用于日志
+        String oldGroupKey = instanceDO.getGroupKey();
+
+        // 5. 先更新数据库（事务内）
+        final Integer instanceDbId = instanceDO.getId();
+        transactionTemplate.executeWithoutResult(s -> {
+            GatewayInstanceDO updateDO = new GatewayInstanceDO();
+            updateDO.setId(instanceDbId);
+            updateDO.setGroupKey(targetGroupKey);
+            gatewayInstanceMapper.updateById(updateDO);
+        });
+
+        log.info("[GatewayInstance] 实例分组数据库更新成功 | instanceId: {}, oldGroup: {}, newGroup: {}",
+                instanceId, oldGroupKey, targetGroupKey);
+
+        // 6. 更新 Nacos 配置文件中的分组（事务外，数据库更新成功后执行）
+        try {
+            updateInstanceGroupConfig(instanceId, targetGroupKey);
+            log.info("[GatewayInstance] Nacos 配置更新成功 | instanceId: {}, newGroup: {}", instanceId, targetGroupKey);
+        } catch (Exception e) {
+            // Nacos 更新失败，回滚数据库（手动回滚）
+            log.error("[GatewayInstance] Nacos 配置更新失败，回滚数据库 | instanceId: {}, error: {}", instanceId, e.getMessage());
+            transactionTemplate.executeWithoutResult(s -> {
+                GatewayInstanceDO rollbackDO = new GatewayInstanceDO();
+                rollbackDO.setId(instanceDbId);
+                rollbackDO.setGroupKey(oldGroupKey);
+                gatewayInstanceMapper.updateById(rollbackDO);
+            });
+            throw e;
+        }
+
+        return ResponseDTO.newSuccessInstance();
     }
 
     /**
