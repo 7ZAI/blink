@@ -284,10 +284,14 @@ const handleAdd = () => {
 // ==================== 删除 ====================
 
 const handleDelete = (row: RouteGroup) => {
+  if (!row.groupId) {
+    ElMessage.warning(t('common.paramError'))
+    return
+  }
   ElMessageBox.confirm(t('routeGroup.deleteConfirm'), t('message.tips'), { type: 'warning' })
     .then(async () => {
       try {
-        await deleteRouteGroup({ groupId: row.groupId })
+        await deleteRouteGroup({ groupId: row.groupId! })
         ElMessage.success(t('common.success'))
         loadData()
       } catch (error) {

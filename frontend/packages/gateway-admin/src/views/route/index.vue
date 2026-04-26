@@ -6,39 +6,19 @@
       <el-form :model="searchForm" inline class="search-form">
         <!-- 路由分组 -->
         <el-form-item :label="t('route.routeGroup')">
-          <el-input
-            v-model.trim="searchForm.routesGroup"
-            :placeholder="t('route.routeGroupPlaceholder')"
-            clearable
+          <el-select
+            v-model="searchForm.routesGroup"
             style="width: 180px"
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-
-        <!-- 路由名称 -->
-        <el-form-item :label="t('route.routeName')">
-          <el-input
-            v-model.trim="searchForm.routeName"
-            :placeholder="t('route.routeNamePlaceholder')"
-            clearable
-            style="width: 150px"
-            @keyup.enter="handleSearch"
-          />
-        </el-form-item>
-
-        <el-form-item>
-          <el-button
-            type="primary"
-            style="height: 28px; padding: 0 12px; font-size: 13px"
-            @click="handleSearch"
+            @change="handleSearch"
           >
-            <el-icon><Search /></el-icon>
-            {{ t('common.search') }}
-          </el-button>
-          <el-button style="height: 28px; padding: 0 12px; font-size: 13px" @click="handleReset">
-            <el-icon><Refresh /></el-icon>
-            {{ t('common.reset') }}
-          </el-button>
+            <el-option :label="t('route.allGroups')" value="" />
+            <el-option
+              v-for="group in groupOptions"
+              :key="group.groupKey"
+              :label="group.groupName"
+              :value="group.groupKey"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
     </el-card>
@@ -47,27 +27,41 @@
     <el-card class="table-card flex-1 flex flex-col overflow-hidden" shadow="never">
       <template #header>
         <div class="table-header">
+          <!-- 视图切换 -->
+          <el-radio-group v-model="viewMode" size="small">
+            <el-radio-button value="table">
+              <el-icon><List /></el-icon>
+              {{ t('route.viewTable') }}
+            </el-radio-button>
+            <el-radio-button value="json">
+              <el-icon><Document /></el-icon>
+              JSON
+            </el-radio-button>
+            <el-radio-button value="yaml">
+              <el-icon><Document /></el-icon>
+              YAML
+            </el-radio-button>
+          </el-radio-group>
+        </div>
+      </template>
+
+      <!-- 表格视图 -->
+      <div v-show="viewMode === 'table'" class="table-wrapper">
+        <!-- 工具栏 -->
+        <div class="table-toolbar">
           <AuthButton
             :has-permission="() => checkPermission(ButtonPerms.Route.Add)"
             type="primary"
+            size="small"
             @click="handleAdd"
           >
             <el-icon><Plus /></el-icon>
             {{ t('route.addRoute') }}
           </AuthButton>
           <AuthButton
-            :has-permission="() => checkPermission(ButtonPerms.Route.Refresh)"
-            type="success"
-            :disabled="selectedRoutes.length === 0"
-            @click="handlePushSelected"
-          >
-            <el-icon><Promotion /></el-icon>
-            {{ t('route.pushSelected') }} ({{ selectedRoutes.length }})
-          </AuthButton>
-          <!-- 新增按钮 -->
-          <AuthButton
             :has-permission="() => checkPermission(ButtonPerms.Route.BatchStatus)"
             type="default"
+            size="small"
             :disabled="selectedRoutes.length === 0"
             @click="handleBatchStatus"
           >
@@ -75,16 +69,9 @@
             {{ t('route.batchStatus') }} ({{ selectedRoutes.length }})
           </AuthButton>
           <AuthButton
-            :has-permission="() => checkPermission(ButtonPerms.Route.Import)"
-            type="default"
-            @click="handleImport"
-          >
-            <el-icon><Download /></el-icon>
-            {{ t('route.importRoutes') }}
-          </AuthButton>
-          <AuthButton
             :has-permission="() => checkPermission(ButtonPerms.Route.Export)"
             type="default"
+            size="small"
             :disabled="selectedRoutes.length === 0"
             @click="handleExport"
           >
@@ -92,18 +79,32 @@
             {{ t('route.exportRoutes') }} ({{ selectedRoutes.length }})
           </AuthButton>
           <AuthButton
-            :has-permission="() => checkPermission(ButtonPerms.Route.Add)"
-            type="warning"
-            @click="handleFetchInstanceRoutes"
+            :has-permission="() => checkPermission(ButtonPerms.Route.Import)"
+            type="default"
+            size="small"
+            @click="handleImport"
           >
             <el-icon><Download /></el-icon>
-            {{ t('route.fetchInstanceRoutes') }}
+            {{ t('route.importRoutes') }}
           </AuthButton>
+          <el-button
+            type="warning"
+            size="small"
+            :loading="syncFromInstanceLoading"
+            @click="handleSyncGroupRoutes"
+          >
+            <el-icon><Download /></el-icon>
+            {{ t('route.syncGroupRoutes') }}
+          </el-button>
+          <el-button
+            type="primary"
+            size="small"
+            @click="handleOpenPushDialog"
+          >
+            <el-icon><Promotion /></el-icon>
+            {{ t('route.pushGroupRoutes') }}
+          </el-button>
         </div>
-      </template>
-
-      <!-- 表格区域 -->
-      <div class="table-wrapper">
         <el-table
           v-loading="loading"
           :data="tableData"
@@ -183,53 +184,6 @@
               </el-tag>
             </template>
           </el-table-column>
-          <!-- 新增：推送状态列 -->
-          <el-table-column :label="t('route.pushStatus')" min-width="120" align="center">
-            <template #default="{ row }">
-              <el-popover
-                placement="top"
-                :width="320"
-                trigger="hover"
-                :disabled="!hasInstancePushStatus(row.routeId)"
-              >
-                <template #reference>
-                  <el-tag
-                    :type="getPushStatusType(row.pushStatus, row.routeId)"
-                    effect="plain"
-                    size="small"
-                    class="cursor-pointer"
-                  >
-                    {{ getPushStatusText(row.pushStatus, row.routeId) }}
-                  </el-tag>
-                </template>
-                <div class="instance-push-status-popover">
-                  <div class="popover-title">{{ t('route.instancePushDetail') }}</div>
-                  <div class="instance-list">
-                    <div
-                      v-for="detail in getInstancePushDetails(row.routeId)"
-                      :key="detail.instanceId"
-                      class="instance-item"
-                    >
-                      <span class="instance-id">{{ detail.instanceId }}</span>
-                      <el-tag
-                        :type="getInstancePushStatusType(detail.pushStatus)"
-                        size="small"
-                        effect="plain"
-                      >
-                        {{ detail.pushStatusDesc }}
-                      </el-tag>
-                    </div>
-                  </div>
-                </div>
-              </el-popover>
-            </template>
-          </el-table-column>
-          <!-- 新增：最后推送时间列 -->
-          <el-table-column :label="t('route.lastPushTime')" width="160">
-            <template #default="{ row }">
-              <span class="time-text">{{ row.lastPushTime || '-' }}</span>
-            </template>
-          </el-table-column>
           <el-table-column :label="t('common.operation')" width="320" fixed="right">
             <template #default="{ row }">
               <div class="operation-buttons">
@@ -264,16 +218,6 @@
                   {{ t('route.cloneRoute') }}
                 </AuthButton>
                 <AuthButton
-                  :has-permission="() => checkPermission(ButtonPerms.Route.Edit)"
-                  type="info"
-                  link
-                  size="small"
-                  @click="handleHistory(row)"
-                >
-                  <el-icon><Clock /></el-icon>
-                  {{ t('route.history') }}
-                </AuthButton>
-                <AuthButton
                   :has-permission="() => checkPermission(ButtonPerms.Route.Delete)"
                   type="danger"
                   link
@@ -289,21 +233,26 @@
         </el-table>
       </div>
 
-      <!-- 分页 -->
-      <div class="pagination-wrapper">
-        <el-pagination
-          v-model:current-page="pagination.pageNum"
-          v-model:page-size="pagination.pageSize"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        >
-          <template #total="{ total }">
-            {{ t('pagination.total', { total }) }}
-          </template>
-        </el-pagination>
+      <!-- JSON 视图 -->
+      <div v-show="viewMode === 'json'" class="code-view-wrapper">
+        <el-input
+          v-model="routesJsonPreview"
+          type="textarea"
+          :rows="30"
+          readonly
+          class="code-editor"
+        />
+      </div>
+
+      <!-- YAML 视图 -->
+      <div v-show="viewMode === 'yaml'" class="code-view-wrapper">
+        <el-input
+          v-model="routesYamlPreview"
+          type="textarea"
+          :rows="30"
+          readonly
+          class="code-editor"
+        />
       </div>
     </el-card>
 
@@ -340,10 +289,18 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item :label="t('route.routeGroup')" prop="routesGroup">
-              <el-input
-                v-model.trim="formData.routesGroup"
+              <el-select
+                v-model="formData.routesGroup"
                 :placeholder="t('route.routeGroupPlaceholder')"
-              />
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="group in groupOptions"
+                  :key="group.groupKey"
+                  :label="group.groupName"
+                  :value="group.groupKey"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -624,64 +581,6 @@
       </template>
     </el-dialog>
 
-    <!-- 历史记录弹窗 -->
-    <el-dialog
-      v-model="historyDialogVisible"
-      :title="t('route.historyTitle')"
-      width="800px"
-      :close-on-click-modal="false"
-      :lock-scroll="false"
-      class="history-dialog"
-      @open="lockBodyScroll"
-      @closed="unlockBodyScroll"
-    >
-      <el-table v-loading="historyLoading" :data="historyData" height="400" stripe>
-        <el-table-column prop="historyId" :label="t('route.historyId')" width="100" align="center" />
-        <el-table-column prop="routeName" :label="t('route.routeName')" min-width="120" show-overflow-tooltip />
-        <el-table-column prop="operationType" :label="t('route.operationType')" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getOperationTypeTag(row.operationType)" effect="plain" size="small">
-              {{ getOperationTypeLabel(row.operationType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="operatorName" :label="t('route.operatorName')" min-width="100" show-overflow-tooltip />
-        <el-table-column prop="operateTime" :label="t('route.operateTime')" width="160" />
-        <el-table-column :label="t('common.operation')" width="140" align="center">
-          <template #default="{ row }">
-            <div class="history-operation-buttons">
-              <el-button
-                v-if="row.operationType !== 'A'"
-                type="primary"
-                link
-                size="small"
-                @click="handleRollback(row)"
-              >
-                {{ t('route.rollback') }}
-              </el-button>
-              <span v-else class="operation-placeholder">-</span>
-              <el-button type="info" link size="small" @click="handleViewHistoryDetail(row)">
-                {{ t('route.viewDetail') }}
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-wrapper mt-4">
-        <el-pagination
-          v-model:current-page="historyPagination.pageNum"
-          v-model:page-size="historyPagination.pageSize"
-          :total="historyPagination.total"
-          :page-sizes="[10, 20, 50]"
-          layout="total, sizes, prev, pager, next"
-          @size-change="loadHistoryData"
-          @current-change="loadHistoryData"
-        />
-      </div>
-    </el-dialog>
-
     <!-- 同步到实例弹窗 -->
     <SyncInstanceDialog
       v-model="syncDialogVisible"
@@ -761,7 +660,18 @@
         <div class="import-tip">{{ t('route.importTip') }}</div>
         <el-form label-width="100px">
           <el-form-item :label="t('route.routesGroup')">
-            <el-input v-model="importRoutesGroup" :placeholder="t('route.routeGroupPlaceholder')" />
+            <el-select
+              v-model="importRoutesGroup"
+              :placeholder="t('route.routeGroupPlaceholder')"
+              style="width: 100%"
+            >
+              <el-option
+                v-for="group in groupOptions"
+                :key="group.groupKey"
+                :label="group.groupName"
+                :value="group.groupKey"
+              />
+            </el-select>
           </el-form-item>
           <el-form-item :label="t('route.importData')">
             <el-input
@@ -914,47 +824,6 @@
               {{ currentRouteDetail.status === 1 ? t('common.statusEnable') : t('common.statusDisable') }}
             </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item :label="t('route.pushStatus')">
-            <el-popover
-              placement="top"
-              :width="320"
-              trigger="hover"
-              :disabled="!hasInstancePushStatus(currentRouteDetail.routeId)"
-            >
-              <template #reference>
-                <el-tag
-                  :type="getPushStatusType(currentRouteDetail.pushStatus, currentRouteDetail.routeId)"
-                  size="small"
-                  effect="plain"
-                  class="cursor-pointer"
-                >
-                  {{ getPushStatusText(currentRouteDetail.pushStatus, currentRouteDetail.routeId) }}
-                </el-tag>
-              </template>
-              <div class="instance-push-status-popover">
-                <div class="popover-title">{{ t('route.instancePushDetail') }}</div>
-                <div class="instance-list">
-                  <div
-                    v-for="detail in getInstancePushDetails(currentRouteDetail.routeId)"
-                    :key="detail.instanceId"
-                    class="instance-item"
-                  >
-                    <span class="instance-id">{{ detail.instanceId }}</span>
-                    <el-tag
-                      :type="getInstancePushStatusType(detail.pushStatus)"
-                      size="small"
-                      effect="plain"
-                    >
-                      {{ detail.pushStatusDesc }}
-                    </el-tag>
-                  </div>
-                </div>
-              </div>
-            </el-popover>
-          </el-descriptions-item>
-          <el-descriptions-item :label="t('route.lastPushTime')">
-            {{ currentRouteDetail.lastPushTime || '-' }}
-          </el-descriptions-item>
           <el-descriptions-item :label="t('common.remark')" :span="2">
             {{ currentRouteDetail.remark || '-' }}
           </el-descriptions-item>
@@ -1000,119 +869,13 @@
       </div>
     </el-dialog>
 
-    <!-- 获取实例路由弹窗 -->
-    <el-dialog
-      v-model="fetchInstanceDialogVisible"
-      :title="t('route.fetchInstanceRoutes')"
-      width="900px"
-      :close-on-click-modal="false"
-      :lock-scroll="false"
-      class="fetch-instance-dialog"
-      @open="lockBodyScroll"
-      @closed="unlockBodyScroll"
-    >
-      <div class="fetch-instance-content">
-        <!-- 实例选择 -->
-        <div class="instance-select-section">
-          <el-form label-width="80px">
-            <el-form-item :label="t('route.targetInstances')">
-              <el-select
-                v-model="selectedFetchInstance"
-                :placeholder="t('route.selectInstanceToFetch')"
-                style="width: 300px"
-                :loading="fetchInstanceLoading"
-                @change="handleInstanceSelect"
-              >
-                <el-option
-                  v-for="instance in onlineInstances"
-                  :key="instance.instanceId"
-                  :label="instance.instanceId"
-                  :value="instance.instanceId"
-                >
-                  <div class="instance-option">
-                    <span class="instance-id">{{ instance.instanceId }}</span>
-                    <el-tag type="success" size="small" effect="plain">{{ instance.uri }}</el-tag>
-                  </div>
-                </el-option>
-              </el-select>
-            </el-form-item>
-          </el-form>
-        </div>
-
-        <!-- 实例路由列表 -->
-        <div v-if="instanceRoutes.length > 0" class="instance-routes-section">
-          <div class="section-header">
-            <span class="section-title">
-              {{ t('route.instanceRoutesList', { count: instanceRoutes.length }) }}
-            </span>
-            <div class="section-actions">
-              <el-checkbox v-model="selectAllInstanceRoutes" @change="handleSelectAllInstanceRoutes as any">
-                {{ t('common.selectAll') }}
-              </el-checkbox>
-              <el-button type="primary" size="small" :loading="importingRoutes" @click="handleImportInstanceRoutes">
-                {{ t('route.importSelectedRoutes') }} ({{ selectedInstanceRouteIds.length }})
-              </el-button>
-            </div>
-          </div>
-          <el-table
-            :data="instanceRoutes"
-            height="400"
-            stripe
-            @selection-change="handleInstanceRouteSelection"
-          >
-            <el-table-column type="selection" width="50" />
-            <el-table-column prop="routeId" :label="t('route.routeId')" min-width="140">
-              <template #default="{ row }">
-                <span class="mono-text">{{ row.routeId }}</span>
-                <el-tag v-if="row.existsInRepo" type="warning" size="small" effect="plain" class="ml-2">
-                  {{ t('route.alreadyExists') }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="uri" :label="t('route.uri')" min-width="160" show-overflow-tooltip>
-              <template #default="{ row }">
-                <el-tag type="success" effect="plain" size="small">{{ row.uri }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column :label="t('route.predicates')" min-width="180">
-              <template #default="{ row }">
-                <div class="predicate-tags">
-                  <el-tag
-                    v-for="(p, idx) in row.predicates"
-                    :key="idx"
-                    type="primary"
-                    effect="light"
-                    size="small"
-                  >
-                    {{ p.name }}
-                  </el-tag>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column :label="t('route.filters')" min-width="140">
-              <template #default="{ row }">
-                <div class="filter-tags">
-                  <el-tag
-                    v-for="(f, idx) in row.filters"
-                    :key="idx"
-                    type="warning"
-                    effect="light"
-                    size="small"
-                  >
-                    {{ f.name }}
-                  </el-tag>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="orderNum" :label="t('route.order')" width="80" align="center" />
-          </el-table>
-        </div>
-        <div v-else-if="selectedFetchInstance && !fetchInstanceRoutesLoading" class="empty-section">
-          <el-empty :description="t('route.noInstanceRoutes')" />
-        </div>
-      </div>
-    </el-dialog>
-  </div>
+    <!-- 推送分组路由对话框 -->
+    <PushRouteDialog
+      v-model="pushDialogVisible"
+      :routes-group="searchForm.routesGroup"
+      @push-success="handlePushSuccess"
+    />
+    </div>
 </template>
 
 <script setup lang="ts">
@@ -1130,20 +893,20 @@ import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import yaml from 'js-yaml'
 import {
-  Search,
-  Refresh,
   Plus,
   Edit,
   Delete,
-  Clock,
-  Promotion,
   View,
+  Refresh,
+  // 视图切换图标
+  List,
+  Document,
   // 新增图标
   Switch,
   UploadFilled,
   Download,
   DocumentCopy,
-  Download as FetchInstance,
+  Promotion,
 } from '@element-plus/icons-vue'
 import {
   getRouteList,
@@ -1151,33 +914,31 @@ import {
   updateRoute,
   deleteRoute,
   refreshRoutes,
-  getRouteHistory,
-  rollbackRoute,
   // 新增接口方法
   batchUpdateStatus,
   exportRoutes,
   importRoutes,
   cloneRoute,
   routeApi,
+  syncRoutesFromInstance,
   type RouteDefinition,
   type PredicateConfig,
   type FilterConfig,
   type SaveRouteReq,
   type UpdateRouteReq,
   type DeleteRouteReq,
-  type QueryRouteHistoryReq,
-  type RollbackRouteReq,
-  type RouteHistory,
   type BatchUpdateStatusReq,
   type ImportRoutesReq,
   type ImportRoutesRsp,
   type CloneRouteReq,
   type ExportRoutesReq,
-  type GatewayInstanceVO,
-  type RouteInstancePushStatusRsp,
+  type SyncRoutesFromInstanceRsp,
 } from '@/api/route'
+import { getEnabledRouteGroups, type RouteGroup } from '@/api/routeGroup'
+import { queryInstanceList, type InstanceInfo, type QueryInstanceParams } from '@/api/instance'
 import { ButtonPerms, usePermission } from '@/composables/usePermission'
 import SyncInstanceDialog from './components/SyncInstanceDialog.vue'
+import PushRouteDialog from './components/PushRouteDialog.vue'
 
 defineOptions({
   name: 'RouteRepository',
@@ -1191,8 +952,10 @@ const route = useRoute()
 // 搜索表单
 const searchForm = reactive({
   routesGroup: '',
-  routeName: '',
 })
+
+// 路由分组选项
+const groupOptions = ref<RouteGroup[]>([])
 
 // 从路由参数获取要定位的路由ID
 const highlightRouteId = ref<string | null>(null)
@@ -1201,19 +964,13 @@ const highlightRouteId = ref<string | null>(null)
 const syncDialogVisible = ref(false)
 const selectedRouteIds = ref<string[]>([])
 
-// 分页
-const pagination = reactive({
-  pageNum: 1,
-  pageSize: 10,
-  total: 0,
-})
+// 视图模式
+const viewMode = ref<'table' | 'json' | 'yaml'>('table')
 
 // 表格数据
 const loading = ref(false)
 const tableData = ref<RouteDefinition[]>([])
 const selectedRoutes = ref<RouteDefinition[]>([])
-// 路由实例推送状态映射 (routeId -> RouteInstancePushStatusRsp)
-const routeInstancePushStatusMap = ref<Map<string, RouteInstancePushStatusRsp>>(new Map())
 
 // 弹窗
 const dialogVisible = ref(false)
@@ -1256,16 +1013,22 @@ const formRules = {
 
 const dialogTitle = computed(() => (isEdit.value ? t('route.editRoute') : t('route.addRoute')))
 
-// 历史弹窗
-const historyDialogVisible = ref(false)
-const historyLoading = ref(false)
-const historyData = ref<RouteHistory[]>([])
-const historyPagination = reactive({
-  pageNum: 1,
-  pageSize: 10,
-  total: 0,
+// JSON/YAML 视图预览（使用 computed）
+const routesJsonPreview = computed(() => {
+  if (tableData.value.length === 0) return '[]'
+  const gatewayRoutes = tableData.value.map(convertToGatewayRouteDefinition)
+  return JSON.stringify(gatewayRoutes, null, 2)
 })
-const currentHistoryRouteId = ref('')
+
+const routesYamlPreview = computed(() => {
+  if (tableData.value.length === 0) return ''
+  const gatewayRoutes = tableData.value.map(convertToGatewayRouteDefinition)
+  try {
+    return yaml.dump(gatewayRoutes, { indent: 2, lineWidth: -1 })
+  } catch {
+    return JSON.stringify(gatewayRoutes, null, 2)
+  }
+})
 
 // 断言类型选项
 const predicateTypes = [
@@ -1304,34 +1067,6 @@ const formatConfigArgs = (config: PredicateConfig | FilterConfig): string => {
     .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
     .join(', ')
   return args
-}
-
-// 获取操作类型标签
-const getOperationTypeTag = (type: string): 'success' | 'warning' | 'danger' | 'info' => {
-  switch (type) {
-    case 'A':
-      return 'success'
-    case 'M':
-      return 'warning'
-    case 'D':
-      return 'danger'
-    default:
-      return 'info'
-  }
-}
-
-// 获取操作类型标签文本
-const getOperationTypeLabel = (type: string): string => {
-  switch (type) {
-    case 'A':
-      return t('route.operationAdd')
-    case 'M':
-      return t('route.operationModify')
-    case 'D':
-      return t('route.operationDelete')
-    default:
-      return type
-  }
 }
 
 /**
@@ -1425,73 +1160,18 @@ watch(editMode, (mode, oldMode) => {
 const loadData = async () => {
   loading.value = true
   try {
-    // 路由仓库始终从数据库查询
+    // 路由仓库始终从数据库查询，一次性加载所有数据
     const res = await getRouteList({
       routesGroup: searchForm.routesGroup,
-      routeName: searchForm.routeName,
-      pageNum: pagination.pageNum,
-      pageSize: pagination.pageSize,
+      pageNum: 1,
+      pageSize: 10000,
     })
     tableData.value = res.rows || []
-    pagination.total = res.total || 0
-
-    // 加载路由实例推送状态
-    if (tableData.value.length > 0) {
-      await loadRouteInstancePushStatus()
-    }
   } catch (error) {
     console.error('[RouteManagement] Failed to load route list:', error)
     tableData.value = []
-    pagination.total = 0
   } finally {
     loading.value = false
-  }
-}
-
-/**
- * 加载路由实例推送状态
- */
-const loadRouteInstancePushStatus = async () => {
-  if (tableData.value.length === 0) return
-
-  try {
-    const routeIds = tableData.value.map(r => r.routeId)
-    const statusList = await routeApi.getRouteInstancePushStatus({ routeIds })
-
-    // 构建映射
-    routeInstancePushStatusMap.value.clear()
-    if (Array.isArray(statusList)) {
-      statusList.forEach(status => {
-        routeInstancePushStatusMap.value.set(status.routeId, status)
-      })
-    }
-  } catch (error) {
-    console.error('[RouteManagement] Failed to load route instance push status:', error)
-  }
-}
-
-/**
- * 加载路由历史数据
- */
-const loadHistoryData = async () => {
-  if (!currentHistoryRouteId.value) return
-
-  historyLoading.value = true
-  try {
-    const req: QueryRouteHistoryReq = {
-      routeId: currentHistoryRouteId.value,
-      pageNum: historyPagination.pageNum,
-      pageSize: historyPagination.pageSize,
-    }
-    const res = await getRouteHistory(req)
-    historyData.value = res.rows || []
-    historyPagination.total = res.total || 0
-  } catch (error) {
-    console.error('[RouteManagement] Failed to load route history:', error)
-    historyData.value = []
-    historyPagination.total = 0
-  } finally {
-    historyLoading.value = false
   }
 }
 
@@ -1499,32 +1179,41 @@ const loadHistoryData = async () => {
  * 处理搜索操作
  */
 const handleSearch = () => {
-  pagination.pageNum = 1
   loadData()
 }
 
 /**
- * 处理重置搜索表单
+ * 同步分组路由（直接调用后端，后端自动选择在线实例）
  */
-const handleReset = () => {
-  searchForm.routesGroup = ''
-  searchForm.routeName = ''
-  pagination.pageNum = 1
-  loadData()
-}
+const handleSyncGroupRoutes = async () => {
+  // 必须选择分组才能同步
+  if (!searchForm.routesGroup) {
+    ElMessage.warning(t('route.routeGroupPlaceholder'))
+    return
+  }
 
-/**
- * 处理分页大小改变
- */
-const handleSizeChange = () => {
-  loadData()
-}
+  syncFromInstanceLoading.value = true
+  try {
+    const result: SyncRoutesFromInstanceRsp = await syncRoutesFromInstance({
+      routesGroup: searchForm.routesGroup,
+    })
 
-/**
- * 处理页码改变
- */
-const handleCurrentChange = () => {
-  loadData()
+    if (result.addedCount > 0 || result.updatedCount > 0) {
+      ElMessage.success(t('route.syncRoutesSuccess', {
+        added: result.addedCount,
+        updated: result.updatedCount,
+      }))
+    } else {
+      ElMessage.info(t('route.noRoutesToSync'))
+    }
+
+    loadData() // 刷新路由列表
+  } catch (error) {
+    console.error('[RouteManagement] Failed to sync routes:', error)
+    ElMessage.error(t('message.operationFailed'))
+  } finally {
+    syncFromInstanceLoading.value = false
+  }
 }
 
 /**
@@ -1570,55 +1259,6 @@ const handleDetail = (row: RouteDefinition) => {
   currentRouteDetail.value = row
   detailFormat.value = 'json'
   detailDialogVisible.value = true
-}
-
-/**
- * 处理查看历史
- */
-const handleHistory = (row: RouteDefinition) => {
-  currentHistoryRouteId.value = row.routeId
-  historyPagination.pageNum = 1
-  historyDialogVisible.value = true
-  loadHistoryData()
-}
-
-/**
- * 处理回滚
- */
-const handleRollback = async (row: RouteHistory) => {
-  try {
-    await ElMessageBox.confirm(
-      t('route.rollbackConfirm', { routeName: row.routeName || currentHistoryRouteId.value }),
-      t('message.tips'),
-      { type: 'warning' }
-    )
-
-    const req: RollbackRouteReq = {
-      routeId: currentHistoryRouteId.value,
-      historyId: row.historyId,
-      syncToStorage: true,
-    }
-    await rollbackRoute(req)
-
-    ElMessage.success(t('message.success'))
-    historyDialogVisible.value = false
-    loadData()
-  } catch {
-    // 用户取消
-  }
-}
-
-/**
- * 处理查看历史详情
- */
-const handleViewHistoryDetail = (row: RouteHistory) => {
-  // 显示详情，可以使用 JSON 格式展示 beforeData 或 afterData
-  const detail = row.operationType === 'D' ? row.beforeData : row.afterData
-  if (detail) {
-    ElMessageBox.alert(JSON.stringify(detail, null, 2), t('route.historyDetailTitle'), {
-      confirmButtonText: t('common.confirm'),
-    })
-  }
 }
 
 /**
@@ -1764,18 +1404,6 @@ const handleDelete = async (row: RouteDefinition) => {
 }
 
 /**
- * 处理刷新路由
- */
-const handleRefreshRoutes = async () => {
-  try {
-    await refreshRoutes()
-    ElMessage.success(t('message.success'))
-  } catch (error) {
-    console.error('[RouteManagement] Failed to refresh routes:', error)
-  }
-}
-
-/**
  * 同步成功回调
  */
 const handleSyncSuccess = () => {
@@ -1827,18 +1455,6 @@ const handleSelectionChange = (selection: RouteDefinition[]) => {
   selectedRoutes.value = selection
 }
 
-/**
- * 处理推送选中路由
- */
-const handlePushSelected = () => {
-  if (selectedRoutes.value.length === 0) {
-    ElMessage.warning(t('route.selectRouteToPush'))
-    return
-  }
-  selectedRouteIds.value = selectedRoutes.value.map((r) => r.routeId)
-  syncDialogVisible.value = true
-}
-
 // ========== 新增功能：批量状态、全量推送、导入导出、克隆路由 ==========
 
 // 批量状态更新弹窗状态
@@ -1867,104 +1483,28 @@ const cloneNewRouteId = ref('')
 const cloneNewRouteName = ref('')
 const cloneLoading = ref(false)
 
-// 获取实例路由弹窗状态
-const fetchInstanceDialogVisible = ref(false)
-const onlineInstances = ref<GatewayInstanceVO[]>([])
-const selectedFetchInstance = ref('')
-const fetchInstanceLoading = ref(false)
-const fetchInstanceRoutesLoading = ref(false)
-const instanceRoutes = ref<(RouteDefinition & { existsInRepo?: boolean })[]>([])
-const selectedInstanceRouteIds = ref<string[]>([])
-const selectAllInstanceRoutes = ref(false)
-const importingRoutes = ref(false)
+// 同步分组路由 loading 状态
+const syncFromInstanceLoading = ref(false)
+
+// 推送分组路由对话框
+const pushDialogVisible = ref(false)
 
 /**
- * 获取推送状态类型（用于Tag颜色）
+ * 打开推送分组路由对话框
  */
-const getPushStatusType = (pushStatus: number | undefined, routeId?: string): 'info' | 'success' | 'danger' | 'warning' => {
-  // 如果有实例级别状态，根据实例推送比例判断
-  if (routeId) {
-    const instanceStatus = routeInstancePushStatusMap.value.get(routeId)
-    if (instanceStatus) {
-      // 部分成功显示 warning
-      if (instanceStatus.pushedInstances > 0 && instanceStatus.pushedInstances < instanceStatus.totalInstances) {
-        return 'warning'
-      }
-      // 全部成功
-      if (instanceStatus.pushedInstances === instanceStatus.totalInstances) {
-        return 'success'
-      }
-      // 全部失败
-      if (instanceStatus.failedInstances === instanceStatus.totalInstances) {
-        return 'danger'
-      }
-      // 部分失败
-      if (instanceStatus.failedInstances > 0) {
-        return 'warning'
-      }
-    }
+const handleOpenPushDialog = () => {
+  if (!searchForm.routesGroup) {
+    ElMessage.warning(t('route.selectGroupFirst'))
+    return
   }
-
-  // 兼容旧的推送状态
-  if (pushStatus === undefined || pushStatus === 0) return 'info'
-  if (pushStatus === 1) return 'success'
-  if (pushStatus === 2) return 'danger'
-  return 'warning'
+  pushDialogVisible.value = true
 }
 
 /**
- * 获取推送状态文本
+ * 推送成功回调
  */
-const getPushStatusText = (pushStatus: number | undefined, routeId?: string): string => {
-  // 如果有实例级别状态，显示详细格式
-  if (routeId) {
-    const instanceStatus = routeInstancePushStatusMap.value.get(routeId)
-    if (instanceStatus) {
-      // 显示格式: "已推送(3/5)" 或 "未推送(0/5)" 或 "部分失败(3/5)"
-      if (instanceStatus.pushedInstances === instanceStatus.totalInstances) {
-        return t('route.pushStatusPushedFormat', { count: instanceStatus.pushedInstances, total: instanceStatus.totalInstances })
-      }
-      if (instanceStatus.pushedInstances === 0 && instanceStatus.failedInstances === 0) {
-        return t('route.pushStatusNotPushedFormat', { total: instanceStatus.totalInstances })
-      }
-      if (instanceStatus.failedInstances > 0) {
-        return t('route.pushStatusPartialFormat', { success: instanceStatus.pushedInstances, failed: instanceStatus.failedInstances, total: instanceStatus.totalInstances })
-      }
-      return t('route.pushStatusPushedFormat', { count: instanceStatus.pushedInstances, total: instanceStatus.totalInstances })
-    }
-  }
-
-  // 兼容旧的推送状态
-  if (pushStatus === undefined || pushStatus === 0) return t('route.pushStatusNotPushed')
-  if (pushStatus === 1) return t('route.pushStatusPushed')
-  if (pushStatus === 2) return t('route.pushStatusFailed')
-  return t('route.pushStatusUnknown')
-}
-
-/**
- * 判断是否有实例推送状态详情
- */
-const hasInstancePushStatus = (routeId: string): boolean => {
-  const status = routeInstancePushStatusMap.value.get(routeId)
-  return status !== undefined && status.instanceDetails !== undefined && status.instanceDetails.length > 0
-}
-
-/**
- * 获取实例推送状态详情
- */
-const getInstancePushDetails = (routeId: string) => {
-  const status = routeInstancePushStatusMap.value.get(routeId)
-  return status?.instanceDetails || []
-}
-
-/**
- * 获取实例推送状态类型
- */
-const getInstancePushStatusType = (pushStatus: number): 'info' | 'success' | 'danger' | 'warning' => {
-  if (pushStatus === 1) return 'success'
-  if (pushStatus === 2) return 'danger'
-  if (pushStatus === 0) return 'info'
-  return 'warning'
+const handlePushSuccess = () => {
+  loadData()
 }
 
 /**
@@ -2203,155 +1743,6 @@ const handleCloneSubmit = async () => {
   }
 }
 
-// ========== 新增功能：获取实例路由 ==========
-
-/**
- * 打开获取实例路由弹窗
- */
-const handleFetchInstanceRoutes = async () => {
-  fetchInstanceDialogVisible.value = true
-  fetchInstanceLoading.value = true
-  selectedFetchInstance.value = ''
-  instanceRoutes.value = []
-  selectedInstanceRouteIds.value = []
-  selectAllInstanceRoutes.value = false
-
-  try {
-    const result = await routeApi.getOnlineGatewayInstances()
-    onlineInstances.value = Array.isArray(result) ? result : []
-  } catch (error) {
-    console.error('[RouteManagement] Failed to load instances:', error)
-    onlineInstances.value = []
-    ElMessage.error(t('message.fetchFailed'))
-  } finally {
-    fetchInstanceLoading.value = false
-  }
-}
-
-/**
- * 选择实例后获取路由
- */
-const handleInstanceSelect = async (instanceId: string) => {
-  if (!instanceId) {
-    instanceRoutes.value = []
-    return
-  }
-
-  fetchInstanceRoutesLoading.value = true
-  instanceRoutes.value = []
-  selectedInstanceRouteIds.value = []
-  selectAllInstanceRoutes.value = false
-
-  try {
-    const result = await routeApi.getInstanceRoutes({ instanceId })
-    // getInstanceRoutes 返回 RouteDefinition[] 或 { rows: RouteDefinition[] }
-    let routes: RouteDefinition[]
-    if (Array.isArray(result)) {
-      routes = result
-    } else if (result && Array.isArray((result as any).rows)) {
-      routes = (result as any).rows
-    } else {
-      routes = []
-    }
-
-    // 检查哪些路由已存在于仓库
-    const existingRouteIds = new Set(tableData.value.map(r => r.routeId))
-    instanceRoutes.value = routes.map(route => ({
-      ...route,
-      existsInRepo: existingRouteIds.has(route.routeId),
-    }))
-  } catch (error) {
-    console.error('[RouteManagement] Failed to load instance routes:', error)
-    instanceRoutes.value = []
-    ElMessage.error(t('message.fetchFailed'))
-  } finally {
-    fetchInstanceRoutesLoading.value = false
-  }
-}
-
-/**
- * 处理实例路由选择
- */
-const handleInstanceRouteSelection = (selection: (RouteDefinition & { existsInRepo?: boolean })[]) => {
-  selectedInstanceRouteIds.value = selection.map(r => r.routeId)
-  selectAllInstanceRoutes.value = selection.length === instanceRoutes.value.length
-}
-
-/**
- * 全选/取消全选实例路由
- */
-const handleSelectAllInstanceRoutes = (val: boolean) => {
-  if (val) {
-    // 只选择不存在于仓库的路由
-    selectedInstanceRouteIds.value = instanceRoutes.value
-      .filter(r => !r.existsInRepo)
-      .map(r => r.routeId)
-  } else {
-    selectedInstanceRouteIds.value = []
-  }
-}
-
-/**
- * 导入选中的实例路由到仓库
- */
-const handleImportInstanceRoutes = async () => {
-  if (selectedInstanceRouteIds.value.length === 0) {
-    ElMessage.warning(t('route.selectRouteToImport'))
-    return
-  }
-
-  // 过滤掉已存在的路由
-  const routesToImport = instanceRoutes.value.filter(
-    r => selectedInstanceRouteIds.value.includes(r.routeId) && !r.existsInRepo
-  )
-
-  if (routesToImport.length === 0) {
-    ElMessage.warning(t('route.allRoutesExist'))
-    return
-  }
-
-  importingRoutes.value = true
-  try {
-    // 批量保存路由
-    const routesGroup = searchForm.routesGroup || 'default'
-    let successCount = 0
-    let failCount = 0
-
-    for (const route of routesToImport) {
-      try {
-        const saveReq: SaveRouteReq = {
-          routeId: route.routeId,
-          routeName: route.routeName || route.routeId,
-          uri: route.uri,
-          predicates: route.predicates || [],
-          filters: route.filters || [],
-          orderNum: route.orderNum || 0,
-          routesGroup,
-          status: 1,
-        }
-        await saveRoute(saveReq)
-        successCount++
-      } catch {
-        failCount++
-      }
-    }
-
-    if (failCount > 0) {
-      ElMessage.warning(t('route.importResultPartial', { success: successCount, failed: failCount }))
-    } else {
-      ElMessage.success(t('route.importResultSuccess', { count: successCount }))
-    }
-
-    fetchInstanceDialogVisible.value = false
-    loadData()
-  } catch (error) {
-    console.error('[RouteManagement] Failed to import instance routes:', error)
-    ElMessage.error(t('message.operationFailed'))
-  } finally {
-    importingRoutes.value = false
-  }
-}
-
 // ============================================
 // 弹窗防抖动 - 手动锁定滚动条
 // ============================================
@@ -2372,7 +1763,32 @@ onMounted(() => {
     highlightRouteId.value = routeIdFromQuery
   }
   loadData()
+  loadGroupOptions()
 })
+
+/**
+ * 加载路由分组选项
+ */
+const loadGroupOptions = async () => {
+  try {
+    const result = await getEnabledRouteGroups()
+    const groups = result || []
+
+    // 确保 default 分组始终存在
+    const hasDefault = groups.some(g => g.groupKey === 'default')
+    if (!hasDefault) {
+      groups.unshift({
+        groupKey: 'default',
+        groupName: '默认分组',
+        status: 1,
+      })
+    }
+
+    groupOptions.value = groups
+  } catch (error) {
+    console.error('[RouteManagement] Failed to load group options:', error)
+  }
+}
 
 // 监听数据加载完成后，高亮定位到指定路由
 watch(tableData, () => {
@@ -2390,6 +1806,29 @@ watch(tableData, () => {
 
 <style scoped lang="scss">
 /* 路由管理页面 - 继承全局 table-page-container 样式 */
+
+.code-view-wrapper {
+  flex: 1;
+  overflow: hidden;
+
+  .code-editor {
+    height: 100%;
+
+    :deep(.el-textarea__inner) {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      height: 100%;
+      resize: none;
+    }
+  }
+}
+
+.table-toolbar {
+  flex-shrink: 0;
+  padding: 4px 0;
+  margin-bottom: 4px;
+}
 
 .storage-mode-option {
   display: flex;
@@ -2430,7 +1869,8 @@ watch(tableData, () => {
 // 新增弹窗样式
 .batch-status-tip,
 .import-tip,
-.clone-tip {
+.clone-tip,
+.sync-tip {
   padding: 12px 16px;
   background: var(--el-color-primary-light-9);
   border-radius: 8px;
@@ -2477,110 +1917,6 @@ watch(tableData, () => {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-}
-
-.time-text {
-  font-size: 12px;
-  color: var(--el-text-color-secondary);
-}
-
-// 实例推送状态 Popover 样式
-.instance-push-status-popover {
-  .popover-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-  }
-
-  .instance-list {
-    max-height: 300px;
-    overflow-y: auto;
-  }
-
-  .instance-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px dashed var(--el-border-color-lighter);
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .instance-id {
-      font-size: 12px;
-      font-family: 'Monaco', 'Menlo', monospace;
-      color: var(--el-text-color-regular);
-    }
-  }
-}
-
-.cursor-pointer {
-  cursor: pointer;
-}
-
-// 获取实例路由弹窗样式
-.fetch-instance-dialog {
-  .fetch-instance-content {
-    .instance-select-section {
-      margin-bottom: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--el-border-color-lighter);
-    }
-
-    .instance-option {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-
-      .instance-id {
-        font-family: 'Monaco', 'Menlo', monospace;
-      }
-    }
-
-    .instance-routes-section {
-      .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-
-        .section-title {
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .section-actions {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-      }
-
-      .ml-2 {
-        margin-left: 8px;
-      }
-    }
-  }
-}
-
-// 历史弹窗操作按钮样式
-.history-operation-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-
-  .operation-placeholder {
-    width: 40px;
-    display: inline-block;
-    text-align: center;
-    color: var(--el-text-color-placeholder);
-  }
 }
 
 // 路由详情弹窗样式
@@ -2660,8 +1996,7 @@ watch(tableData, () => {
 
 <style lang="scss">
 /* 路由弹窗样式（非 scoped） */
-.route-dialog,
-.history-dialog {
+.route-dialog {
   .dynamic-section {
     .dynamic-item {
       display: flex;

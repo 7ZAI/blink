@@ -6,10 +6,11 @@ import request from '@/utils/request'
  * 路由分组
  */
 export interface RouteGroup {
-  groupId: number
+  groupId?: number
   groupKey: string
   groupName: string
-  instanceCount: number
+  instanceCount?: number
+  status?: number
   remark?: string
   createTime?: string
   updateTime?: string
