@@ -37,12 +37,12 @@ public class GroupInstanceRoutesRsp implements Serializable {
     private LocalDateTime timestamp;
 
     /**
-     * 跨由列表
+     * 路由列表
      */
     private List<GaRouteDO> rows;
 
     /**
-     * 跨由总数
+     * 路由总数
      */
     private Integer total;
 
