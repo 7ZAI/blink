@@ -4,7 +4,7 @@
     :row-class-name="getRowClassName"
     stripe
     size="small"
-    :max-height="maxHeight"
+    :max-height="props.maxHeight"
     @row-click="handleRowClick"
   >
     <el-table-column prop="routeId" :label="t('route.routeId')" min-width="180">
@@ -228,12 +228,12 @@ function handleRowClick(row: RouteDiffItem) {
 
 // 差异行背景色
 .diff-row-added {
-  background-color: rgba(var(--el-color-success-rgb), 0.1) !important;
+  background-color: var(--el-color-success-light-9) !important;
 }
 .diff-row-modified {
-  background-color: rgba(var(--el-color-warning-rgb), 0.1) !important;
+  background-color: var(--el-color-warning-light-9) !important;
 }
 .diff-row-deleted {
-  background-color: rgba(var(--el-color-danger-rgb), 0.1) !important;
+  background-color: var(--el-color-danger-light-9) !important;
 }
 </style>
