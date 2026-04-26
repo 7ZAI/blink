@@ -26,7 +26,7 @@ spring:
         namespace: 94984ad7-b510-4ca4-bdcb-b6cdbd437dfb
         enabled: true
         server-addr: 127.0.0.1:8848
-        ip: 10.141.92.120
+        ip: 10.186.131.120
 logging:
   level:
     root: INFO
@@ -171,9 +171,6 @@ resilience4j:
 
 blink:
   gateway:
-    instance:
-      # 网关实例IP，用于指标上报和实例标识（需与 Nacos 注册 IP 一致）
-      ip: 10.141.92.120
     config:
       ignore-intercept-url:
         - "/base/auth/login"

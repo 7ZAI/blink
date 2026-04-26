@@ -70,7 +70,8 @@ public class ChannelConfigCache {
         }
 
         // 解析 JSON（不解密）
-        List<Map<String, Object>> configList = JacksonUtil.fromJsonToList(configStr, Map.class);
+        List<Map<String, Object>> configList = JacksonUtil.fromJson(configStr,
+                new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
         if (configList == null || configList.isEmpty()) {
             log.warn("[ChannelConfigCache] 配置内容为空");
             return;
@@ -170,7 +171,8 @@ public class ChannelConfigCache {
             }
 
             // 解析 JSON（不解密）
-            List<Map<String, Object>> configList = JacksonUtil.fromJsonToList(configStr, Map.class);
+            List<Map<String, Object>> configList = JacksonUtil.fromJson(configStr,
+                    new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
             if (configList == null) {
                 log.warn("[ChannelConfigCache] 配置内容为空，跳过刷新 | appKey: {}", appKey);
                 return;

@@ -2,6 +2,7 @@ package com.blink.gateway.monitor;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.StrUtil;
+import com.alibaba.cloud.nacos.NacosDiscoveryProperties;
 import com.blink.gateway.monitor.dto.CircuitBreakerMetric;
 import com.blink.gateway.monitor.dto.MetricsMessage;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -57,15 +58,13 @@ public class MetricsReporterImpl implements MetricsReporter {
     private final ObjectMapper objectMapper;
     private final MonitorConfigHolder configHolder;
     private final CircuitBreakerRegistry circuitBreakerRegistry;
+    private final NacosDiscoveryProperties nacosDiscoveryProperties;
 
     @Value("${spring.application.name:gateway-reactive}")
     private String serviceId;
 
     @Value("${server.port:8080}")
     private Integer port;
-
-    @Value("${blink.gateway.instance.ip:}")
-    private String configuredIp;
 
     private final AtomicReference<String> instanceId = new AtomicReference<>();
     private final AtomicReference<String> hostAddress = new AtomicReference<>();
@@ -74,12 +73,14 @@ public class MetricsReporterImpl implements MetricsReporter {
                                ReactiveStringRedisTemplate redisTemplate,
                                BuildProperties buildProperties,
                                MonitorConfigHolder configHolder,
-                               CircuitBreakerRegistry circuitBreakerRegistry) {
+                               CircuitBreakerRegistry circuitBreakerRegistry,
+                               NacosDiscoveryProperties nacosDiscoveryProperties) {
         this.meterRegistry = meterRegistry;
         this.redisTemplate = redisTemplate;
         this.objectMapper = new ObjectMapper();
         this.configHolder = configHolder;
         this.circuitBreakerRegistry = circuitBreakerRegistry;
+        this.nacosDiscoveryProperties = nacosDiscoveryProperties;
     }
 
     /**
@@ -98,11 +99,12 @@ public class MetricsReporterImpl implements MetricsReporter {
         if (instanceId.get() == null) {
             try {
                 String host;
-                if (StrUtil.isNotBlank(configuredIp)) {
-                    // 使用配置的 IP（需与 Nacos 注册 IP 一致）
-                    host = configuredIp;
+                // 从 Nacos 注册配置获取 IP（spring.cloud.nacos.discovery.ip）
+                String nacosIp = nacosDiscoveryProperties.getIp();
+                if (StrUtil.isNotBlank(nacosIp)) {
+                    host = nacosIp;
                 } else {
-                    // 自动获取主机地址
+                    // Nacos 未配置 IP，自动获取主机地址
                     host = InetAddress.getLocalHost().getHostAddress();
                 }
                 hostAddress.set(host);
