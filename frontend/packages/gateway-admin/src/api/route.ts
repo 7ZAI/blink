@@ -535,6 +535,116 @@ export const cloneRoute = (data: CloneRouteReq): Promise<RouteDefinition> => {
   return request.post('/route/cloneRoute', { body: data })
 }
 
+/**
+ * 从实例同步路由到本地
+ * 增量同步：新增本地没有的路由，更新本地已有的路由
+ */
+export interface SyncRoutesFromInstanceReq {
+  instanceId?: string // 可选，不传时后端自动选择在线实例
+  routesGroup: string // 目标分组
+}
+
+export interface SyncRoutesFromInstanceRsp {
+  addedCount: number
+  updatedCount: number
+  addedRoutes: string[] // 新增的路由ID列表
+  updatedRoutes: string[] // 更新的路由ID列表
+}
+
+export const syncRoutesFromInstance = (data: SyncRoutesFromInstanceReq): Promise<SyncRoutesFromInstanceRsp> => {
+  return request.post('/route/syncRoutesFromInstance', { body: data })
+}
+
+// ========== 分组实例路由接口 ==========
+
+/**
+ * 获取分组实例路由请求
+ */
+export interface GetGroupInstanceRoutesReq {
+  routesGroup: string // 路由分组（必填）
+}
+
+/**
+ * 分组实例路由响应
+ */
+export interface GroupInstanceRoutesRsp {
+  instanceId: string // 来源实例 ID
+  storageMode: string // 存储模式（redis/nacos）
+  timestamp: string // 获取时间
+  rows: RouteDefinition[] // 路由列表
+  total: number // 路由总数
+  fromActuator: boolean // 是否来自 Actuator
+  error?: string // 错误信息（可选）
+}
+
+/**
+ * 获取分组下实例的实际路由
+ * 从分组下第一个在线实例获取路由配置
+ */
+export const getGroupInstanceRoutes = (params: GetGroupInstanceRoutesReq): Promise<GroupInstanceRoutesRsp> => {
+  return request.post('/route/getGroupInstanceRoutes', { body: params })
+}
+
+// ========== 路由差异对比接口 ==========
+
+/**
+ * 路由差异对比请求
+ */
+export interface RouteDiffReq {
+  routesGroup: string
+  instanceId?: string // 可选，不传时自动选择分组下第一个在线实例
+}
+
+/**
+ * 差异统计
+ */
+export interface DiffStats {
+  addedCount: number // 新增数量（仓库有但实例没有）
+  modifiedCount: number // 修改数量（两边都有但内容不同）
+  deletedCount: number // 删除数量（实例有但仓库没有）
+  unchangedCount: number // 不变数量
+}
+
+/**
+ * 字段差异
+ */
+export interface FieldDiff {
+  fieldName: string
+  oldValue: string // 实例版本
+  newValue: string // 仓库版本
+}
+
+/**
+ * 路由差异项
+ */
+export interface RouteDiffItem {
+  routeId: string
+  diffType: 'added' | 'modified' | 'deleted' | 'unchanged'
+  repositoryRoute?: RouteDefinition // 仓库版本
+  instanceRoute?: RouteDefinition // 实例版本
+  fieldDiffs?: FieldDiff[] // 字段级差异（仅 modified 时有）
+}
+
+/**
+ * 路由差异对比响应
+ */
+export interface RouteDiffRsp {
+  repositoryRoutes: RouteDefinition[] // 仓库路由（待推送）
+  repositoryCount: number
+  instanceRoutes: RouteDefinition[] // 实例路由（当前运行）
+  instanceCount: number
+  diffStats: DiffStats
+  diffDetails: RouteDiffItem[]
+}
+
+/**
+ * 获取路由差异对比
+ * 对比仓库路由与实例路由的差异
+ */
+export const getRouteDiff = (data: RouteDiffReq): Promise<RouteDiffRsp> => {
+  return request.post('/route/getRouteDiff', { body: data })
+}
+
 // ========== 实例路由 Actuator 接口 ==========
 
 /**
@@ -722,4 +832,8 @@ export const routeApi = {
   verifyPushResult,
   // 获取最新推送
   getLatestPush,
+  // 从实例同步路由
+  syncRoutesFromInstance,
+  // 分组实例路由
+  getGroupInstanceRoutes,
 }
