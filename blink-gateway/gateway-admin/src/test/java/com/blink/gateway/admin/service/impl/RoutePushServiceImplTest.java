@@ -6,11 +6,12 @@ import com.blink.framework.common.data.ResponseDTO;
 import com.blink.framework.common.exception.BlinkException;
 import com.blink.gateway.admin.dto.req.ConfirmPushReq;
 import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
+import com.blink.gateway.admin.dto.req.QueryInstanceReq;
 import com.blink.gateway.admin.dto.req.QueryRouteInstancePushStatusReq;
 import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.RouteInstancePushStatusRsp;
-import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
-import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
+import com.blink.gateway.admin.dto.rsp.QueryInstanceListRsp;
+import com.blink.gateway.admin.dto.vo.InstanceInfoVO;
 import com.blink.gateway.admin.entity.GaRouteInstanceRelaDO;
 import com.blink.gateway.admin.entity.GaRoutePushLogDO;
 import com.blink.gateway.admin.mapper.GaRouteInstanceRelaMapper;
@@ -81,20 +82,16 @@ class RoutePushServiceImplTest {
             QueryRouteInstancePushStatusReq req = new QueryRouteInstancePushStatusReq();
             req.setRouteIds(List.of("route-001"));
 
-            // Mock 网关实例列表
-            GatewayInstanceVO instance1 = new GatewayInstanceVO();
-            instance1.setInstanceId("gateway-app:192.168.1.10:8080");
-            instance1.setStatus(ConfigValueConstant.INSTANCE_STATUS_ONLINE);
+            // Mock 网关实例列表 - 使用 queryInstanceList
+            InstanceInfoVO instance1 = createInstanceInfoVO("gateway-app:192.168.1.10:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
+            InstanceInfoVO instance2 = createInstanceInfoVO("gateway-app:192.168.1.11:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
 
-            GatewayInstanceVO instance2 = new GatewayInstanceVO();
-            instance2.setInstanceId("gateway-app:192.168.1.11:8080");
-            instance2.setStatus(ConfigValueConstant.INSTANCE_STATUS_ONLINE);
+            QueryInstanceListRsp instanceListRsp = new QueryInstanceListRsp();
+            instanceListRsp.setRows(List.of(instance1, instance2));
+            instanceListRsp.setTotal(2);
 
-            GatewayInstanceListRsp instanceListRsp = new GatewayInstanceListRsp();
-            instanceListRsp.setInstances(List.of(instance1, instance2));
-
-            ResponseDTO<GatewayInstanceListRsp> instancesResponse = ResponseDTO.newSuccessInstance(instanceListRsp);
-            when(gatewayInstanceService.getGatewayInstances()).thenReturn(instancesResponse);
+            ResponseDTO<QueryInstanceListRsp> instancesResponse = ResponseDTO.newSuccessInstance(instanceListRsp);
+            when(gatewayInstanceService.queryInstanceList(any(QueryInstanceReq.class))).thenReturn(instancesResponse);
 
             // Mock 路由实例关联记录
             GaRouteInstanceRelaDO rela1 = new GaRouteInstanceRelaDO();
@@ -123,7 +120,7 @@ class RoutePushServiceImplTest {
             assertEquals(2, statusRsp.getPushedInstances());
             assertEquals(0, statusRsp.getFailedInstances());
 
-            verify(gatewayInstanceService, times(1)).getGatewayInstances();
+            verify(gatewayInstanceService, times(1)).queryInstanceList(any(QueryInstanceReq.class));
             verify(gaRouteInstanceRelaMapper, times(1)).selectByRouteId("route-001");
         }
 
@@ -133,15 +130,16 @@ class RoutePushServiceImplTest {
             QueryRouteInstancePushStatusReq req = new QueryRouteInstancePushStatusReq();
             req.setRouteIds(List.of("route-001"));
 
-            // Mock 网关实例列表（3个实例）
-            GatewayInstanceVO instance1 = createInstance("gateway-app:192.168.1.10:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
-            GatewayInstanceVO instance2 = createInstance("gateway-app:192.168.1.11:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
-            GatewayInstanceVO instance3 = createInstance("gateway-app:192.168.1.12:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
+            // Mock 网关实例列表（3个实例）- 使用 queryInstanceList
+            InstanceInfoVO instance1 = createInstanceInfoVO("gateway-app:192.168.1.10:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
+            InstanceInfoVO instance2 = createInstanceInfoVO("gateway-app:192.168.1.11:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
+            InstanceInfoVO instance3 = createInstanceInfoVO("gateway-app:192.168.1.12:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
 
-            GatewayInstanceListRsp instanceListRsp = new GatewayInstanceListRsp();
-            instanceListRsp.setInstances(List.of(instance1, instance2, instance3));
+            QueryInstanceListRsp instanceListRsp = new QueryInstanceListRsp();
+            instanceListRsp.setRows(List.of(instance1, instance2, instance3));
+            instanceListRsp.setTotal(3);
 
-            when(gatewayInstanceService.getGatewayInstances())
+            when(gatewayInstanceService.queryInstanceList(any(QueryInstanceReq.class)))
                     .thenReturn(ResponseDTO.newSuccessInstance(instanceListRsp));
 
             // Mock 路由实例关联（2个已推送，1个失败）
@@ -172,7 +170,7 @@ class RoutePushServiceImplTest {
             assertTrue(response.getBody().isEmpty());
 
             // 不应该调用任何 mapper
-            verify(gatewayInstanceService, never()).getGatewayInstances();
+            verify(gatewayInstanceService, never()).queryInstanceList(any());
             verify(gaRouteInstanceRelaMapper, never()).selectByRouteId(any());
         }
 
@@ -182,11 +180,12 @@ class RoutePushServiceImplTest {
             QueryRouteInstancePushStatusReq req = new QueryRouteInstancePushStatusReq();
             req.setRouteId("route-002");
 
-            GatewayInstanceVO instance = createInstance("gateway-app:192.168.1.10:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
-            GatewayInstanceListRsp instanceListRsp = new GatewayInstanceListRsp();
-            instanceListRsp.setInstances(List.of(instance));
+            InstanceInfoVO instance = createInstanceInfoVO("gateway-app:192.168.1.10:8080", ConfigValueConstant.INSTANCE_STATUS_ONLINE);
+            QueryInstanceListRsp instanceListRsp = new QueryInstanceListRsp();
+            instanceListRsp.setRows(List.of(instance));
+            instanceListRsp.setTotal(1);
 
-            when(gatewayInstanceService.getGatewayInstances())
+            when(gatewayInstanceService.queryInstanceList(any(QueryInstanceReq.class)))
                     .thenReturn(ResponseDTO.newSuccessInstance(instanceListRsp));
             when(gaRouteInstanceRelaMapper.selectByRouteId("route-002")).thenReturn(new ArrayList<>());
 
@@ -307,14 +306,14 @@ class RoutePushServiceImplTest {
     // ========== 辅助方法 ==========
 
     /**
-     * 创建网关实例 VO 对象
+     * 创建实例信息 VO 对象
      *
      * @param instanceId 实例ID
      * @param status 实例状态
-     * @return 网关实例 VO
+     * @return 实例信息 VO
      */
-    private GatewayInstanceVO createInstance(String instanceId, Byte status) {
-        GatewayInstanceVO instance = new GatewayInstanceVO();
+    private InstanceInfoVO createInstanceInfoVO(String instanceId, Byte status) {
+        InstanceInfoVO instance = new InstanceInfoVO();
         instance.setInstanceId(instanceId);
         instance.setStatus(status);
         return instance;
