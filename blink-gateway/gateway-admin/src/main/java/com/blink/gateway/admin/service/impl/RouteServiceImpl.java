@@ -14,15 +14,25 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.gateway.admin.constants.RouteConstant;
 import com.blink.gateway.admin.dto.req.*;
+import com.blink.gateway.admin.dto.rsp.DiffStats;
+import com.blink.gateway.admin.dto.rsp.FieldDiff;
 import com.blink.gateway.admin.dto.rsp.GatewayInstanceListRsp;
+import com.blink.gateway.admin.dto.rsp.GroupInstanceRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.QueryInstanceListRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
 import com.blink.gateway.admin.dto.rsp.ImportRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.RouteDiffItem;
+import com.blink.gateway.admin.dto.rsp.RouteDiffRsp;
 import com.blink.gateway.admin.dto.rsp.RoutesGroupStatsRsp;
+import com.blink.gateway.admin.dto.rsp.SyncRoutesFromInstanceRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.dto.vo.RoutePushStatusVO;
+import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
+import com.blink.gateway.admin.dto.vo.InstanceInfoVO;
 import com.blink.gateway.admin.dto.vo.RoutesGroupStatsVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
@@ -33,6 +43,7 @@ import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
 import com.blink.gateway.admin.service.GatewayInstanceService;
 import com.blink.gateway.admin.service.NacosRouteService;
 import com.blink.gateway.admin.service.RouteAsyncSyncService;
+import com.blink.gateway.admin.service.RoutePushService;
 import com.blink.gateway.admin.service.RouteService;
 import com.blink.gateway.admin.service.RouteValidator;
 import com.blink.gateway.dto.RouteSyncMsg;
@@ -92,6 +103,9 @@ public class RouteServiceImpl implements RouteService {
 
     @Resource
     private RouteValidator routeValidator;
+
+    @Resource
+    private RoutePushService routePushService;
 
     // ========== Redis 路由管理（数据库存储） ==========
 
@@ -781,5 +795,327 @@ public class RouteServiceImpl implements RouteService {
 
         log.info("[Route] 克隆路由成功 | sourceRouteId: {}, newRouteId: {}", req.getSourceRouteId(), req.getNewRouteId());
         return ResponseDTO.newSuccessInstance();
+    }
+
+    @Override
+    public ResponseDTO<SyncRoutesFromInstanceRsp> syncRoutesFromInstance(SyncRoutesFromInstanceReq req) {
+        // 分组必填
+        if (StrUtil.isBlank(req.getRoutesGroup())) {
+            BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
+        }
+
+        // 如果未指定实例ID，自动根据分组查找在线实例
+        String instanceId = req.getInstanceId();
+        if (StrUtil.isBlank(instanceId)) {
+            QueryInstanceReq queryReq = new QueryInstanceReq();
+            queryReq.setGroupKey(req.getRoutesGroup());
+            queryReq.setStatus(INSTANCE_STATUS_ONLINE);
+            queryReq.setPageNum(1);
+            queryReq.setPageSize(1);
+
+            ResponseDTO<QueryInstanceListRsp> instanceListRsp = gatewayInstanceService.queryInstanceList(queryReq);
+            if (ObjectUtil.isNull(instanceListRsp.getBody())
+                || CollUtil.isEmpty(instanceListRsp.getBody().getRows())) {
+                log.warn("[Route] 当前分组无在线实例，无法同步 | routesGroup: {}", req.getRoutesGroup());
+                SyncRoutesFromInstanceRsp emptyRsp = new SyncRoutesFromInstanceRsp();
+                emptyRsp.setAddedCount(0);
+                emptyRsp.setUpdatedCount(0);
+                emptyRsp.setAddedRoutes(new ArrayList<>());
+                emptyRsp.setUpdatedRoutes(new ArrayList<>());
+                return ResponseDTO.newSuccessInstance(emptyRsp);
+            }
+
+            instanceId = instanceListRsp.getBody().getRows().get(0).getInstanceId();
+            log.info("[Route] 自动选择在线实例进行同步 | routesGroup: {}, instanceId: {}", req.getRoutesGroup(), instanceId);
+        }
+
+        // 1. 从实例获取路由
+        GetInstanceRoutesFromActuatorReq actuatorReq = new GetInstanceRoutesFromActuatorReq();
+        actuatorReq.setInstanceId(instanceId);
+        ResponseDTO<InstanceRoutesRsp> instanceRoutesRsp = routePushService.getInstanceRoutesFromActuator(actuatorReq);
+
+        if (ObjectUtil.isNull(instanceRoutesRsp) || ObjectUtil.isNull(instanceRoutesRsp.getBody())) {
+            log.warn("[Route] 从实例获取路由失败 | instanceId: {}", instanceId);
+            SyncRoutesFromInstanceRsp emptyRsp = new SyncRoutesFromInstanceRsp();
+            emptyRsp.setAddedCount(0);
+            emptyRsp.setUpdatedCount(0);
+            emptyRsp.setAddedRoutes(new ArrayList<>());
+            emptyRsp.setUpdatedRoutes(new ArrayList<>());
+            return ResponseDTO.newSuccessInstance(emptyRsp);
+        }
+
+        List<GaRouteDO> instanceRoutes = instanceRoutesRsp.getBody().getRows();
+        if (CollUtil.isEmpty(instanceRoutes)) {
+            log.info("[Route] 实例无路由可同步 | instanceId: {}", instanceId);
+            SyncRoutesFromInstanceRsp emptyRsp = new SyncRoutesFromInstanceRsp();
+            emptyRsp.setAddedCount(0);
+            emptyRsp.setUpdatedCount(0);
+            emptyRsp.setAddedRoutes(new ArrayList<>());
+            emptyRsp.setUpdatedRoutes(new ArrayList<>());
+            return ResponseDTO.newSuccessInstance(emptyRsp);
+        }
+
+        // 2. 查询本地路由
+        List<GaRouteDO> localRoutes = gaRouteMapper.selectList(
+            new LambdaQueryWrapper<GaRouteDO>()
+                .eq(GaRouteDO::getRoutesGroup, req.getRoutesGroup())
+        );
+
+        // 本地路由ID集合
+        Map<String, GaRouteDO> localRouteMap = localRoutes.stream()
+            .collect(Collectors.toMap(GaRouteDO::getRouteId, r -> r, (a, b) -> a));
+
+        // 3. 增量同步：新增 + 更新
+        List<String> addedRoutes = new ArrayList<>();
+        List<String> updatedRoutes = new ArrayList<>();
+
+        // 获取操作人信息
+        Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
+        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
+
+        for (GaRouteDO instanceRoute : instanceRoutes) {
+            // 设置目标分组
+            instanceRoute.setRoutesGroup(req.getRoutesGroup());
+            instanceRoute.setStorageMode(RouteConstant.STORAGE_MODE_REDIS);
+
+            GaRouteDO localRoute = localRouteMap.get(instanceRoute.getRouteId());
+
+            if (ObjectUtil.isNull(localRoute)) {
+                // 新增：本地不存在该路由
+                instanceRoute.setVersion(0);
+                instanceRoute.setPushStatus(RouteConstant.PUSH_STATUS_NOT_PUSHED);
+                instanceRoute.setLastPushTime(null);
+                if (instanceRoute.getStatus() == null) {
+                    instanceRoute.setStatus(RouteConstant.STATUS_ENABLE);
+                }
+
+                gaRouteMapper.insert(instanceRoute);
+
+                // 记录历史
+                saveRouteHistory(instanceRoute, null, instanceRoute, RouteConstant.OPERATION_ADD, null);
+
+                addedRoutes.add(instanceRoute.getRouteId());
+            } else {
+                // 更新：本地已存在该路由，保留 version、pushStatus 等
+                GaRouteDO beforeData = BeanUtil.copyProperties(localRoute, GaRouteDO.class);
+
+                BeanUtil.copyProperties(instanceRoute, localRoute,
+                    "routeId", "version", "pushStatus", "lastPushTime", "createBy", "createTime", "routesGroup");
+
+                // 版本号自增
+                Integer currentVersion = localRoute.getVersion();
+                localRoute.setVersion(currentVersion == null ? 1 : currentVersion + 1);
+
+                gaRouteMapper.updateById(localRoute);
+
+                // 计算变更字段
+                List<String> changedFields = calculateChangedFields(beforeData, localRoute);
+
+                // 记录历史
+                saveRouteHistory(localRoute, beforeData, localRoute, RouteConstant.OPERATION_MODIFY, changedFields);
+
+                updatedRoutes.add(instanceRoute.getRouteId());
+            }
+        }
+
+        // 4. 返回结果
+        SyncRoutesFromInstanceRsp rsp = new SyncRoutesFromInstanceRsp();
+        rsp.setAddedCount(addedRoutes.size());
+        rsp.setUpdatedCount(updatedRoutes.size());
+        rsp.setAddedRoutes(addedRoutes);
+        rsp.setUpdatedRoutes(updatedRoutes);
+
+        log.info("[Route] 从实例同步路由成功 | instanceId: {}, routesGroup: {}, added: {}, updated: {}, operatorUser: {}",
+            req.getInstanceId(), req.getRoutesGroup(), addedRoutes.size(), updatedRoutes.size(), operatorUser);
+
+        return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    @Override
+    public ResponseDTO<RouteDiffRsp> getRouteDiff(RouteDiffReq req) {
+        // 1. 查询仓库路由（启用状态的路由）
+        List<GaRouteDO> repositoryRoutes = gaRouteMapper.selectList(
+            new LambdaQueryWrapper<GaRouteDO>()
+                .eq(GaRouteDO::getRoutesGroup, req.getRoutesGroup())
+                .eq(GaRouteDO::getStatus, RouteConstant.STATUS_ENABLE)
+        );
+
+        // 2. 查询实例路由
+        String instanceId = req.getInstanceId();
+        if (StrUtil.isBlank(instanceId)) {
+            // 自动选择分组下第一个在线实例
+            QueryInstanceReq queryReq = new QueryInstanceReq();
+            queryReq.setGroupKey(req.getRoutesGroup());
+            queryReq.setStatus(INSTANCE_STATUS_ONLINE);
+            queryReq.setPageNum(1);
+            queryReq.setPageSize(1);
+
+            ResponseDTO<QueryInstanceListRsp> instanceListRsp = gatewayInstanceService.queryInstanceList(queryReq);
+            if (ObjectUtil.isNull(instanceListRsp.getBody())
+                || CollUtil.isEmpty(instanceListRsp.getBody().getRows())) {
+                log.warn("[Route] 当前分组无在线实例 | routesGroup: {}", req.getRoutesGroup());
+                RouteDiffRsp emptyRsp = new RouteDiffRsp();
+                emptyRsp.setRepositoryRoutes(repositoryRoutes);
+                emptyRsp.setRepositoryCount(repositoryRoutes.size());
+                emptyRsp.setInstanceRoutes(new ArrayList<>());
+                emptyRsp.setInstanceCount(0);
+                emptyRsp.setDiffStats(new DiffStats());
+                emptyRsp.setDiffDetails(new ArrayList<>());
+                return ResponseDTO.newSuccessInstance(emptyRsp);
+            }
+            instanceId = instanceListRsp.getBody().getRows().get(0).getInstanceId();
+            log.info("[Route] 自动选择在线实例进行差异对比 | routesGroup: {}, instanceId: {}", req.getRoutesGroup(), instanceId);
+        }
+
+        // 从实例获取路由
+        GetInstanceRoutesFromActuatorReq actuatorReq = new GetInstanceRoutesFromActuatorReq();
+        actuatorReq.setInstanceId(instanceId);
+        ResponseDTO<InstanceRoutesRsp> instanceRoutesRsp = routePushService.getInstanceRoutesFromActuator(actuatorReq);
+
+        List<GaRouteDO> instanceRoutes = new ArrayList<>();
+        if (ObjectUtil.isNotNull(instanceRoutesRsp.getBody())
+            && CollUtil.isNotEmpty(instanceRoutesRsp.getBody().getRows())) {
+            instanceRoutes = instanceRoutesRsp.getBody().getRows();
+        }
+
+        // 3. 对比差异
+        Map<String, GaRouteDO> repoRouteMap = repositoryRoutes.stream()
+            .collect(Collectors.toMap(GaRouteDO::getRouteId, r -> r, (a, b) -> a));
+        Map<String, GaRouteDO> instRouteMap = instanceRoutes.stream()
+            .collect(Collectors.toMap(GaRouteDO::getRouteId, r -> r, (a, b) -> a));
+
+        List<RouteDiffItem> diffDetails = new ArrayList<>();
+        DiffStats diffStats = new DiffStats();
+        int addedCount = 0, modifiedCount = 0, deletedCount = 0, unchangedCount = 0;
+
+        // 仓库路由遍历：检查新增、修改、不变
+        for (GaRouteDO repoRoute : repositoryRoutes) {
+            RouteDiffItem item = new RouteDiffItem();
+            item.setRouteId(repoRoute.getRouteId());
+            item.setRepositoryRoute(repoRoute);
+
+            GaRouteDO instRoute = instRouteMap.get(repoRoute.getRouteId());
+            if (ObjectUtil.isNull(instRoute)) {
+                // 新增：仓库有但实例没有
+                item.setDiffType("added");
+                addedCount++;
+            } else {
+                item.setInstanceRoute(instRoute);
+                // 对比内容
+                List<FieldDiff> fieldDiffs = compareRouteFields(repoRoute, instRoute);
+                if (CollUtil.isNotEmpty(fieldDiffs)) {
+                    // 修改：内容不同
+                    item.setDiffType("modified");
+                    item.setFieldDiffs(fieldDiffs);
+                    modifiedCount++;
+                } else {
+                    // 不变
+                    item.setDiffType("unchanged");
+                    unchangedCount++;
+                }
+            }
+            diffDetails.add(item);
+        }
+
+        // 实例路由遍历：检查删除（实例有但仓库没有）
+        for (GaRouteDO instRoute : instanceRoutes) {
+            if (!repoRouteMap.containsKey(instRoute.getRouteId())) {
+                RouteDiffItem item = new RouteDiffItem();
+                item.setRouteId(instRoute.getRouteId());
+                item.setDiffType("deleted");
+                item.setInstanceRoute(instRoute);
+                diffDetails.add(item);
+                deletedCount++;
+            }
+        }
+
+        // 4. 设置统计结果
+        diffStats.setAddedCount(addedCount);
+        diffStats.setModifiedCount(modifiedCount);
+        diffStats.setDeletedCount(deletedCount);
+        diffStats.setUnchangedCount(unchangedCount);
+
+        RouteDiffRsp rsp = new RouteDiffRsp();
+        rsp.setRepositoryRoutes(repositoryRoutes);
+        rsp.setRepositoryCount(repositoryRoutes.size());
+        rsp.setInstanceRoutes(instanceRoutes);
+        rsp.setInstanceCount(instanceRoutes.size());
+        rsp.setDiffStats(diffStats);
+        rsp.setDiffDetails(diffDetails);
+
+        log.info("[Route] 路由差异对比完成 | routesGroup: {}, instanceId: {}, added: {}, modified: {}, deleted: {}, unchanged: {}",
+            req.getRoutesGroup(), instanceId, addedCount, modifiedCount, deletedCount, unchangedCount);
+
+        return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    /**
+     * 对比两个路由的字段差异
+     */
+    private List<FieldDiff> compareRouteFields(GaRouteDO repoRoute, GaRouteDO instRoute) {
+        List<FieldDiff> diffs = new ArrayList<>();
+
+        // 对比 URI
+        if (!StrUtil.equals(repoRoute.getUri(), instRoute.getUri())) {
+            FieldDiff diff = new FieldDiff();
+            diff.setFieldName("uri");
+            diff.setOldValue(instRoute.getUri());
+            diff.setNewValue(repoRoute.getUri());
+            diffs.add(diff);
+        }
+
+        // 对比 orderNum
+        if (!ObjectUtil.equals(repoRoute.getOrderNum(), instRoute.getOrderNum())) {
+            FieldDiff diff = new FieldDiff();
+            diff.setFieldName("orderNum");
+            diff.setOldValue(String.valueOf(instRoute.getOrderNum()));
+            diff.setNewValue(String.valueOf(repoRoute.getOrderNum()));
+            diffs.add(diff);
+        }
+
+        // 对比 predicates（JSON 序列化对比）
+        String repoPredicatesJson = JacksonUtil.toJson(repoRoute.getPredicates());
+        String instPredicatesJson = JacksonUtil.toJson(instRoute.getPredicates());
+        if (!StrUtil.equals(repoPredicatesJson, instPredicatesJson)) {
+            FieldDiff diff = new FieldDiff();
+            diff.setFieldName("predicates");
+            diff.setOldValue(instPredicatesJson);
+            diff.setNewValue(repoPredicatesJson);
+            diffs.add(diff);
+        }
+
+        // 对比 filters
+        String repoFiltersJson = JacksonUtil.toJson(repoRoute.getFilters());
+        String instFiltersJson = JacksonUtil.toJson(instRoute.getFilters());
+        if (!StrUtil.equals(repoFiltersJson, instFiltersJson)) {
+            FieldDiff diff = new FieldDiff();
+            diff.setFieldName("filters");
+            diff.setOldValue(instFiltersJson);
+            diff.setNewValue(repoFiltersJson);
+            diffs.add(diff);
+        }
+
+        // 对比 metadata
+        String repoMetadataJson = JacksonUtil.toJson(repoRoute.getMetadata());
+        String instMetadataJson = JacksonUtil.toJson(instRoute.getMetadata());
+        if (!StrUtil.equals(repoMetadataJson, instMetadataJson)) {
+            FieldDiff diff = new FieldDiff();
+            diff.setFieldName("metadata");
+            diff.setOldValue(instMetadataJson);
+            diff.setNewValue(repoMetadataJson);
+            diffs.add(diff);
+        }
+
+        return diffs;
+    }
+
+    @Override
+    public ResponseDTO<GroupInstanceRoutesRsp> getGroupInstanceRoutes(GetGroupInstanceRoutesReq req) {
+        // TODO: Task 4 will implement this method
+        GroupInstanceRoutesRsp rsp = new GroupInstanceRoutesRsp();
+        rsp.setRows(new ArrayList<>());
+        rsp.setTotal(0);
+        rsp.setFromActuator(false);
+        return ResponseDTO.newSuccessInstance(rsp);
     }
 }

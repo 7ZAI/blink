@@ -7,21 +7,28 @@ import com.blink.gateway.admin.dto.req.DeleteNacosRouteReq;
 import com.blink.gateway.admin.dto.req.DeleteRouteReq;
 import com.blink.gateway.admin.dto.req.BatchUpdateStatusReq;
 import com.blink.gateway.admin.dto.req.ExportRoutesReq;
+import com.blink.gateway.admin.dto.req.GetGroupInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.ImportRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryNacosRouteReq;
 import com.blink.gateway.admin.dto.req.QueryPushStatusReq;
 import com.blink.gateway.admin.dto.req.QueryRouteReq;
 import com.blink.gateway.admin.dto.req.QueryRouteHistoryReq;
 import com.blink.gateway.admin.dto.req.RollbackRouteReq;
+import com.blink.gateway.admin.dto.req.RouteDiffReq;
 import com.blink.gateway.admin.dto.req.SaveNacosRouteReq;
 import com.blink.gateway.admin.dto.req.SaveRouteReq;
+import com.blink.gateway.admin.dto.req.SyncRoutesFromInstanceReq;
 import com.blink.gateway.admin.dto.req.SyncRoutesReq;
 import com.blink.gateway.admin.dto.req.UpdateRouteReq;
+import com.blink.gateway.admin.dto.rsp.DiffStats;
+import com.blink.gateway.admin.dto.rsp.GroupInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
 import com.blink.gateway.admin.dto.rsp.ImportRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.RouteDiffRsp;
+import com.blink.gateway.admin.dto.rsp.SyncRoutesFromInstanceRsp;
 import com.blink.gateway.admin.dto.rsp.RoutesGroupStatsRsp;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
@@ -163,4 +170,31 @@ public interface RouteService {
      * @return 操作结果
      */
     ResponseDTO<EmptyBody> cloneRoute(CloneRouteReq req);
+
+    /**
+     * 从实例同步路由到本地数据库
+     * 增量同步模式：新增本地没有的路由，更新本地已有的路由
+     *
+     * @param req 同步请求（instanceId, routesGroup）
+     * @return 同步结果（新增数量、更新数量）
+     */
+    ResponseDTO<SyncRoutesFromInstanceRsp> syncRoutesFromInstance(SyncRoutesFromInstanceReq req);
+
+    /**
+     * 获取路由差异对比
+     * 对比仓库路由与实例路由的差异
+     *
+     * @param req 差异对比请求（routesGroup, instanceId可选）
+     * @return 差异对比结果
+     */
+    ResponseDTO<RouteDiffRsp> getRouteDiff(RouteDiffReq req);
+
+    /**
+     * 获取分组下实例的实际路由
+     * 从分组下第一个在线实例通过 Actuator 获取路由配置
+     *
+     * @param req 请求参数（包含路由分组）
+     * @return 实例路由响应
+     */
+    ResponseDTO<GroupInstanceRoutesRsp> getGroupInstanceRoutes(GetGroupInstanceRoutesReq req);
 }
