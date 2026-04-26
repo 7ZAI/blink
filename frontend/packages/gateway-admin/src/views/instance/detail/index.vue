@@ -341,6 +341,21 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 下线进度弹窗 -->
+    <BlinkTaskDialog
+      v-model="offlineTaskState.visible"
+      :status="offlineTaskState.status"
+      :progress="offlineTaskState.progress"
+      :title="offlineTaskState.title"
+      :message="offlineTaskState.message"
+      :result="offlineTaskState.result"
+      :error="offlineTaskState.error"
+      :elapsed-time="offlineTaskState.elapsedTime"
+      :cancellable="false"
+      :backgroundable="true"
+      @background="handleOfflineBackground"
+    />
   </div>
 </template>
 
@@ -362,6 +377,11 @@ import {
 import { monitorApi, type InstanceDetailInfo } from '@/api/monitor'
 import { useInstanceStatus } from '@/composables/useInstanceStatus'
 import { useTabsStore } from '@/stores/tabs'
+import {
+  BlinkTaskDialog,
+  useTaskRunner,
+  type ProgressUpdate,
+} from '@blink/components'
 
 defineOptions({ name: 'InstanceDetail' })
 
@@ -389,6 +409,22 @@ const offlineForm = reactive({
   reason: '',
   mode: 'graceful' as 'force' | 'graceful',
 })
+
+// ==================== 下线任务进度弹窗 ====================
+
+const { state: offlineTaskState, start: startOfflineTask } = useTaskRunner({
+  onComplete: () => {
+    loadData()
+  },
+  onError: (error: Error) => {
+    ElMessage.error(t('instance.offlineFailed') + ': ' + error.message)
+  },
+})
+
+const handleOfflineBackground = () => {
+  offlineTaskState.value.visible = false
+  ElMessage.info(t('instance.offlineBackground'))
+}
 
 // SSE 实时状态（复用 MainLayout 的 SSE 连接）
 // 用于更新实例基本状态信息（status, healthStatus, cpuUsage, heapUsagePercent）
@@ -599,20 +635,127 @@ const handleOffline = () => {
 }
 
 const confirmOffline = async () => {
-  submitting.value = true
-  try {
-    if (offlineForm.mode === 'graceful') {
-      await gracefulOfflineInstance(offlineForm)
-    } else {
-      await offlineInstance(offlineForm)
-    }
-    ElMessage.success(t('common.success'))
-    offlineDialogVisible.value = false
-    loadData()
-  } catch (error) {
-    console.error('Offline instance error:', error)
-  } finally {
-    submitting.value = false
+  // 关闭确认弹窗
+  offlineDialogVisible.value = false
+
+  const currentInstanceId = offlineForm.instanceId
+  const mode = offlineForm.mode
+  const reason = offlineForm.reason
+  const rowId = instanceRowId.value
+
+  // 使用任务弹窗展示下线进度
+  if (mode === 'graceful') {
+    // 优雅下线：多步骤流程
+    await startOfflineTask({
+      task: async (onProgress: (update: ProgressUpdate) => void, signal?: AbortSignal) => {
+        // 步骤 0: 发送下线请求
+        onProgress({ step: 0, stepMessage: t('instance.offlineStepSending') })
+        await gracefulOfflineInstance({ instanceId: currentInstanceId, reason })
+
+        // 步骤 1: 等待流量排空
+        onProgress({ step: 1, stepMessage: t('instance.offlineStepDraining') })
+
+        // 轮询检查实例状态，等待从 DRAINING 变为 SHUTDOWN
+        const maxPollCount = 60 // 最多轮询 60 次（约 30 秒）
+        const pollInterval = 500 // 每 500ms 轮询一次
+
+        for (let i = 0; i < maxPollCount; i++) {
+          if (signal?.aborted) {
+            return null
+          }
+
+          // 如果有数据库行 ID，获取实例详情以检查状态
+          if (rowId) {
+            const detail = await getInstanceDetailWithMetrics({ id: rowId })
+            const status = detail?.instanceInfo?.status
+
+            // 状态变为 SHUTDOWN(2)，说明下线完成
+            if (status === INSTANCE_STATUS.SHUTDOWN) {
+              onProgress({ step: 2, stepMessage: t('instance.offlineStepComplete') })
+              return { status: 'shutdown', instanceId: currentInstanceId }
+            }
+
+            // 更新等待进度
+            onProgress({
+              step: 1,
+              stepMessage: t('instance.offlineStepDraining') + ` (${i + 1}/${maxPollCount})`,
+            })
+          }
+
+          // 等待轮询间隔
+          await new Promise(resolve => setTimeout(resolve, pollInterval))
+        }
+
+        // 超时后仍返回成功，让用户自行确认
+        onProgress({ step: 2, stepMessage: t('instance.offlineStepTimeout') })
+        return { status: 'timeout', instanceId: currentInstanceId }
+      },
+      title: t('instance.gracefulOfflineTitle'),
+      message: t('instance.offlineStarting'),
+      steps: [
+        t('instance.offlineStepSending'),
+        t('instance.offlineStepDraining'),
+        t('instance.offlineStepComplete'),
+      ],
+      backgroundable: true,
+      onCompleteBehavior: 'show-result',
+    })
+  } else {
+    // 强制下线：轮询等待状态变化
+    await startOfflineTask({
+      task: async (onProgress: (update: ProgressUpdate) => void, signal?: AbortSignal) => {
+        // 步骤 0: 发送下线请求
+        onProgress({ step: 0, stepMessage: t('instance.offlineStepSending') })
+        await offlineInstance({ instanceId: currentInstanceId, reason })
+
+        // 步骤 1: 等待状态变为 SHUTDOWN
+        onProgress({ step: 1, stepMessage: t('instance.offlineStepWaiting') })
+
+        // 轮询检查实例状态，等待变为 SHUTDOWN
+        const maxPollCount = 60 // 最多轮询 60 次（约 30 秒）
+        const pollInterval = 500 // 每 500ms 轮询一次
+
+        for (let i = 0; i < maxPollCount; i++) {
+          if (signal?.aborted) {
+            return null
+          }
+
+          // 如果有数据库行 ID，获取实例详情以检查状态
+          if (rowId) {
+            const detail = await getInstanceDetailWithMetrics({ id: rowId })
+            const status = detail?.instanceInfo?.status
+
+            // 状态变为 SHUTDOWN(2)，说明下线完成
+            if (status === INSTANCE_STATUS.SHUTDOWN) {
+              onProgress({ step: 2, stepMessage: t('instance.offlineStepComplete') })
+              return { status: 'shutdown', instanceId: currentInstanceId, mode: 'force' }
+            }
+
+            // 更新等待进度
+            onProgress({
+              step: 1,
+              stepMessage: t('instance.offlineStepWaiting') + ` (${i + 1}/${maxPollCount})`,
+            })
+          }
+
+          // 等待轮询间隔
+          await new Promise(resolve => setTimeout(resolve, pollInterval))
+        }
+
+        // 超时后仍返回成功，让用户自行确认
+        onProgress({ step: 2, stepMessage: t('instance.offlineStepTimeout') })
+        return { status: 'timeout', instanceId: currentInstanceId, mode: 'force' }
+      },
+      title: t('instance.forceOfflineTitle'),
+      message: t('instance.offlineStarting'),
+      steps: [
+        t('instance.offlineStepSending'),
+        t('instance.offlineStepWaiting'),
+        t('instance.offlineStepComplete'),
+      ],
+      backgroundable: false,
+      onCompleteBehavior: 'show-result',
+    })
   }
 }
 

@@ -77,7 +77,7 @@
             <span v-else class="empty-text">-</span>
           </template>
         </el-table-column>
-        <el-table-column :label="t('instance.storageMode')" width="90" align="center">
+        <el-table-column :label="t('instance.storageMode')" width="100" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.storageMode" :type="row.storageMode === 'redis' ? 'success' : 'warning'" effect="plain" size="small">
               {{ row.storageMode === 'redis' ? t('instance.storageModeRedis') : t('instance.storageModeNacos') }}
@@ -99,7 +99,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column :label="t('instance.registryStatus')" width="90" align="center">
+        <el-table-column :label="t('instance.registryStatus')" width="100" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.inRegistry" type="success" effect="plain" size="small">
               {{ t('instance.inRegistry') }}
@@ -276,14 +276,42 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 上线任务进度弹窗 -->
+    <BlinkTaskDialog
+      v-model="onlineTaskState.visible"
+      :status="onlineTaskState.status"
+      :progress="onlineTaskState.progress"
+      :title="onlineTaskState.title"
+      :message="onlineTaskState.message"
+      :result="onlineTaskState.result"
+      :error="onlineTaskState.error"
+      :elapsed-time="onlineTaskState.elapsedTime"
+      :cancellable="false"
+      :backgroundable="false"
+    />
+
+    <!-- 下线进度弹窗 -->
+    <BlinkTaskDialog
+      v-model="offlineTaskState.visible"
+      :status="offlineTaskState.status"
+      :progress="offlineTaskState.progress"
+      :title="offlineTaskState.title"
+      :message="offlineTaskState.message"
+      :result="offlineTaskState.result"
+      :error="offlineTaskState.error"
+      :elapsed-time="offlineTaskState.elapsedTime"
+      :cancellable="false"
+      :backgroundable="false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Refresh,
   Search,
@@ -294,6 +322,7 @@ import {
   InfoFilled,
   WarningFilled,
   Switch,
+  CircleCheck,
 } from '@element-plus/icons-vue'
 import {
   queryInstanceList,
@@ -303,11 +332,17 @@ import {
   gracefulOfflineInstance,
   refreshInstanceStatus,
   switchInstanceGroup,
+  getInstanceDetailWithMetrics,
   type InstanceInfo,
   INSTANCE_STATUS,
 } from '@/api/instance'
 import { getEnabledRouteGroups, type RouteGroup } from '@/api/routeGroup'
 import { usePermission } from '@/composables/usePermission'
+import {
+  BlinkTaskDialog,
+  useTaskRunner,
+  type ProgressUpdate,
+} from '@blink/components'
 
 defineOptions({ name: 'InstanceManagement' })
 
@@ -348,6 +383,28 @@ const offlineForm = reactive({
   mode: 'force' as 'force' | 'graceful',
 })
 
+// ==================== 上线任务进度弹窗 ====================
+
+const { state: onlineTaskState, start: startOnlineTask } = useTaskRunner({
+  onComplete: () => {
+    loadData()
+  },
+  onError: (error: Error) => {
+    ElMessage.error(t('instance.onlineFailed') + ': ' + error.message)
+  },
+})
+
+// ==================== 下线任务进度弹窗 ====================
+
+const { state: offlineTaskState, start: startOfflineTask } = useTaskRunner({
+  onComplete: () => {
+    loadData()
+  },
+  onError: (error: Error) => {
+    ElMessage.error(t('instance.offlineFailed') + ': ' + error.message)
+  },
+})
+
 // ==================== 切换分组弹窗 ====================
 
 const switchGroupDialogVisible = ref(false)
@@ -380,8 +437,9 @@ const confirmSwitchGroup = async () => {
     ElMessage.success(t('instance.switchGroupSuccess'))
     switchGroupDialogVisible.value = false
     loadData()
-  } catch (error) {
+  } catch (error: any) {
     console.error('Switch group error:', error)
+    ElMessage.error(error?.message || t('common.failed'))
   } finally {
     submitting.value = false
   }
@@ -422,7 +480,7 @@ const getStatusText = (status: number): string => {
 /**
  * 健康状态颜色
  */
-const getHealthStatusType = (healthStatus: string): 'success' | 'danger' | 'warning' | 'info' => {
+const getHealthStatusType = (healthStatus: string): 'success' | 'danger' | 'warning' | 'info' | 'primary' => {
   switch (healthStatus) {
     case 'UP':
       return 'success'
@@ -430,6 +488,8 @@ const getHealthStatusType = (healthStatus: string): 'success' | 'danger' | 'warn
       return 'danger'
     case 'OFFLINE':
       return 'warning'
+    case 'DRAINING':
+      return 'primary'
     default:
       return 'info'
   }
@@ -596,34 +656,188 @@ const handleOffline = (row: InstanceInfo) => {
 }
 
 const confirmOffline = async () => {
-  submitting.value = true
-  try {
-    if (offlineForm.mode === 'graceful') {
-      await gracefulOfflineInstance(offlineForm)
-    } else {
-      await offlineInstance(offlineForm)
-    }
-    ElMessage.success(t('common.success'))
-    offlineDialogVisible.value = false
-    loadData()
-  } catch (error) {
-    console.error('Offline instance error:', error)
-  } finally {
-    submitting.value = false
+  // 关闭确认弹窗
+  offlineDialogVisible.value = false
+
+  const instanceId = offlineForm.instanceId
+  const mode = offlineForm.mode
+  const reason = offlineForm.reason
+
+  // 使用任务弹窗展示下线进度
+  if (mode === 'graceful') {
+    // 优雅下线：多步骤流程
+    await startOfflineTask({
+      task: async (onProgress: (update: ProgressUpdate) => void, signal?: AbortSignal) => {
+        // 步骤 0: 发送下线请求
+        onProgress({ step: 0, stepMessage: t('instance.offlineStepSending') })
+        await gracefulOfflineInstance({ instanceId, reason })
+
+        // 步骤 1: 等待流量排空
+        onProgress({ step: 1, stepMessage: t('instance.offlineStepDraining') })
+
+        // 轮询检查实例状态，等待从 DRAINING 变为 SHUTDOWN
+        const maxPollCount = 60 // 最多轮询 60 次（约 30 秒）
+        const pollInterval = 500 // 每 500ms 轮询一次
+
+        for (let i = 0; i < maxPollCount; i++) {
+          if (signal?.aborted) {
+            return null
+          }
+
+          // 获取实例详情以检查状态
+          const instance = instanceList.value.find(item => item.instanceId === instanceId)
+          if (instance) {
+            const detail = await getInstanceDetailWithMetrics({ id: instance.id })
+            const status = detail?.instanceInfo?.status
+
+            // 状态变为 SHUTDOWN(2)，说明下线完成
+            if (status === INSTANCE_STATUS.SHUTDOWN) {
+              onProgress({ step: 2, stepMessage: t('instance.offlineStepComplete') })
+              return { status: 'shutdown', instanceId }
+            }
+
+            // 更新等待进度
+            onProgress({
+              step: 1,
+              stepMessage: t('instance.offlineStepDraining') + ` (${i + 1}/${maxPollCount})`,
+            })
+          }
+
+          // 等待轮询间隔
+          await new Promise(resolve => setTimeout(resolve, pollInterval))
+        }
+
+        // 超时后仍返回成功，让用户自行确认
+        onProgress({ step: 2, stepMessage: t('instance.offlineStepTimeout') })
+        return { status: 'timeout', instanceId }
+      },
+      title: t('instance.gracefulOfflineTitle'),
+      message: t('instance.offlineStarting'),
+      steps: [
+        t('instance.offlineStepSending'),
+        t('instance.offlineStepDraining'),
+        t('instance.offlineStepComplete'),
+      ],
+      backgroundable: false,
+      onCompleteBehavior: 'show-result',
+    })
+  } else {
+    // 强制下线：轮询等待状态变化
+    await startOfflineTask({
+      task: async (onProgress: (update: ProgressUpdate) => void, signal?: AbortSignal) => {
+        // 步骤 0: 发送下线请求
+        onProgress({ step: 0, stepMessage: t('instance.offlineStepSending') })
+        await offlineInstance({ instanceId, reason })
+
+        // 步骤 1: 等待状态变为 SHUTDOWN
+        onProgress({ step: 1, stepMessage: t('instance.offlineStepWaiting') })
+
+        // 轮询检查实例状态，等待变为 SHUTDOWN
+        const maxPollCount = 60 // 最多轮询 60 次（约 30 秒）
+        const pollInterval = 500 // 每 500ms 轮询一次
+
+        for (let i = 0; i < maxPollCount; i++) {
+          if (signal?.aborted) {
+            return null
+          }
+
+          // 获取实例详情以检查状态
+          const instance = instanceList.value.find(item => item.instanceId === instanceId)
+          if (instance) {
+            const detail = await getInstanceDetailWithMetrics({ id: instance.id })
+            const status = detail?.instanceInfo?.status
+
+            // 状态变为 SHUTDOWN(2)，说明下线完成
+            if (status === INSTANCE_STATUS.SHUTDOWN) {
+              onProgress({ step: 2, stepMessage: t('instance.offlineStepComplete') })
+              return { status: 'shutdown', instanceId, mode: 'force' }
+            }
+
+            // 更新等待进度
+            onProgress({
+              step: 1,
+              stepMessage: t('instance.offlineStepWaiting') + ` (${i + 1}/${maxPollCount})`,
+            })
+          }
+
+          // 等待轮询间隔
+          await new Promise(resolve => setTimeout(resolve, pollInterval))
+        }
+
+        // 超时后仍返回成功，让用户自行确认
+        onProgress({ step: 2, stepMessage: t('instance.offlineStepTimeout') })
+        return { status: 'timeout', instanceId, mode: 'force' }
+      },
+      title: t('instance.forceOfflineTitle'),
+      message: t('instance.offlineStarting'),
+      steps: [
+        t('instance.offlineStepSending'),
+        t('instance.offlineStepWaiting'),
+        t('instance.offlineStepComplete'),
+      ],
+      backgroundable: false,
+      onCompleteBehavior: 'show-result',
+    })
   }
 }
 
-const handleOnline = (row: InstanceInfo) => {
-  ElMessageBox.confirm(t('instance.onlineConfirm'), t('message.tips'), { type: 'info' })
-    .then(async () => {
-      try {
-        await onlineInstance({ instanceId: row.instanceId })
-        ElMessage.success(t('common.success'))
-        loadData()
-      } catch (error) {
-        console.error('Online instance error:', error)
+const handleOnline = async (row: InstanceInfo) => {
+  const instanceId = row.instanceId
+  const instanceDbId = row.id
+
+  // 使用任务弹窗展示上线进度
+  await startOnlineTask({
+    task: async (onProgress: (update: ProgressUpdate) => void, signal?: AbortSignal) => {
+      // 步骤 0: 发送上线请求
+      onProgress({ step: 0, stepMessage: t('instance.onlineStepSending') })
+      await onlineInstance({ instanceId })
+
+      // 步骤 1: 等待健康状态变为 UP
+      onProgress({ step: 1, stepMessage: t('instance.onlineStepWaiting') })
+
+      // 轮询检查实例健康状态，等待变为 UP
+      const maxPollCount = 60 // 最多轮询 60 次（约 30 秒）
+      const pollInterval = 500 // 每 500ms 轮询一次
+
+      for (let i = 0; i < maxPollCount; i++) {
+        if (signal?.aborted) {
+          return null
+        }
+
+        // 获取实例详情以检查健康状态
+        const detail = await getInstanceDetailWithMetrics({ id: instanceDbId })
+        const healthStatus = detail?.healthDetail?.status
+
+        // 健康状态变为 UP，说明上线完成
+        if (healthStatus === 'UP') {
+          onProgress({ step: 2, stepMessage: t('instance.onlineStepComplete') })
+          return { status: 'online', instanceId, healthStatus }
+        }
+
+        // 更新等待进度
+        onProgress({
+          step: 1,
+          stepMessage: t('instance.onlineStepWaiting') + ` (${i + 1}/${maxPollCount})`,
+        })
+
+        // 等待轮询间隔
+        await new Promise(resolve => setTimeout(resolve, pollInterval))
       }
-    })
+
+      // 超时后仍返回成功，让用户自行确认
+      onProgress({ step: 2, stepMessage: t('instance.onlineStepTimeout') })
+      return { status: 'timeout', instanceId }
+    },
+    title: t('instance.onlineTitle'),
+    message: t('instance.onlineStarting'),
+    steps: [
+      t('instance.onlineStepSending'),
+      t('instance.onlineStepWaiting'),
+      t('instance.onlineStepComplete'),
+    ],
+    backgroundable: false,
+    onCompleteBehavior: 'show-result',
+  })
 }
 
 // ==================== 加载分组列表 ====================
@@ -631,7 +845,22 @@ const handleOnline = (row: InstanceInfo) => {
 const loadGroupOptions = async () => {
   try {
     const result = await getEnabledRouteGroups()
-    groupOptions.value = result || []
+    const groups = result || []
+
+    // 确保 default 分组始终存在
+    const hasDefault = groups.some(g => g.groupKey === 'default')
+    if (!hasDefault) {
+      groups.unshift({
+        groupKey: 'default',
+        groupName: '默认分组',
+        status: 0,
+        createTime: '',
+        updateTime: '',
+        remark: '',
+      })
+    }
+
+    groupOptions.value = groups
   } catch (error) {
     console.error('Load group options error:', error)
   }
