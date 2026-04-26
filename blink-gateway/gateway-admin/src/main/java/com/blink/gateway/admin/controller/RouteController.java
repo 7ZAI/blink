@@ -11,6 +11,7 @@ import com.blink.gateway.admin.dto.req.ConfirmPushReq;
 import com.blink.gateway.admin.dto.req.ExportRoutesReq;
 import com.blink.gateway.admin.dto.req.FullPushRoutesReq;
 import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
+import com.blink.gateway.admin.dto.req.GetGroupInstanceRoutesReq;
 import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.ImportRoutesReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
@@ -24,15 +25,19 @@ import com.blink.gateway.admin.dto.req.QueryRouteReq;
 import com.blink.gateway.admin.dto.req.QueryRouteHistoryReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
 import com.blink.gateway.admin.dto.req.RollbackRouteReq;
+import com.blink.gateway.admin.dto.req.RouteDiffReq;
 import com.blink.gateway.admin.dto.req.SaveNacosRouteReq;
 import com.blink.gateway.admin.dto.req.SaveRouteReq;
 import com.blink.gateway.admin.dto.req.SyncRoutesReq;
+import com.blink.gateway.admin.dto.req.SyncRoutesFromInstanceReq;
 import com.blink.gateway.admin.dto.req.UpdateRouteReq;
 import com.blink.gateway.admin.dto.req.VerifyPushResultReq;
+import com.blink.gateway.admin.dto.rsp.GroupInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.ImportRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.RouteDiffRsp;
 import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushStatusRsp;
@@ -40,6 +45,7 @@ import com.blink.gateway.admin.dto.rsp.QueryRouteRsp;
 import com.blink.gateway.admin.dto.rsp.QueryRouteHistoryRsp;
 import com.blink.gateway.admin.dto.rsp.RouteInstancePushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.RoutesGroupStatsRsp;
+import com.blink.gateway.admin.dto.rsp.SyncRoutesFromInstanceRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
@@ -265,6 +271,44 @@ public class RouteController {
     @PostMapping("/cloneRoute")
     public ResponseDTO<EmptyBody> cloneRoute(@RequestBody @Validated RequestDTO<CloneRouteReq> reqDto) {
         return routeService.cloneRoute(reqDto.getBody());
+    }
+
+    /**
+     * 从实例同步路由到本地数据库
+     * 增量同步模式：新增本地没有的路由，更新本地已有的路由，不删除本地已有路由
+     *
+     * @param reqDto 请求参数
+     * @return 同步结果
+     */
+    @PostMapping("/syncRoutesFromInstance")
+    public ResponseDTO<SyncRoutesFromInstanceRsp> syncRoutesFromInstance(
+        @RequestBody @Validated RequestDTO<SyncRoutesFromInstanceReq> reqDto) {
+        return routeService.syncRoutesFromInstance(reqDto.getBody());
+    }
+
+    /**
+     * 获取路由差异对比
+     * 对比仓库路由与实例路由的差异
+     *
+     * @param reqDto 请求参数
+     * @return 差异对比结果
+     */
+    @PostMapping("/getRouteDiff")
+    public ResponseDTO<RouteDiffRsp> getRouteDiff(@RequestBody @Validated RequestDTO<RouteDiffReq> reqDto) {
+        return routeService.getRouteDiff(reqDto.getBody());
+    }
+
+    /**
+     * 获取分组下实例的实际路由
+     * 从分组下第一个在线实例通过 Actuator 获取路由配置
+     *
+     * @param reqDto 请求参数
+     * @return 实例路由响应
+     */
+    @PostMapping("/getGroupInstanceRoutes")
+    public ResponseDTO<GroupInstanceRoutesRsp> getGroupInstanceRoutes(
+        @RequestBody @Validated RequestDTO<GetGroupInstanceRoutesReq> reqDto) {
+        return routeService.getGroupInstanceRoutes(reqDto.getBody());
     }
 
     // ========== Nacos 路由管理 ==========
