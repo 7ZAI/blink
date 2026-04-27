@@ -68,7 +68,7 @@
         class="history-table"
       >
         <!-- 存储方式：固定宽度，Tag 展示 -->
-        <el-table-column prop="storageMode" :label="t('pushHistory.storageModeColumn')" width="80" align="center">
+        <el-table-column prop="storageMode" :label="t('pushHistory.storageModeColumn')" width="90" align="center">
           <template #default="{ row }">
             <el-tag
               :type="row.storageMode === 'redis' ? 'success' : 'warning'"
@@ -80,13 +80,13 @@
           </template>
         </el-table-column>
         <!-- 路由分组：弹性宽度 -->
-        <el-table-column prop="routesGroup" :label="t('pushHistory.routesGroupColumn')" min-width="80" show-overflow-tooltip>
+        <el-table-column prop="routesGroup" :label="t('pushHistory.routesGroupColumn')" min-width="100" show-overflow-tooltip>
           <template #default="{ row }">
             <span>{{ row.routesGroup || '-' }}</span>
           </template>
         </el-table-column>
         <!-- 路由ID列表：弹性宽度，内容可能较长 -->
-        <el-table-column prop="routeIds" :label="t('pushHistory.routeIdsColumn')" min-width="100">
+        <el-table-column prop="routeIds" :label="t('pushHistory.routeIdsColumn')" min-width="120">
           <template #default="{ row }">
             <el-popover placement="top" trigger="hover" :width="300">
               <template #reference>
@@ -105,7 +105,7 @@
           </template>
         </el-table-column>
         <!-- 推送模式：固定宽度 -->
-        <el-table-column prop="pushMode" :label="t('pushHistory.pushModeColumn')" width="70" align="center">
+        <el-table-column prop="pushMode" :label="t('pushHistory.pushModeColumn')" width="90" align="center">
           <template #default="{ row }">
             <el-tag
               :type="row.pushMode === 'broadcast' ? 'info' : 'primary'"
@@ -117,19 +117,19 @@
           </template>
         </el-table-column>
         <!-- 实例数：固定宽度，数字 -->
-        <el-table-column prop="instanceCount" :label="t('pushHistory.instanceCountColumn')" width="60" align="center">
+        <el-table-column prop="instanceCount" :label="t('pushHistory.instanceCountColumn')" width="80" align="center">
           <template #default="{ row }">
             <span class="count-cell">{{ row.instanceCount || 0 }}</span>
           </template>
         </el-table-column>
         <!-- 成功数：固定宽度，数字 -->
-        <el-table-column prop="successCount" :label="t('pushHistory.successCountColumn')" width="60" align="center">
+        <el-table-column prop="successCount" :label="t('pushHistory.successCountColumn')" width="80" align="center">
           <template #default="{ row }">
             <span class="success-count">{{ row.successCount || 0 }}</span>
           </template>
         </el-table-column>
         <!-- 推送结果：固定宽度 -->
-        <el-table-column prop="pushResult" :label="t('pushHistory.pushResultColumn')" width="70" align="center">
+        <el-table-column prop="pushResult" :label="t('pushHistory.pushResultColumn')" width="90" align="center">
           <template #default="{ row }">
             <el-tag
               :type="getPushResultType(row.pushResult)"
@@ -141,7 +141,7 @@
           </template>
         </el-table-column>
         <!-- 失败实例：弹性宽度 -->
-        <el-table-column :label="t('pushHistory.failedInstancesColumn')" min-width="80">
+        <el-table-column :label="t('pushHistory.failedInstancesColumn')" min-width="100">
           <template #default="{ row }">
             <template v-if="row.failedInstanceIds">
               <el-popover placement="top" trigger="hover" :width="450">
@@ -171,7 +171,7 @@
           </template>
         </el-table-column>
         <!-- 确认状态：固定宽度 -->
-        <el-table-column :label="t('pushHistory.confirmStatusColumn')" width="70" align="center">
+        <el-table-column :label="t('pushHistory.confirmStatusColumn')" width="90" align="center">
           <template #default="{ row }">
             <el-tag
               :type="getConfirmStatusType(row.confirmStatus)"
@@ -183,19 +183,19 @@
           </template>
         </el-table-column>
         <!-- 操作人：固定宽度 -->
-        <el-table-column prop="operatorName" :label="t('pushHistory.operatorColumn')" width="60" show-overflow-tooltip>
+        <el-table-column prop="operatorName" :label="t('pushHistory.operatorColumn')" width="80" show-overflow-tooltip>
           <template #default="{ row }">
             <span class="operator-cell">{{ row.operatorName || '-' }}</span>
           </template>
         </el-table-column>
         <!-- 推送时间：固定宽度 -->
-        <el-table-column prop="pushTime" :label="t('pushHistory.pushTimeColumn')" width="150">
+        <el-table-column prop="pushTime" :label="t('pushHistory.pushTimeColumn')" width="160">
           <template #default="{ row }">
             <span class="time-cell">{{ row.pushTime }}</span>
           </template>
         </el-table-column>
         <!-- 操作：固定宽度，固定在右侧 -->
-        <el-table-column :label="t('pushHistory.actionColumn')" width="180" fixed="right">
+        <el-table-column :label="t('pushHistory.actionColumn')" width="200" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button
@@ -696,6 +696,12 @@ onMounted(() => {
       font-weight: 600;
       color: var(--text-color-primary);
       white-space: nowrap;
+
+      .cell {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
     }
   }
 
