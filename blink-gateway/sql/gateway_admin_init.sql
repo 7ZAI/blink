@@ -365,6 +365,7 @@ CREATE TABLE `gateway_route_group` (
   `group_id` int NOT NULL AUTO_INCREMENT COMMENT '分组ID',
   `group_key` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '分组标识（业务唯一键）',
   `group_name` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '分组名称',
+  `storage_mode` varchar(16) DEFAULT 'nacos' COMMENT '存储方式：nacos/redis',
   `status` tinyint DEFAULT '1' COMMENT '状态：1启用 0禁用',
   `remark` varchar(256) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '备注说明',
   `create_by` varchar(64) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '创建者',
@@ -1161,8 +1162,8 @@ INSERT INTO sys_dict_data (dict_type, dict_label, dict_value, css_class, list_cl
 -- ============================================
 -- 10. 默认路由分组
 -- ============================================
-INSERT INTO gateway_route_group (group_id, group_key, group_name, status, remark, create_by, create_time) VALUES
-(1, 'default', '默认分组', 1, '系统默认分组', 'admin', NOW());
+INSERT INTO gateway_route_group (group_id, group_key, group_name, storage_mode, status, remark, create_by, create_time) VALUES
+(1, 'default', '默认分组', 'nacos', 1, '系统默认分组', 'admin', NOW());
 
 -- ============================================
 -- 11. 监控配置分组
@@ -1190,4 +1191,10 @@ SELECT CONCAT('已创建 ', COUNT(*), ' 个角色') AS role_count FROM sys_role 
 SELECT CONCAT('已创建 ', COUNT(*), ' 个配置项') AS config_count FROM sys_config WHERE status = 0;
 SELECT CONCAT('已创建 ', COUNT(*), ' 个字典类型') AS dict_type_count FROM sys_dict_type WHERE status = 0;
 SELECT CONCAT('已创建 ', COUNT(*), ' 个字典数据') AS dict_data_count FROM sys_dict_data WHERE status = 0;
+
+-- ============================================
+-- 增量变更：路由分组表增加存储方式字段
+-- ============================================
+-- ALTER TABLE gateway_route_group ADD COLUMN storage_mode VARCHAR(16) DEFAULT 'nacos' COMMENT '存储方式：nacos/redis' AFTER group_name;
+-- UPDATE gateway_route_group SET storage_mode = 'nacos' WHERE storage_mode IS NULL;
 
