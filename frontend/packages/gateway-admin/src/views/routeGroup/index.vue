@@ -48,6 +48,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="groupName" :label="t('routeGroup.groupName')" min-width="150" show-overflow-tooltip />
+        <el-table-column :label="t('routeGroup.storageMode')" width="100" align="center">
+          <template #default="{ row }">
+            <el-tag :type="row.storageMode === 'nacos' ? 'primary' : 'success'" effect="plain" size="small">
+              {{ row.storageMode === 'nacos' ? t('routeGroup.nacos') : t('routeGroup.redis') }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column :label="t('common.status')" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.instanceCount > 0 ? 'success' : 'info'" effect="plain" size="small">
@@ -133,6 +140,22 @@
             maxlength="100"
           />
         </el-form-item>
+        <el-form-item :label="t('routeGroup.storageMode')" prop="storageMode">
+          <el-radio-group v-model="formData.storageMode">
+            <el-radio value="nacos">
+              <span>{{ t('routeGroup.nacos') }}</span>
+              <el-tooltip :content="t('routeGroup.nacosDesc')" placement="top">
+                <el-icon class="ml-1 cursor-pointer"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </el-radio>
+            <el-radio value="redis">
+              <span>{{ t('routeGroup.redis') }}</span>
+              <el-tooltip :content="t('routeGroup.redisDesc')" placement="top">
+                <el-icon class="ml-1 cursor-pointer"><QuestionFilled /></el-icon>
+              </el-tooltip>
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
         <el-form-item :label="t('common.remark')" prop="remark">
           <el-input
             v-model="formData.remark"
@@ -162,6 +185,7 @@ import {
   RefreshLeft,
   Plus,
   Delete,
+  QuestionFilled,
 } from '@element-plus/icons-vue'
 import {
   queryRouteGroupList,
@@ -202,6 +226,7 @@ const formRef = ref<FormInstance>()
 const formData = reactive({
   groupKey: '',
   groupName: '',
+  storageMode: 'nacos',
   remark: '',
 })
 
@@ -215,6 +240,9 @@ const formRules = computed<FormRules>(() => ({
   groupName: [
     { required: true, message: t('routeGroup.groupNameRequired'), trigger: 'blur' },
     { min: 1, max: 100, message: t('validation.length', { min: 1, max: 100 }), trigger: 'blur' },
+  ],
+  storageMode: [
+    { required: true, message: t('routeGroup.storageModeRequired'), trigger: 'change' },
   ],
 }))
 
@@ -277,6 +305,7 @@ const handleCurrentChange = (page: number) => {
 const handleAdd = () => {
   formData.groupKey = ''
   formData.groupName = ''
+  formData.storageMode = 'nacos'
   formData.remark = ''
   dialogVisible.value = true
 }
@@ -317,6 +346,7 @@ const handleSubmit = async () => {
     await addRouteGroup({
       groupKey: formData.groupKey,
       groupName: formData.groupName,
+      storageMode: formData.storageMode,
       remark: formData.remark,
     })
     ElMessage.success(t('common.success'))
@@ -394,6 +424,25 @@ onMounted(() => {
 
   .group-form {
     margin-top: 0;
+
+    .el-radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .el-radio {
+      height: auto;
+      align-items: flex-start;
+    }
+
+    .ml-1 {
+      margin-left: 4px;
+    }
+
+    .cursor-pointer {
+      cursor: pointer;
+    }
   }
 }
 </style>
