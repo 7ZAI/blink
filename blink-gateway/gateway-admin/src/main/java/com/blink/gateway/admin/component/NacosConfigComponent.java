@@ -59,4 +59,27 @@ public class NacosConfigComponent {
             throw new BlinkException(e, e.getMessage());
         }
     }
+
+    /**
+     * 删除 Nacos 配置
+     *
+     * @param dataId  配置文件id
+     * @param groupId 配置文件组别
+     * @throws BlinkException 删除失败时抛出异常
+     */
+    public void deleteConfig(String dataId, String groupId) throws BlinkException {
+        try {
+            ConfigService configService = nacosConfigManager.getConfigService();
+            boolean isDeleted = configService.removeConfig(dataId, groupId);
+
+            if (isDeleted) {
+                log.info("[NacosConfig] 删除配置成功 | dataId: {}, groupId: {}", dataId, groupId);
+            } else {
+                log.warn("[NacosConfig] 删除配置失败，配置不存在 | dataId: {}, groupId: {}", dataId, groupId);
+            }
+        } catch (NacosException e) {
+            log.error("[NacosConfig] 删除配置失败 | dataId: {}, groupId: {}, error: {}", dataId, groupId, e.getMessage(), e);
+            throw new BlinkException(e, e.getMessage());
+        }
+    }
 }
