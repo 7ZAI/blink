@@ -9,6 +9,7 @@ export interface RouteGroup {
   groupId?: number
   groupKey: string
   groupName: string
+  storageMode: string
   instanceCount?: number
   status?: number
   remark?: string
@@ -33,6 +34,7 @@ export interface QueryRouteGroupParams {
 export interface AddRouteGroupParams {
   groupKey: string
   groupName: string
+  storageMode: string
   remark?: string
 }
 

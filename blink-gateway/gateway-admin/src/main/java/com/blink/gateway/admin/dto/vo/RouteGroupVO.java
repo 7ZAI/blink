@@ -34,6 +34,11 @@ public class RouteGroupVO implements Serializable {
     private String groupName;
 
     /**
+     * 存储方式：nacos/redis
+     */
+    private String storageMode;
+
+    /**
      * 绑定的实例数量
      * 用于判断分组状态：>0 表示已启用（有实例绑定），=0 表示未启用
      */

@@ -45,6 +45,12 @@ public class GatewayRouteGroupDO implements Serializable {
     private String groupName;
 
     /**
+     * 存储方式：nacos/redis
+     */
+    @TableField("storage_mode")
+    private String storageMode;
+
+    /**
      * 状态：1启用 0禁用
      */
     @TableField("status")

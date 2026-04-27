@@ -31,6 +31,12 @@ public class AddRouteGroupReq implements Serializable {
     private String groupName;
 
     /**
+     * 存储方式：nacos/redis，默认 nacos
+     */
+    @NotBlank(message = "存储方式不能为空")
+    private String storageMode = "nacos";
+
+    /**
      * 状态：1启用 0禁用，默认启用
      */
     private Byte status = 1;
