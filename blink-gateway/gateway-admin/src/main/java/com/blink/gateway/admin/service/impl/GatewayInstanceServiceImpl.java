@@ -15,7 +15,10 @@ import com.blink.framework.common.exception.BlinkException;
 import com.blink.framework.redis.component.RedisClient;
 import com.blink.framework.redis.mq.StreamMessage;
 import com.blink.framework.redis.lock.DistributedLockClient;
+import com.blink.gateway.admin.component.InstanceConfigComponent;
 import com.blink.gateway.admin.component.NacosConfigComponent;
+import com.blink.gateway.admin.constants.RouteConstant;
+import com.blink.gateway.admin.dto.InstanceInstanceConfig;
 import com.blink.gateway.dto.InstanceOfflineMsg;
 import com.blink.gateway.dto.InstanceOnlineMsg;
 import com.blink.gateway.admin.dto.req.DeleteInstanceReq;
@@ -35,7 +38,9 @@ import com.blink.gateway.admin.dto.vo.HttpMetricsVO;
 import com.blink.gateway.admin.dto.vo.InstanceInfoVO;
 import com.blink.gateway.admin.dto.vo.JvmMetricsVO;
 import com.blink.gateway.admin.entity.GatewayInstanceDO;
+import com.blink.gateway.admin.entity.GatewayRouteGroupDO;
 import com.blink.gateway.admin.mapper.GatewayInstanceMapper;
+import com.blink.gateway.admin.mapper.GatewayRouteGroupMapper;
 import com.blink.gateway.admin.service.GatewayInstanceService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -112,6 +117,9 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
     private GatewayInstanceMapper gatewayInstanceMapper;
 
     @Resource
+    private GatewayRouteGroupMapper gatewayRouteGroupMapper;
+
+    @Resource
     private RedisClient redisClient;
 
     @Resource
@@ -125,6 +133,9 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
 
     @Resource
     private NacosConfigComponent nacosConfigComponent;
+
+    @Resource
+    private InstanceConfigComponent instanceConfigComponent;
 
     @Value("${spring.cloud.nacos.discovery.namespace:public}")
     private String namespaceId;
@@ -143,12 +154,6 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
      */
     @Value("${blink.gateway.instance.default-group-key:default}")
     private String defaultGroupKey;
-
-    /**
-     * 默认存储方式
-     */
-    @Value("${blink.gateway.instance.default-storage-mode:redis}")
-    private String defaultStorageMode;
 
     /**
      * 网关服务名称（用于从 Nacos 获取实例列表）
@@ -688,15 +693,13 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             newInstance.setStatus(INSTANCE_STATUS_ONLINE);
             newInstance.setOnlineTime(LocalDateTime.now());
 
-            // 从元数据读取分组和存储方式配置
-            Map<String, String> metadata = instance.getMetadata();
-            String groupKey = metadata != null ? metadata.getOrDefault("groupKey", defaultGroupKey) : defaultGroupKey;
-            String storageMode = metadata != null ? metadata.getOrDefault("storageMode", defaultStorageMode) : defaultStorageMode;
-            newInstance.setGroupKey(groupKey);
-            newInstance.setStorageMode(storageMode);
+            // 从实例配置文件或 metadata 获取分组配置，storageMode 从路由分组获取
+            InstanceInstanceConfig instanceConfig = getInstanceConfig(instanceId, instance.getMetadata());
+            newInstance.setGroupKey(instanceConfig.getGroupKey());
 
             gatewayInstanceMapper.insert(newInstance);
-            log.info("[GatewayInstance] 新增网关实例 | instanceId: {}, groupKey: {}, storageMode: {}", instanceId, groupKey, storageMode);
+            log.info("[GatewayInstance] 新增网关实例 | instanceId: {}, groupKey: {}, configSource: {}",
+                instanceId, instanceConfig.getGroupKey(), instanceConfig.getSource());
         }
     }
 
@@ -723,6 +726,135 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             }
         }
         return null;
+    }
+
+    /**
+     * 获取实例配置
+     * 优先级：配置文件 > metadata > 默认值
+     *
+     * @param instanceId 实例ID
+     * @param metadata 实例元数据（可能为空）
+     * @return 实例配置
+     */
+    private InstanceInstanceConfig getInstanceConfig(String instanceId, Map<String, String> metadata) {
+        InstanceInstanceConfig config = new InstanceInstanceConfig();
+
+        // 1. 尝试从配置文件获取
+        InstanceInstanceConfig fileConfig = getInstanceConfigFromFile(instanceId);
+        if (fileConfig != null) {
+            return fileConfig;
+        }
+
+        // 2. 从 metadata 获取（只获取 groupKey，storageMode 从路由分组获取）
+        if (metadata != null) {
+            String groupKey = metadata.get("groupKey");
+
+            if (StrUtil.isNotBlank(groupKey)) {
+                config.setGroupKey(groupKey);
+                config.setSource("metadata");
+                return config;
+            }
+        }
+
+        // 3. 使用默认值
+        return InstanceInstanceConfig.createDefault(defaultGroupKey);
+    }
+
+    /**
+     * 从 Nacos 配置文件获取实例配置
+     * 配置文件命名规则：gateway-instance-{instanceId}.yaml
+     *
+     * @param instanceId 实例ID
+     * @return 实例配置，获取失败返回 null
+     */
+    private InstanceInstanceConfig getInstanceConfigFromFile(String instanceId) {
+        if (instanceConfigComponent == null) {
+            log.debug("[GatewayInstance] InstanceConfigComponent 未注入，无法从配置文件获取实例配置");
+            return null;
+        }
+
+        try {
+            // 使用 InstanceConfigComponent 获取配置
+            String content = instanceConfigComponent.getConfigContent(instanceId);
+
+            if (StrUtil.isBlank(content)) {
+                log.debug("[GatewayInstance] 实例配置文件不存在 | instanceId: {}", instanceId);
+                return null;
+            }
+
+            // 解析 YAML 配置
+            Yaml yaml = new Yaml();
+            Map<String, Object> configMap = yaml.load(content);
+
+            // 提取 blink.gateway 配置（实际配置格式）
+            Map<String, Object> gatewayConfigMap = getNestedMap(configMap,
+                RouteConstant.INSTANCE_CONFIG_PATH.split("\\."));
+
+            if (gatewayConfigMap == null || gatewayConfigMap.isEmpty()) {
+                log.debug("[GatewayInstance] 配置文件中未找到实例配置 | instanceId: {}, path: {}",
+                    instanceId, RouteConstant.INSTANCE_CONFIG_PATH);
+                return null;
+            }
+
+            // 解析 dynamicRoute 配置
+            Object dynamicRouteObj = gatewayConfigMap.get(RouteConstant.INSTANCE_CONFIG_DYNAMIC_ROUTE);
+            if (!(dynamicRouteObj instanceof Map)) {
+                log.debug("[GatewayInstance] 配置文件中未找到 dynamicRoute 配置 | instanceId: {}", instanceId);
+                return null;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dynamicRouteMap = (Map<String, Object>) dynamicRouteObj;
+
+            // 解析配置（只获取 groupKey，storageMode 从路由分组获取）
+            InstanceInstanceConfig config = new InstanceInstanceConfig();
+
+            // groupKey 从 dynamicRoute.group 获取
+            Object group = dynamicRouteMap.get(RouteConstant.INSTANCE_CONFIG_ROUTE_GROUP);
+            if (group != null) {
+                config.setGroupKey(group.toString());
+            }
+
+            // 如果 groupKey 为空，返回 null
+            if (StrUtil.isBlank(config.getGroupKey())) {
+                return null;
+            }
+
+            config.setSource("config_file");
+
+            log.info("[GatewayInstance] 从配置文件获取实例配置成功 | instanceId: {}, groupKey: {}",
+                instanceId, config.getGroupKey());
+
+            return config;
+
+        } catch (Exception e) {
+            log.warn("[GatewayInstance] 解析实例配置文件失败 | instanceId: {}, error: {}", instanceId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 从嵌套 Map 中获取指定路径的 Map
+     *
+     * @param map 源 Map
+     * @param keys 路径数组
+     * @return 目标 Map，不存在返回 null
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getNestedMap(Map<String, Object> map, String[] keys) {
+        if (map == null || keys == null || keys.length == 0) {
+            return null;
+        }
+
+        Map<String, Object> current = map;
+        for (String key : keys) {
+            Object value = current.get(key);
+            if (!(value instanceof Map)) {
+                return null;
+            }
+            current = (Map<String, Object>) value;
+        }
+        return current;
     }
 
     /**
@@ -887,7 +1019,15 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
         InstanceInfoVO vo = BeanUtil.copyProperties(doct, InstanceInfoVO.class);
         vo.setStatusDesc(getStatusDesc(doct.getStatus()));
         vo.setGroupKey(doct.getGroupKey());
-        vo.setStorageMode(doct.getStorageMode());
+        // storageMode 从路由分组获取
+        if (StrUtil.isNotBlank(doct.getGroupKey())) {
+            LambdaQueryWrapper<GatewayRouteGroupDO> groupQuery = new LambdaQueryWrapper<>();
+            groupQuery.eq(GatewayRouteGroupDO::getGroupKey, doct.getGroupKey());
+            GatewayRouteGroupDO group = gatewayRouteGroupMapper.selectOne(groupQuery);
+            if (group != null) {
+                vo.setStorageMode(group.getStorageMode());
+            }
+        }
         return vo;
     }
 
@@ -919,7 +1059,15 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
         InstanceInfoVO vo = BeanUtil.copyProperties(dbInstance, InstanceInfoVO.class);
         vo.setStatusDesc(getStatusDesc(dbInstance.getStatus()));
         vo.setGroupKey(dbInstance.getGroupKey());
-        vo.setStorageMode(dbInstance.getStorageMode());
+        // storageMode 从路由分组获取
+        if (StrUtil.isNotBlank(dbInstance.getGroupKey())) {
+            LambdaQueryWrapper<GatewayRouteGroupDO> groupQuery = new LambdaQueryWrapper<>();
+            groupQuery.eq(GatewayRouteGroupDO::getGroupKey, dbInstance.getGroupKey());
+            GatewayRouteGroupDO group = gatewayRouteGroupMapper.selectOne(groupQuery);
+            if (group != null) {
+                vo.setStorageMode(group.getStorageMode());
+            }
+        }
 
         // 检查是否在注册中心
         boolean inRegistry = registryInstanceIds.contains(dbInstance.getInstanceId());
@@ -1363,8 +1511,9 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
             BlinkException.throwBusinessException(INSTANCE_ONLINE_CANNOT_SWITCH);
         }
 
-        // 3. 校验目标分组配置是否存在（事务外）
-        validateTargetGroupConfig(targetGroupKey, instanceDO.getStorageMode());
+        // 3. 从目标分组获取存储方式，并校验目标分组配置是否存在（事务外）
+        String targetStorageMode = getStorageModeByGroupKey(targetGroupKey);
+        validateTargetGroupConfig(targetGroupKey, targetStorageMode);
 
         // 4. 记录旧分组用于日志
         String oldGroupKey = instanceDO.getGroupKey();
@@ -1398,6 +1547,36 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
         }
 
         return ResponseDTO.newSuccessInstance();
+    }
+
+    /**
+     * 根据分组标识获取存储方式
+     * 优先从指定的路由分组获取，如果分组不存在则使用默认分组
+     *
+     * @param groupKey 分组标识
+     * @return 存储方式：nacos/redis
+     */
+    private String getStorageModeByGroupKey(String groupKey) {
+        // 尝试从路由分组获取
+        LambdaQueryWrapper<GatewayRouteGroupDO> groupQuery = new LambdaQueryWrapper<>();
+        groupQuery.eq(GatewayRouteGroupDO::getGroupKey, groupKey);
+        GatewayRouteGroupDO group = gatewayRouteGroupMapper.selectOne(groupQuery);
+
+        if (group != null && StrUtil.isNotBlank(group.getStorageMode())) {
+            return group.getStorageMode();
+        }
+
+        // 使用默认分组的存储方式
+        LambdaQueryWrapper<GatewayRouteGroupDO> defaultQuery = new LambdaQueryWrapper<>();
+        defaultQuery.eq(GatewayRouteGroupDO::getGroupKey, defaultGroupKey);
+        GatewayRouteGroupDO defaultGroup = gatewayRouteGroupMapper.selectOne(defaultQuery);
+
+        if (defaultGroup != null && StrUtil.isNotBlank(defaultGroup.getStorageMode())) {
+            return defaultGroup.getStorageMode();
+        }
+
+        // 最终兜底：返回 nacos
+        return "nacos";
     }
 
     /**

@@ -69,7 +69,7 @@ public class InstanceInfoVO implements Serializable {
     private String groupKey;
 
     /**
-     * 存储方式
+     * 存储方式：nacos/redis
      */
     private String storageMode;
 
