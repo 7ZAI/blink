@@ -35,6 +35,23 @@ public interface RouteConstant {
      */
     String DEFAULT_NACOS_DATA_ID = "gateway-routes.json";
 
+    // ==================== Nacos 路由配置常量 ====================
+
+    /**
+     * Nacos 路由配置文件前缀
+     */
+    String NACOS_ROUTE_CONFIG_PREFIX = "gateway-routes";
+
+    /**
+     * Nacos 路由配置文件后缀
+     */
+    String NACOS_ROUTE_CONFIG_SUFFIX = ".json";
+
+    /**
+     * Nacos 路由配置文件 Group
+     */
+    String NACOS_ROUTE_CONFIG_GROUP = "DEFAULT_GROUP";
+
     /**
      * 状态：启用
      */
@@ -272,4 +289,37 @@ public interface RouteConstant {
      * 验证结果：完全不一致
      */
     Byte VERIFY_RESULT_MISMATCH = 2;
+
+    // ==================== 实例配置文件常量 ====================
+
+    /**
+     * 实例配置文件前缀
+     * 命名规则：gateway-instance-{instanceId}.yaml
+     */
+    String INSTANCE_CONFIG_PREFIX = "gateway-instance-";
+
+    /**
+     * 实例配置文件后缀
+     */
+    String INSTANCE_CONFIG_SUFFIX = ".yaml";
+
+    /**
+     * 实例配置文件中的配置路径：blink.gateway
+     */
+    String INSTANCE_CONFIG_PATH = "blink.gateway";
+
+    /**
+     * 实例配置字段：动态路由配置
+     */
+    String INSTANCE_CONFIG_DYNAMIC_ROUTE = "dynamicRoute";
+
+    /**
+     * 实例配置字段：路由模式（redis/nacos）
+     */
+    String INSTANCE_CONFIG_ROUTE_MODE = "mode";
+
+    /**
+     * 实例配置字段：路由分组
+     */
+    String INSTANCE_CONFIG_ROUTE_GROUP = "group";
 }

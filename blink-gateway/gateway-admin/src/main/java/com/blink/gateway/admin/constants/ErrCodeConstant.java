@@ -467,6 +467,23 @@ public interface ErrCodeConstant {
      */
     String ROUTE_GROUP_HAS_INSTANCES = "GATE0212";
 
+    // ============ 存储方式错误码 GATE0213-GATE0215 ============
+
+    /**
+     * 存储方式不合法
+     */
+    String STORAGE_MODE_INVALID = "GATE0213";
+
+    /**
+     * 创建路由配置失败
+     */
+    String CREATE_ROUTE_CONFIG_FAILED = "GATE0214";
+
+    /**
+     * 删除路由配置失败
+     */
+    String DELETE_ROUTE_CONFIG_FAILED = "GATE0215";
+
     // ============ 渠道配置错误码 GATE0220-GATE0229 ============
 
     /**
