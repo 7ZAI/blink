@@ -83,9 +83,8 @@ public class SaveRouteReq implements Serializable {
     private String remark;
 
     /**
-     * 是否自动同步到运行时存储
-     * true: 保存后自动推送
-     * false: 仅保存到数据库，需手动推送
+     * 是否忽略服务名未注册警告
+     * 当 lb:// 协议的服务名未在注册中心找到时，前端提示用户确认后传 true 继续添加
      */
-    private Boolean autoSync;
+    private Boolean ignoreServiceNotRegistered;
 }

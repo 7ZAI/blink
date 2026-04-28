@@ -31,30 +31,33 @@ import com.blink.gateway.admin.dto.rsp.RoutesGroupStatsRsp;
 import com.blink.gateway.admin.dto.rsp.SyncRoutesFromInstanceRsp;
 import com.blink.gateway.admin.dto.vo.GatewayInstanceVO;
 import com.blink.gateway.admin.dto.vo.RoutePushStatusVO;
-import com.blink.gateway.admin.dto.req.GetInstanceRoutesFromActuatorReq;
 import com.blink.gateway.admin.dto.vo.InstanceInfoVO;
 import com.blink.gateway.admin.dto.vo.RoutesGroupStatsVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
 import com.blink.gateway.admin.entity.GaRouteHistoryDO;
 import com.blink.gateway.admin.entity.GatewayRouteGroupDO;
+import com.blink.gateway.admin.entity.PredicateConfig;
+import com.blink.gateway.admin.entity.FilterConfig;
 import com.blink.gateway.admin.mapper.GaRouteHistoryMapper;
 import com.blink.gateway.admin.mapper.GaRouteMapper;
 import com.blink.gateway.admin.mapper.GatewayRouteGroupMapper;
 import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
 import com.blink.gateway.admin.service.GatewayInstanceService;
 import com.blink.gateway.admin.service.NacosRouteService;
-import com.blink.gateway.admin.service.RouteAsyncSyncService;
 import com.blink.gateway.admin.service.RoutePushService;
 import com.blink.gateway.admin.service.RouteService;
 import com.blink.gateway.admin.service.RouteValidator;
+import com.blink.gateway.admin.component.NacosConfigComponent;
 import com.blink.gateway.dto.RouteSyncMsg;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -99,9 +102,6 @@ public class RouteServiceImpl implements RouteService {
     private GatewayInstanceService gatewayInstanceService;
 
     @Resource
-    private RouteAsyncSyncService routeAsyncSyncService;
-
-    @Resource
     private NacosRouteService nacosRouteService;
 
     @Resource
@@ -112,6 +112,16 @@ public class RouteServiceImpl implements RouteService {
 
     @Resource
     private GatewayRouteGroupMapper gatewayRouteGroupMapper;
+
+    /**
+     * Nacos 配置组件（可选注入）
+     */
+    private NacosConfigComponent nacosConfigComponent;
+
+    @Autowired(required = false)
+    public void setNacosConfigComponent(NacosConfigComponent nacosConfigComponent) {
+        this.nacosConfigComponent = nacosConfigComponent;
+    }
 
     // ========== Redis 路由管理（数据库存储） ==========
 
@@ -162,7 +172,16 @@ public class RouteServiceImpl implements RouteService {
         routeValidator.validateRouteIdUnique(req.getRouteId(), false);
 
         // 校验路由配置完整性（URI格式、断言必填、断言/过滤器类型、路由冲突）
-        routeValidator.validateRouteConfig(null, req.getUri(), req.getPredicates(), req.getFilters());
+        // 同时检查服务名是否在注册中心，返回警告信息
+        String serviceWarning = routeValidator.validateRouteConfigWithServiceWarning(
+                null, req.getUri(), req.getPredicates(), req.getFilters(), req.getIgnoreServiceNotRegistered());
+
+        // 如果有警告且用户未确认，返回警告让前端提示用户
+        if (serviceWarning != null) {
+            ResponseDTO<EmptyBody> warningRsp = ResponseDTO.newSuccessInstance();
+            warningRsp.setMsgInfo(serviceWarning);
+            return warningRsp;
+        }
 
         // 构建 GaRouteDO
         GaRouteDO routeDO = BeanUtil.copyProperties(req, GaRouteDO.class);
@@ -187,15 +206,8 @@ public class RouteServiceImpl implements RouteService {
 
         // 获取操作人信息
         Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
-        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
 
-        // 自动同步到运行时存储
-        if (Boolean.TRUE.equals(req.getAutoSync())) {
-            routeAsyncSyncService.syncAddRoute(routeDO.getRouteId(), routeDO, operatorUser, operatorName);
-            log.info("[Route] 自动同步路由到运行时存储 | routeId: {}", routeDO.getRouteId());
-        }
-
-        log.info("[Route] 保存路由成功（仓库路由，需手动推送生效） | routeId: {}, uri: {}, routesGroup: {}, operatorUser: {}",
+        log.info("[Route] 保存路由成功 | routeId: {}, uri: {}, routesGroup: {}, operatorUser: {}",
                 routeDO.getRouteId(), routeDO.getUri(), routeDO.getRoutesGroup(), operatorUser);
 
         return ResponseDTO.newSuccessInstance();
@@ -224,7 +236,16 @@ public class RouteServiceImpl implements RouteService {
         }
 
         // 校验路由配置完整性（更新时传入routeId排除自身）
-        routeValidator.validateRouteConfig(req.getRouteId(), req.getUri(), req.getPredicates(), req.getFilters());
+        // 同时检查服务名是否在注册中心，返回警告信息
+        String serviceWarning = routeValidator.validateRouteConfigWithServiceWarning(
+                req.getRouteId(), req.getUri(), req.getPredicates(), req.getFilters(), req.getIgnoreServiceNotRegistered());
+
+        // 如果有警告且用户未确认，返回警告让前端提示用户
+        if (serviceWarning != null) {
+            ResponseDTO<EmptyBody> warningRsp = ResponseDTO.newSuccessInstance();
+            warningRsp.setMsgInfo(serviceWarning);
+            return warningRsp;
+        }
 
         // 记录变更前数据（用于历史）
         GaRouteDO beforeData = BeanUtil.copyProperties(existingRoute, GaRouteDO.class);
@@ -246,15 +267,8 @@ public class RouteServiceImpl implements RouteService {
 
         // 获取操作人信息
         Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
-        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
 
-        // 自动同步到运行时存储
-        if (Boolean.TRUE.equals(req.getAutoSync())) {
-            routeAsyncSyncService.syncModifyRoute(req.getRouteId(), existingRoute, operatorUser, operatorName);
-            log.info("[Route] 自动同步路由到运行时存储 | routeId: {}", req.getRouteId());
-        }
-
-        log.info("[Route] 更新路由成功（仓库路由，需手动推送生效） | routeId: {}, uri: {}, version: {}, operatorUser: {}",
+        log.info("[Route] 更新路由成功 | routeId: {}, uri: {}, version: {}, operatorUser: {}",
                 existingRoute.getRouteId(), existingRoute.getUri(), existingRoute.getVersion(), operatorUser);
 
         return ResponseDTO.newSuccessInstance();
@@ -366,12 +380,6 @@ public class RouteServiceImpl implements RouteService {
 
         // 获取操作人信息
         Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
-        String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
-
-        // 是否同步到运行时存储（默认同步）
-        if (ObjectUtil.isNull(req.getSyncToStorage()) || req.getSyncToStorage()) {
-            routeAsyncSyncService.syncModifyRoute(req.getRouteId(), afterRollback, operatorUser, operatorName);
-        }
 
         log.info("[Route] 回滚路由成功 | routeId: {}, historyId: {}, operatorUser: {}",
                 req.getRouteId(), req.getHistoryId(), operatorUser);
@@ -810,49 +818,16 @@ public class RouteServiceImpl implements RouteService {
             BlinkException.throwBusinessException(PARAMETER_NOT_NULL);
         }
 
-        // 如果未指定实例ID，自动根据分组查找在线实例
-        String instanceId = req.getInstanceId();
-        if (StrUtil.isBlank(instanceId)) {
-            QueryInstanceReq queryReq = new QueryInstanceReq();
-            queryReq.setGroupKey(req.getRoutesGroup());
-            queryReq.setStatus(INSTANCE_STATUS_ONLINE);
-            queryReq.setPageNum(1);
-            queryReq.setPageSize(1);
+        String routesGroup = req.getRoutesGroup();
 
-            ResponseDTO<QueryInstanceListRsp> instanceListRsp = gatewayInstanceService.queryInstanceList(queryReq);
-            if (ObjectUtil.isNull(instanceListRsp.getBody())
-                || CollUtil.isEmpty(instanceListRsp.getBody().getRows())) {
-                log.warn("[Route] 当前分组无在线实例，无法同步 | routesGroup: {}", req.getRoutesGroup());
-                SyncRoutesFromInstanceRsp emptyRsp = new SyncRoutesFromInstanceRsp();
-                emptyRsp.setAddedCount(0);
-                emptyRsp.setUpdatedCount(0);
-                emptyRsp.setAddedRoutes(new ArrayList<>());
-                emptyRsp.setUpdatedRoutes(new ArrayList<>());
-                return ResponseDTO.newSuccessInstance(emptyRsp);
-            }
+        // 获取分组对应的存储方式
+        String storageMode = getStorageModeByGroupKey(routesGroup);
 
-            instanceId = instanceListRsp.getBody().getRows().get(0).getInstanceId();
-            log.info("[Route] 自动选择在线实例进行同步 | routesGroup: {}, instanceId: {}", req.getRoutesGroup(), instanceId);
-        }
+        // 1. 根据存储方式从 Redis 或 Nacos 获取路由
+        List<GaRouteDO> storageRoutes = getRoutesFromStorage(routesGroup, storageMode);
 
-        // 1. 从实例获取路由
-        GetInstanceRoutesFromActuatorReq actuatorReq = new GetInstanceRoutesFromActuatorReq();
-        actuatorReq.setInstanceId(instanceId);
-        ResponseDTO<InstanceRoutesRsp> instanceRoutesRsp = routePushService.getInstanceRoutesFromActuator(actuatorReq);
-
-        if (ObjectUtil.isNull(instanceRoutesRsp) || ObjectUtil.isNull(instanceRoutesRsp.getBody())) {
-            log.warn("[Route] 从实例获取路由失败 | instanceId: {}", instanceId);
-            SyncRoutesFromInstanceRsp emptyRsp = new SyncRoutesFromInstanceRsp();
-            emptyRsp.setAddedCount(0);
-            emptyRsp.setUpdatedCount(0);
-            emptyRsp.setAddedRoutes(new ArrayList<>());
-            emptyRsp.setUpdatedRoutes(new ArrayList<>());
-            return ResponseDTO.newSuccessInstance(emptyRsp);
-        }
-
-        List<GaRouteDO> instanceRoutes = instanceRoutesRsp.getBody().getRows();
-        if (CollUtil.isEmpty(instanceRoutes)) {
-            log.info("[Route] 实例无路由可同步 | instanceId: {}", instanceId);
+        if (CollUtil.isEmpty(storageRoutes)) {
+            log.info("[Route] 存储中无路由可同步 | routesGroup: {}, storageMode: {}", routesGroup, storageMode);
             SyncRoutesFromInstanceRsp emptyRsp = new SyncRoutesFromInstanceRsp();
             emptyRsp.setAddedCount(0);
             emptyRsp.setUpdatedCount(0);
@@ -864,7 +839,7 @@ public class RouteServiceImpl implements RouteService {
         // 2. 查询本地路由
         List<GaRouteDO> localRoutes = gaRouteMapper.selectList(
             new LambdaQueryWrapper<GaRouteDO>()
-                .eq(GaRouteDO::getRoutesGroup, req.getRoutesGroup())
+                .eq(GaRouteDO::getRoutesGroup, routesGroup)
         );
 
         // 本地路由ID集合
@@ -879,34 +854,34 @@ public class RouteServiceImpl implements RouteService {
         Integer operatorUser = StpUtil.isLogin() ? StpUtil.getLoginIdAsInt() : null;
         String operatorName = StpUtil.isLogin() ? StpUtil.getLoginIdAsString() : null;
 
-        for (GaRouteDO instanceRoute : instanceRoutes) {
-            // 设置目标分组
-            instanceRoute.setRoutesGroup(req.getRoutesGroup());
-            instanceRoute.setStorageMode(RouteConstant.STORAGE_MODE_REDIS);
+        for (GaRouteDO storageRoute : storageRoutes) {
+            // 设置目标分组和存储方式
+            storageRoute.setRoutesGroup(routesGroup);
+            storageRoute.setStorageMode(storageMode);
 
-            GaRouteDO localRoute = localRouteMap.get(instanceRoute.getRouteId());
+            GaRouteDO localRoute = localRouteMap.get(storageRoute.getRouteId());
 
             if (ObjectUtil.isNull(localRoute)) {
                 // 新增：本地不存在该路由
-                instanceRoute.setVersion(0);
-                instanceRoute.setPushStatus(RouteConstant.PUSH_STATUS_NOT_PUSHED);
-                instanceRoute.setLastPushTime(null);
-                if (instanceRoute.getStatus() == null) {
-                    instanceRoute.setStatus(RouteConstant.STATUS_ENABLE);
+                storageRoute.setVersion(0);
+                storageRoute.setPushStatus(RouteConstant.PUSH_STATUS_PUSHED);
+                storageRoute.setLastPushTime(LocalDateTime.now());
+                if (storageRoute.getStatus() == null) {
+                    storageRoute.setStatus(RouteConstant.STATUS_ENABLE);
                 }
 
-                gaRouteMapper.insert(instanceRoute);
+                gaRouteMapper.insert(storageRoute);
 
                 // 记录历史
-                saveRouteHistory(instanceRoute, null, instanceRoute, RouteConstant.OPERATION_ADD, null);
+                saveRouteHistory(storageRoute, null, storageRoute, RouteConstant.OPERATION_ADD, null);
 
-                addedRoutes.add(instanceRoute.getRouteId());
+                addedRoutes.add(storageRoute.getRouteId());
             } else {
                 // 更新：本地已存在该路由，保留 version、pushStatus 等
                 GaRouteDO beforeData = BeanUtil.copyProperties(localRoute, GaRouteDO.class);
 
-                BeanUtil.copyProperties(instanceRoute, localRoute,
-                    "routeId", "version", "pushStatus", "lastPushTime", "createBy", "createTime", "routesGroup");
+                BeanUtil.copyProperties(storageRoute, localRoute,
+                    "routeId", "version", "pushStatus", "lastPushTime", "createBy", "createTime", "routesGroup", "storageMode");
 
                 // 版本号自增
                 Integer currentVersion = localRoute.getVersion();
@@ -920,7 +895,7 @@ public class RouteServiceImpl implements RouteService {
                 // 记录历史
                 saveRouteHistory(localRoute, beforeData, localRoute, RouteConstant.OPERATION_MODIFY, changedFields);
 
-                updatedRoutes.add(instanceRoute.getRouteId());
+                updatedRoutes.add(storageRoute.getRouteId());
             }
         }
 
@@ -931,10 +906,226 @@ public class RouteServiceImpl implements RouteService {
         rsp.setAddedRoutes(addedRoutes);
         rsp.setUpdatedRoutes(updatedRoutes);
 
-        log.info("[Route] 从实例同步路由成功 | instanceId: {}, routesGroup: {}, added: {}, updated: {}, operatorUser: {}",
-            req.getInstanceId(), req.getRoutesGroup(), addedRoutes.size(), updatedRoutes.size(), operatorUser);
+        log.info("[Route] 从存储同步路由成功 | routesGroup: {}, storageMode: {}, added: {}, updated: {}, operatorUser: {}",
+            routesGroup, storageMode, addedRoutes.size(), updatedRoutes.size(), operatorUser);
 
         return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    /**
+     * 根据存储方式从 Redis 或 Nacos 获取路由
+     *
+     * @param routesGroup 路由分组
+     * @param storageMode 存储方式（redis/nacos）
+     * @return 路由列表
+     */
+    private List<GaRouteDO> getRoutesFromStorage(String routesGroup, String storageMode) {
+        if (RouteConstant.STORAGE_MODE_REDIS.equals(storageMode)) {
+            return getRoutesFromRedis(routesGroup);
+        } else if (RouteConstant.STORAGE_MODE_NACOS.equals(storageMode)) {
+            return getRoutesFromNacos(routesGroup);
+        }
+
+        log.warn("[Route] 未知的存储方式 | storageMode: {}", storageMode);
+        return new ArrayList<>();
+    }
+
+    /**
+     * 从 Redis Hash 获取路由
+     * Key 格式：blink:gateway:admin:gateway:routes:{groupKey}
+     *
+     * @param routesGroup 路由分组
+     * @return 路由列表
+     */
+    private List<GaRouteDO> getRoutesFromRedis(String routesGroup) {
+        List<GaRouteDO> routes = new ArrayList<>();
+
+        String redisKey = GATEWAY_DYNAMIC_ROUTES + ":" + routesGroup;
+
+        Map<String, Object> routeMap = redisClient.hGetStringMap(redisKey);
+        if (routeMap != null && !routeMap.isEmpty()) {
+            for (Map.Entry<String, Object> entry : routeMap.entrySet()) {
+                try {
+                    GaRouteDO route = JacksonUtil.fromJson(entry.getValue().toString(), GaRouteDO.class);
+                    if (route != null) {
+                        routes.add(route);
+                    }
+                } catch (Exception e) {
+                    log.warn("[Route] 解析 Redis 路由 JSON 失败 | routeId: {}, error: {}", entry.getKey(), e.getMessage());
+                }
+            }
+        }
+
+        log.info("[Route] 从 Redis 获取路由 | redisKey: {}, count: {}", redisKey, routes.size());
+        return routes;
+    }
+
+    /**
+     * 从 Nacos 配置文件获取路由
+     * DataId 格式：gateway-routes-{groupKey}.json
+     *
+     * @param routesGroup 路由分组
+     * @return 路由列表
+     */
+    private List<GaRouteDO> getRoutesFromNacos(String routesGroup) {
+        List<GaRouteDO> routes = new ArrayList<>();
+
+        if (nacosConfigComponent == null) {
+            log.warn("[Route] NacosConfigComponent 未注入，无法从 Nacos 获取路由");
+            return routes;
+        }
+
+        // 构建配置文件 DataId：gateway-routes-{groupKey}.json
+        String dataId = RouteConstant.NACOS_ROUTE_CONFIG_PREFIX + "-" + routesGroup + RouteConstant.NACOS_ROUTE_CONFIG_SUFFIX;
+        String group = RouteConstant.NACOS_ROUTE_CONFIG_GROUP;
+
+        try {
+            String configContent = nacosConfigComponent.getConfig(dataId, group);
+            if (StrUtil.isNotBlank(configContent)) {
+                // 解析 JSON 数组格式的路由配置
+                List<Map<String, Object>> routeMapList = JacksonUtil.fromJson(configContent,
+                    new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+
+                if (routeMapList != null) {
+                    for (Map<String, Object> routeMap : routeMapList) {
+                        GaRouteDO route = convertNacosRouteToGaRouteDO(routeMap);
+                        if (route != null) {
+                            routes.add(route);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("[Route] 从 Nacos 获取路由配置失败 | dataId: {}, group: {}, error: {}", dataId, group, e.getMessage(), e);
+        }
+
+        log.info("[Route] 从 Nacos 获取路由 | dataId: {}, group: {}, count: {}", dataId, group, routes.size());
+        return routes;
+    }
+
+    /**
+     * 将 Nacos 路由格式转换为 GaRouteDO
+     * Nacos 格式：id, uri, predicates, filters, order, metadata
+     * 数据库格式：routeId, routeName, uri, predicates, filters, orderNum, status
+     *
+     * @param routeMap 路由 Map
+     * @return GaRouteDO
+     */
+    @SuppressWarnings("unchecked")
+    private GaRouteDO convertNacosRouteToGaRouteDO(Map<String, Object> routeMap) {
+        if (routeMap == null) {
+            return null;
+        }
+
+        GaRouteDO route = new GaRouteDO();
+
+        // id -> routeId
+        Object id = routeMap.get("id");
+        if (id != null) {
+            route.setRouteId(id.toString());
+        }
+
+        // uri
+        Object uri = routeMap.get("uri");
+        if (uri != null) {
+            route.setUri(uri.toString());
+        }
+
+        // order -> orderNum
+        Object order = routeMap.get("order");
+        if (order != null) {
+            route.setOrderNum(((Number) order).intValue());
+        }
+
+        // predicates - 转换为 List<PredicateConfig>
+        Object predicatesObj = routeMap.get("predicates");
+        if (predicatesObj instanceof List) {
+            route.setPredicates(convertToPredicateConfigList((List<?>) predicatesObj));
+        }
+
+        // filters - 转换为 List<FilterConfig>
+        Object filtersObj = routeMap.get("filters");
+        if (filtersObj instanceof List) {
+            route.setFilters(convertToFilterConfigList((List<?>) filtersObj));
+        }
+
+        // metadata - 转换为 Map<String, Object>
+        Object metadataObj = routeMap.get("metadata");
+        if (metadataObj instanceof Map) {
+            Map<String, Object> metadata = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) metadataObj).entrySet()) {
+                if (entry.getKey() != null) {
+                    metadata.put(entry.getKey().toString(), entry.getValue());
+                }
+            }
+            route.setMetadata(metadata);
+        }
+
+        // 默认值
+        route.setStatus(RouteConstant.STATUS_ENABLE);
+        route.setRouteName(route.getRouteId());
+
+        return route;
+    }
+
+    /**
+     * 将 Nacos predicates 列表转换为 List<PredicateConfig>
+     */
+    @SuppressWarnings("unchecked")
+    private List<PredicateConfig> convertToPredicateConfigList(List<?> predicatesObj) {
+        List<PredicateConfig> predicates = new ArrayList<>();
+        for (Object item : predicatesObj) {
+            if (item instanceof Map) {
+                Map<?, ?> predMap = (Map<?, ?>) item;
+                PredicateConfig config = new PredicateConfig();
+                Object name = predMap.get("name");
+                if (name != null) {
+                    config.setName(name.toString());
+                }
+                Object args = predMap.get("args");
+                if (args instanceof Map) {
+                    Map<String, String> argsMap = new LinkedHashMap<>();
+                    for (Map.Entry<?, ?> entry : ((Map<?, ?>) args).entrySet()) {
+                        if (entry.getKey() != null && entry.getValue() != null) {
+                            argsMap.put(entry.getKey().toString(), entry.getValue().toString());
+                        }
+                    }
+                    config.setArgs(argsMap);
+                }
+                predicates.add(config);
+            }
+        }
+        return predicates;
+    }
+
+    /**
+     * 将 Nacos filters 列表转换为 List<FilterConfig>
+     */
+    @SuppressWarnings("unchecked")
+    private List<FilterConfig> convertToFilterConfigList(List<?> filtersObj) {
+        List<FilterConfig> filters = new ArrayList<>();
+        for (Object item : filtersObj) {
+            if (item instanceof Map) {
+                Map<?, ?> filterMap = (Map<?, ?>) item;
+                FilterConfig config = new FilterConfig();
+                Object name = filterMap.get("name");
+                if (name != null) {
+                    config.setName(name.toString());
+                }
+                Object args = filterMap.get("args");
+                if (args instanceof Map) {
+                    Map<String, String> argsMap = new LinkedHashMap<>();
+                    for (Map.Entry<?, ?> entry : ((Map<?, ?>) args).entrySet()) {
+                        if (entry.getKey() != null && entry.getValue() != null) {
+                            argsMap.put(entry.getKey().toString(), entry.getValue().toString());
+                        }
+                    }
+                    config.setArgs(argsMap);
+                }
+                filters.add(config);
+            }
+        }
+        return filters;
     }
 
     @Override
@@ -946,48 +1137,14 @@ public class RouteServiceImpl implements RouteService {
                 .eq(GaRouteDO::getStatus, RouteConstant.STATUS_ENABLE)
         );
 
-        // 2. 查询实例路由
-        String instanceId = req.getInstanceId();
-        if (StrUtil.isBlank(instanceId)) {
-            // 自动选择分组下第一个在线实例
-            QueryInstanceReq queryReq = new QueryInstanceReq();
-            queryReq.setGroupKey(req.getRoutesGroup());
-            queryReq.setStatus(INSTANCE_STATUS_ONLINE);
-            queryReq.setPageNum(1);
-            queryReq.setPageSize(1);
-
-            ResponseDTO<QueryInstanceListRsp> instanceListRsp = gatewayInstanceService.queryInstanceList(queryReq);
-            if (ObjectUtil.isNull(instanceListRsp.getBody())
-                || CollUtil.isEmpty(instanceListRsp.getBody().getRows())) {
-                log.warn("[Route] 当前分组无在线实例 | routesGroup: {}", req.getRoutesGroup());
-                RouteDiffRsp emptyRsp = new RouteDiffRsp();
-                emptyRsp.setRepositoryRoutes(repositoryRoutes);
-                emptyRsp.setRepositoryCount(repositoryRoutes.size());
-                emptyRsp.setInstanceRoutes(new ArrayList<>());
-                emptyRsp.setInstanceCount(0);
-                emptyRsp.setDiffStats(new DiffStats());
-                emptyRsp.setDiffDetails(new ArrayList<>());
-                return ResponseDTO.newSuccessInstance(emptyRsp);
-            }
-            instanceId = instanceListRsp.getBody().getRows().get(0).getInstanceId();
-            log.info("[Route] 自动选择在线实例进行差异对比 | routesGroup: {}, instanceId: {}", req.getRoutesGroup(), instanceId);
-        }
-
-        // 从实例获取路由
-        GetInstanceRoutesFromActuatorReq actuatorReq = new GetInstanceRoutesFromActuatorReq();
-        actuatorReq.setInstanceId(instanceId);
-        ResponseDTO<InstanceRoutesRsp> instanceRoutesRsp = routePushService.getInstanceRoutesFromActuator(actuatorReq);
-
-        List<GaRouteDO> instanceRoutes = new ArrayList<>();
-        if (ObjectUtil.isNotNull(instanceRoutesRsp.getBody())
-            && CollUtil.isNotEmpty(instanceRoutesRsp.getBody().getRows())) {
-            instanceRoutes = instanceRoutesRsp.getBody().getRows();
-        }
+        // 2. 从存储获取路由
+        String storageMode = getStorageModeByGroupKey(req.getRoutesGroup());
+        List<GaRouteDO> storageRoutes = getRoutesFromStorage(req.getRoutesGroup(), storageMode);
 
         // 3. 对比差异
         Map<String, GaRouteDO> repoRouteMap = repositoryRoutes.stream()
             .collect(Collectors.toMap(GaRouteDO::getRouteId, r -> r, (a, b) -> a));
-        Map<String, GaRouteDO> instRouteMap = instanceRoutes.stream()
+        Map<String, GaRouteDO> storageRouteMap = storageRoutes.stream()
             .collect(Collectors.toMap(GaRouteDO::getRouteId, r -> r, (a, b) -> a));
 
         List<RouteDiffItem> diffDetails = new ArrayList<>();
@@ -1000,15 +1157,15 @@ public class RouteServiceImpl implements RouteService {
             item.setRouteId(repoRoute.getRouteId());
             item.setRepositoryRoute(repoRoute);
 
-            GaRouteDO instRoute = instRouteMap.get(repoRoute.getRouteId());
-            if (ObjectUtil.isNull(instRoute)) {
-                // 新增：仓库有但实例没有
+            GaRouteDO storageRoute = storageRouteMap.get(repoRoute.getRouteId());
+            if (ObjectUtil.isNull(storageRoute)) {
+                // 新增：仓库有但存储没有
                 item.setDiffType("added");
                 addedCount++;
             } else {
-                item.setInstanceRoute(instRoute);
+                item.setInstanceRoute(storageRoute);
                 // 对比内容
-                List<FieldDiff> fieldDiffs = compareRouteFields(repoRoute, instRoute);
+                List<FieldDiff> fieldDiffs = compareRouteFields(repoRoute, storageRoute);
                 if (CollUtil.isNotEmpty(fieldDiffs)) {
                     // 修改：内容不同
                     item.setDiffType("modified");
@@ -1023,13 +1180,13 @@ public class RouteServiceImpl implements RouteService {
             diffDetails.add(item);
         }
 
-        // 实例路由遍历：检查删除（实例有但仓库没有）
-        for (GaRouteDO instRoute : instanceRoutes) {
-            if (!repoRouteMap.containsKey(instRoute.getRouteId())) {
+        // 存储路由遍历：检查删除（存储有但仓库没有）
+        for (GaRouteDO storageRoute : storageRoutes) {
+            if (!repoRouteMap.containsKey(storageRoute.getRouteId())) {
                 RouteDiffItem item = new RouteDiffItem();
-                item.setRouteId(instRoute.getRouteId());
+                item.setRouteId(storageRoute.getRouteId());
                 item.setDiffType("deleted");
-                item.setInstanceRoute(instRoute);
+                item.setInstanceRoute(storageRoute);
                 diffDetails.add(item);
                 deletedCount++;
             }
@@ -1044,13 +1201,13 @@ public class RouteServiceImpl implements RouteService {
         RouteDiffRsp rsp = new RouteDiffRsp();
         rsp.setRepositoryRoutes(repositoryRoutes);
         rsp.setRepositoryCount(repositoryRoutes.size());
-        rsp.setInstanceRoutes(instanceRoutes);
-        rsp.setInstanceCount(instanceRoutes.size());
+        rsp.setInstanceRoutes(storageRoutes);
+        rsp.setInstanceCount(storageRoutes.size());
         rsp.setDiffStats(diffStats);
         rsp.setDiffDetails(diffDetails);
 
-        log.info("[Route] 路由差异对比完成 | routesGroup: {}, instanceId: {}, added: {}, modified: {}, deleted: {}, unchanged: {}",
-            req.getRoutesGroup(), instanceId, addedCount, modifiedCount, deletedCount, unchangedCount);
+        log.info("[Route] 路由差异对比完成 | routesGroup: {}, storageMode: {}, added: {}, modified: {}, deleted: {}, unchanged: {}",
+            req.getRoutesGroup(), storageMode, addedCount, modifiedCount, deletedCount, unchangedCount);
 
         return ResponseDTO.newSuccessInstance(rsp);
     }
@@ -1124,70 +1281,32 @@ public class RouteServiceImpl implements RouteService {
 
         GroupInstanceRoutesRsp rsp = new GroupInstanceRoutesRsp();
         rsp.setTimestamp(LocalDateTime.now());
-        rsp.setFromActuator(true);
+        rsp.setFromActuator(false);
 
-        // 1. 查询分组下第一个在线实例
-        QueryInstanceReq queryReq = new QueryInstanceReq();
-        queryReq.setGroupKey(req.getRoutesGroup());
-        queryReq.setStatus(INSTANCE_STATUS_ONLINE);
-        queryReq.setPageNum(1);
-        queryReq.setPageSize(1);
-
-        ResponseDTO<QueryInstanceListRsp> instanceListRsp = gatewayInstanceService.queryInstanceList(queryReq);
-        if (ObjectUtil.isNull(instanceListRsp.getBody())
-            || CollUtil.isEmpty(instanceListRsp.getBody().getRows())) {
-            log.warn("[Route] 当前分组无在线实例，无法获取实例路由 | routesGroup: {}", req.getRoutesGroup());
-            rsp.setRows(new ArrayList<>());
-            rsp.setTotal(0);
-            rsp.setError("当前分组无在线实例");
-            return ResponseDTO.newSuccessInstance(rsp);
-        }
-
-        InstanceInfoVO firstInstance = instanceListRsp.getBody().getRows().get(0);
-        String instanceId = firstInstance.getInstanceId();
+        String routesGroup = req.getRoutesGroup();
         // 从路由分组获取存储方式
-        String storageMode = getStorageModeByGroupKey(req.getRoutesGroup());
+        String storageMode = getStorageModeByGroupKey(routesGroup);
 
-        rsp.setInstanceId(instanceId);
+        rsp.setRoutesGroup(routesGroup);
         rsp.setStorageMode(storageMode);
 
-        log.info("[Route] 自动选择在线实例获取路由 | routesGroup: {}, instanceId: {}, storageMode: {}",
-            req.getRoutesGroup(), instanceId, storageMode);
-
-        // 2. 从实例获取路由
-        GetInstanceRoutesFromActuatorReq actuatorReq = new GetInstanceRoutesFromActuatorReq();
-        actuatorReq.setInstanceId(instanceId);
+        log.info("[Route] 从存储获取路由 | routesGroup: {}, storageMode: {}", routesGroup, storageMode);
 
         try {
-            ResponseDTO<InstanceRoutesRsp> instanceRoutesRsp = routePushService.getInstanceRoutesFromActuator(actuatorReq);
-
-            if (ObjectUtil.isNull(instanceRoutesRsp) || ObjectUtil.isNull(instanceRoutesRsp.getBody())) {
-                log.warn("[Route] 从实例获取路由失败 | instanceId: {}", instanceId);
-                rsp.setRows(new ArrayList<>());
-                rsp.setTotal(0);
-                rsp.setError("从实例获取路由失败");
-                return ResponseDTO.newSuccessInstance(rsp);
-            }
-
-            InstanceRoutesRsp instanceRoutes = instanceRoutesRsp.getBody();
-            List<GaRouteDO> routes = instanceRoutes.getRows();
+            // 从存储获取路由
+            List<GaRouteDO> routes = getRoutesFromStorage(routesGroup, storageMode);
 
             rsp.setRows(routes);
-            rsp.setTotal(instanceRoutes.getTotal());
-            rsp.setFromActuator(instanceRoutes.getFromActuator());
+            rsp.setTotal(routes.size());
 
-            if (StrUtil.isNotBlank(instanceRoutes.getError())) {
-                rsp.setError(instanceRoutes.getError());
-            }
-
-            log.info("[Route] 成功获取分组实例路由 | routesGroup: {}, instanceId: {}, count: {}",
-                req.getRoutesGroup(), instanceId, rsp.getTotal());
+            log.info("[Route] 成功获取存储路由 | routesGroup: {}, storageMode: {}, count: {}",
+                routesGroup, storageMode, rsp.getTotal());
 
         } catch (Exception e) {
-            log.error("[Route] 获取实例路由异常 | instanceId: {}, error: {}", instanceId, e.getMessage(), e);
+            log.error("[Route] 获取存储路由异常 | routesGroup: {}, error: {}", routesGroup, e.getMessage(), e);
             rsp.setRows(new ArrayList<>());
             rsp.setTotal(0);
-            rsp.setError("获取实例路由异常: " + e.getMessage());
+            rsp.setError("获取存储路由异常: " + e.getMessage());
         }
 
         return ResponseDTO.newSuccessInstance(rsp);
@@ -1220,6 +1339,6 @@ public class RouteServiceImpl implements RouteService {
         }
 
         // 最终兜底：返回 nacos
-        return "nacos";
+        return RouteConstant.STORAGE_MODE_NACOS;
     }
 }

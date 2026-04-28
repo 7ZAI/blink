@@ -22,6 +22,7 @@ import com.blink.gateway.dubbo.service.GatewayAdminDubboService;
 import com.blink.gateway.event.EnableStreamEvent;
 import com.blink.gateway.monitor.MonitorConfigHolder;
 import com.blink.gateway.monitor.MetricsReportScheduler;
+import com.blink.gateway.scheduler.PendingMessageScheduler;
 import com.blink.gateway.util.GateWayUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -88,6 +89,9 @@ public class CommonEventStreamListener implements CommandLineRunner {
 
     @Resource
     private ChannelConfigCache channelConfigCache;
+
+    @Resource
+    private PendingMessageScheduler pendingMessageScheduler;
 
     @Value("${blink.gateway.instance-id:01}")
     private String instanceId;
@@ -230,15 +234,27 @@ public class CommonEventStreamListener implements CommandLineRunner {
                                     return handlerEvent(streamMsgRecord).flatMap(result -> {
                                         //事件处理 失败！
                                         if (!result.getHandledResult()) {
-                                            return Mono.error(new BlinkException("消费失败"));
+                                            // 消费失败，移入死信队列
+                                            log.warn("[Stream] 消费失败，移入死信队列 | messageId: {}", rid);
+                                            return pendingMessageScheduler.moveToDeadLetterQueue(
+                                                    streamKey, groupName, rid, message,
+                                                    "消费处理失败", appName + ":" + instanceId)
+                                                    .then(Mono.just(streamMsgRecord));
                                         }
                                         return ack(result).map(r -> streamMsgRecord);
                                     });
 
                                 }).onErrorContinue((e, r) -> {
-                                    //只记录 不停止监听 如果抛出异常会停止链接
-                                    log.error("处理消费同步缓存消息出错！", e);
-
+                                    //捕获异常，移入死信队列，不停止监听
+                                    log.error("[Stream] 处理消费同步缓存消息出错！", e);
+                                    if (r instanceof StreamMsgRecord smr) {
+                                        String failedMsgId = smr.getId();
+                                        StreamMessage<?> failedMsg = smr.getStreamMessage();
+                                        pendingMessageScheduler.moveToDeadLetterQueue(
+                                                smr.getStreamKey(), smr.getGroupName(), failedMsgId, failedMsg,
+                                                e.getMessage(), appName + ":" + instanceId)
+                                                .subscribe();
+                                    }
                                 });
                     }
                     //stream不存在并创建失败

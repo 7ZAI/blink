@@ -28,10 +28,4 @@ public class RollbackRouteReq implements Serializable {
      * 指定回滚到此历史版本
      */
     private Long historyId;
-
-    /**
-     * 是否同步到运行时存储
-     * 默认为 true
-     */
-    private Boolean syncToStorage;
 }

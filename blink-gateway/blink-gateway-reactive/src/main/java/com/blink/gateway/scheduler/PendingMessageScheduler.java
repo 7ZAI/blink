@@ -1,8 +1,11 @@
 package com.blink.gateway.scheduler;
 
+import com.blink.framework.common.utils.JacksonUtil;
 import com.blink.framework.redis.component.ReactiveRedisClient;
+import com.blink.framework.redis.mq.StreamMessage;
 import com.blink.gateway.config.prop.BlinkGatewayProperties;
 import com.blink.gateway.constant.RedisConstans;
+import com.blink.gateway.dto.DeadLetterMessageDTO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.connection.stream.PendingMessage;
@@ -12,6 +15,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -135,9 +139,88 @@ public class PendingMessageScheduler {
     private Mono<Void> moveToDeadLetterQueue(String streamKey, String groupName, String messageId) {
         log.error("[PEL] 消息移入死信队列 | messageId: {}", messageId);
 
-        // 先 ACK 移除，避免重复处理
-        return redisClient.xAck(streamKey, groupName, messageId)
-                .doOnSuccess(acked -> log.info("[PEL] 死信消息已 ACK | messageId: {}", messageId))
+        // 先获取消息内容，再 ACK 移除
+        return redisClient.xRange(streamKey, messageId, messageId)
+                .next()
+                .flatMap(record -> {
+                    // 构建死信消息
+                    DeadLetterMessageDTO deadLetterMsg = new DeadLetterMessageDTO();
+                    deadLetterMsg.setOriginalStreamKey(streamKey);
+                    deadLetterMsg.setGroupName(groupName);
+                    deadLetterMsg.setMessageId(messageId);
+                    deadLetterMsg.setFailedTime(LocalDateTime.now());
+                    deadLetterMsg.setRetryCount(0);
+
+                    // 提取消息体信息
+                    Object value = record.getValue();
+                    if (value instanceof StreamMessage<?> streamMessage) {
+                        deadLetterMsg.setPayloadClass(streamMessage.getPayloadClass());
+                        deadLetterMsg.setPayloadJson(JacksonUtil.toJson(streamMessage.getPayload()));
+                    } else {
+                        deadLetterMsg.setPayloadJson(JacksonUtil.toJson(value));
+                    }
+
+                    // 保存到死信队列（Redis Hash）
+                    String deadLetterKey = RedisConstans.STREAM_DEAD_LETTER_QUEUE;
+                    String deadLetterJson = JacksonUtil.toJson(deadLetterMsg);
+
+                    return redisClient.hPut(deadLetterKey, messageId, deadLetterJson)
+                            .doOnSuccess(success -> log.info("[DeadLetter] 消息已保存到死信队列 | messageId: {}", messageId))
+                            .then(redisClient.xAck(streamKey, groupName, messageId))
+                            .doOnSuccess(acked -> log.info("[DeadLetter] 死信消息已 ACK | messageId: {}", messageId))
+                            .then();
+                })
+                .onErrorResume(e -> {
+                    log.error("[DeadLetter] 保存死信消息失败 | messageId: {}, error: {}", messageId, e.getMessage());
+                    // 即使保存失败，也要 ACK 移除，避免重复处理
+                    return redisClient.xAck(streamKey, groupName, messageId).then();
+                });
+    }
+
+    /**
+     * 将消费失败的消息移入死信队列（公共方法，供外部调用）
+     *
+     * @param streamKey      Stream 键名
+     * @param groupName      消费者组名称
+     * @param messageId      消息ID
+     * @param streamMessage  原始消息
+     * @param errorMsg       错误信息
+     * @param failedInstance 失败实例标识
+     * @return Mono<Void>
+     */
+    public Mono<Void> moveToDeadLetterQueue(String streamKey, String groupName, String messageId,
+                                            StreamMessage<?> streamMessage, String errorMsg, String failedInstance) {
+        log.error("[DeadLetter] 消费失败，移入死信队列 | messageId: {}, error: {}", messageId, errorMsg);
+
+        // 构建死信消息
+        DeadLetterMessageDTO deadLetterMsg = new DeadLetterMessageDTO();
+        deadLetterMsg.setOriginalStreamKey(streamKey);
+        deadLetterMsg.setGroupName(groupName);
+        deadLetterMsg.setMessageId(messageId);
+        deadLetterMsg.setErrorMsg(errorMsg);
+        deadLetterMsg.setFailedTime(LocalDateTime.now());
+        deadLetterMsg.setFailedInstance(failedInstance);
+        deadLetterMsg.setRetryCount(0);
+
+        // 提取消息体信息
+        if (streamMessage != null) {
+            deadLetterMsg.setPayloadClass(streamMessage.getPayloadClass());
+            deadLetterMsg.setPayloadJson(JacksonUtil.toJson(streamMessage.getPayload()));
+        }
+
+        // 保存到死信队列（Redis Hash）
+        String deadLetterKey = RedisConstans.STREAM_DEAD_LETTER_QUEUE;
+        String deadLetterJson = JacksonUtil.toJson(deadLetterMsg);
+
+        return redisClient.hPut(deadLetterKey, messageId, deadLetterJson)
+                .doOnSuccess(success -> log.info("[DeadLetter] 消息已保存到死信队列 | messageId: {}, payloadClass: {}",
+                        messageId, deadLetterMsg.getPayloadClass()))
+                .then(redisClient.xAck(streamKey, groupName, messageId))
+                .doOnSuccess(acked -> log.info("[DeadLetter] 死信消息已 ACK | messageId: {}", messageId))
+                .onErrorResume(e -> {
+                    log.error("[DeadLetter] 保存死信消息失败 | messageId: {}, error: {}", messageId, e.getMessage());
+                    return redisClient.xAck(streamKey, groupName, messageId).flatMap(l -> Mono.empty());
+                })
                 .then();
     }
 

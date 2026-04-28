@@ -22,7 +22,10 @@ import static com.blink.gateway.admin.constants.RedisKeyConstant.GATEWAY_DYNAMIC
  *
  * @author binblink
  * @since 2026-04-11
+ * @deprecated 已废弃。路由增删改操作不再自动同步到运行时存储，
+ *             请使用 {@link com.blink.gateway.admin.service.RoutePushService} 进行手动推送。
  */
+@Deprecated
 @Service
 @Slf4j
 public class RouteAsyncSyncServiceImpl implements RouteAsyncSyncService {
