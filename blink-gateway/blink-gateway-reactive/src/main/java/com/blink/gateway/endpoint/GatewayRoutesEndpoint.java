@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.cloud.gateway.route.RouteDefinition;
-import org.springframework.cloud.gateway.route.RouteDefinitionRepository;
+import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Resource;
@@ -20,6 +20,8 @@ import java.util.List;
  * 网关路由 Actuator 端点
  * 用于获取当前实例内存中加载的路由定义
  *
+ * <p>使用 RouteDefinitionLocator 聚合所有路由来源（配置文件 + 动态路由）</p>
+ *
  * @author binblink
  * @since 2026-04-16
  */
@@ -28,8 +30,12 @@ import java.util.List;
 @Slf4j
 public class GatewayRoutesEndpoint {
 
+    /**
+     * 使用 RouteDefinitionLocator 聚合所有路由来源
+     * 包括：配置文件定义的路由、动态路由（Nacos/Redis）等
+     */
     @Resource
-    private RouteDefinitionRepository routeDefinitionRepository;
+    private RouteDefinitionLocator routeDefinitionLocator;
 
     @Value("${server.port}")
     private String serverPort;
@@ -44,7 +50,8 @@ public class GatewayRoutesEndpoint {
         String instanceId = getInstanceId();
 
         try {
-            List<RouteDefinition> routes = routeDefinitionRepository
+            // 使用 RouteDefinitionLocator 获取所有路由（聚合所有来源）
+            List<RouteDefinition> routes = routeDefinitionLocator
                 .getRouteDefinitions()
                 .collectList()
                 .block();

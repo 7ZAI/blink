@@ -37,8 +37,10 @@ import com.blink.gateway.admin.dto.vo.RoutesGroupStatsVO;
 import com.blink.gateway.admin.dto.vo.StorageModeVO;
 import com.blink.gateway.admin.entity.GaRouteDO;
 import com.blink.gateway.admin.entity.GaRouteHistoryDO;
+import com.blink.gateway.admin.entity.GatewayRouteGroupDO;
 import com.blink.gateway.admin.mapper.GaRouteHistoryMapper;
 import com.blink.gateway.admin.mapper.GaRouteMapper;
+import com.blink.gateway.admin.mapper.GatewayRouteGroupMapper;
 import com.blink.gateway.admin.producer.GateWayStreamMessageProducer;
 import com.blink.gateway.admin.service.GatewayInstanceService;
 import com.blink.gateway.admin.service.NacosRouteService;
@@ -107,6 +109,9 @@ public class RouteServiceImpl implements RouteService {
 
     @Resource
     private RoutePushService routePushService;
+
+    @Resource
+    private GatewayRouteGroupMapper gatewayRouteGroupMapper;
 
     // ========== Redis 路由管理（数据库存储） ==========
 
@@ -1140,7 +1145,8 @@ public class RouteServiceImpl implements RouteService {
 
         InstanceInfoVO firstInstance = instanceListRsp.getBody().getRows().get(0);
         String instanceId = firstInstance.getInstanceId();
-        String storageMode = firstInstance.getStorageMode();
+        // 从路由分组获取存储方式
+        String storageMode = getStorageModeByGroupKey(req.getRoutesGroup());
 
         rsp.setInstanceId(instanceId);
         rsp.setStorageMode(storageMode);
@@ -1185,5 +1191,35 @@ public class RouteServiceImpl implements RouteService {
         }
 
         return ResponseDTO.newSuccessInstance(rsp);
+    }
+
+    /**
+     * 根据分组标识获取存储方式
+     * 优先从指定的路由分组获取，如果分组不存在则使用默认分组
+     *
+     * @param groupKey 分组标识
+     * @return 存储方式：nacos/redis
+     */
+    private String getStorageModeByGroupKey(String groupKey) {
+        // 尝试从路由分组获取
+        LambdaQueryWrapper<GatewayRouteGroupDO> groupQuery = new LambdaQueryWrapper<>();
+        groupQuery.eq(GatewayRouteGroupDO::getGroupKey, groupKey);
+        GatewayRouteGroupDO group = gatewayRouteGroupMapper.selectOne(groupQuery);
+
+        if (group != null && StrUtil.isNotBlank(group.getStorageMode())) {
+            return group.getStorageMode();
+        }
+
+        // 使用默认分组的存储方式
+        LambdaQueryWrapper<GatewayRouteGroupDO> defaultQuery = new LambdaQueryWrapper<>();
+        defaultQuery.eq(GatewayRouteGroupDO::getGroupKey, "default");
+        GatewayRouteGroupDO defaultGroup = gatewayRouteGroupMapper.selectOne(defaultQuery);
+
+        if (defaultGroup != null && StrUtil.isNotBlank(defaultGroup.getStorageMode())) {
+            return defaultGroup.getStorageMode();
+        }
+
+        // 最终兜底：返回 nacos
+        return "nacos";
     }
 }

@@ -16,7 +16,7 @@ import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.ImportRoutesReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
-import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
+import com.blink.gateway.admin.dto.req.QueryStorageRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryNacosRouteReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
 import com.blink.gateway.admin.dto.req.QueryPushStatusReq;
@@ -35,7 +35,7 @@ import com.blink.gateway.admin.dto.req.VerifyPushResultReq;
 import com.blink.gateway.admin.dto.rsp.GroupInstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryGateWayRoutesRsp;
-import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.QueryStorageRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.ImportRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.RouteDiffRsp;
 import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
@@ -383,14 +383,15 @@ public class RouteController {
     }
 
     /**
-     * 查询实例当前路由
+     * 查询配置中心路由
+     * 从 Redis/Nacos 配置中心查询已推送的路由配置
      *
      * @param reqDto 请求参数
-     * @return 实例路由列表
+     * @return 配置中心路由列表
      */
-    @PostMapping("/getInstanceRoutes")
-    public ResponseDTO<QueryInstanceRoutesRsp> getInstanceRoutes(@RequestBody RequestDTO<QueryInstanceRoutesReq> reqDto) {
-        return routePushService.getInstanceRoutes(reqDto.getBody());
+    @PostMapping("/getStorageRoutes")
+    public ResponseDTO<QueryStorageRoutesRsp> getStorageRoutes(@RequestBody RequestDTO<QueryStorageRoutesReq> reqDto) {
+        return routePushService.getStorageRoutes(reqDto.getBody());
     }
 
     /**

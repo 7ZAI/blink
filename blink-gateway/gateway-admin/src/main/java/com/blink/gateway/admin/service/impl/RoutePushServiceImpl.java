@@ -21,13 +21,13 @@ import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.PushRoutesReq;
 import com.blink.gateway.admin.dto.req.GetLatestPushReq;
 import com.blink.gateway.admin.dto.req.QueryInstancePushHistoryReq;
-import com.blink.gateway.admin.dto.req.QueryInstanceRoutesReq;
+import com.blink.gateway.admin.dto.req.QueryStorageRoutesReq;
 import com.blink.gateway.admin.dto.req.QueryPushLogReq;
 import com.blink.gateway.admin.dto.req.QueryRouteInstancePushStatusReq;
 import com.blink.gateway.admin.dto.req.RollbackPushReq;
 import com.blink.gateway.admin.dto.req.VerifyPushResultReq;
 import com.blink.gateway.admin.dto.rsp.InstanceRoutesRsp;
-import com.blink.gateway.admin.dto.rsp.QueryInstanceRoutesRsp;
+import com.blink.gateway.admin.dto.rsp.QueryStorageRoutesRsp;
 import com.blink.gateway.admin.dto.rsp.QueryPushLogRsp;
 import com.blink.gateway.admin.dto.rsp.RouteInstancePushStatusRsp;
 import com.blink.gateway.admin.dto.rsp.VerifyPushResultRsp;
@@ -302,8 +302,8 @@ public class RoutePushServiceImpl implements RoutePushService {
     }
 
     @Override
-    public ResponseDTO<QueryInstanceRoutesRsp> getInstanceRoutes(QueryInstanceRoutesReq req) {
-        QueryInstanceRoutesRsp rsp = new QueryInstanceRoutesRsp();
+    public ResponseDTO<QueryStorageRoutesRsp> getStorageRoutes(QueryStorageRoutesReq req) {
+        QueryStorageRoutesRsp rsp = new QueryStorageRoutesRsp();
         List<GaRouteDO> routes = new ArrayList<>();
 
         // 确定存储模式：优先使用请求参数，否则默认使用 nacos
@@ -321,7 +321,7 @@ public class RoutePushServiceImpl implements RoutePushService {
         rsp.setRows(routes);
         rsp.setTotal(routes.size());
 
-        log.info("[RoutePush] 查询实例路由成功 | storageMode: {}, count: {}", storageMode, routes.size());
+        log.info("[RoutePush] 查询配置中心路由成功 | storageMode: {}, count: {}", storageMode, routes.size());
 
         return ResponseDTO.newSuccessInstance(rsp);
     }

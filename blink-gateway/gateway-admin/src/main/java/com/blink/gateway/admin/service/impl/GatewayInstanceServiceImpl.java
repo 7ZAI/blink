@@ -1019,15 +1019,7 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
         InstanceInfoVO vo = BeanUtil.copyProperties(doct, InstanceInfoVO.class);
         vo.setStatusDesc(getStatusDesc(doct.getStatus()));
         vo.setGroupKey(doct.getGroupKey());
-        // storageMode 从路由分组获取
-        if (StrUtil.isNotBlank(doct.getGroupKey())) {
-            LambdaQueryWrapper<GatewayRouteGroupDO> groupQuery = new LambdaQueryWrapper<>();
-            groupQuery.eq(GatewayRouteGroupDO::getGroupKey, doct.getGroupKey());
-            GatewayRouteGroupDO group = gatewayRouteGroupMapper.selectOne(groupQuery);
-            if (group != null) {
-                vo.setStorageMode(group.getStorageMode());
-            }
-        }
+        // storageMode 不再存储在实例中，需要时从路由分组获取
         return vo;
     }
 
@@ -1059,15 +1051,7 @@ public class GatewayInstanceServiceImpl implements GatewayInstanceService {
         InstanceInfoVO vo = BeanUtil.copyProperties(dbInstance, InstanceInfoVO.class);
         vo.setStatusDesc(getStatusDesc(dbInstance.getStatus()));
         vo.setGroupKey(dbInstance.getGroupKey());
-        // storageMode 从路由分组获取
-        if (StrUtil.isNotBlank(dbInstance.getGroupKey())) {
-            LambdaQueryWrapper<GatewayRouteGroupDO> groupQuery = new LambdaQueryWrapper<>();
-            groupQuery.eq(GatewayRouteGroupDO::getGroupKey, dbInstance.getGroupKey());
-            GatewayRouteGroupDO group = gatewayRouteGroupMapper.selectOne(groupQuery);
-            if (group != null) {
-                vo.setStorageMode(group.getStorageMode());
-            }
-        }
+        // storageMode 不再存储在实例中，需要时从路由分组获取
 
         // 检查是否在注册中心
         boolean inRegistry = registryInstanceIds.contains(dbInstance.getInstanceId());

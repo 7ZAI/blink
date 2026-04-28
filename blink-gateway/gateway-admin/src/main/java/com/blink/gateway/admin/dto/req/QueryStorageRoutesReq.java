@@ -5,13 +5,14 @@ import lombok.Data;
 import java.io.Serial;
 
 /**
- * 查询实例路由请求
+ * 查询配置中心路由请求
+ * 从 Redis/Nacos 配置中心查询已推送的路由配置
  *
  * @author binblink
  * @since 2026-04-11
  */
 @Data
-public class QueryInstanceRoutesReq {
+public class QueryStorageRoutesReq {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -35,9 +36,4 @@ public class QueryInstanceRoutesReq {
      * Nacos Group（Nacos模式）
      */
     private String nacosGroup;
-
-    /**
-     * 目标实例ID（可选，用于查看特定实例的路由）
-     */
-    private String instanceId;
 }

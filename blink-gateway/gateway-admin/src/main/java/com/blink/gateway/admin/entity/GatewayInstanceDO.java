@@ -39,12 +39,6 @@ public class GatewayInstanceDO implements Serializable {
     private String groupKey;
 
     /**
-     * 存储方式：redis/nacos
-     */
-    @TableField("storage_mode")
-    private String storageMode;
-
-    /**
      * 服务 ID
      */
     @TableField("service_id")
