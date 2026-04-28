@@ -36,6 +36,7 @@ dependencies {
     implementation 'cn.hutool:hutool-core'
     implementation 'cn.hutool:hutool-crypto'
     implementation 'cn.hutool:hutool-http'
+    implementation 'cn.hutool:hutool-json'
 
     // 验证码
     implementation 'com.anji-plus:captcha:1.3.0'
@@ -45,6 +46,9 @@ dependencies {
     implementation 'cn.dev33:sa-token-redis-jackson:1.45.0'
     // 密码加密
     implementation 'org.springframework.security:spring-security-crypto'
+
+    // Spring Mail 邮件发送
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
 
     // ============ 测试框架 ============
     testImplementation 'com.blink:blink-framework-test:1.0.0-SNAPSHOT'
