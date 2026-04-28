@@ -85,4 +85,21 @@ public enum ChannelType {
         }
         return null;
     }
+
+    /**
+     * 根据枚举名称查找对应的渠道类型
+     *
+     * @param name 枚举名称（如 IN_APP、EMAIL）
+     * @return 渠道类型，未找到返回null
+     */
+    public static ChannelType fromName(String name) {
+        if (StrUtil.isBlank(name)) {
+            return null;
+        }
+        try {
+            return valueOf(name.trim());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
 }

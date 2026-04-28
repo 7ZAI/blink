@@ -9,6 +9,9 @@ import com.blink.gateway.admin.entity.GatewayAlertHistoryDO;
 import com.blink.gateway.admin.entity.GatewayAlertRuleDO;
 import com.blink.gateway.admin.mapper.GatewayAlertHistoryMapper;
 import com.blink.gateway.admin.mapper.GatewayAlertRuleMapper;
+import com.blink.gateway.admin.notification.dispatcher.NotificationDispatcher;
+import com.blink.gateway.admin.notification.model.ChannelType;
+import com.blink.gateway.admin.notification.model.NotificationMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -25,6 +28,7 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -52,6 +56,9 @@ class AlertEvaluationServiceTest {
 
     @Mock
     private NotificationPublishService notificationService;
+
+    @Mock
+    private NotificationDispatcher notificationDispatcher;
 
     @InjectMocks
     private AlertEvaluationService alertEvaluationService;
@@ -92,7 +99,7 @@ class AlertEvaluationServiceTest {
 
             verify(ruleMapper, times(1)).selectEnabledRules();
             verify(historyMapper, never()).insert(any(GatewayAlertHistoryDO.class));
-            verify(notificationService, never()).sendAlert(anyString(), anyString(), anyString());
+            verify(notificationDispatcher, never()).dispatchAsync(any(NotificationMessage.class), anyList());
         }
 
         @Test
@@ -278,7 +285,7 @@ class AlertEvaluationServiceTest {
 
             // 验证：应触发告警
             verify(historyMapper, times(1)).insert(any(GatewayAlertHistoryDO.class));
-            verify(notificationService, times(1)).sendAlert(anyString(), anyString(), anyString());
+            verify(notificationDispatcher, times(1)).dispatchAsync(any(NotificationMessage.class), anyList());
             verify(redisClient, times(1)).setEx(anyString(), eq("1"), any(Duration.class)); // 设置抑制
         }
     }
@@ -307,7 +314,7 @@ class AlertEvaluationServiceTest {
 
             // 验证：不应触发告警
             verify(historyMapper, never()).insert(any(GatewayAlertHistoryDO.class));
-            verify(notificationService, never()).sendAlert(anyString(), anyString(), anyString());
+            verify(notificationDispatcher, never()).dispatchAsync(any(NotificationMessage.class), anyList());
         }
     }
 
@@ -388,7 +395,7 @@ class AlertEvaluationServiceTest {
             alertEvaluationService.evaluateAllRules();
 
             // 验证：应发送站内通知
-            verify(notificationService, times(1)).sendAlert(anyString(), anyString(), eq("WARNING"));
+            verify(notificationDispatcher, times(1)).dispatchAsync(any(NotificationMessage.class), anyList());
         }
 
         @Test
@@ -412,7 +419,7 @@ class AlertEvaluationServiceTest {
 
             alertEvaluationService.evaluateAllRules();
 
-            verify(notificationService, times(1)).sendAlert(anyString(), anyString(), eq("ERROR"));
+            verify(notificationDispatcher, times(1)).dispatchAsync(any(NotificationMessage.class), anyList());
         }
 
         @Test
@@ -436,7 +443,7 @@ class AlertEvaluationServiceTest {
             alertEvaluationService.evaluateAllRules();
 
             // 验证：不应发送通知
-            verify(notificationService, never()).sendAlert(anyString(), anyString(), anyString());
+            verify(notificationDispatcher, never()).dispatchAsync(any(NotificationMessage.class), anyList());
         }
     }
 

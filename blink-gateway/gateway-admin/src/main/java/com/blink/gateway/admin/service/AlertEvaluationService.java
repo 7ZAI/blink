@@ -10,6 +10,9 @@ import com.blink.gateway.admin.entity.GatewayAlertHistoryDO;
 import com.blink.gateway.admin.entity.GatewayAlertRuleDO;
 import com.blink.gateway.admin.mapper.GatewayAlertHistoryMapper;
 import com.blink.gateway.admin.mapper.GatewayAlertRuleMapper;
+import com.blink.gateway.admin.notification.dispatcher.NotificationDispatcher;
+import com.blink.gateway.admin.notification.model.ChannelType;
+import com.blink.gateway.admin.notification.model.NotificationMessage;
 import com.blink.gateway.admin.service.NotificationPublishService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +22,10 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.blink.gateway.admin.constants.NotificationSeverityConstant.*;
+import static com.blink.gateway.admin.constants.NotificationTypeConstant.ALERT;
 
 /**
  * 告警评估服务
@@ -55,6 +60,9 @@ public class AlertEvaluationService {
 
     @Resource
     private NotificationPublishService notificationService;
+
+    @Resource
+    private NotificationDispatcher notificationDispatcher;
 
     /**
      * 定时评估所有规则 (每分钟执行)
@@ -280,28 +288,44 @@ public class AlertEvaluationService {
             return;
         }
 
-        String[] channels = rule.getNotifyChannels().split(",");
+        // 构建通知消息
+        NotificationMessage message = NotificationMessage.builder()
+                .title(alert.getAlertTitle())
+                .content(alert.getAlertContent())
+                .notificationType(ALERT)
+                .severity(convertSeverity(alert.getSeverity()))
+                .businessId(String.valueOf(alert.getId()))
+                .extra(buildAlertExtra(alert))
+                .build();
 
-        for (String channel : channels) {
-            switch (channel.trim()) {
-                case "IN_APP":
-                    String severity = convertSeverity(alert.getSeverity());
-                    notificationService.sendAlert(
-                            alert.getAlertTitle(),
-                            alert.getAlertContent(),
-                            severity);
-                    log.info("[AlertEvaluation] 站内通知已发送 | title: {}", alert.getAlertTitle());
-                    break;
-                case "EMAIL":
-                    log.info("[AlertEvaluation] 邮件通知预留 | title: {}", alert.getAlertTitle());
-                    break;
-                case "WEBHOOK":
-                    log.info("[AlertEvaluation] Webhook通知预留 | title: {}", alert.getAlertTitle());
-                    break;
-                default:
-                    log.warn("[AlertEvaluation] 未知通知渠道 | channel: {}", channel);
-            }
+        // 解析渠道类型
+        List<ChannelType> channelTypes = Arrays.stream(rule.getNotifyChannels().split(","))
+                .map(String::trim)
+                .map(ChannelType::fromName)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (CollUtil.isEmpty(channelTypes)) {
+            log.warn("[AlertEvaluation] 无有效通知渠道 | channels={}", rule.getNotifyChannels());
+            return;
         }
+
+        // 异步发送通知
+        notificationDispatcher.dispatchAsync(message, channelTypes);
+        log.info("[AlertEvaluation] 通知已分发 | channels={}", channelTypes);
+    }
+
+    /**
+     * 构建告警扩展参数
+     */
+    private Map<String, Object> buildAlertExtra(GatewayAlertHistoryDO alert) {
+        Map<String, Object> extra = new HashMap<>();
+        extra.put("alertId", alert.getId());
+        extra.put("ruleId", alert.getRuleId());
+        extra.put("ruleName", alert.getRuleName());
+        extra.put("severity", alert.getSeverity());
+        extra.put("triggeredConditions", alert.getTriggeredConditions());
+        return extra;
     }
 
     /**
